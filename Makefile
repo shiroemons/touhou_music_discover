@@ -23,6 +23,9 @@ dbinit: ## Initialize database
 migrate: ## Run db:migrate
 	docker-compose run --rm web bundle exec rails db:migrate
 
+rollback: ## Run db:rollback
+	docker-compose run --rm web bundle exec rails db:rollback
+
 dbseed: ## Run db:seed
 	docker-compose run --rm web bundle exec rails db:seed
 
