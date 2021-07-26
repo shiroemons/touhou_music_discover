@@ -155,7 +155,6 @@ DEPENDENCIES
   puma (~> 5.0)
   rails (~> 6.1.4)
   spring
-  tzinfo-data
 
 RUBY VERSION
    ruby 3.0.2p107
