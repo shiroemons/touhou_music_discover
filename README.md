@@ -1,0 +1,2 @@
+# touhou_music_discover
+東方同人音楽流通の楽曲を収集するWebアプリ
