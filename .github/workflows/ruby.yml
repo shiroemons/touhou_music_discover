@@ -1,0 +1,65 @@
+name: Ruby
+
+on:
+  push:
+    branches:
+      - feature/**
+      - dependabot/**
+
+env:
+  CI: "true"
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:12-alpine
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    container:
+      image: cimg/ruby:3.0.2-node
+      options: --user root
+      env:
+        PG_HOST: postgres
+        PG_USER: postgres
+        PG_PASSWORD: password
+        RAILS_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Cache vendor/bundle
+        uses: actions/cache@v1
+        id: cache_gem
+        with:
+          path: vendor/bundle
+          key: v1-gem-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            v1-gem-{{ runner.os }}-
+
+      - name: Build and setup
+        run: |
+          gem install bundler --no-document -v $(grep "BUNDLED WITH" -1 Gemfile.lock | tail -n 1)
+          bundle install --jobs 4 --retry 3
+
+      - name: Database setup
+        run: |
+          bundle exec rails db:create db:schema:load db:migrate
+
+      - name: Run Rubocop
+        run: |
+          bundle exec rubocop --parallel
+
+      - name: Run test
+        run: |
+          bundle exec rails test
