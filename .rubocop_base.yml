@@ -10,5 +10,8 @@ Metrics/MethodLength:
 Metrics/PerceivedComplexity:
   Enabled: false
 
+Rails/Output:
+  Enabled: false
+
 Style/Documentation:
   Enabled: false

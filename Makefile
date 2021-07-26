@@ -23,6 +23,9 @@ dbinit: ## Initialize database
 migrate: ## Run db:migrate
 	docker-compose run --rm web bundle exec rails db:migrate
 
+dbseed: ## Run db:seed
+	docker-compose run --rm web bundle exec rails db:seed
+
 minitest: ## Run test
 	docker-compose run --rm -e RAILS_ENV=test web bin/rails db:test:prepare
 	docker-compose run --rm -e RAILS_ENV=test web bin/rails test
