@@ -10,11 +10,18 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_26_132219) do
+ActiveRecord::Schema.define(version: 2021_07_26_133107) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
+
+  create_table "albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "jan_code", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["jan_code"], name: "index_albums_on_jan_code", unique: true
+  end
 
   create_table "master_artists", force: :cascade do |t|
     t.string "name", null: false
