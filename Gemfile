@@ -22,3 +22,5 @@ group :development do
   gem 'rubocop-rails', require: false
   gem 'spring'
 end
+
+gem 'rspotify'
