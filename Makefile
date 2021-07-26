@@ -27,6 +27,12 @@ minitest: ## Run test
 	docker-compose run --rm -e RAILS_ENV=test web bin/rails db:test:prepare
 	docker-compose run --rm -e RAILS_ENV=test web bin/rails test
 
+rubocop: ## Run rubocop (auto correct)
+	docker-compose run --rm web bundle exec rubocop --auto-correct
+
+rubocop_auto_corrector: ## Run rubocop_auto_corrector (rubocop auto correct and git commit)
+	docker-compose run --rm web bundle exec rubocop_auto_corrector
+
 bash: ## Run bash in web container
 	docker-compose run --rm web bash
 
