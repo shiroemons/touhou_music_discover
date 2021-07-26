@@ -1,0 +1,40 @@
+version: "3.8"
+services:
+  db:
+    image: postgres:12-alpine
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_HOST_AUTH_METHOD: trust
+
+  web: &web
+    build: .
+    image: app:1.0.0
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/app:cached
+      - bundle:/app/vendor/bundle
+      - rails_cache:/app/tmp/cache
+    tmpfs:
+      - /tmp
+    environment:
+      BUNDLE_PATH: "/app/vendor/bundle"
+      BOOTSNAP_CACHE_DIR: "/app/vendor/bundle"
+      WD_INSTALL_DIR: "/usr/local/bin"
+      HISTFILE: "/app/log/.bash_history"
+      EDITOR: "vi"
+      DATABASE_URL: "postgres://postgres:postgres@db:5432"
+      RAILS_MASTER_KEY:
+    depends_on:
+      - db
+    command: ["bin/rails", "server", "-b", "0.0.0.0"]
+    expose: ["3000"]
+    ports: ["3000:3000"]
+    user: root
+    working_dir: /app
+
+volumes:
+  postgres:
+  bundle:
+  rails_cache:
