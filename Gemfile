@@ -15,7 +15,6 @@ end
 group :development do
   gem 'listen', '~> 3.3'
   gem 'rubocop', require: false
-  gem 'rubocop_auto_corrector', require: false
   gem 'rubocop-performance', require: false
   gem 'rubocop-rails', require: false
   gem 'spring'

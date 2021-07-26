@@ -30,9 +30,6 @@ minitest: ## Run test
 rubocop: ## Run rubocop (auto correct)
 	docker-compose run --rm web bundle exec rubocop --auto-correct
 
-rubocop_auto_corrector: ## Run rubocop_auto_corrector (rubocop auto correct and git commit)
-	docker-compose run --rm web bundle exec rubocop_auto_corrector
-
 bash: ## Run bash in web container
 	docker-compose run --rm web bash
 

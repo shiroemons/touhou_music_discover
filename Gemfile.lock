@@ -152,8 +152,6 @@ GEM
       activesupport (>= 4.2.0)
       rack (>= 1.1)
       rubocop (>= 1.7.0, < 2.0)
-    rubocop_auto_corrector (0.4.2)
-      rubocop (>= 1.13.0)
     ruby-progressbar (1.11.0)
     spring (2.1.1)
     sprockets (4.0.2)
@@ -186,7 +184,6 @@ DEPENDENCIES
   rubocop
   rubocop-performance
   rubocop-rails
-  rubocop_auto_corrector
   spring
 
 RUBY VERSION
