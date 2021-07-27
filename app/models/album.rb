@@ -5,4 +5,6 @@ class Album < ApplicationRecord
 
   has_many :albums_tracks, dependent: :destroy
   has_many :tracks, through: :albums_tracks
+
+  has_one :spotify_album, dependent: :destroy
 end
