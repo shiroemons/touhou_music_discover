@@ -7,7 +7,9 @@ namespace :spotify do
     master_artist_count = 0
     max_master_artist_count = artists.count
     artists.each do |artist|
-      SpotifyClient::Artist.fetch(artist.key)
+      unless SpotifyArtist.exists?(spotify_id: artist.key)
+        SpotifyClient::Artist.fetch(artist.key)
+      end
       master_artist_count += 1
       print "\rマスターアーティスト: #{master_artist_count}/#{max_master_artist_count} Progress: #{(master_artist_count * 100.0 / max_master_artist_count).round(1)}%"
     end
