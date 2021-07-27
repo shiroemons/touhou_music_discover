@@ -68,6 +68,7 @@ module SpotifyClient
     def self.save_track(spotify_album, spotify_track)
       isrc = spotify_track.external_ids['isrc']
       track = ::Track.find_or_create_by!(isrc: isrc)
+      track.album_ids.push(spotify_album.album_id) unless track.album_ids.include?(spotify_album.album_id)
 
       s_track = ::SpotifyTrack.find_or_create_by!(
         album_id: spotify_album.album_id,
