@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_26_172438) do
+ActiveRecord::Schema.define(version: 2021_07_27_012647) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -105,6 +105,8 @@ ActiveRecord::Schema.define(version: 2021_07_26_172438) do
     t.boolean "is_touhou", default: true, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.uuid "album_id"
+    t.index ["album_id"], name: "index_tracks_on_album_id"
     t.index ["isrc"], name: "index_tracks_on_isrc", unique: true
   end
 
@@ -112,4 +114,5 @@ ActiveRecord::Schema.define(version: 2021_07_26_172438) do
   add_foreign_key "spotify_tracks", "albums"
   add_foreign_key "spotify_tracks", "spotify_albums"
   add_foreign_key "spotify_tracks", "tracks"
+  add_foreign_key "tracks", "albums"
 end
