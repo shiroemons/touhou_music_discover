@@ -20,6 +20,9 @@ bundle: ## Run bundle install
 dbinit: ## Initialize database
 	docker-compose run --rm web bundle exec rails db:drop db:setup
 
+dbconsole: ## Run dbconsole
+	docker-compose run --rm web bundle exec rails dbconsole
+
 migrate: ## Run db:migrate
 	docker-compose run --rm web bundle exec rails db:migrate
 
