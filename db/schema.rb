@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_27_012647) do
+ActiveRecord::Schema.define(version: 2021_07_27_043256) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -22,6 +22,14 @@ ActiveRecord::Schema.define(version: 2021_07_27_012647) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["jan_code"], name: "index_albums_on_jan_code", unique: true
+  end
+
+  create_table "albums_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "album_id", null: false
+    t.uuid "track_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["album_id", "track_id"], name: "index_albums_tracks_on_album_id_and_track_id", unique: true
   end
 
   create_table "master_artists", force: :cascade do |t|
@@ -105,14 +113,13 @@ ActiveRecord::Schema.define(version: 2021_07_27_012647) do
     t.boolean "is_touhou", default: true, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.uuid "album_id"
-    t.index ["album_id"], name: "index_tracks_on_album_id"
     t.index ["isrc"], name: "index_tracks_on_isrc", unique: true
   end
 
+  add_foreign_key "albums_tracks", "albums"
+  add_foreign_key "albums_tracks", "tracks"
   add_foreign_key "spotify_albums", "albums"
   add_foreign_key "spotify_tracks", "albums"
   add_foreign_key "spotify_tracks", "spotify_albums"
   add_foreign_key "spotify_tracks", "tracks"
-  add_foreign_key "tracks", "albums"
 end
