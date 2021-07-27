@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 namespace :spotify do
-  desc 'Spotify アーティスト情報取得'
+  desc 'Spotify MasterArtistからアーティスト情報を取得'
   task master_artist_fetch: :environment do
     artists = MasterArtist.spotify
     master_artist_count = 0
@@ -10,6 +10,17 @@ namespace :spotify do
       SpotifyClient::Artist.fetch(artist.key) unless SpotifyArtist.exists?(spotify_id: artist.key)
       master_artist_count += 1
       print "\rマスターアーティスト: #{master_artist_count}/#{max_master_artist_count} Progress: #{(master_artist_count * 100.0 / max_master_artist_count).round(1)}%"
+    end
+  end
+
+  desc 'Spotify SpotifyTrackからアーティスト情報を取得'
+  task spotify_track_artist_fetch: :environment do
+    SpotifyTrack.find_each do |spotify_track|
+      payload = spotify_track.payload
+      payload['artists']&.each do |artist|
+        artist_id = artist['id']
+        SpotifyClient::Artist.fetch(artist_id) unless SpotifyArtist.exists?(spotify_id: artist_id)
+      end
     end
   end
 
