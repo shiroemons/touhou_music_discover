@@ -2,7 +2,10 @@ Layout/LineLength:
   Enabled: false
 
 Metrics/AbcSize:
-  Max: 25
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
 
 Metrics/CyclomaticComplexity:
   Enabled: false
