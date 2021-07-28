@@ -25,4 +25,17 @@ namespace :apple_music do
       print "\rAppleMusicアーティスト: #{apple_music_artist_count}/#{max_apple_music_artist_count} Progress: #{(apple_music_artist_count * 100.0 / max_apple_music_artist_count).round(1)}%"
     end
   end
+
+  desc 'AppleMusic アルバムに紐づくトラック情報を取得'
+  task album_tracks_fetch: :environment do
+    apple_music_albums = AppleMusicAlbum.all
+    apple_music_album_count = 0
+    max_apple_music_album_count = apple_music_albums.count
+    print "\rAppleMusicアルバム: #{apple_music_album_count}/#{max_apple_music_album_count} Progress: #{(apple_music_album_count * 100.0 / max_apple_music_album_count).round(1)}%"
+    apple_music_albums.each do |album|
+      AppleMusicClient::Track.fetch_album_tracks(album)
+      apple_music_album_count += 1
+      print "\rAppleMusicアルバム: #{apple_music_album_count}/#{max_apple_music_album_count} Progress: #{(apple_music_album_count * 100.0 / max_apple_music_album_count).round(1)}%"
+    end
+  end
 end
