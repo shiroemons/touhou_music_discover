@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_28_015937) do
+ActiveRecord::Schema.define(version: 2021_07_28_044818) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -30,6 +30,20 @@ ActiveRecord::Schema.define(version: 2021_07_28_015937) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["album_id", "track_id"], name: "index_albums_tracks_on_album_id_and_track_id", unique: true
+  end
+
+  create_table "apple_music_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "album_id"
+    t.string "apple_music_id", null: false
+    t.string "name", null: false
+    t.string "label", null: false
+    t.string "url"
+    t.date "release_date"
+    t.integer "total_tracks"
+    t.jsonb "payload"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["album_id"], name: "index_apple_music_albums_on_album_id"
   end
 
   create_table "apple_music_artists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -127,6 +141,7 @@ ActiveRecord::Schema.define(version: 2021_07_28_015937) do
 
   add_foreign_key "albums_tracks", "albums"
   add_foreign_key "albums_tracks", "tracks"
+  add_foreign_key "apple_music_albums", "albums"
   add_foreign_key "spotify_albums", "albums"
   add_foreign_key "spotify_tracks", "albums"
   add_foreign_key "spotify_tracks", "spotify_albums"
