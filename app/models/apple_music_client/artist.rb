@@ -3,7 +3,6 @@
 module AppleMusicClient
   class Artist
     def self.fetch(id)
-      puts id
       artist = AppleMusic::Artist.find(id)
       save_apple_music_artist(artist)
     end
