@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 namespace :apple_music do
-  desc 'Apple Music MasterArtistからアーティスト情報を取得'
+  desc 'AppleMusic MasterArtistからアーティスト情報を取得'
   task master_artist_fetch: :environment do
     artists = MasterArtist.apple_music
     master_artist_count = 0
@@ -10,6 +10,19 @@ namespace :apple_music do
       AppleMusicClient::Artist.fetch(artist.key) unless AppleMusicArtist.exists?(apple_music_id: artist.key)
       master_artist_count += 1
       print "\rマスターアーティスト: #{master_artist_count}/#{max_master_artist_count} Progress: #{(master_artist_count * 100.0 / max_master_artist_count).round(1)}%"
+    end
+  end
+
+  desc 'AppleMusic アーティストに紐づくアルバム情報を取得'
+  task artists_album_fetch: :environment do
+    apple_music_artists = AppleMusicArtist.all
+    apple_music_artist_count = 0
+    max_apple_music_artist_count = apple_music_artists.count
+    print "\rAppleMusicアーティスト: #{apple_music_artist_count}/#{max_apple_music_artist_count} Progress: #{(apple_music_artist_count * 100.0 / max_apple_music_artist_count).round(1)}%"
+    apple_music_artists.each do |apple_music_artist|
+      AppleMusicClient::Album.fetch_artists_albums(apple_music_artist.apple_music_id)
+      apple_music_artist_count += 1
+      print "\rAppleMusicアーティスト: #{apple_music_artist_count}/#{max_apple_music_artist_count} Progress: #{(apple_music_artist_count * 100.0 / max_apple_music_artist_count).round(1)}%"
     end
   end
 end
