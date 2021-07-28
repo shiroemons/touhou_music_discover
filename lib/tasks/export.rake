@@ -4,7 +4,7 @@ namespace :export do
   desc 'Spotify touhou music file export'
   task spotify: :environment do
     File.open('tmp/spotify_touhou_music.tsv', 'w') do |f|
-      f.puts("jan\tisrc\ttrack_number\talbum_name\ttrack_name\talbum_url\ttrack_url")
+      f.puts("JAN\tISRC\tトラック番号\tアルバム名\t楽曲名\tアルバムURL\t楽曲URL")
       SpotifyAlbum.includes(:album, spotify_tracks: :track).order(:release_date).each do |album|
         jan = album.jan_code
         album_name = album.name
