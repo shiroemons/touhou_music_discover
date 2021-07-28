@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_27_043256) do
+ActiveRecord::Schema.define(version: 2021_07_28_015937) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -30,6 +30,15 @@ ActiveRecord::Schema.define(version: 2021_07_27_043256) do
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["album_id", "track_id"], name: "index_albums_tracks_on_album_id_and_track_id", unique: true
+  end
+
+  create_table "apple_music_artists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "apple_music_id", null: false
+    t.string "name", null: false
+    t.string "url"
+    t.jsonb "payload"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   create_table "master_artists", force: :cascade do |t|
