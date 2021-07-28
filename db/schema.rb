@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_28_044818) do
+ActiveRecord::Schema.define(version: 2021_07_28_163312) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -53,6 +53,28 @@ ActiveRecord::Schema.define(version: 2021_07_28_044818) do
     t.jsonb "payload"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+  end
+
+  create_table "apple_music_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "album_id"
+    t.uuid "track_id", null: false
+    t.uuid "apple_music_album_id", null: false
+    t.string "apple_music_id", null: false
+    t.string "name", null: false
+    t.string "label", null: false
+    t.string "artist_name", default: "", null: false
+    t.string "composer_name", default: "", null: false
+    t.string "url", default: "", null: false
+    t.date "release_date"
+    t.integer "disc_number"
+    t.integer "track_number"
+    t.integer "duration_ms"
+    t.jsonb "payload"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["album_id"], name: "index_apple_music_tracks_on_album_id"
+    t.index ["apple_music_album_id"], name: "index_apple_music_tracks_on_apple_music_album_id"
+    t.index ["track_id"], name: "index_apple_music_tracks_on_track_id"
   end
 
   create_table "master_artists", force: :cascade do |t|
@@ -142,6 +164,9 @@ ActiveRecord::Schema.define(version: 2021_07_28_044818) do
   add_foreign_key "albums_tracks", "albums"
   add_foreign_key "albums_tracks", "tracks"
   add_foreign_key "apple_music_albums", "albums"
+  add_foreign_key "apple_music_tracks", "albums"
+  add_foreign_key "apple_music_tracks", "apple_music_albums"
+  add_foreign_key "apple_music_tracks", "tracks"
   add_foreign_key "spotify_albums", "albums"
   add_foreign_key "spotify_tracks", "albums"
   add_foreign_key "spotify_tracks", "spotify_albums"
