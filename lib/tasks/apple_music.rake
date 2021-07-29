@@ -38,4 +38,23 @@ namespace :apple_music do
       print "\rAppleMusicアルバム: #{apple_music_album_count}/#{max_apple_music_album_count} Progress: #{(apple_music_album_count * 100.0 / max_apple_music_album_count).round(1)}%"
     end
   end
+
+  desc 'AppleMusic ISRCからトラック情報を取得し、アルバム情報を取得'
+  task isrc_fetch: :environment do
+    missing_apple_music_tracks = Track.missing_apple_music_track
+    count = 0
+    max_count = missing_apple_music_tracks.count
+    print "\rトラック: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+    missing_apple_music_tracks.each do |track|
+      tracks = AppleMusic::Song.get_collection_by_isrc(track.isrc)
+      tracks.each do |t|
+        t.albums.each do |album|
+          apple_music_album = AppleMusicClient::Album.fetch(album.id)
+          AppleMusicClient::Track.fetch_album_tracks(apple_music_album) if apple_music_album
+        end
+      end
+      count += 1
+      print "\rトラック: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+    end
+  end
 end
