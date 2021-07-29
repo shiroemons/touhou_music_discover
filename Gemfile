@@ -23,4 +23,5 @@ group :development do
   gem 'spring'
 end
 
+gem 'apple_music'
 gem 'rspotify'
