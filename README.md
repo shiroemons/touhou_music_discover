@@ -92,21 +92,22 @@ root@ea9f1bc59441:/app# bin/rails --version
 Rails 6.1.4
 ```
 
-## Spotify
+## 情報収集
 
-### ローカル環境
+- ローカル環境
+```shell
+cp .env.development.local.example .env.development.local
+```
 
-- `SPOTIFY_CLIENT_ID`と`SPOTIFY_CLIENT_SECRET`を設定する
-    ```shell
-    cp .env.development.local.example .env.development.local
-    ```
+### Spotify
 
-#### 情報収集
+`SPOTIFY_CLIENT_ID`と`SPOTIFY_CLIENT_SECRET`を設定する
 
 - Spotify MasterArtistからアーティスト情報を取得
-    ```shell
-    docker-compose run --rm web bin/rails spotify:master_artist_fetch
-    ```
+  - `make dbseed`を行っておく
+  ```shell
+  docker-compose run --rm web bin/rails spotify:master_artist_fetch
+  ```
 
 - Spotify アーティストに紐づくアルバム情報とトラック情報を取得
     ```shell
@@ -117,3 +118,28 @@ Rails 6.1.4
     ```shell
     docker-compose run --rm web bin/rails spotify:spotify_track_artist_fetch
     ```
+
+### AppleMusic
+
+`APPLE_MUSIC_SECRET_KEY`と`APPLE_MUSIC_TEAM_ID`と`APPLE_MUSIC_MUSIC_ID`を設定する
+
+- AppleMusic MasterArtistからアーティスト情報を取得
+  - `make dbseed`を行っておく
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:master_artist_fetch
+  ```
+
+- AppleMusic アーティストに紐づくアルバム情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:artists_album_fetch
+  ```
+
+- AppleMusic アルバムに紐づくトラック情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:album_tracks_fetch
+  ```
+
+- AppleMusic ISRCからトラック情報を取得し、アルバム情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:isrc_fetch
+  ```
