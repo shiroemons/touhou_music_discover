@@ -58,6 +58,14 @@ namespace :apple_music do
     end
   end
 
+  desc 'AppleMusic Various Artistsのアルバムとトラックを取得'
+  task various_artists_albums_fetch: :environment do
+    AppleMusicAlbum::VARIOUS_ARTISTS_ALBUMS_IDS.each do |album_id|
+      apple_music_album = AppleMusicClient::Album.fetch(album_id)
+      AppleMusicClient::Track.fetch_album_tracks(apple_music_album) if apple_music_album
+    end
+  end
+
   desc 'AppleMusic AppleMusicAlbumとAppleMusicTrackにalbum_idを設定する'
   task set_album_id: :environment do
     Album.includes(:spotify_album).missing_apple_music_album.each do |album|
