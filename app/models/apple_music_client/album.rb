@@ -4,6 +4,13 @@ module AppleMusicClient
   LIMIT = 100
 
   class Album
+    def self.fetch(album_id)
+      return if AppleMusicAlbum.exists?(apple_music_id: album_id)
+
+      apple_music_album = AppleMusic::Album.find(album_id)
+      save_album(apple_music_album)
+    end
+
     def self.fetch_artists_albums(artist_id)
       apple_music_albums = []
       offset = 0
