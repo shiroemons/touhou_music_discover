@@ -143,3 +143,13 @@ cp .env.development.local.example .env.development.local
   ```shell
   docker-compose run --rm web bin/rails apple_music:isrc_fetch
   ```
+
+- AppleMusic Various Artistsのアルバムとトラックを取得
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:various_artists_albums_fetch
+  ```
+
+- AppleMusic AppleMusicAlbumとAppleMusicTrackにalbum_idを設定する
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:set_album_id
+  ```
