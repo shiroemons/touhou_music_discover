@@ -57,4 +57,36 @@ namespace :apple_music do
       print "\rトラック: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
     end
   end
+
+  desc 'AppleMusic AppleMusicAlbumとAppleMusicTrackにalbum_idを設定する'
+  task set_album_id: :environment do
+    Album.includes(:spotify_album).missing_apple_music_album.each do |album|
+      track_ids = album.tracks.pluck(:id)
+      album_name = album.spotify_album.name
+      release_date = album.spotify_album.release_date
+      total_tracks = album.spotify_album.total_tracks
+      apple_music_albums = AppleMusicAlbum.includes(:apple_music_tracks).where(apple_music_tracks: { track_id: track_ids }, release_date: release_date, total_tracks: total_tracks)
+      apple_music_albums = AppleMusicAlbum.includes(:apple_music_tracks).where(apple_music_tracks: { track_id: track_ids }, total_tracks: total_tracks) if apple_music_albums.empty?
+      count = apple_music_albums.size
+      if count == 1
+        apple_music_album = apple_music_albums.first
+        apple_music_album.update!(album_id: album.id)
+        apple_music_album.apple_music_tracks.update_all(album_id: album.id) # rubocop:disable Rails/SkipsModelValidations
+      elsif count > 1
+        apple_music_albums.each do |am_album|
+          puts "#{count}件\tSpotify: #{album_name}\tAppleMusic: #{am_album.name}"
+        end
+      else
+        albums = AppleMusicAlbum.where(name: album_name, total_tracks: total_tracks)
+        count = albums.size
+        if count == 1
+          apple_music_album = albums.first
+          apple_music_album.update!(album_id: album.id)
+          apple_music_album.apple_music_tracks.update_all(album_id: album.id) # rubocop:disable Rails/SkipsModelValidations
+        else
+          puts "AppleMusicに #{album_name} は、存在しません"
+        end
+      end
+    end
+  end
 end
