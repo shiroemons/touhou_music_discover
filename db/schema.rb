@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_30_121132) do
+ActiveRecord::Schema.define(version: 2021_07_30_181451) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -115,7 +115,6 @@ ActiveRecord::Schema.define(version: 2021_07_30_121132) do
     t.string "url"
     t.date "release_date"
     t.integer "total_tracks"
-    t.boolean "is_touhou", default: true, null: false
     t.jsonb "payload"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
@@ -144,7 +143,6 @@ ActiveRecord::Schema.define(version: 2021_07_30_121132) do
     t.integer "disc_number"
     t.integer "track_number"
     t.integer "duration_ms"
-    t.boolean "is_touhou", default: true, null: false
     t.jsonb "payload"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
