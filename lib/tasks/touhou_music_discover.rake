@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+
 require 'csv'
 
 namespace :touhou_music_discover do
@@ -20,7 +21,7 @@ namespace :touhou_music_discover do
             spotify_track_name = track.name
             apple_music_track_id = track.track&.apple_music_track&.apple_music_id
             apple_music_track_name = track.track&.apple_music_track&.name
-            original_songs = track.track.original_songs.map { _1.title }.join('/')
+            original_songs = track.track.original_songs.map(&:title).join('/')
             f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}")
           end
         end
@@ -37,7 +38,7 @@ namespace :touhou_music_discover do
             apple_music_track_name = track.name
             spotify_track_id = track.track.spotify_track&.spotify_id
             spotify_track_name = track.track.spotify_track&.name
-            original_songs = track.track.original_songs.map { _1.title }.join('/')
+            original_songs = track.track.original_songs.map(&:title).join('/')
             f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}")
           end
         end
