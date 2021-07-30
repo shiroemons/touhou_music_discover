@@ -12,4 +12,5 @@ class Track < ApplicationRecord
 
   scope :missing_apple_music_track, -> { where.missing(:apple_music_track) }
   scope :missing_spotify_track, -> { where.missing(:spotify_track) }
+  scope :missing_original_songs, -> { where.missing(:original_songs) }
 end
