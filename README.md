@@ -170,3 +170,8 @@ cp .env.development.local.example .env.development.local
   ```shell
   docker-compose run --rm web bin/rails touhou_music_discover:import:touhou_music_with_original_songs
   ```
+
+- 原曲情報を見て、is_touhouフラグを変更する
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:change_is_touhou_flag
+  ```
