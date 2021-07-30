@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'csv'
 
 namespace :touhou_music_discover do
   namespace :export do
@@ -66,7 +67,6 @@ namespace :touhou_music_discover do
   namespace :import do
     desc 'Touhou music with original songs file import'
     task touhou_music_with_original_songs: :environment do
-      require 'csv'
       songs = CSV.table('tmp/touhou_music_with_original_songs.tsv', col_sep: "\t", converters: nil, liberal_parsing: true)
       songs.each do |song|
         isrc = song[:isrc]
@@ -76,6 +76,33 @@ namespace :touhou_music_discover do
           original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
           track.original_songs = original_song_list
         end
+      end
+    end
+
+    desc 'GitHub fetch Touhou music with original songs file import'
+    task fetch_touhou_music_with_original_songs: :environment do
+      url = 'https://raw.githubusercontent.com/shiroemons/touhou_streaming_with_original_songs/main/touhou_music_with_original_songs.tsv'
+      token = ENV['GITHUB_TOKEN']
+      if token.present?
+        headers = { 'Authorization' => "token #{token}" }
+        response = Faraday.get(url, nil, headers)
+        songs = CSV.new(response.body, col_sep: "\t", converters: nil, liberal_parsing: true, encoding: 'UTF-8', headers: true)
+        songs = songs.read
+        songs.inspect
+
+        max_songs = songs.size
+        songs.each.with_index(1) do |song, song_count|
+          isrc = song['isrc']
+          original_songs = song['original_songs']
+          track = Track.find_by(isrc: isrc)
+          if track && original_songs
+            original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
+            track.original_songs = original_song_list
+          end
+          print "\r東方楽曲: #{song_count}/#{max_songs} Progress: #{(song_count * 100.0 / max_songs).round(1)}%"
+        end
+      else
+        puts 'GITHUB_TOKEN を設定してください。'
       end
     end
   end
