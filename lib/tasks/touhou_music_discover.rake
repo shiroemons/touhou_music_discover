@@ -107,4 +107,20 @@ namespace :touhou_music_discover do
       end
     end
   end
+
+  desc '原曲情報を見て is_touhouフラグを変更する'
+  task change_is_touhou_flag: :environment do
+    # Trackのis_touhouフラグを変更
+    Track.includes(:original_songs).each do |track|
+      original_songs = track.original_songs
+      is_touhou = original_songs.all? { _1.title != 'オリジナル' } && !original_songs.all? { _1.title == 'その他' }
+      track.update(is_touhou: is_touhou) if track.is_touhou != is_touhou
+    end
+
+    # Albumのis_touhouフラグを変更
+    Album.includes(:tracks).each do |album|
+      is_touhou = !album.tracks.all? { _1.is_touhou == false }
+      album.update!(is_touhou: is_touhou) if album.is_touhou != is_touhou
+    end
+  end
 end
