@@ -31,9 +31,14 @@ namespace :spotify do
     max_spotify_artist_count = spotify_artists.count
     print "\rSpotifyアーティスト: #{spotify_artist_count}/#{max_spotify_artist_count} Progress: #{(spotify_artist_count * 100.0 / max_spotify_artist_count).round(1)}%"
     spotify_artists.each do |spotify_artist|
-      SpotifyClient::Album.fetch_artists_albums_tracks(spotify_artist.spotify_id)
-      spotify_artist_count += 1
-      print "\rSpotifyアーティスト: #{spotify_artist_count}/#{max_spotify_artist_count} Progress: #{(spotify_artist_count * 100.0 / max_spotify_artist_count).round(1)}%"
+      Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
+        puts "try #{retries} failed with exception: #{exception}" if retries.positive?
+
+        SpotifyClient::Album.fetch_artists_albums_tracks(spotify_artist.spotify_id)
+        spotify_artist_count += 1
+        print "\rSpotifyアーティスト: #{spotify_artist_count}/#{max_spotify_artist_count} Progress: #{(spotify_artist_count * 100.0 / max_spotify_artist_count).round(1)}%"
+        sleep 1.0
+      end
     end
   end
 end
