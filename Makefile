@@ -26,6 +26,9 @@ dbconsole: ## Run dbconsole
 migrate: ## Run db:migrate
 	docker-compose run --rm web bin/rails db:migrate
 
+migrate-redo: ## Run db:migrate:redo
+	docker-compose run --rm web bin/rails db:migrate:redo
+
 rollback: ## Run db:rollback
 	docker-compose run --rm web bin/rails db:rollback
 
