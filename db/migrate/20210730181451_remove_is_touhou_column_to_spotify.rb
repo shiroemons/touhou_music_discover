@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class RemoveIsTouhouColumnToSpotify < ActiveRecord::Migration[6.1]
   def change
     remove_column :spotify_albums, :is_touhou, :boolean, null: false, default: true
