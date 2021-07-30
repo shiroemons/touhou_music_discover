@@ -250,6 +250,7 @@ DEPENDENCIES
   bootsnap (>= 1.4.4)
   byebug
   dotenv-rails
+  faraday
   listen (~> 3.3)
   pg (~> 1.1)
   puma (~> 5.4)

@@ -8,6 +8,8 @@ class AppleMusicAlbum < ApplicationRecord
 
   belongs_to :album, optional: true
 
+  scope :missing_album, -> { where.missing(:album) }
+
   delegate :jan_code, to: :album, allow_nil: true
 
   # rubocop:disable Style/NumericLiterals

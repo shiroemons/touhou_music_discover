@@ -24,5 +24,6 @@ group :development do
 end
 
 gem 'apple_music'
+gem 'faraday'
 gem 'retryable'
 gem 'rspotify'

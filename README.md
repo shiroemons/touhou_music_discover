@@ -153,3 +153,20 @@ cp .env.development.local.example .env.development.local
   ```shell
   docker-compose run --rm web bin/rails apple_music:set_album_id
   ```
+
+### 共通
+
+- 外部から`touhou_music_with_original_songs.tsv`を取得し原曲紐付けを行う
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:import:fetch_touhou_music_with_original_songs
+  ```
+
+- 原曲付きリストを`./tmp/touhou_music_with_original_songs.tsv`に出力
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music_with_original_songs
+  ```
+
+- 原曲付きリストを`./tmp/touhou_music_with_original_songs.tsv`を読み込み原曲紐付けを行う
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:import:touhou_music_with_original_songs
+  ```
