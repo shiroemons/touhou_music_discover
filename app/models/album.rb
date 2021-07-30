@@ -12,4 +12,7 @@ class Album < ApplicationRecord
 
   scope :missing_apple_music_album, -> { where.missing(:apple_music_album) }
   scope :missing_spotify_album, -> { where.missing(:spotify_album) }
+  scope :is_touhou, -> { where(is_touhou: true) }
+  scope :non_touhou, -> { where(is_touhou: false) }
+  scope :jan, ->(jan) { find_by(jan_code: jan) }
 end
