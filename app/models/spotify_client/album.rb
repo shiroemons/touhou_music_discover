@@ -30,7 +30,7 @@ module SpotifyClient
         # アルバムの総曲数分トラックの登録がある場合、スキップする
         next if SpotifyTrack.includes(:spotify_album).where(spotify_album: { spotify_id: s_album.id }).count == s_album.total_tracks
 
-        spotify_album = save_album(s_album.label, s_album)
+        spotify_album = save_album(s_album)
 
         # アルバムの登録がない または、アルバムのトラック数が0曲 の場合はスキップする
         next if spotify_album.nil? || !spotify_album.total_tracks.positive?
@@ -63,9 +63,9 @@ module SpotifyClient
     end
 
     # Spotifyのアルバム情報を保存する
-    def self.save_album(label, spotify_album)
+    def self.save_album(spotify_album)
       # labelが "東方同人音楽流通" 以外は nil を返す
-      return nil if label != ::Album::TOUHOU_MUSIC_LABEL
+      return nil if spotify_album.label != ::Album::TOUHOU_MUSIC_LABEL
 
       jan_code = spotify_album.external_ids['upc']
       album = ::Album.find_or_create_by!(jan_code: jan_code)
@@ -90,7 +90,7 @@ module SpotifyClient
         s_album.update!(release_date: release_date) if s_album.release_date != release_date
       end
 
-      s_album.update!(payload: spotify_album.as_json) if s_album.nil?
+      s_album.update!(payload: spotify_album.as_json)
       s_album
     end
 
@@ -113,7 +113,7 @@ module SpotifyClient
         track_number: spotify_track.track_number,
         duration_ms: spotify_track.duration_ms
       )
-      s_track.update(payload: spotify_track.as_json) if s_track.payload.nil?
+      s_track.update(payload: spotify_track.as_json)
       s_track
     end
   end
