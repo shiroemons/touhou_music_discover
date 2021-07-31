@@ -8,37 +8,20 @@ namespace :touhou_music_discover do
     task touhou_music_with_original_songs: :environment do
       File.open('tmp/touhou_music_with_original_songs.tsv', 'w') do |f|
         f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs")
-        SpotifyAlbum.includes(album: :apple_music_album, spotify_tracks: { track: :apple_music_track }).order(:release_date).each do |album|
+        Album.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_track apple_music_track]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
-          spotify_album_id = album.spotify_id
-          spotify_album_name = album.name
-          apple_music_album_id = album.album&.apple_music_album&.apple_music_id
-          apple_music_album_name = album.album&.apple_music_album&.name
-          album.spotify_tracks.each do |track|
+          apple_music_album_id = album.apple_music_album&.apple_music_id
+          apple_music_album_name = album.apple_music_album&.name
+          spotify_album_id = album.spotify_album&.spotify_id
+          spotify_album_name = album.spotify_album&.name
+          album.tracks.sort_by(&:isrc).each do |track|
             isrc = track.isrc
-            track_number = track.track_number
-            spotify_track_id = track.spotify_id
-            spotify_track_name = track.name
-            apple_music_track_id = track.track&.apple_music_track&.apple_music_id
-            apple_music_track_name = track.track&.apple_music_track&.name
-            original_songs = track.track.original_songs.map(&:title).join('/')
-            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}")
-          end
-        end
-        AppleMusicAlbum.missing_album.includes(album: :spotify_album, apple_music_tracks: { track: :spotify_track }).order(:release_date).each do |album|
-          jan = album.jan_code
-          apple_music_album_id = album.apple_music_id
-          apple_music_album_name = album.name
-          spotify_album_id = album.album&.spotify_album&.spotify_id
-          spotify_album_name = album.album&.spotify_album&.name
-          album.apple_music_tracks.each do |track|
-            isrc = track.isrc
-            track_number = track.track_number
-            apple_music_track_id = track.apple_music_id
-            apple_music_track_name = track.name
-            spotify_track_id = track.track.spotify_track&.spotify_id
-            spotify_track_name = track.track.spotify_track&.name
-            original_songs = track.track.original_songs.map(&:title).join('/')
+            track_number = track.apple_music_track&.track_number || track.spotify_track&.spotify_id
+            apple_music_track_id = track.apple_music_track&.apple_music_id
+            apple_music_track_name = track.apple_music_track&.name
+            spotify_track_id = track.spotify_track&.spotify_id
+            spotify_track_name = track.spotify_track&.name
+            original_songs = track.original_songs.map(&:title).join('/')
             f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}")
           end
         end
