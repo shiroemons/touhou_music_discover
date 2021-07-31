@@ -40,6 +40,7 @@ module AppleMusicClient
         track_number: apple_music_track.track_number,
         duration_ms: apple_music_track.duration_in_millis
       )
+      am_track.update(album_id: apple_music_album.album_id) if am_track.album_id.nil? && apple_music_album.album_id
       am_track.update(payload: apple_music_track.as_json) if am_track.payload.nil?
       am_track
     end
