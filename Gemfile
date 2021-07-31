@@ -23,7 +23,7 @@ group :development do
   gem 'spring'
 end
 
-gem 'apple_music', github: 'shiroemons/apple_music', branch: 'feature/upc-support'
+gem 'apple_music'
 gem 'faraday'
 gem 'retryable'
 gem 'rspotify'
