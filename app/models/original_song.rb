@@ -11,5 +11,7 @@ class OriginalSong < ApplicationRecord
              primary_key: :code,
              inverse_of: :original_songs
 
+  delegate :title, :short_title, :original_type, :series_order, to: :original, allow_nil: true, prefix: true
+
   scope :non_duplicated, -> { where(is_duplicate: false) }
 end

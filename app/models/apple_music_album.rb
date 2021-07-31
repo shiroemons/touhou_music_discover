@@ -10,7 +10,7 @@ class AppleMusicAlbum < ApplicationRecord
 
   scope :missing_album, -> { where.missing(:album) }
 
-  delegate :jan_code, to: :album, allow_nil: true
+  delegate :jan_code, :is_touhou, to: :album, allow_nil: true
 
   # rubocop:disable Style/NumericLiterals
   VARIOUS_ARTISTS_ALBUMS_IDS = [

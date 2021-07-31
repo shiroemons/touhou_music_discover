@@ -8,5 +8,5 @@ class SpotifyAlbum < ApplicationRecord
 
   belongs_to :album
 
-  delegate :jan_code, to: :album, allow_nil: true
+  delegate :jan_code, :is_touhou, to: :album, allow_nil: true
 end
