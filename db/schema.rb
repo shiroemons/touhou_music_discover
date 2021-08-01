@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_30_181451) do
+ActiveRecord::Schema.define(version: 2021_08_01_043731) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -131,6 +131,31 @@ ActiveRecord::Schema.define(version: 2021_07_30_181451) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
+  create_table "spotify_track_audio_features", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "track_id", null: false
+    t.uuid "spotify_track_id", null: false
+    t.string "spotify_id", null: false
+    t.float "acousticness", null: false
+    t.string "analysis_url", default: "", null: false
+    t.float "danceability", null: false
+    t.integer "duration_ms", null: false
+    t.float "energy", null: false
+    t.float "instrumentalness", null: false
+    t.integer "key", null: false
+    t.float "liveness", null: false
+    t.float "loudness", null: false
+    t.integer "mode", null: false
+    t.float "speechiness", null: false
+    t.float "tempo", null: false
+    t.integer "time_signature", null: false
+    t.float "valence", null: false
+    t.jsonb "payload"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["spotify_track_id"], name: "index_spotify_track_audio_features_on_spotify_track_id"
+    t.index ["track_id"], name: "index_spotify_track_audio_features_on_track_id"
+  end
+
   create_table "spotify_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id", null: false
     t.uuid "track_id", null: false
@@ -176,6 +201,8 @@ ActiveRecord::Schema.define(version: 2021_07_30_181451) do
   add_foreign_key "apple_music_tracks", "apple_music_albums"
   add_foreign_key "apple_music_tracks", "tracks"
   add_foreign_key "spotify_albums", "albums"
+  add_foreign_key "spotify_track_audio_features", "spotify_tracks"
+  add_foreign_key "spotify_track_audio_features", "tracks"
   add_foreign_key "spotify_tracks", "albums"
   add_foreign_key "spotify_tracks", "spotify_albums"
   add_foreign_key "spotify_tracks", "tracks"

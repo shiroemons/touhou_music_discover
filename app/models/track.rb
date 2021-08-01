@@ -9,6 +9,7 @@ class Track < ApplicationRecord
 
   has_many :apple_music_tracks, dependent: :destroy
   has_many :spotify_tracks, dependent: :destroy
+  has_many :spotify_track_audio_features, dependent: :destroy
 
   scope :missing_apple_music_track, -> { where.missing(:apple_music_track) }
   scope :missing_spotify_track, -> { where.missing(:spotify_track) }
