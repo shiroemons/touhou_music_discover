@@ -9,6 +9,8 @@ class SpotifyTrack < ApplicationRecord
 
   delegate :isrc, :is_touhou, to: :track, allow_nil: true
 
+  scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }
+  scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
   scope :spotify_id, ->(spotify_id) { find_by(spotify_id: spotify_id) }
   scope :bpm, ->(bpm) { eager_load(:spotify_track_audio_feature).where(spotify_track_audio_feature: { tempo: bpm }) }
 end
