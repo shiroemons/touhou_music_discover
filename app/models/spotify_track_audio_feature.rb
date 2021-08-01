@@ -4,7 +4,7 @@ class SpotifyTrackAudioFeature < ApplicationRecord
   belongs_to :track
   belongs_to :spotify_track
 
-  def self.save_spotify_track_audio_feature(spotify_track, track_af)
+  def self.save_audio_features(spotify_track, track_af)
     return nil if spotify_track.blank? || track_af.blank?
 
     st_audio_features = SpotifyTrackAudioFeature.find_or_create_by!(
