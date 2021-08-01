@@ -136,22 +136,22 @@ cp .env.development.local.example .env.development.local
 
 - AppleMusic アーティストに紐づくアルバム情報を取得
   ```shell
-  docker-compose run --rm web bin/rails apple_music:artists_album_fetch
+  docker-compose run --rm web bin/rails apple_music:fetch_artist_albums
   ```
 
 - AppleMusic アルバムに紐づくトラック情報を取得
   ```shell
-  docker-compose run --rm web bin/rails apple_music:album_tracks_fetch
+  docker-compose run --rm web bin/rails apple_music:fetch_album_tracks
   ```
 
 - AppleMusic ISRCからトラック情報を取得し、アルバム情報を取得
   ```shell
-  docker-compose run --rm web bin/rails apple_music:isrc_fetch
+  docker-compose run --rm web bin/rails apple_music:fetch_tracks_by_isrc
   ```
 
 - AppleMusic Various Artistsのアルバムとトラックを取得
   ```shell
-  docker-compose run --rm web bin/rails apple_music:various_artists_albums_fetch
+  docker-compose run --rm web bin/rails apple_music:fetch_various_artists_albums
   ```
 
 ### 共通

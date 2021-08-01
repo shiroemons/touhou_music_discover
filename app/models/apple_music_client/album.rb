@@ -11,8 +11,8 @@ module AppleMusicClient
       AppleMusicAlbum.save_album(am_album)
     end
 
-    def self.fetch_artists_albums(artist_id)
-      am_albums = fetch_albums(artist_id)
+    def self.fetch_artists_albums(am_artist_id)
+      am_albums = fetch_albums(am_artist_id)
       am_albums.each do |am_album|
         AppleMusicAlbum.save_album(am_album)
       end
