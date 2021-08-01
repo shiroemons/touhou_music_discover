@@ -7,8 +7,8 @@ module AppleMusicClient
     def self.fetch(album_id)
       return if AppleMusicAlbum.exists?(apple_music_id: album_id)
 
-      apple_music_album = AppleMusic::Album.find(album_id)
-      save_album(apple_music_album)
+      am_album = AppleMusic::Album.find(album_id)
+      AppleMusicAlbum.save_album(am_album)
     end
 
     def self.fetch_artists_albums(artist_id)
