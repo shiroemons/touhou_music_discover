@@ -116,7 +116,7 @@ cp .env.development.local.example .env.development.local
 
 - Spotify SpotifyTrackからアーティスト情報を取得
     ```shell
-    docker-compose run --rm web bin/rails spotify:spotify_track_artist_fetch
+    docker-compose run --rm web bin/rails spotify:fetch_spotify_track_artist
     ```
 
 ### AppleMusic

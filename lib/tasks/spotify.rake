@@ -19,14 +19,26 @@ namespace :spotify do
   end
 
   desc 'Spotify SpotifyTrackからアーティスト情報を取得'
-  task spotify_track_artist_fetch: :environment do
-    SpotifyTrack.find_each do |spotify_track|
-      payload = spotify_track.payload
-      payload['artists']&.each do |artist|
-        artist_id = artist['id']
-        SpotifyClient::Artist.fetch(artist_id) unless SpotifyArtist.exists?(spotify_id: artist_id)
+  task fetch_spotify_track_artist: :environment do
+    s_artist_ids = []
+    SpotifyTrack.all.each.with_index(1) do |spotify_track, i|
+      ids = spotify_track.payload['artists']&.map { _1['id'] }
+      s_artist_ids.push(*ids)
+      print "\r曲数 #{i}曲"
+    end
+    s_artist_ids.uniq!.compact!
+
+    spotify_artist_ids = SpotifyArtist.pluck(:spotify_id)
+
+    new_artist_ids = s_artist_ids - spotify_artist_ids
+    new_artist_ids.each_slice(50) do |ids|
+      Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
+        puts "try #{retries} failed with exception: #{exception}" if retries.positive?
+
+        SpotifyClient::Artist.fetch(ids)
       end
     end
+    puts "\n完了しました。"
   end
 
   desc 'Spotify アーティストに紐づくアルバム情報とトラック情報を取得'
