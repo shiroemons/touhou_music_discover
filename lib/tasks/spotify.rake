@@ -1,16 +1,21 @@
 # frozen_string_literal: true
 
 namespace :spotify do
-  desc 'Spotify MasterArtistからアーティスト情報を取得'
-  task master_artist_fetch: :environment do
-    artists = MasterArtist.spotify
-    master_artist_count = 0
-    max_master_artist_count = artists.count
-    artists.each do |artist|
-      SpotifyClient::Artist.fetch(artist.key) unless SpotifyArtist.exists?(spotify_id: artist.key)
-      master_artist_count += 1
-      print "\rマスターアーティスト: #{master_artist_count}/#{max_master_artist_count} Progress: #{(master_artist_count * 100.0 / max_master_artist_count).round(1)}%"
+  desc 'Spotify MasterArtistからSpotifyのアーティスト情報を取得'
+  task fetch_spotify_artist_from_master_artists: :environment do
+    max_count = MasterArtist.spotify.count
+    count = 0
+    MasterArtist.spotify.find_in_batches(batch_size: 50) do |master_artists|
+      Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
+        puts "try #{retries} failed with exception: #{exception}" if retries.positive?
+
+        SpotifyClient::Artist.fetch(master_artists.map(&:key))
+      end
+
+      count += master_artists.size
+      print "\rマスターアーティスト: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
     end
+    puts "\n完了しました。"
   end
 
   desc 'Spotify SpotifyTrackからアーティスト情報を取得'

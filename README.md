@@ -103,10 +103,10 @@ cp .env.development.local.example .env.development.local
 
 `SPOTIFY_CLIENT_ID`と`SPOTIFY_CLIENT_SECRET`を設定する
 
-- Spotify MasterArtistからアーティスト情報を取得
+- Spotify MasterArtistからSpotifyのアーティスト情報を取得
   - `make dbseed`を行っておく
   ```shell
-  docker-compose run --rm web bin/rails spotify:master_artist_fetch
+  docker-compose run --rm web bin/rails spotify:fetch_spotify_artist_from_master_artists
   ```
 
 - Spotify アーティストに紐づくアルバム情報とトラック情報を取得
