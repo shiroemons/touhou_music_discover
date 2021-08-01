@@ -67,4 +67,20 @@ namespace :spotify do
     end
     puts "\n完了しました。"
   end
+
+  desc 'Spotify SpotifyAlbumの情報を更新'
+  task update_spotify_albums: :environment do
+    count = 0
+    max_count = SpotifyAlbum.count
+    SpotifyAlbum.eager_load(:album).find_in_batches(batch_size: 20) do |spotify_albums|
+      Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
+        puts "try #{retries} failed with exception: #{exception}" if retries.positive?
+
+        SpotifyClient::Album.update_albums(spotify_albums)
+      end
+      count += spotify_albums.size
+      print "\rSpotify アルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+      sleep 0.5
+    end
+  end
 end
