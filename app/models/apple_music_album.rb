@@ -21,4 +21,27 @@ class AppleMusicAlbum < ApplicationRecord
     1437759890 # オールナイト・オブ・ナイツ
   ].freeze
   # rubocop:enable Style/NumericLiterals
+
+  # AppleMusicのアルバム情報を保存する
+  def self.save_album(am_album)
+    return nil if am_album.record_label != ::Album::TOUHOU_MUSIC_LABEL
+
+    apple_music_album = ::AppleMusicAlbum.find_or_create_by!(
+      apple_music_id: am_album.id,
+      name: am_album.name,
+      label: am_album.record_label,
+      url: am_album.url,
+      release_date: am_album.release_date,
+      total_tracks: am_album.track_count
+    )
+
+    jan_code = am_album.upc
+    album = ::Album.find_or_create_by!(jan_code: jan_code)
+
+    apple_music_album.update(
+      album_id: album.id,
+      payload: apple_music_album.as_json
+    )
+    apple_music_album
+  end
 end

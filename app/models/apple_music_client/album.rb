@@ -23,32 +23,11 @@ module AppleMusicClient
       end
 
       apple_music_albums.each do |album|
-        save_album(album)
+        AppleMusicAlbum.save_album(album)
       end
     rescue AppleMusic::ApiError => e
       puts artist_id
       logger.warn e
-    end
-
-    # AppleMusicのアルバム情報を保存する
-    def self.save_album(apple_music_album)
-      return nil if apple_music_album.record_label != ::Album::TOUHOU_MUSIC_LABEL
-
-      am_album = ::AppleMusicAlbum.find_or_create_by!(
-        apple_music_id: apple_music_album.id,
-        name: apple_music_album.name,
-        label: apple_music_album.record_label,
-        url: apple_music_album.url,
-        release_date: apple_music_album.release_date,
-        total_tracks: apple_music_album.track_count
-      )
-
-      jan_code = apple_music_album.upc
-      album = ::Album.find_or_create_by!(jan_code: jan_code)
-
-      am_album.update(album_id: album.id) if am_album.album_id.nil? && album
-      am_album.update(payload: apple_music_album.as_json) if am_album.payload.nil?
-      am_album
     end
   end
 end
