@@ -128,10 +128,10 @@ cp .env.development.local.example .env.development.local
 
 `APPLE_MUSIC_SECRET_KEY`と`APPLE_MUSIC_TEAM_ID`と`APPLE_MUSIC_MUSIC_ID`を設定する
 
-- AppleMusic MasterArtistからアーティスト情報を取得
+- AppleMusic MasterArtistからAppleMusicのアーティスト情報を取得
   - `make dbseed`を行っておく
   ```shell
-  docker-compose run --rm web bin/rails apple_music:master_artist_fetch
+  docker-compose run --rm web bin/rails apple_music:fetch_apple_music_artist_from_master_artists
   ```
 
 - AppleMusic アーティストに紐づくアルバム情報を取得

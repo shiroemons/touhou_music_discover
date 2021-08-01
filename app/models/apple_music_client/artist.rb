@@ -2,9 +2,11 @@
 
 module AppleMusicClient
   class Artist
-    def self.fetch(id)
-      artist = AppleMusic::Artist.find(id)
-      AppleMusicArtist.save_artist(artist)
+    def self.fetch(ids)
+      am_artists = AppleMusic::Artist.get_collection_by_ids(ids)
+      am_artists.each do |am_artist|
+        AppleMusicArtist.save_artist(am_artist)
+      end
     end
   end
 end
