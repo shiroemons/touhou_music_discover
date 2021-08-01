@@ -60,7 +60,7 @@ namespace :spotify do
   end
 
   desc 'Spotify Audio Featuresを取得'
-  task audio_features: :environment do
+  task fetch_audio_features: :environment do
     count = 0
     max_count = SpotifyTrack.count
     print "\rSpotify 楽曲: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
