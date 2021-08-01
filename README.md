@@ -129,6 +129,11 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails spotify:update_spotify_albums
   ```
 
+- Spotify SpotifyTrackの情報を更新
+  ```shell
+  docker-compose run --rm web bin/rails spotify:update_spotify_tracks
+  ```
+
 ### AppleMusic
 
 `APPLE_MUSIC_SECRET_KEY`と`APPLE_MUSIC_TEAM_ID`と`APPLE_MUSIC_MUSIC_ID`を設定する
