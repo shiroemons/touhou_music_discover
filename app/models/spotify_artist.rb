@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class SpotifyArtist < ApplicationRecord
+  EXCLUDE_SPOTIFY_IDS = [
+    '2XEx6N3gknSmtshM0PVuxu' # GUMI
+  ].freeze
+
   def self.save_artist(s_artist)
     return nil if s_artist.blank?
 
