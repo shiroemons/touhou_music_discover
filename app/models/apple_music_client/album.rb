@@ -12,19 +12,23 @@ module AppleMusicClient
     end
 
     def self.fetch_artists_albums(artist_id)
-      apple_music_albums = []
+      am_albums = fetch_albums(artist_id)
+      am_albums.each do |am_album|
+        AppleMusicAlbum.save_album(am_album)
+      end
+    end
+
+    def self.fetch_albums(artist_id)
+      am_albums = []
       offset = 0
       loop do
         albums = AppleMusic::Artist.get_relationship(artist_id, :albums, limit: LIMIT, offset: offset)
-        apple_music_albums.push(*albums)
+        am_albums.push(*albums)
         break if albums.size < LIMIT
 
         offset += LIMIT
       end
-
-      apple_music_albums.each do |album|
-        AppleMusicAlbum.save_album(album)
-      end
+      am_albums
     rescue AppleMusic::ApiError => e
       puts artist_id
       logger.warn e
