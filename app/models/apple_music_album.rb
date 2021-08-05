@@ -40,7 +40,7 @@ class AppleMusicAlbum < ApplicationRecord
 
     apple_music_album.update(
       album_id: album.id,
-      payload: apple_music_album.as_json
+      payload: am_album.as_json
     )
     apple_music_album
   end

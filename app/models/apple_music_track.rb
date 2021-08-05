@@ -30,7 +30,7 @@ class AppleMusicTrack < ApplicationRecord
     )
     apple_music_track.update!(
       album_id: apple_music_album.album_id,
-      payload: apple_music_track.as_json
+      payload: am_track.as_json
     )
     apple_music_track
   end
