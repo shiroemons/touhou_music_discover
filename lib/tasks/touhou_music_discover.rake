@@ -28,6 +28,34 @@ namespace :touhou_music_discover do
       end
     end
 
+    desc 'Touhou music file export'
+    task touhou_music: :environment do
+      File.open('tmp/touhou_music.tsv', 'w') do |f|
+        f.puts("jan\tisrc\tno\tspotify_artist_name\tspotify_album_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_artist_name\tapple_music_album_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url")
+        Album.order(jan_code: :asc).each do |album|
+          jan = album.jan_code
+          apple_music_album_url = album.apple_music_album&.url
+          apple_music_album_name = album.apple_music_album&.name
+          spotify_album_url = album.spotify_album&.url
+          spotify_album_name = album.spotify_album&.name
+          album.tracks.sort_by(&:isrc).each do |track|
+            isrc = track.isrc
+            apple_music_track = track.apple_music_tracks&.find { _1.album == album }
+            spotify_track = track.spotify_tracks&.find { _1.album == album }
+            track_number = apple_music_track&.track_number || spotify_track&.track_number
+            apple_music_artist_name = apple_music_track&.artist_name
+            apple_music_track_url = apple_music_track&.url
+            apple_music_track_name = apple_music_track&.name
+
+            spotify_artist_name = spotify_track&.artist_name
+            spotify_track_url = spotify_track&.url
+            spotify_track_name = spotify_track&.name
+            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_artist_name}\t#{spotify_album_name}\t#{spotify_track_name}\t#{spotify_album_url}\t#{spotify_track_url}\t#{apple_music_artist_name}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{apple_music_album_url}\t#{apple_music_track_url}")
+          end
+        end
+      end
+    end
+
     desc 'Spotify touhou music file export'
     task spotify: :environment do
       File.open('tmp/spotify_touhou_music.tsv', 'w') do |f|
