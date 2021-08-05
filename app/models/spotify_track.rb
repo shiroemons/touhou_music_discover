@@ -37,4 +37,8 @@ class SpotifyTrack < ApplicationRecord
     spotify_track.update!(payload: s_track.as_json)
     spotify_track
   end
+
+  def artist_name
+    payload['artists']&.map{_1['name']}&.join(' / ')
+  end
 end
