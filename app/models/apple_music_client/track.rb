@@ -35,5 +35,14 @@ module AppleMusicClient
         end
       end
     end
+
+    def self.update_tracks(apple_music_tracks)
+      ids = apple_music_tracks.map(&:apple_music_id)
+      am_tracks = AppleMusic::Song.get_collection_by_ids(ids)
+      am_tracks.each do |am_track|
+        apple_music_track = apple_music_tracks.find{_1.apple_music_id == am_track.id}
+        apple_music_track&.update(payload: am_track.as_json)
+      end
+    end
   end
 end

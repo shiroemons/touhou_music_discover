@@ -33,5 +33,14 @@ module AppleMusicClient
       puts artist_id
       logger.warn e
     end
+
+    def self.update_albums(apple_music_albums)
+      ids = apple_music_albums.map(&:apple_music_id)
+      am_albums = AppleMusic::Album.list(ids: ids)
+      am_albums.each do |am_album|
+        apple_music_album = apple_music_albums.find{_1.apple_music_id == am_album.id}
+        apple_music_album&.update(payload: am_album.as_json)
+      end
+    end
   end
 end
