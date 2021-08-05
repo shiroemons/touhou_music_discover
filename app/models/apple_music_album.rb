@@ -44,4 +44,8 @@ class AppleMusicAlbum < ApplicationRecord
     )
     apple_music_album
   end
+
+  def artist_name
+    payload.dig('attributes', 'artist_name')
+  end
 end

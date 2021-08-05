@@ -43,4 +43,8 @@ class SpotifyAlbum < ApplicationRecord
     spotify_album.update!(payload: spotify_album.as_json)
     spotify_album
   end
+
+  def artist_name
+    payload['artists']&.map{_1['name']}&.join(' / ')
+  end
 end
