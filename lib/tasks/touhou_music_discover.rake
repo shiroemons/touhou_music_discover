@@ -31,9 +31,10 @@ namespace :touhou_music_discover do
     desc 'Touhou music file export'
     task touhou_music: :environment do
       File.open('tmp/touhou_music.tsv', 'w') do |f|
-        f.puts("jan\tisrc\tno\tspotify_album_artist_name\tspotify_album_name\tspotify_artist_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_artist_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url")
-        Album.order(jan_code: :asc).each do |album|
+        f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_artist_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_artist_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url")
+        Album.order(jan_code: :asc).is_touhou.each do |album|
           jan = album.jan_code
+          circle = album.circles&.map{_1.name}&.join(' / ')
           apple_music_album_url = album.apple_music_album&.url
           apple_music_album_artist_name = album.apple_music_album&.artist_name
           apple_music_album_name = album.apple_music_album&.name
@@ -52,7 +53,7 @@ namespace :touhou_music_discover do
             spotify_artist_name = spotify_track&.artist_name
             spotify_track_url = spotify_track&.url
             spotify_track_name = spotify_track&.name
-            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_artist_name}\t#{spotify_album_name}\t#{spotify_artist_name}\t#{spotify_track_name}\t#{spotify_album_url}\t#{spotify_track_url}\t#{apple_music_album_artist_name}\t#{apple_music_album_name}\t#{apple_music_artist_name}\t#{apple_music_track_name}\t#{apple_music_album_url}\t#{apple_music_track_url}")
+            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{circle}\t#{spotify_album_artist_name}\t#{spotify_album_name}\t#{spotify_artist_name}\t#{spotify_track_name}\t#{spotify_album_url}\t#{spotify_track_url}\t#{apple_music_album_artist_name}\t#{apple_music_album_name}\t#{apple_music_artist_name}\t#{apple_music_track_name}\t#{apple_music_album_url}\t#{apple_music_track_url}")
           end
         end
       end
@@ -142,6 +143,25 @@ namespace :touhou_music_discover do
     Album.includes(:tracks).each do |album|
       is_touhou = !album.tracks.all? { _1.is_touhou == false }
       album.update!(is_touhou: is_touhou) if album.is_touhou != is_touhou
+    end
+  end
+
+  desc 'アルバムにサークルを紐付ける'
+  task associate_album_with_circle: :environment do
+    Album.missing_circles.eager_load(:spotify_album).is_touhou.each do |album|
+      artist_name = album&.spotify_album&.artist_name
+      artist_name = artist_name&.sub(%r{\AZUN / }, '')
+      artists = artist_name&.split(' / ')
+      artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[_1].presence || _1 }&.flatten
+      artists&.uniq&.each do |artist|
+        circle = Circle.find_by(name: artist)
+        album.circles.push(circle) if circle.present?
+      end
+      next unless album.circles.size.zero?
+
+      artist = Circle::JAN_TO_CIRCLE[album.jan_code]
+      circle = Circle.find_by(name: artist)
+      album.circles.push(circle) if circle.present?
     end
   end
 end
