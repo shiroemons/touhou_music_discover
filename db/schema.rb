@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_08_01_043731) do
+ActiveRecord::Schema.define(version: 2021_08_07_085221) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -75,6 +75,21 @@ ActiveRecord::Schema.define(version: 2021_08_01_043731) do
     t.index ["album_id"], name: "index_apple_music_tracks_on_album_id"
     t.index ["apple_music_album_id"], name: "index_apple_music_tracks_on_apple_music_album_id"
     t.index ["track_id"], name: "index_apple_music_tracks_on_track_id"
+  end
+
+  create_table "circles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "name", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["name"], name: "index_circles_on_name", unique: true
+  end
+
+  create_table "circles_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "circle_id", null: false
+    t.uuid "album_id", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["circle_id", "album_id"], name: "index_circles_albums_on_circle_id_and_album_id", unique: true
   end
 
   create_table "master_artists", force: :cascade do |t|
@@ -200,6 +215,8 @@ ActiveRecord::Schema.define(version: 2021_08_01_043731) do
   add_foreign_key "apple_music_tracks", "albums"
   add_foreign_key "apple_music_tracks", "apple_music_albums"
   add_foreign_key "apple_music_tracks", "tracks"
+  add_foreign_key "circles_albums", "albums"
+  add_foreign_key "circles_albums", "circles"
   add_foreign_key "spotify_albums", "albums"
   add_foreign_key "spotify_track_audio_features", "spotify_tracks"
   add_foreign_key "spotify_track_audio_features", "tracks"

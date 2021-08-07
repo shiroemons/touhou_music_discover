@@ -3,6 +3,8 @@
 class Album < ApplicationRecord
   TOUHOU_MUSIC_LABEL = '東方同人音楽流通'
 
+  has_many :circles_albums, dependent: :destroy
+  has_many :circles, through: :circles_albums
   has_many :apple_music_tracks, -> { order(Arel.sql('apple_music_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
   has_many :albums_tracks, dependent: :destroy
   has_many :tracks, through: :albums_tracks
@@ -15,6 +17,7 @@ class Album < ApplicationRecord
   delegate :apple_music_id, *common_columns, to: :apple_music_album, allow_nil: true, prefix: true
   delegate :spotify_id, *common_columns, to: :spotify_album, allow_nil: true, prefix: true
 
+  scope :missing_circles, -> { where.missing(:circles) }
   scope :missing_apple_music_album, -> { where.missing(:apple_music_album) }
   scope :missing_spotify_album, -> { where.missing(:spotify_album) }
   scope :is_touhou, -> { where(is_touhou: true) }
