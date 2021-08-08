@@ -141,7 +141,8 @@ namespace :touhou_music_discover do
 
     # Albumのis_touhouフラグを変更
     Album.includes(:tracks).each do |album|
-      is_touhou = !album.tracks.all? { _1.is_touhou == false }
+      # トラック内にis_touhouがtrueがあれば、そのアルバムはis_touhouはtrueとする
+      is_touhou = album.tracks.map(&:is_touhou).any?
       album.update!(is_touhou: is_touhou) if album.is_touhou != is_touhou
     end
   end
