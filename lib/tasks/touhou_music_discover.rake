@@ -32,7 +32,7 @@ namespace :touhou_music_discover do
     task touhou_music: :environment do
       File.open('tmp/touhou_music.tsv', 'w') do |f|
         f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_artist_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_artist_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url")
-        Album.order(jan_code: :asc).is_touhou.each do |album|
+        Album.order(jan_code: :asc).each do |album|
           jan = album.jan_code
           circle = album.circles&.map{_1.name}&.join(' / ')
           apple_music_album_url = album.apple_music_album&.url
@@ -148,7 +148,7 @@ namespace :touhou_music_discover do
 
   desc 'アルバムにサークルを紐付ける'
   task associate_album_with_circle: :environment do
-    Album.missing_circles.eager_load(:spotify_album).is_touhou.each do |album|
+    Album.missing_circles.eager_load(:spotify_album).each do |album|
       artist_name = album&.spotify_album&.artist_name
       artist_name = artist_name&.sub(%r{\AZUN / }, '')
       artists = artist_name&.split(' / ')
