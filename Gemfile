@@ -25,5 +25,7 @@ end
 
 gem 'apple_music'
 gem 'faraday'
+gem 'meilisearch-rails'
+gem 'pagy'
 gem 'retryable'
 gem 'rspotify'
