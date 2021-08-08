@@ -18,4 +18,12 @@ class Track < ApplicationRecord
   scope :non_touhou, -> { where(is_touhou: false) }
   scope :jan, ->(jan) { joins(:albums).where(albums: { jan_code: jan }) }
   scope :isrc, ->(isrc) { find_by(isrc: isrc) }
+
+  def apple_music_track(album)
+    apple_music_tracks.find{_1.album == album}
+  end
+
+  def spotify_track(album)
+    spotify_tracks.find{_1.album == album}
+  end
 end
