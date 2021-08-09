@@ -1,0 +1,16 @@
+<table>
+  <tr>
+    <th>プレイリスト名</th>
+    <th>URL</th>
+    <th>曲数</th>
+    <th>いいね数</th>
+  </tr>
+  <% @playlists.each do |playlist| %>
+    <tr>
+      <td><%= playlist.name %></td>
+      <td><%= playlist.external_urls["spotify"] %></td>
+      <td><%= playlist.total %></td>
+      <td><%= playlist.followers["total"] %></td>
+    </tr>
+  <% end %>
+</table>
