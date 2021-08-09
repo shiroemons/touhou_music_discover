@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_08_07_085221) do
+ActiveRecord::Schema.define(version: 2021_08_09_071424) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
@@ -207,6 +207,18 @@ ActiveRecord::Schema.define(version: 2021_08_07_085221) do
     t.index ["original_song_code"], name: "index_tracks_original_songs_on_original_song_code"
     t.index ["track_id", "original_song_code"], name: "index_tracks_original_songs_on_track_id_and_original_song_code", unique: true
     t.index ["track_id"], name: "index_tracks_original_songs_on_track_id"
+  end
+
+  create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "provider", null: false
+    t.string "uid", null: false
+    t.string "name", null: false
+    t.string "email", default: "", null: false
+    t.string "nickname", default: "", null: false
+    t.string "description", default: "", null: false
+    t.string "image_url", default: "", null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
   end
 
   add_foreign_key "albums_tracks", "albums"
