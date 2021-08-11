@@ -176,14 +176,19 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music_with_original_songs
   ```
 
+- 原曲付きリストを`./tmp/touhou_music_with_original_songs.tsv`を読み込み原曲紐付けを行う
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:import:touhou_music_with_original_songs
+  ```
+
 - 東方同人音楽流通 配信曲リスト出力
   ```shell
   docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music
   ```
 
-- 原曲付きリストを`./tmp/touhou_music_with_original_songs.tsv`を読み込み原曲紐付けを行う
+- 東方同人音楽流通 東方サブスクランダム選曲アプリ用JOSN出力
   ```shell
-  docker-compose run --rm web bin/rails touhou_music_discover:import:touhou_music_with_original_songs
+  docker-compose run --rm web bin/rails touhou_music_discover:export:to_random_touhou_music
   ```
 
 - 原曲情報を見て、is_touhouフラグを変更する

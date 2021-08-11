@@ -89,6 +89,41 @@ namespace :touhou_music_discover do
         file.puts(JSON.pretty_generate(AlbumsToAlgoliaPresenter.new(albums).as_json))
       end
     end
+
+    desc 'Output files for random_touhou_music'
+    task to_random_touhou_music: :environment do
+      apple_music_songs = []
+      AppleMusicAlbum.includes(apple_music_tracks: :track).is_touhou.order(release_date: :asc).each do |album|
+        album.apple_music_tracks.each do |track|
+          next unless track.is_touhou
+
+          track_name = track.name
+          collection_name = album.name
+          url = track.url
+          apple_music_songs.push({ title: track_name, collection_name: collection_name, url: url})
+        end
+      end
+
+      File.open('tmp/touhou_music_song_apple.json', 'w') do |f|
+        f.puts JSON.pretty_generate(apple_music_songs)
+      end
+
+      spotify_songs = []
+      SpotifyAlbum.includes(spotify_tracks: :track).is_touhou.order(release_date: :asc).each do |album|
+        album.spotify_tracks.each do |track|
+          next unless track.is_touhou
+
+          track_name = track.name
+          collection_name = album.name
+          url = track.url
+          spotify_songs.push({ title: track_name, collection_name: collection_name, url: url})
+        end
+      end
+
+      File.open('tmp/touhou_music_song_spotify.json', 'w') do |f|
+        f.puts JSON.pretty_generate(spotify_songs)
+      end
+    end
   end
 
   namespace :import do
