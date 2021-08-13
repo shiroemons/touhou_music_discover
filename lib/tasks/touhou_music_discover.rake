@@ -100,7 +100,7 @@ namespace :touhou_music_discover do
           track_name = track.name
           collection_name = album.name
           url = track.url
-          apple_music_songs.push({ title: track_name, collection_name: collection_name, url: url})
+          apple_music_songs.push({ title: track_name, collection_name: collection_name, url: url })
         end
       end
 
@@ -116,7 +116,7 @@ namespace :touhou_music_discover do
           track_name = track.name
           collection_name = album.name
           url = track.url
-          spotify_songs.push({ title: track_name, collection_name: collection_name, url: url})
+          spotify_songs.push({ title: track_name, collection_name: collection_name, url: url })
         end
       end
 
