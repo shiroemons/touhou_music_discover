@@ -10,27 +10,22 @@ module Spotify
       auth_hash = JSON.parse(Redis.current.get(session[:user_id]))
       @spotify_user = RSpotify::User.new(auth_hash)
 
-      @playlists = fetch_playlists
+      offset = 0
+      @playlists = []
+      loop do
+        playlists = @spotify_user.playlists(limit: LIMIT, offset: offset)
+        offset += LIMIT
+        @playlists.push(*playlists)
+        break if playlists.count < LIMIT
+      end
+      @playlists.reverse!
       # Original.includes(:original_songs).windows.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).pc98.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).zuns_music_collection.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).akyus_untouched_score.each { |original| add_tracks(original) }
-      # @playlists = fetch_playlists
     end
 
     private
-
-    def fetch_playlists
-      offset = 0
-      playlists = []
-      loop do
-        playlists = @spotify_user.playlists(limit: LIMIT, offset: offset)
-        offset += LIMIT
-        playlists.push(*playlists)
-        break if playlists.count < LIMIT
-      end
-      playlists.reverse!
-    end
 
     def add_tracks(original)
       original.original_songs.each do |os|
@@ -40,7 +35,8 @@ module Spotify
         next if spotify_tracks.size.zero?
 
         original_song_title = os.title
-        playlist = playlist_find_or_create(original_song_title)
+        playlist = playlist_find(original_song_title)
+        next if playlist.nil?
 
         playlist_tracks = playlist.tracks
         # 既存のプレイリストのtrackをすべて削除する
@@ -56,10 +52,8 @@ module Spotify
       end
     end
 
-    def playlist_find_or_create(playlist_name)
-      playlist = @playlists.find { _1.name == playlist_name }
-      playlist ||= @spotify_user.create_playlist!(playlist_name)
-      playlist
+    def playlist_find(playlist_name)
+      @playlists.find { _1.name == playlist_name }
     end
   end
 end
