@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class AppleMusicTrack < ApplicationRecord
-  belongs_to :album
+  belongs_to :album, optional: true
   belongs_to :apple_music_album
   belongs_to :track
 
