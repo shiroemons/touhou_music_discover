@@ -40,7 +40,7 @@ class SpotifyAlbum < ApplicationRecord
       spotify_album.update!(release_date: release_date)
     end
 
-    spotify_album.update!(payload: spotify_album.as_json)
+    spotify_album.update!(payload: s_album.as_json)
     spotify_album
   end
 
