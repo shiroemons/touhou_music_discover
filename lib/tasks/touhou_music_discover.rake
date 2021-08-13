@@ -36,7 +36,7 @@ namespace :touhou_music_discover do
     task touhou_music: :environment do
       File.open('tmp/touhou_music.tsv', 'w') do |f|
         f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_artist_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_artist_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url")
-        Album.order(jan_code: :asc).each do |album|
+        Album.includes(:circles, :apple_music_album, :spotify_album, tracks: %i[apple_music_tracks spotify_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           circle = album.circles&.map{_1.name}&.join(' / ')
           apple_music_album_url = album.apple_music_album&.url
