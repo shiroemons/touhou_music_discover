@@ -24,6 +24,9 @@ module AppleMusicClient
         offset += LIMIT
       end
       am_tracks
+    rescue TypeError => e
+      puts "#{album_id}\t#{e}"
+      []
     end
 
     def self.fetch_tracks_by_isrc(isrc)
