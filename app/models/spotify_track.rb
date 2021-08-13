@@ -19,7 +19,7 @@ class SpotifyTrack < ApplicationRecord
     return nil if spotify_album.blank? || s_track.blank?
 
     track = ::Track.find_or_create_by!(isrc: s_track.external_ids['isrc'])
-    track.album_ids.push(spotify_album.album_id) unless track.album_ids.include?(spotify_album.album_id)
+    spotify_album.album.tracks << track unless spotify_album.album.tracks.include?(track)
 
     spotify_track = ::SpotifyTrack.find_or_create_by!(
       album_id: spotify_album.album_id,
