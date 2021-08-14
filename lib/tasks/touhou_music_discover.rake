@@ -98,7 +98,7 @@ namespace :touhou_music_discover do
     task to_random_touhou_music: :environment do
       apple_music_songs = []
       AppleMusicAlbum.includes(apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
-        album.apple_music_tracks.sort_by{_1.track_number}.each do |track|
+        album.apple_music_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
 
           track_name = track.name
@@ -114,7 +114,7 @@ namespace :touhou_music_discover do
 
       spotify_songs = []
       SpotifyAlbum.includes(spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
-        album.spotify_tracks.sort_by{_1.track_number}.each do |track|
+        album.spotify_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
 
           track_name = track.name
