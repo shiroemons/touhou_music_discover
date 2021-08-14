@@ -62,7 +62,7 @@ GEM
       zeitwerk (~> 2.3)
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
-    apple_music (0.3.0)
+    apple_music (0.3.1)
       faraday
       faraday_middleware
       jwt (>= 2.2)
