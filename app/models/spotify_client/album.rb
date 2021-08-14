@@ -9,6 +9,9 @@ module SpotifyClient
 
       s_artists = RSpotify::Artist.find(artist_ids)
       s_artists&.each do |s_artist|
+        # 特定のアーティストのみ収集する SpotifyのアーティストIDを指定する
+        # next unless s_artist.id == ''
+
         Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
           print "-> try #{retries} failed with exception: #{exception}" if retries.positive?
           fetch_process(s_artist) if ::SpotifyArtist::EXCLUDE_SPOTIFY_IDS.exclude?(s_artist.id)

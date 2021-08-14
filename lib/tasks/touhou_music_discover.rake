@@ -26,6 +26,10 @@ namespace :touhou_music_discover do
             spotify_track_id = spotify_track&.spotify_id
             spotify_track_name = spotify_track&.name
             original_songs = track.original_songs.map(&:title).join('/')
+
+            # 原曲の紐付けがまだの楽曲を出力する場合、コメントをオフにする
+            # next if original_songs.present?
+
             f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}")
           end
         end
