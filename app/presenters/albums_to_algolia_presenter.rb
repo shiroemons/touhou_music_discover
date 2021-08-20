@@ -18,12 +18,17 @@ class AlbumsToAlgoliaPresenter < Presenter
 
   def album_object(album)
     return nil if album.spotify_album.nil?
+    return nil unless album.is_touhou
 
     {
       objectID: album.id,
       jan: album.jan_code,
-      is_touhou: album.is_touhou,
       name: album.spotify_album_name,
+      circles: album.circles&.map do
+        {
+          name: _1['name']
+        }
+      end || [],
       total_tracks: album.spotify_album_total_tracks,
       url: album.spotify_album_url,
       uri: album.spotify_album_payload&.dig('uri'),
@@ -40,14 +45,9 @@ class AlbumsToAlgoliaPresenter < Presenter
           type: _1['type']
         }
       end || [],
-      images: album.spotify_album_payload&.dig('images')&.map do
-        {
-          url: _1['url'],
-          width: _1['width'],
-          height: _1['height']
-        }
-      end || [],
-      tracks: track_objects(album.spotify_tracks)
+      image_url: album.spotify_album_payload&.dig('images')&.first&.dig('url').presence || '',
+      release_date: album.spotify_album_release_date,
+      tracks: track_objects(album.spotify_tracks.sort_by{ [_1.disc_number, _1.track_number] })
     }
   end
 
