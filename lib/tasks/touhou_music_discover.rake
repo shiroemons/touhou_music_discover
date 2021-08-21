@@ -67,6 +67,23 @@ namespace :touhou_music_discover do
       end
     end
 
+    desc 'Touhou music album only file export'
+    task touhou_music_album_only: :environment do
+      File.open('tmp/touhou_music_album_only.tsv', 'w') do |f|
+        f.puts("jan\tcircle\talbum_name\tspotify_album_url\tapple_music_album_url")
+        Album.includes(:circles, :apple_music_album, :spotify_album).order(jan_code: :asc).each do |album|
+          jan = album.jan_code
+          circle = album.circles&.map{_1.name}&.join(' / ')
+          apple_music_album_url = album.apple_music_album&.url
+          apple_music_album_name = album.apple_music_album&.name
+          spotify_album_url = album.spotify_album&.url
+          spotify_album_name = album.spotify_album&.name
+
+          f.puts("#{jan}\t#{circle}\t#{spotify_album_name || apple_music_album_name}\t#{spotify_album_url}\t#{apple_music_album_url}")
+        end
+      end
+    end
+
     desc 'Spotify touhou music file export'
     task spotify: :environment do
       File.open('tmp/spotify_touhou_music.tsv', 'w') do |f|

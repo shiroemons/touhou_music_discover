@@ -186,7 +186,17 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music
   ```
 
-- 東方同人音楽流通 東方サブスクランダム選曲アプリ用JOSN出力
+- 東方同人音楽流通 配信アルバムリスト出力
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music_album_only
+  ```
+
+- Algolia向けのJSON出力
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:export:spotify_albums_tracks_for_algolia
+  ```
+
+- 東方同人音楽流通 東方サブスクランダム選曲アプリ用JSON出力
   ```shell
   docker-compose run --rm web bin/rails touhou_music_discover:export:to_random_touhou_music
   ```
