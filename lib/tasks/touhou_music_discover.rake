@@ -103,11 +103,16 @@ namespace :touhou_music_discover do
       end
     end
 
-    desc 'Output Spotify albums and songs as JSON for Algolia'
-    task spotify_albums_tracks_for_algolia: :environment do
+    desc 'Output albums and songs as JSON for Algolia'
+    task for_algolia: :environment do
       File.open('tmp/touhou_music_spotify_for_algolia.json', 'w') do |file|
         albums = Album.eager_load(spotify_tracks: { track: { original_songs: :original } })
-        file.puts(JSON.pretty_generate(AlbumsToAlgoliaPresenter.new(albums).as_json))
+        file.puts(JSON.pretty_generate(SpotifyAlbumsToAlgoliaPresenter.new(albums).as_json))
+      end
+
+      File.open('tmp/touhou_music_apple_music_for_algolia.json', 'w') do |file|
+        albums = Album.eager_load(apple_music_tracks: { track: { original_songs: :original } })
+        file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
     end
 

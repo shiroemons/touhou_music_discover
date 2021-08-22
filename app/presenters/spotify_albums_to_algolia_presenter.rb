@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class AlbumsToAlgoliaPresenter < Presenter
+class SpotifyAlbumsToAlgoliaPresenter < Presenter
   ORIGINAL_TYPE = {
     windows: '01. Windows作品',
     pc98: '02. PC-98作品',
@@ -9,6 +9,8 @@ class AlbumsToAlgoliaPresenter < Presenter
     commercial_books: '05. 商業書籍',
     other: '06. その他'
   }.freeze
+
+  COPYRIGHT_TYPE = { 'C' => '©', 'P' => '℗' }.freeze
 
   def as_json(*)
     @object&.map { |o| album_object(o) }&.compact || []
@@ -31,18 +33,15 @@ class AlbumsToAlgoliaPresenter < Presenter
       end || [],
       total_tracks: album.spotify_album_total_tracks,
       url: album.spotify_album_url,
-      uri: album.spotify_album_payload&.dig('uri'),
       artists: album.spotify_album_payload&.dig('artists')&.map do
         {
           name: _1['name'],
-          uri: _1['uri'],
           url: _1.dig('external_urls', 'spotify')
         }
       end || [],
       copyrights: album.spotify_album_payload&.dig('copyrights')&.map do
         {
-          text: _1['text'],
-          type: _1['type']
+          text: "#{COPYRIGHT_TYPE[_1['type']]} #{_1['text']}"
         }
       end || [],
       image_url: album.spotify_album_payload&.dig('images')&.first&.dig('url').presence || '',
@@ -63,15 +62,7 @@ class AlbumsToAlgoliaPresenter < Presenter
       url: spotify_track.url,
       disc_number: spotify_track.disc_number,
       track_number: spotify_track.track_number,
-      preview_url: spotify_track.payload&.dig('preview_url'),
       duration_ms: spotify_track.duration_ms,
-      artists: spotify_track.payload&.dig('artists')&.map do |artist|
-        {
-          name: artist['name'],
-          uri: artist['uri'],
-          url: artist.dig('external_urls', 'spotify')
-        }
-      end,
       original_songs: original_song_objects(spotify_track.track.original_songs)
     }
   end
