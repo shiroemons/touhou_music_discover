@@ -18,7 +18,8 @@ class AppleMusicAlbum < ApplicationRecord
   # rubocop:disable Style/NumericLiterals
   VARIOUS_ARTISTS_ALBUMS_IDS = [
     1437759828, # 東方インストバッカー
-    1437759890 # オールナイト・オブ・ナイツ
+    1437759890, # オールナイト・オブ・ナイツ
+    1582445297 # 東方ダンジョンダイブ (Original Sound Track)
   ].freeze
   # rubocop:enable Style/NumericLiterals
 
