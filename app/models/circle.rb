@@ -22,6 +22,7 @@ class Circle < ApplicationRecord
     'ねこみりん' => 'nekomimi style',
     'まりつみ' => 'maritumix',
     'オノ - axeempty' => '斧家',
+    'オノ・コーヘイ' => '斧家',
     'ナオキ' => '渡り鳥のほとり',
     'パンマン' => 'アベニュールーム',
     '凋叶棕&ホシニセ' => %w[凋叶棕 ホシニセ],
