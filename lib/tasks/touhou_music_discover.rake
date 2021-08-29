@@ -10,6 +10,9 @@ namespace :touhou_music_discover do
         f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs")
         Album.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
+          # 特定のアルバムのみ出力する場合、コメントをオフにする
+          # next if jan != ''
+
           apple_music_album = album.apple_music_album
           apple_music_album_id = apple_music_album&.apple_music_id
           apple_music_album_name = apple_music_album&.name
