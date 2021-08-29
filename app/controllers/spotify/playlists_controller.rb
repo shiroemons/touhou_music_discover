@@ -23,6 +23,7 @@ module Spotify
       # Original.includes(:original_songs).pc98.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).zuns_music_collection.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).akyus_untouched_score.each { |original| add_tracks(original) }
+      # Original.includes(:original_songs).commercial_books.each { |original| add_tracks(original) }
     end
 
     private
