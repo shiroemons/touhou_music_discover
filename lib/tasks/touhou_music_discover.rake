@@ -137,6 +137,23 @@ namespace :touhou_music_discover do
         f.puts JSON.pretty_generate(apple_music_songs)
       end
 
+      apple_music_tsa_songs = []
+      albums = AppleMusicAlbum.includes(album: :circles, apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums.each do |album|
+        album.apple_music_tracks.sort_by(&:track_number).each do |track|
+          next unless track.is_touhou
+
+          track_name = track.name
+          collection_name = album.name
+          url = track.url
+          apple_music_tsa_songs.push({ title: track_name, collection_name: collection_name, url: url })
+        end
+      end
+
+      File.open('tmp/touhou_music_song_apple_tsa.json', 'w') do |f|
+        f.puts JSON.pretty_generate(apple_music_tsa_songs)
+      end
+
       spotify_songs = []
       SpotifyAlbum.includes(spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
         album.spotify_tracks.sort_by(&:track_number).each do |track|
@@ -151,6 +168,23 @@ namespace :touhou_music_discover do
 
       File.open('tmp/touhou_music_song_spotify.json', 'w') do |f|
         f.puts JSON.pretty_generate(spotify_songs)
+      end
+
+      spotify_tsa_songs = []
+      albums = SpotifyAlbum.includes(album: :circles, spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums.each do |album|
+        album.spotify_tracks.sort_by(&:track_number).each do |track|
+          next unless track.is_touhou
+
+          track_name = track.name
+          collection_name = album.name
+          url = track.url
+          spotify_tsa_songs.push({ title: track_name, collection_name: collection_name, url: url })
+        end
+      end
+
+      File.open('tmp/touhou_music_song_spotify_tsa.json', 'w') do |f|
+        f.puts JSON.pretty_generate(spotify_tsa_songs)
       end
     end
   end
