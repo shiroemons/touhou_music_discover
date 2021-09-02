@@ -11,6 +11,7 @@ module SpotifyClient
       s_artists&.each do |s_artist|
         # 特定のアーティストのみ収集する SpotifyのアーティストIDを指定する
         # next unless s_artist.id == ''
+        next if s_artist.id == '6wH1UiZO1V6f7rZ7b0mlci' # 洛天依
 
         Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
           print "-> try #{retries} failed with exception: #{exception}" if retries.positive?
