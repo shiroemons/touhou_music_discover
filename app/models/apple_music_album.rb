@@ -19,7 +19,9 @@ class AppleMusicAlbum < ApplicationRecord
   VARIOUS_ARTISTS_ALBUMS_IDS = [
     1437759828, # 東方インストバッカー
     1437759890, # オールナイト・オブ・ナイツ
-    1582445297 # 東方ダンジョンダイブ (Original Sound Track)
+    1582445297, # 東方ダンジョンダイブ (Original Sound Track)
+    1583684648, # 東方オトハナビ
+    1583694708 # 東方オトハナビ
   ].freeze
   # rubocop:enable Style/NumericLiterals
 
