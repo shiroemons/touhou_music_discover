@@ -164,6 +164,16 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails apple_music:fetch_various_artists_albums
   ```
 
+- AppleMusic AppleMusicAlbumの情報を更新
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:update_apple_music_albums
+  ```
+
+- AppleMusic AppleMusicTrackの情報を更新
+  ```shell
+  docker-compose run --rm web bin/rails apple_music:update_apple_music_tracks
+  ```
+
 ### 共通
 
 - 外部から`touhou_music_with_original_songs.tsv`を取得し原曲紐付けを行う
