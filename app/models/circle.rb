@@ -47,6 +47,6 @@ class Circle < ApplicationRecord
     '4580547322583' => 'れいんふぉれすと', # 暗闇の中で
     '4580547322590' => 'れいんふぉれすと', # 弦想郷
     '4580547331974' => 'Login Records', # We Are Gensou Bangers Vol.1
-    '4580547333695' => 'COOL&CREATE', # 東方オトハナビ
+    '4580547333695' => 'COOL&CREATE' # 東方オトハナビ
   }.freeze
 end
