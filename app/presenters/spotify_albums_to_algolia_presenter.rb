@@ -26,22 +26,22 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
       objectID: album.id,
       jan: album.jan_code,
       name: album.spotify_album_name,
-      circles: album.circles&.map do
+      circles: album.circles&.map do |circle|
         {
-          name: _1['name']
+          name: circle['name']
         }
       end || [],
       total_tracks: album.spotify_album_total_tracks,
       url: album.spotify_album_url,
-      artists: album.spotify_album_payload&.dig('artists')&.map do
+      artists: album.spotify_album_payload&.dig('artists')&.map do |artist|
         {
-          name: _1['name'],
-          url: _1.dig('external_urls', 'spotify')
+          name: artist['name'],
+          url: artist.dig('external_urls', 'spotify')
         }
       end || [],
-      copyrights: album.spotify_album_payload&.dig('copyrights')&.map do
+      copyrights: album.spotify_album_payload&.dig('copyrights')&.map do |copyright|
         {
-          text: "#{COPYRIGHT_TYPE[_1['type']]} #{_1['text']}"
+          text: "#{COPYRIGHT_TYPE[copyright['type']]} #{copyright['text']}"
         }
       end || [],
       image_url: album.spotify_album_payload&.dig('images')&.first&.dig('url').presence || '',

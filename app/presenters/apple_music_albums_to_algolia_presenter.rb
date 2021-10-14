@@ -24,9 +24,9 @@ class AppleMusicAlbumsToAlgoliaPresenter < Presenter
       objectID: album.id,
       jan: album.jan_code,
       name: album.apple_music_album_name,
-      circles: album.circles&.map do
+      circles: album.circles&.map do |circle|
         {
-          name: _1['name']
+          name: circle['name']
         }
       end || [],
       total_tracks: album.apple_music_album_total_tracks,
