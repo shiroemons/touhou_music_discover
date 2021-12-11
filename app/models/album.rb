@@ -5,9 +5,8 @@ class Album < ApplicationRecord
 
   has_many :circles_albums, dependent: :destroy
   has_many :circles, through: :circles_albums
+  has_many :tracks, foreign_key: :jan_code, primary_key: :jan_code, inverse_of: :album, dependent: :destroy
   has_many :apple_music_tracks, -> { order(Arel.sql('apple_music_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
-  has_many :albums_tracks, dependent: :destroy
-  has_many :tracks, through: :albums_tracks
   has_many :spotify_tracks, -> { order(Arel.sql('spotify_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
 
   has_one :apple_music_album, dependent: :destroy

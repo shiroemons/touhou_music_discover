@@ -40,7 +40,7 @@ namespace :apple_music do
 
   desc 'AppleMusic ISRCからトラック情報を取得し、アルバム情報を取得'
   task fetch_tracks_by_isrc: :environment do
-    missing_apple_music_tracks = Track.missing_apple_music_track
+    missing_apple_music_tracks = Track.missing_apple_music_tracks
     count = 0
     max_count = missing_apple_music_tracks.count
     missing_apple_music_tracks.each do |track|

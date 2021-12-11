@@ -194,9 +194,10 @@ namespace :touhou_music_discover do
     task touhou_music_with_original_songs: :environment do
       songs = CSV.table('tmp/touhou_music_with_original_songs.tsv', col_sep: "\t", converters: nil, liberal_parsing: true)
       songs.each do |song|
+        jan = song[:jan]
         isrc = song[:isrc]
         original_songs = song[:original_songs]
-        track = Track.find_by(isrc: isrc)
+        track = Track.find_by(jan_code: jan, isrc: isrc)
         if track && original_songs
           original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
           track.original_songs = original_song_list
@@ -217,9 +218,10 @@ namespace :touhou_music_discover do
 
         max_songs = songs.size
         songs.each.with_index(1) do |song, song_count|
+          jan = song['jan']
           isrc = song['isrc']
           original_songs = song['original_songs']
-          track = Track.find_by(isrc: isrc)
+          track = Track.find_by(jan_code: jan, isrc: isrc)
           if track && original_songs
             original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
             track.original_songs = original_song_list

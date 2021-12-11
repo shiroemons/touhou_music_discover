@@ -12,7 +12,7 @@ class AppleMusicTrack < ApplicationRecord
   scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
 
   def self.save_track(apple_music_album, am_track)
-    track = ::Track.find_or_create_by!(isrc: am_track.isrc)
+    track = ::Track.find_or_create_by!(jan_code: apple_music_album.album.jan_code, isrc: am_track.isrc)
 
     apple_music_track = ::AppleMusicTrack.find_or_create_by!(
       track_id: track.id,
