@@ -47,6 +47,12 @@ class Circle < ApplicationRecord
     '4580547322583' => 'れいんふぉれすと', # 暗闇の中で
     '4580547322590' => 'れいんふぉれすと', # 弦想郷
     '4580547331974' => 'Login Records', # We Are Gensou Bangers Vol.1
-    '4580547333695' => 'COOL&CREATE' # 東方オトハナビ
+    '4580547333695' => 'COOL&CREATE', # 東方オトハナビ
+    '4580547334814' => '東方LostWord', # 指先の熱 (feat.島みやえい子 & 幽閉サテライト)
+    '4580547334821' => '東方LostWord', # NAЯAKA (feat.カグラナナ & SOUND HOLIC)
+    '4580547334838' => '東方LostWord', # 白銀の風 (feat.相川七瀬 & 豚乙女)
+    '4580547334845' => '東方LostWord', # 月と十六夜 (feat.ナノ & 岸田教団&THE明星ロケッツ)
+    '4580547334852' => '東方LostWord', # 斑にマーガレット (feat. konoco & 森羅万象)
+    '4580547334869' => '東方LostWord'  # サヨナラはどこか蒼い (feat.田原俊彦 & 豚乙女)
   }.freeze
 end
