@@ -7,13 +7,6 @@ services:
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
 
-  meilisearch:
-    image: getmeili/meilisearch
-    volumes:
-      - meilisearch:/var/lib/meilisearch
-    command: ["./meilisearch", "--master-key=masterKey", "--no-analytics=true"]
-    ports: ["7700:7700"]
-
   redis:
     image: redis:6-alpine
     volumes:
@@ -39,12 +32,9 @@ services:
       DATABASE_URL: "postgres://postgres:postgres@db:5432"
       REDIS_URL: "redis://redis:6379/"
       RAILS_MASTER_KEY:
-      MEILISEARCH_HOST: "http://meilisearch:7700"
-      MEILISEARCH_API_KEY: "masterKey"
     depends_on:
       - db
       - redis
-      - meilisearch
     command: ["bin/rails", "server", "-b", "0.0.0.0"]
     expose: ["3000"]
     ports: ["3000:3000"]
@@ -56,4 +46,3 @@ volumes:
   redis:
   bundle:
   rails_cache:
-  meilisearch:
