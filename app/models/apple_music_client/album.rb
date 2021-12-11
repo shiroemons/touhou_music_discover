@@ -13,6 +13,8 @@ module AppleMusicClient
 
     def self.fetch_artists_albums(am_artist_id)
       am_albums = fetch_albums(am_artist_id)
+      return unless am_albums.respond_to?(:each)
+
       am_albums.each do |am_album|
         AppleMusicAlbum.save_album(am_album)
       end
@@ -31,7 +33,7 @@ module AppleMusicClient
       am_albums
     rescue AppleMusic::ApiError => e
       puts artist_id
-      logger.warn e
+      Rails.logger.warn e
     end
 
     def self.update_albums(apple_music_albums)
