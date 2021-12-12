@@ -18,11 +18,11 @@ class SpotifyTrack < ApplicationRecord
   def self.save_track(spotify_album, s_track)
     return nil if spotify_album.blank? || s_track.blank?
 
-    track = ::Track.find_or_create_by!(isrc: s_track.external_ids['isrc'])
+    track = ::Track.find_or_create_by!(jan_code: spotify_album.album.jan_code, isrc: s_track.external_ids['isrc'])
     spotify_album.album.tracks << track unless spotify_album.album.tracks.include?(track)
 
     spotify_track = ::SpotifyTrack.find_or_create_by!(
-      album_id: spotify_album.album_id,
+      album_id: spotify_album.album.id,
       track_id: track.id,
       spotify_album_id: spotify_album.id,
       spotify_id: s_track.id,

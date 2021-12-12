@@ -24,14 +24,6 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.index ["jan_code"], name: "index_albums_on_jan_code", unique: true
   end
 
-  create_table "albums_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
-    t.uuid "album_id", null: false
-    t.uuid "track_id", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["album_id", "track_id"], name: "index_albums_tracks_on_album_id_and_track_id", unique: true
-  end
-
   create_table "apple_music_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id"
     t.string "apple_music_id", null: false
@@ -192,11 +184,12 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
   end
 
   create_table "tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "jan_code", null: false
     t.string "isrc", null: false
     t.boolean "is_touhou", default: true, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-    t.index ["isrc"], name: "index_tracks_on_isrc", unique: true
+    t.index ["jan_code", "isrc"], name: "index_tracks_on_jan_code_and_isrc", unique: true
   end
 
   create_table "tracks_original_songs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -221,8 +214,6 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.datetime "updated_at", precision: 6, null: false
   end
 
-  add_foreign_key "albums_tracks", "albums"
-  add_foreign_key "albums_tracks", "tracks"
   add_foreign_key "apple_music_albums", "albums"
   add_foreign_key "apple_music_tracks", "albums"
   add_foreign_key "apple_music_tracks", "apple_music_albums"
