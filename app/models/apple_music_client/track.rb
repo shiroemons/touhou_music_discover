@@ -17,7 +17,7 @@ module AppleMusicClient
       am_tracks = []
       offset = 0
       loop do
-        tracks = AppleMusic::Album.get_relationship(album_id, :tracks, limit: LIMIT, offset: offset)
+        tracks = AppleMusic::Album.get_relationship(album_id, :tracks, limit: LIMIT, offset:)
         am_tracks.push(*tracks)
         break if tracks.size < LIMIT
 

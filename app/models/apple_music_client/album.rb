@@ -24,7 +24,7 @@ module AppleMusicClient
       am_albums = []
       offset = 0
       loop do
-        albums = AppleMusic::Artist.get_relationship(artist_id, :albums, limit: LIMIT, offset: offset)
+        albums = AppleMusic::Artist.get_relationship(artist_id, :albums, limit: LIMIT, offset:)
         am_albums.push(*albums)
         break if albums.size < LIMIT
 
@@ -38,7 +38,7 @@ module AppleMusicClient
 
     def self.update_albums(apple_music_albums)
       ids = apple_music_albums.map(&:apple_music_id)
-      am_albums = AppleMusic::Album.list(ids: ids)
+      am_albums = AppleMusic::Album.list(ids:)
       am_albums.each do |am_album|
         apple_music_album = apple_music_albums.find{_1.apple_music_id == am_album.id}
         apple_music_album&.update(payload: am_album.as_json)

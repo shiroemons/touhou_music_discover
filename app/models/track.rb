@@ -16,7 +16,7 @@ class Track < ApplicationRecord
   scope :is_touhou, -> { where(is_touhou: true) }
   scope :non_touhou, -> { where(is_touhou: false) }
   scope :jan, ->(jan) { where(jan_code: jan) }
-  scope :isrc, ->(isrc) { find_by(isrc: isrc) }
+  scope :isrc, ->(isrc) { find_by(isrc:) }
 
   def apple_music_track(album)
     apple_music_tracks.find{_1.album == album}
