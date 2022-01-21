@@ -161,7 +161,8 @@ GEM
     omniauth-oauth2 (1.7.2)
       oauth2 (~> 1.4)
       omniauth (>= 1.9, < 3)
-    pagy (5.7.1)
+    pagy (5.9.0)
+      activesupport
     parallel (1.21.0)
     parser (3.1.0.0)
       ast (~> 2.4.1)
