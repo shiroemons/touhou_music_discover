@@ -7,7 +7,7 @@ ruby '3.0.2'
 
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'pg', '~> 1.3'
-gem 'puma', '~> 5.5'
+gem 'puma', '~> 5.6'
 gem 'rails', '~> 6.1.4'
 
 group :development, :test do
