@@ -13,7 +13,7 @@ module Spotify
       offset = 0
       @playlists = []
       loop do
-        playlists = @spotify_user.playlists(limit: LIMIT, offset: offset)
+        playlists = @spotify_user.playlists(limit: LIMIT, offset:)
         offset += LIMIT
         @playlists.push(*playlists)
         break if playlists.count < LIMIT

@@ -129,7 +129,7 @@ namespace :touhou_music_discover do
           track_name = track.name
           collection_name = album.name
           url = track.url
-          apple_music_songs.push({ title: track_name, collection_name: collection_name, url: url })
+          apple_music_songs.push({ title: track_name, collection_name:, url: })
         end
       end
 
@@ -146,7 +146,7 @@ namespace :touhou_music_discover do
           track_name = track.name
           collection_name = album.name
           url = track.url
-          apple_music_tsa_songs.push({ title: track_name, collection_name: collection_name, url: url })
+          apple_music_tsa_songs.push({ title: track_name, collection_name:, url: })
         end
       end
 
@@ -162,7 +162,7 @@ namespace :touhou_music_discover do
           track_name = track.name
           collection_name = album.name
           url = track.url
-          spotify_songs.push({ title: track_name, collection_name: collection_name, url: url })
+          spotify_songs.push({ title: track_name, collection_name:, url: })
         end
       end
 
@@ -179,7 +179,7 @@ namespace :touhou_music_discover do
           track_name = track.name
           collection_name = album.name
           url = track.url
-          spotify_tsa_songs.push({ title: track_name, collection_name: collection_name, url: url })
+          spotify_tsa_songs.push({ title: track_name, collection_name:, url: })
         end
       end
 
@@ -197,7 +197,7 @@ namespace :touhou_music_discover do
         jan = song[:jan]
         isrc = song[:isrc]
         original_songs = song[:original_songs]
-        track = Track.find_by(jan_code: jan, isrc: isrc)
+        track = Track.find_by(jan_code: jan, isrc:)
         if track && original_songs
           original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
           track.original_songs = original_song_list
@@ -221,7 +221,7 @@ namespace :touhou_music_discover do
           jan = song['jan']
           isrc = song['isrc']
           original_songs = song['original_songs']
-          track = Track.find_by(jan_code: jan, isrc: isrc)
+          track = Track.find_by(jan_code: jan, isrc:)
           if track && original_songs
             original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
             track.original_songs = original_song_list
@@ -240,14 +240,14 @@ namespace :touhou_music_discover do
     Track.includes(:original_songs).each do |track|
       original_songs = track.original_songs
       is_touhou = original_songs.all? { _1.title != 'オリジナル' } && !original_songs.all? { _1.title == 'その他' }
-      track.update(is_touhou: is_touhou) if track.is_touhou != is_touhou
+      track.update(is_touhou:) if track.is_touhou != is_touhou
     end
 
     # Albumのis_touhouフラグを変更
     Album.includes(:tracks).each do |album|
       # トラック内にis_touhouがtrueがあれば、そのアルバムはis_touhouはtrueとする
       is_touhou = album.tracks.map(&:is_touhou).any?
-      album.update!(is_touhou: is_touhou) if album.is_touhou != is_touhou
+      album.update!(is_touhou:) if album.is_touhou != is_touhou
     end
   end
 
