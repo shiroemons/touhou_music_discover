@@ -11,8 +11,8 @@ class SpotifyTrack < ApplicationRecord
 
   scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
-  scope :spotify_id, ->(spotify_id) { find_by(spotify_id: spotify_id) }
-  scope :album_spotify_id, ->(spotify_id) { eager_load(:spotify_album).where(spotify_album: { spotify_id: spotify_id }) }
+  scope :spotify_id, ->(spotify_id) { find_by(spotify_id:) }
+  scope :album_spotify_id, ->(spotify_id) { eager_load(:spotify_album).where(spotify_album: { spotify_id: }) }
   scope :bpm, ->(bpm) { eager_load(:spotify_track_audio_feature).where(spotify_track_audio_feature: { tempo: bpm }) }
 
   def self.save_track(spotify_album, s_track)

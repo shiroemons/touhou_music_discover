@@ -12,7 +12,7 @@ class SpotifyAlbum < ApplicationRecord
 
   scope :is_touhou, -> { eager_load(:album).where(albums: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
-  scope :spotify_id, ->(spotify_id) { find_by(spotify_id: spotify_id) }
+  scope :spotify_id, ->(spotify_id) { find_by(spotify_id:) }
 
   def self.save_album(s_album)
     # labelが "東方同人音楽流通" 以外は nil を返す
@@ -37,7 +37,7 @@ class SpotifyAlbum < ApplicationRecord
         # release_date が "年のみ" の場合がある。 "01/01"を設定する
         Date.parse("#{s_album.release_date}/01/01")
       end
-      spotify_album.update!(release_date: release_date)
+      spotify_album.update!(release_date:)
     end
 
     spotify_album.update!(payload: s_album.as_json)
