@@ -10,8 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_08_09_071424) do
-
+ActiveRecord::Schema[7.0].define(version: 2021_08_09_071424) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -19,8 +18,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
   create_table "albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "jan_code", null: false
     t.boolean "is_touhou", default: true, null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["jan_code"], name: "index_albums_on_jan_code", unique: true
   end
 
@@ -33,8 +32,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.date "release_date"
     t.integer "total_tracks"
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_apple_music_albums_on_album_id"
   end
 
@@ -43,8 +42,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "name", null: false
     t.string "url"
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "apple_music_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -62,8 +61,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.integer "track_number"
     t.integer "duration_ms"
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_apple_music_tracks_on_album_id"
     t.index ["apple_music_album_id"], name: "index_apple_music_tracks_on_apple_music_album_id"
     t.index ["track_id"], name: "index_apple_music_tracks_on_track_id"
@@ -71,16 +70,16 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
 
   create_table "circles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["name"], name: "index_circles_on_name", unique: true
   end
 
   create_table "circles_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "circle_id", null: false
     t.uuid "album_id", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["circle_id", "album_id"], name: "index_circles_albums_on_circle_id_and_album_id", unique: true
   end
 
@@ -88,8 +87,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "name", null: false
     t.string "key", default: "", null: false
     t.string "streaming_type", default: "", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "original_songs", primary_key: "code", id: :string, force: :cascade do |t|
@@ -98,8 +97,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "composer", default: "", null: false
     t.integer "track_number", null: false
     t.boolean "is_duplicate", default: false, null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["code"], name: "index_original_songs_on_code", unique: true
     t.index ["original_code"], name: "index_original_songs_on_original_code"
   end
@@ -109,8 +108,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "short_title", null: false
     t.string "original_type", null: false
     t.float "series_order", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "spotify_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -123,8 +122,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.date "release_date"
     t.integer "total_tracks"
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_spotify_albums_on_album_id"
   end
 
@@ -134,8 +133,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "url"
     t.integer "follower_count"
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "spotify_track_audio_features", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -157,8 +156,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.integer "time_signature", null: false
     t.float "valence", null: false
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["spotify_track_id"], name: "index_spotify_track_audio_features_on_spotify_track_id"
     t.index ["track_id"], name: "index_spotify_track_audio_features_on_track_id"
   end
@@ -176,8 +175,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.integer "track_number"
     t.integer "duration_ms"
     t.jsonb "payload"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_spotify_tracks_on_album_id"
     t.index ["spotify_album_id"], name: "index_spotify_tracks_on_spotify_album_id"
     t.index ["track_id"], name: "index_spotify_tracks_on_track_id"
@@ -187,16 +186,16 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "jan_code", null: false
     t.string "isrc", null: false
     t.boolean "is_touhou", default: true, null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["jan_code", "isrc"], name: "index_tracks_on_jan_code_and_isrc", unique: true
   end
 
   create_table "tracks_original_songs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "track_id", null: false
     t.string "original_song_code", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["original_song_code"], name: "index_tracks_original_songs_on_original_song_code"
     t.index ["track_id", "original_song_code"], name: "index_tracks_original_songs_on_track_id_and_original_song_code", unique: true
     t.index ["track_id"], name: "index_tracks_original_songs_on_track_id"
@@ -210,8 +209,8 @@ ActiveRecord::Schema.define(version: 2021_08_09_071424) do
     t.string "nickname", default: "", null: false
     t.string "description", default: "", null: false
     t.string "image_url", default: "", null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "apple_music_albums", "albums"
