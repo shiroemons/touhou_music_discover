@@ -32,3 +32,10 @@
 /yarn-error.log
 yarn-debug.log*
 .yarn-integrity
+
+# Ignore /bin
+/bin/*
+!/bin/bundle
+!/bin/rails
+!/bin/rake
+!/bin/spring
