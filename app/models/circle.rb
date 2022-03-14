@@ -7,6 +7,7 @@ class Circle < ApplicationRecord
   SPOTIFY_ARTIST_TO_CIRCLE = {
     'Astral Sky vs. 非可逆リズム' => ['Astral Sky', '非可逆リズム'],
     'C-CLAYS & K2 SOUND' => ['C-CLAYS', 'K2 SOUND'],
+    'digital wing' => 'DiGiTAL WiNG',
     'Hachimitsu-Lemon × Aftergrow' => %w[はちみつれもん/Hachimitsu-Lemon Aftergrow],
     'Jerico' => 'ジェリコの法則',
     'KAI' => 'ぷろじぇくとかいにゃん',
