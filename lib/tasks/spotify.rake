@@ -50,6 +50,12 @@ namespace :spotify do
     puts "\n完了しました。"
   end
 
+  desc 'Spotify label:東方同人音楽流通 のアルバムとトラックを年代ごとに取得'
+  task fetch_touhou_albums: :environment do
+    SpotifyClient::Album.fetch_touhou_albums
+    puts "\n完了しました。"
+  end
+
   desc 'Spotify Audio Featuresを取得'
   task fetch_audio_features: :environment do
     count = 0

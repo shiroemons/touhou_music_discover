@@ -52,6 +52,32 @@ module SpotifyClient
       s_albums
     end
 
+    KEYWORD = "label:東方同人音楽流通".freeze
+    def self.fetch_touhou_albums
+      (2000..(Date.today.year)).each do |year|
+        keyword = "#{KEYWORD} year:#{year}"
+        offset = 0
+        loop do
+          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset: offset)
+          s_albums.each do |s_album|
+            unless SpotifyAlbum.exists?(spotify_id: s_album.id)
+              spotify_album = SpotifyAlbum.save_album(s_album)
+              if spotify_album.nil?
+                s_tracks = fetch_tracks(s_album)
+                s_tracks.each do |s_track|
+                  SpotifyTrack.save_track(spotify_album, s_track)
+                  sleep 0.1
+                end
+              end
+            end
+          end
+          offset += s_albums.size
+          puts "year:#{year}\toffset: #{offset}\talbum_size: #{s_albums.size}"
+          break if s_albums.size < LIMIT
+        end
+      end
+    end
+
     def self.fetch_tracks(s_album)
       s_tracks = []
       track_offset = 0

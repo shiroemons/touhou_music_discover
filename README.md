@@ -119,6 +119,11 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails spotify:fetch_spotify_track_artist
   ```
 
+- Spotify label:東方同人音楽流通 のアルバムとトラックを年代ごとに取得
+  ```shell
+  docker-compose run --rm web bin/rails spotify:fetch_touhou_albums
+  ```
+
 - Spotify Audio Features情報を取得
   ```shell
   docker-compose run --rm web bin/rails spotify:fetch_audio_features
