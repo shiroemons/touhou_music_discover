@@ -72,9 +72,9 @@ module SpotifyClient
             end
           end
           offset += s_albums.size
-          puts "year:#{year}\toffset: #{offset}\talbum_size: #{s_albums.size}"
           break if s_albums.size < LIMIT
         end
+        puts "year:#{year}\toffset: #{offset}"
       end
     end
 
