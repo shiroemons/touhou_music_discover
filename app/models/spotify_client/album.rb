@@ -52,7 +52,7 @@ module SpotifyClient
       s_albums
     end
 
-    KEYWORD = "label:東方同人音楽流通".freeze
+    KEYWORD = 'label:東方同人音楽流通'
     def self.fetch_touhou_albums
       (2000..(Date.today.year)).each do |year|
         keyword = "#{KEYWORD} year:#{year}"
@@ -60,15 +60,19 @@ module SpotifyClient
         loop do
           s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset: offset)
           s_albums.each do |s_album|
-            unless SpotifyAlbum.exists?(spotify_id: s_album.id)
-              spotify_album = SpotifyAlbum.save_album(s_album)
-              if spotify_album.nil?
-                s_tracks = fetch_tracks(s_album)
-                s_tracks.each do |s_track|
-                  SpotifyTrack.save_track(spotify_album, s_track)
-                  sleep 0.1
-                end
-              end
+            spotify_album = if SpotifyAlbum.exists?(spotify_id: s_album.id)
+                              SpotifyAlbum.find_by(spotify_id: s_album.id)
+                            else
+                              SpotifyAlbum.save_album(s_album)
+                            end
+
+            next if spotify_album.nil?
+            next if spotify_album.total_tracks == spotify_album.spotify_tracks.count
+
+            s_tracks = fetch_tracks(s_album)
+            s_tracks.each do |s_track|
+              SpotifyTrack.save_track(spotify_album, s_track)
+              sleep 0.1
             end
           end
           offset += s_albums.size
