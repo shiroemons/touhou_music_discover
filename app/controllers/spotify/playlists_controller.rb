@@ -19,6 +19,13 @@ module Spotify
         break if playlists.count < LIMIT
       end
       @playlists.reverse!
+
+      # @playlists.each do |p|
+      #   puts "#{p.name}\t#{p.external_urls["spotify"]}\t#{p.total}\t#{p.followers["total"]}"
+      # end
+
+      # Spotifyの原曲別プレイリストを更新する場合は、以下のコメントを外す。
+      # 原曲別プレイリストの更新は時間がかかるため、1つずつ進めるのが良い。
       # Original.includes(:original_songs).windows.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).pc98.each { |original| add_tracks(original) }
       # Original.includes(:original_songs).zuns_music_collection.each { |original| add_tracks(original) }
@@ -37,6 +44,7 @@ module Spotify
 
         original_song_title = os.title
         playlist = playlist_find(original_song_title)
+        # playlist = @spotify_user.create_playlist!(original_song_title) if playlist.nil?
         next if playlist.nil?
 
         playlist_tracks = playlist.tracks
