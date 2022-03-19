@@ -28,3 +28,8 @@ Rails/UnknownEnv:
 
 Rails/EnvironmentVariableAccess:
   AllowReads: true
+
+Lint/MissingSuper:
+  Enabled: true
+  Exclude:
+    - lib/redis_pool.rb

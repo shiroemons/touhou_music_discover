@@ -7,7 +7,8 @@ module Spotify
     def create
       redirect_to root_url unless session[:user_id]
 
-      auth_hash = JSON.parse(Redis.current.get(session[:user_id]))
+      redis = RedisPool.get
+      auth_hash = JSON.parse(redis.get(session[:user_id]))
       @spotify_user = RSpotify::User.new(auth_hash)
 
       offset = 0
