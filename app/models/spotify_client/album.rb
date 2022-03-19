@@ -54,11 +54,11 @@ module SpotifyClient
 
     KEYWORD = 'label:東方同人音楽流通'
     def self.fetch_touhou_albums
-      (2000..(Date.today.year)).each do |year|
+      (2000..(Time.zone.today.year)).each do |year|
         keyword = "#{KEYWORD} year:#{year}"
         offset = 0
         loop do
-          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset: offset)
+          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:)
           s_albums.each do |s_album|
             spotify_album = if SpotifyAlbum.exists?(spotify_id: s_album.id)
                               SpotifyAlbum.find_by(spotify_id: s_album.id)
