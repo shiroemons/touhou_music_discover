@@ -1,55 +1,6 @@
 # frozen_string_literal: true
 
 namespace :spotify do
-  desc 'Spotify MasterArtistからSpotifyのアーティスト情報を取得'
-  task fetch_spotify_artist_from_master_artists: :environment do
-    max_count = MasterArtist.spotify.count
-    count = 0
-    MasterArtist.spotify.find_in_batches(batch_size: 50) do |master_artists|
-      Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
-        puts "try #{retries} failed with exception: #{exception}" if retries.positive?
-
-        SpotifyClient::Artist.fetch(master_artists.map(&:key))
-      end
-
-      count += master_artists.size
-      print "\rマスターアーティスト: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
-    end
-    puts "\n完了しました。"
-  end
-
-  desc 'Spotify SpotifyTrackからアーティスト情報を取得'
-  task fetch_spotify_track_artist: :environment do
-    s_artist_ids = []
-    SpotifyTrack.all.each.with_index(1) do |spotify_track, i|
-      ids = spotify_track.payload['artists']&.map { _1['id'] }
-      s_artist_ids.push(*ids)
-      print "\r曲数 #{i}曲"
-    end
-    s_artist_ids.uniq!.compact!
-
-    spotify_artist_ids = SpotifyArtist.pluck(:spotify_id)
-
-    new_artist_ids = s_artist_ids - spotify_artist_ids
-    new_artist_ids.each_slice(50) do |ids|
-      Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
-        puts "try #{retries} failed with exception: #{exception}" if retries.positive?
-
-        SpotifyClient::Artist.fetch(ids)
-      end
-    end
-    puts "\n完了しました。"
-  end
-
-  desc 'Spotify アーティストに紐づくアルバム情報とトラック情報を取得'
-  task fetch_albums_and_tracks: :environment do
-    spotify_artist_ids = SpotifyArtist.pluck(:spotify_id)
-    spotify_artist_ids.each_slice(50) do |ids|
-      SpotifyClient::Album.fetch(ids)
-    end
-    puts "\n完了しました。"
-  end
-
   desc 'Spotify label:東方同人音楽流通 のアルバムとトラックを年代ごとに取得'
   task fetch_touhou_albums: :environment do
     SpotifyClient::Album.fetch_touhou_albums
