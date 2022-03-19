@@ -24,6 +24,7 @@ group :development do
 end
 
 gem 'apple_music'
+gem 'connection_pool'
 gem 'faraday'
 gem 'meilisearch-rails'
 gem 'pagy'
