@@ -70,7 +70,13 @@ module SpotifyClient
       s_albums = RSpotify::Album.find(spotify_albums.map(&:spotify_id))
       s_albums.each do |s_album|
         spotify_album = spotify_albums.find{_1.spotify_id == s_album.id}
-        spotify_album&.update(payload: s_album.as_json)
+        spotify_album&.update(
+          album_type: s_album.album_type,
+          name: s_album.name,
+          url: s_album.external_urls['spotify'],
+          total_tracks: s_album.total_tracks,
+          payload: s_album.as_json
+        )
       end
     end
   end
