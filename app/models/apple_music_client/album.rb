@@ -41,7 +41,12 @@ module AppleMusicClient
       am_albums = AppleMusic::Album.list(ids:)
       am_albums.each do |am_album|
         apple_music_album = apple_music_albums.find{_1.apple_music_id == am_album.id}
-        apple_music_album&.update(payload: am_album.as_json)
+        apple_music_album&.update(
+          name: am_album.name,
+          url: am_album.url,
+          total_tracks: am_album.track_count,
+          payload: am_album.as_json
+        )
       end
     end
   end
