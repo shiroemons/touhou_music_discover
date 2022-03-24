@@ -1,10 +1,6 @@
 name: Ruby
 
-on:
-  push:
-    branches:
-      - feature/**
-      - dependabot/**
+on: [push, pull_request]
 
 env:
   CI: "true"
