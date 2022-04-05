@@ -47,6 +47,7 @@ class Circle < ApplicationRecord
     '4580547319644' => '舞音KAGURA', # Edge
     '4580547322583' => 'れいんふぉれすと', # 暗闇の中で
     '4580547322590' => 'れいんふぉれすと', # 弦想郷
+    '4580547327137' => 'Amateras Records', # Kamala
     '4580547331974' => 'Login Records', # We Are Gensou Bangers Vol.1
     '4580547333695' => 'COOL&CREATE', # 東方オトハナビ
     '4580547334814' => '東方LostWord', # 指先の熱 (feat.島みやえい子 & 幽閉サテライト)
