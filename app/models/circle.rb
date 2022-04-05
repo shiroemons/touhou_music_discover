@@ -54,6 +54,7 @@ class Circle < ApplicationRecord
     '4580547334838' => '東方LostWord', # 白銀の風 (feat.相川七瀬 & 豚乙女)
     '4580547334845' => '東方LostWord', # 月と十六夜 (feat.ナノ & 岸田教団&THE明星ロケッツ)
     '4580547334852' => '東方LostWord', # 斑にマーガレット (feat. konoco & 森羅万象)
-    '4580547334869' => '東方LostWord'  # サヨナラはどこか蒼い (feat.田原俊彦 & 豚乙女)
+    '4580547334869' => '東方LostWord', # サヨナラはどこか蒼い (feat.田原俊彦 & 豚乙女)
+    '4580547333640' => '東方ダンジョンダイブ' # 東方ダンジョンダイブ (Original Sound Track)
   }.freeze
 end
