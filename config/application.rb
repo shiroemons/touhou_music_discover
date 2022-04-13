@@ -22,6 +22,7 @@ require 'rails/test_unit/railtie'
 Bundler.require(*Rails.groups)
 
 require_relative '../lib/redis_pool'
+require_relative '../lib/line_music'
 
 module TouhouMusicDiscover
   class Application < Rails::Application
