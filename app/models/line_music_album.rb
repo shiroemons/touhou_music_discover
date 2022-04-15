@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class LineMusicAlbum < ApplicationRecord
+  has_many :line_music_tracks,
+           -> { order(Arel.sql('line_music_tracks.track_number ASC')) },
+           inverse_of: :line_music_album,
+           dependent: :destroy
+
   belongs_to :album
 
   delegate :jan_code, :is_touhou, to: :album, allow_nil: true
@@ -83,5 +88,9 @@ class LineMusicAlbum < ApplicationRecord
       return true
     end
     false
+  end
+
+  def artist_name
+    payload['artists']&.map{_1['artist_name']}&.join(' / ')
   end
 end

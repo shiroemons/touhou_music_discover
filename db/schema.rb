@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_04_13_095525) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_15_021152) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -94,6 +94,23 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_13_095525) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_line_music_albums_on_album_id"
+  end
+
+  create_table "line_music_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "album_id"
+    t.uuid "track_id", null: false
+    t.uuid "line_music_album_id", null: false
+    t.string "line_music_id", null: false
+    t.string "name", null: false
+    t.string "url", default: "", null: false
+    t.integer "disc_number"
+    t.integer "track_number"
+    t.jsonb "payload"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["album_id"], name: "index_line_music_tracks_on_album_id"
+    t.index ["line_music_album_id"], name: "index_line_music_tracks_on_line_music_album_id"
+    t.index ["track_id"], name: "index_line_music_tracks_on_track_id"
   end
 
   create_table "master_artists", force: :cascade do |t|
@@ -233,6 +250,9 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_13_095525) do
   add_foreign_key "circles_albums", "albums"
   add_foreign_key "circles_albums", "circles"
   add_foreign_key "line_music_albums", "albums"
+  add_foreign_key "line_music_tracks", "albums"
+  add_foreign_key "line_music_tracks", "line_music_albums"
+  add_foreign_key "line_music_tracks", "tracks"
   add_foreign_key "spotify_albums", "albums"
   add_foreign_key "spotify_track_audio_features", "spotify_tracks"
   add_foreign_key "spotify_track_audio_features", "tracks"
