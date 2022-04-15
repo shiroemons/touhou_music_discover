@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2021_08_09_071424) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_13_095525) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -81,6 +81,19 @@ ActiveRecord::Schema[7.0].define(version: 2021_08_09_071424) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["circle_id", "album_id"], name: "index_circles_albums_on_circle_id_and_album_id", unique: true
+  end
+
+  create_table "line_music_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "album_id", null: false
+    t.string "line_music_id", null: false
+    t.string "name", null: false
+    t.string "url"
+    t.date "release_date"
+    t.integer "total_tracks"
+    t.jsonb "payload"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["album_id"], name: "index_line_music_albums_on_album_id"
   end
 
   create_table "master_artists", force: :cascade do |t|
@@ -219,6 +232,7 @@ ActiveRecord::Schema[7.0].define(version: 2021_08_09_071424) do
   add_foreign_key "apple_music_tracks", "tracks"
   add_foreign_key "circles_albums", "albums"
   add_foreign_key "circles_albums", "circles"
+  add_foreign_key "line_music_albums", "albums"
   add_foreign_key "spotify_albums", "albums"
   add_foreign_key "spotify_track_audio_features", "spotify_tracks"
   add_foreign_key "spotify_track_audio_features", "tracks"
