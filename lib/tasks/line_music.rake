@@ -33,4 +33,36 @@ namespace :line_music do
     end
     puts "\n完了しました。"
   end
+
+  desc 'LINE MUSIC アルバムのトラック情報を取得'
+  task album_tracks_find_and_save: :environment do
+    max_count = Album.count
+    count = 0
+    Album.includes(:spotify_album, :apple_music_album, :line_music_album).each do |album|
+      count += 1
+      print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+      next if album.line_music_album.blank?
+
+      lm_album = album.line_music_album
+
+      next if lm_album.total_tracks == lm_album.line_music_tracks.size
+
+      lm_tracks = LineMusic::Album.tracks(lm_album.line_music_id)
+
+      if album.spotify_album.present?
+        s_tracks = album.spotify_album.spotify_tracks
+        lm_tracks.each do |lm_track|
+          s_track = s_tracks.find { |t| t.disc_number == lm_track.disc_number && t.track_number == lm_track.track_number }
+          LineMusicTrack.save_track(s_track.album_id, s_track.track_id, lm_album, lm_track) if s_track
+        end
+      elsif album.apple_music_album.present?
+        am_tracks = album.apple_music_album.apple_music_tracks
+        lm_tracks.each do |lm_track|
+          am_track = am_tracks.find { |t| t.disc_number == lm_track.disc_number && t.track_number == lm_track.track_number }
+          LineMusicTrack.save_track(am_track.album_id, am_track.track_id, lm_album, lm_track) if am_track
+        end
+      end
+    end
+    puts "\n完了しました。"
+  end
 end
