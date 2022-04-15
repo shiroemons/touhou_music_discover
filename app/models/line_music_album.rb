@@ -43,9 +43,17 @@ class LineMusicAlbum < ApplicationRecord
     when 0
       return false
     when 1
-      line_album = line_albums.first
-      LineMusicAlbum.save_album(album.album_id, line_album)
-      return true
+      line_album = line_albums.find do |la|
+        la.release_date == album.release_date && la.track_total_count == album.total_tracks
+      end
+      line_album ||= line_albums.find do |la|
+        la.album_title == album.name && la.track_total_count == album.total_tracks
+      end
+
+      if line_album
+        LineMusicAlbum.save_album(album.album_id, line_album)
+        return true
+      end
     else
       line_albums = line_albums.select do |la|
         la.release_date == album.release_date && la.track_total_count == album.total_tracks
