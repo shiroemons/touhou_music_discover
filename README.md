@@ -163,6 +163,28 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails apple_music:update_apple_music_tracks
   ```
 
+### LINE MUSIC
+
+- LINE MUSIC アルバムを検索して情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails line_music:search_albums_and_save
+  ```
+
+- LINE MUSIC アルバムのトラック情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails line_music:album_tracks_find_and_save
+  ```
+
+- LINE MUSIC LineMusicAlbumの情報を更新
+  ```shell
+  docker-compose run --rm web bin/rails line_music:update_line_music_albums
+  ```
+
+- LINE MUSIC LineMusicTrackの情報を更新
+  ```shell
+  docker-compose run --rm web bin/rails line_music:update_line_music_tracks
+  ```
+
 ### 共通
 
 - 外部から`touhou_music_with_original_songs.tsv`を取得し原曲紐付けを行う
