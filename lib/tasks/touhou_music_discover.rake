@@ -129,6 +129,11 @@ namespace :touhou_music_discover do
         albums = Album.eager_load(apple_music_tracks: { track: { original_songs: :original } })
         file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
+
+      File.open('tmp/touhou_music_line_music_for_algolia.json', 'w') do |file|
+        albums = Album.eager_load(line_music_tracks: { track: { original_songs: :original } })
+        file.puts(JSON.pretty_generate(LineMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
+      end
     end
 
     desc 'Output files for random_touhou_music'
