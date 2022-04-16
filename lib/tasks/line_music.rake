@@ -65,4 +65,44 @@ namespace :line_music do
     end
     puts "\n完了しました。"
   end
+
+  desc 'LINE MUSIC LineMusicAlbumの情報を更新'
+  task update_line_music_albums: :environment do
+    count = 0
+    max_count = LineMusicAlbum.count
+    LineMusicAlbum.all.each do |line_music_album|
+      lm_album = LineMusic::Album.find(line_music_album.line_music_id)
+      if lm_album.present?
+        line_music_album.update(
+          name: lm_album.album_title,
+          total_tracks: lm_album.track_total_count,
+          payload: lm_album.as_json
+        )
+      end
+      count += 1
+      print "\rLINE MUSIC アルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+    end
+  end
+
+  desc 'LINE MUSIC LineMusicTrackの情報を更新'
+  task update_line_music_tracks: :environment do
+    count = 0
+    max_count = LineMusicTrack.count
+    LineMusicAlbum.eager_load(:line_music_tracks).each do |line_music_album|
+      lm_tracks = LineMusic::Album.tracks(line_music_album.line_music_id)
+      line_music_album.line_music_tracks.each do |line_music_track|
+        lm_track = lm_tracks.find { _1.track_id == line_music_track.line_music_id }
+        if lm_track.present?
+          line_music_track.update(
+            name: lm_track.track_title,
+            disc_number: lm_track.disc_number,
+            track_number: lm_track.track_number,
+            payload: lm_track.as_json
+          )
+        end
+      end
+      count += line_music_album.total_tracks
+      print "\rLINE MUSIC 楽曲: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+    end
+  end
 end
