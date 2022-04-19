@@ -12,7 +12,10 @@ class YtmusicAlbum < ApplicationRecord
   # 検索で見つけにくいアルバム
   # コメントアウトしているアルバムは、YouTubeMusicで配信されていないアルバム
   JAN_TO_ALBUM_BROWSE_IDS = {
+    '4580547310795' => 'MPREb_eeAHV4hJikZ', # IOSYS - ファンタジックぴこれーしょん! [東方ProjectアレンジSelection]
+    '4580547315783' => 'MPREb_mTu9AJ0IMQS', # Blackscreen/t0m0h1r0/beth_tear/矢追春樹 - Parallels
     '4580547318647' => 'MPREb_N0ObSy2IBoB',	# 彩音 〜xi-on〜 - Quartet -カルテット-
+    #    '4580547320978' => '', # MICMNIS - Event Horizon
     #    '4580547331653' => '',	# Amateras Records - 恋繋エピローグ
     #    '4580547331783' => '',	# EastNewSound - Lyrical Crimson
     #    '4580547311440' => '',	# 豚乙女 - 東方猫鍵盤9
@@ -105,5 +108,14 @@ class YtmusicAlbum < ApplicationRecord
       return true
     end
     false
+  end
+
+  def update_album(album)
+    update(
+      name: album.title,
+      playlist_url: album.playlist_url,
+      total_tracks: album.track_total_count,
+      payload: album.as_json
+    )
   end
 end
