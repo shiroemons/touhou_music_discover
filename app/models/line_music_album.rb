@@ -93,4 +93,8 @@ class LineMusicAlbum < ApplicationRecord
   def artist_name
     payload['artists']&.map{_1['artist_name']}&.join(' / ')
   end
+
+  def image_url
+    payload&.dig('image_url').presence
+  end
 end

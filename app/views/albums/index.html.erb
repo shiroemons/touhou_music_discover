@@ -1,0 +1,54 @@
+<h1>Albums</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>JAN</th>
+      <th>Circle</th>
+      <th>Spotify</th>
+      <th>Apple Music</th>
+      <th>LINE MUSIC</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @records.each do |record| %>
+    <tr>
+      <td><%= record.jan_code %></td>
+      <td>
+        <%= record.circle_name %>
+
+      </td>
+      <td>
+        <% if record.spotify_album.present? %>
+          <% s_album = record.spotify_album %>
+          <%= s_album.name %><br/>
+          <img src="<%= s_album.image_url %>" alt="<%= s_album.name %>" width="300" />
+        <% else %>
+          No Album
+        <% end %>
+      </td>
+      <td>
+        <% if record.apple_music_album.present? %>
+          <% am_album = record.apple_music_album %>
+          <%= am_album.name %><br/>
+          <img src="<%= am_album.image_url %>" alt="<%= am_album.name %>" width="300" />
+        <% else %>
+          No Album
+        <% end %>
+      </td>
+      <td>
+        <% if record.line_music_album.present? %>
+          <% lm_album = record.line_music_album %>
+          <%= lm_album.name %><br/>
+          <img src="<%= lm_album.image_url %>" alt="<%= lm_album.name %>" width="300" />
+        <% else %>
+          No Album
+        <% end %>
+      </td>
+    </tr>
+    <% end %>
+  </tbody>
+</table>
+
+
+<%== pagy_nav(@pagy) %>
