@@ -83,18 +83,20 @@ namespace :touhou_music_discover do
     desc 'Touhou music album only file export'
     task touhou_music_album_only: :environment do
       File.open('tmp/touhou_music_album_only.tsv', 'w') do |f|
-        f.puts("jan\tcircle\tspotify_album_name\tspotify_album_url\tapple_music_album_name\tapple_music_album_url\tline_music_album_name\tline_music_album_url")
-        Album.includes(:circles, :apple_music_album, :spotify_album).order(jan_code: :asc).each do |album|
+        f.puts("jan\tcircle\tspotify_album_name\tspotify_album_url\tapple_music_album_name\tapple_music_album_url\tytmusic_album_name\tytmusic_album_url\tline_music_album_name\tline_music_album_url")
+        Album.includes(:circles, :apple_music_album, :spotify_album, :line_music_album, :ytmusic_album).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           circle = album.circles&.map{_1.name}&.join(' / ')
           spotify_album_name = album.spotify_album&.name
           spotify_album_url = album.spotify_album&.url
           apple_music_album_name = album.apple_music_album&.name
           apple_music_album_url = album.apple_music_album&.url
+          ytmusic_album_name = album.ytmusic_album&.name
+          ytmusic_album_url = album.ytmusic_album&.url
           line_music_album_name = album.line_music_album&.name
           line_music_album_url = album.line_music_album&.url
 
-          f.puts("#{jan}\t#{circle}\t#{spotify_album_name}\t#{spotify_album_url}\t#{apple_music_album_name}\t#{apple_music_album_url}\t#{line_music_album_name}\t#{line_music_album_url}")
+          f.puts("#{jan}\t#{circle}\t#{spotify_album_name}\t#{spotify_album_url}\t#{apple_music_album_name}\t#{apple_music_album_url}\t#{ytmusic_album_name}\t#{ytmusic_album_url}\t#{line_music_album_name}\t#{line_music_album_url}")
         end
       end
     end
