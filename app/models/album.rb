@@ -26,4 +26,8 @@ class Album < ApplicationRecord
   scope :is_touhou, -> { where(is_touhou: true) }
   scope :non_touhou, -> { where(is_touhou: false) }
   scope :jan, ->(jan) { find_by(jan_code: jan) }
+
+  def circle_name
+    circles&.map{_1.name}&.join(' / ')
+  end
 end
