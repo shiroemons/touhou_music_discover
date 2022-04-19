@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2022_04_15_021152) do
+ActiveRecord::Schema[7.0].define(version: 2022_04_17_062021) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
@@ -243,6 +243,20 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_15_021152) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "ytmusic_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.uuid "album_id", null: false
+    t.string "browse_id", null: false
+    t.string "name", null: false
+    t.string "url"
+    t.string "playlist_url"
+    t.string "release_year"
+    t.integer "total_tracks"
+    t.jsonb "payload"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["album_id"], name: "index_ytmusic_albums_on_album_id"
+  end
+
   add_foreign_key "apple_music_albums", "albums"
   add_foreign_key "apple_music_tracks", "albums"
   add_foreign_key "apple_music_tracks", "apple_music_albums"
@@ -260,4 +274,5 @@ ActiveRecord::Schema[7.0].define(version: 2022_04_15_021152) do
   add_foreign_key "spotify_tracks", "spotify_albums"
   add_foreign_key "spotify_tracks", "tracks"
   add_foreign_key "tracks_original_songs", "tracks"
+  add_foreign_key "ytmusic_albums", "albums"
 end
