@@ -9,6 +9,8 @@ namespace :ytmusic do
       count += 1
       print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
 
+      next if album.jan_code == '4580547320978' # MICMNIS - Event Horizon
+
       s_album = album.spotify_album
       am_album = album.apple_music_album
       if s_album.present?
@@ -42,6 +44,19 @@ namespace :ytmusic do
       next if YtmusicAlbum.search_and_save(am_album_name.sub(/ [(|\[].*[)|\]]\z/, ''), am_album)
       next if YtmusicAlbum.search_and_save(am_album.name, am_album)
       next if YtmusicAlbum.search_and_save(am_album.name.sub(' - EP', ''), am_album)
+    end
+  end
+
+  desc 'YouTubeMUSIC アルバムの詳細情報を取得'
+  task albums_update: :environment do
+    max_count = YtmusicAlbum.count
+    count = 0
+    YtmusicAlbum.all.each do |ytmusic_album|
+      count += 1
+      print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+
+      album = YTMusic::Album.find(ytmusic_album.browse_id)
+      ytmusic_album.update_album(album) if album
     end
   end
 end
