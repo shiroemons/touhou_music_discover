@@ -50,4 +50,8 @@ class AppleMusicAlbum < ApplicationRecord
   def artist_name
     payload.dig('attributes', 'artist_name')
   end
+
+  def image_url
+    payload&.dig('attributes', 'artwork', 'url')&.sub('{w}x{h}', '500x500').presence
+  end
 end

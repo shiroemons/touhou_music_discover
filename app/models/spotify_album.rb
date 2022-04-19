@@ -47,4 +47,8 @@ class SpotifyAlbum < ApplicationRecord
   def artist_name
     payload['artists']&.map{_1['name']}&.join(' / ')
   end
+
+  def image_url
+    payload&.dig('images')&.first&.dig('url').presence
+  end
 end
