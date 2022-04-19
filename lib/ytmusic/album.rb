@@ -13,9 +13,9 @@ module YTMusic
       end
     end
 
-    attr_reader :id, :title, :url, :artists, :type, :year,
-                :track_total_count, :playlist_url, :tracks, :thumbnails,
-                :duration_text, :duration_seconds
+    attr_reader :title, :type, :year, :artists,
+                :track_total_count, :duration_text, :thumbnails, :playlist_url,
+                :tracks, :duration_seconds
 
     def initialize(response)
       @title = response.dig('header', 'musicDetailHeaderRenderer', 'title', 'runs', 0, 'text')
