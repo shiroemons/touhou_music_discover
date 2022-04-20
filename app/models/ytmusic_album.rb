@@ -112,6 +112,6 @@ class YtmusicAlbum < ApplicationRecord
   end
 
   def image_url
-    payload&.dig('thumbnails', -1, 'url')
+    payload&.dig('thumbnails', -1, 'url')&.sub(/=w.*\z/, '')
   end
 end
