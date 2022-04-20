@@ -148,6 +148,11 @@ namespace :touhou_music_discover do
         file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
+      File.open('tmp/touhou_music_youtube_music_for_algolia.json', 'w') do |file|
+        albums = Album.eager_load(ytmusic_tracks: { track: { original_songs: :original } })
+        file.puts(JSON.pretty_generate(YtmusicAlbumsToAlgoliaPresenter.new(albums).as_json))
+      end
+
       File.open('tmp/touhou_music_line_music_for_algolia.json', 'w') do |file|
         albums = Album.eager_load(line_music_tracks: { track: { original_songs: :original } })
         file.puts(JSON.pretty_generate(LineMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
