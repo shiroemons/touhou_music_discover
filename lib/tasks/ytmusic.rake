@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 namespace :ytmusic do
-  desc 'YouTubeMUSIC アルバムを検索して簡易アルバム情報を取得'
-  task search_simple_albums_and_save: :environment do
+  desc 'YouTubeMUSIC アルバムを検索してアルバム情報を取得'
+  task search_albums_and_save: :environment do
     max_count = Album.missing_ytmusic_album.count
     count = 0
     Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code).each do |album|
@@ -11,6 +11,7 @@ namespace :ytmusic do
 
       next if album.jan_code == '4580547320978' # MICMNIS - Event Horizon
 
+      sleep(0.2)
       s_album = album.spotify_album
       am_album = album.apple_music_album
       if s_album.present?

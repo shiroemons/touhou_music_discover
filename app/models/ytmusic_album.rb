@@ -13,6 +13,7 @@ class YtmusicAlbum < ApplicationRecord
   # コメントアウトしているアルバムは、YouTubeMusicで配信されていないアルバム
   JAN_TO_ALBUM_BROWSE_IDS = {
     '4580547310795' => 'MPREb_eeAHV4hJikZ', # IOSYS - ファンタジックぴこれーしょん! [東方ProjectアレンジSelection]
+    '4580547315028' => 'MPREb_3LbKcm9Blf0', # SOUND HOLIC - 幻想★あ･ら･もーど
     '4580547315783' => 'MPREb_mTu9AJ0IMQS', # Blackscreen/t0m0h1r0/beth_tear/矢追春樹 - Parallels
     '4580547318647' => 'MPREb_N0ObSy2IBoB',	# 彩音 〜xi-on〜 - Quartet -カルテット-
     #    '4580547320978' => '', # MICMNIS - Event Horizon
@@ -26,23 +27,16 @@ class YtmusicAlbum < ApplicationRecord
     '4580547334661' => 'MPREb_jcbfEMq2FSt'  # 幽閉サテライト - 色は匂へど散りぬるを BAND arrange version vol.1
   }.freeze
 
-  def self.save_simple_album(album_id, simple_album)
-    find_or_create_by!(
-      album_id:,
-      browse_id: simple_album.browse_id,
-      name: simple_album.title,
-      url: simple_album.url,
-      release_year: simple_album.year
-    )
-  end
-
   def self.save_album(album_id, browse_id, album)
     find_or_create_by!(
       album_id:,
       browse_id:,
       name: album.title,
       url: "https://music.youtube.com/browse/#{browse_id}",
-      release_year: album.year
+      playlist_url: album.playlist_url,
+      total_tracks: album.track_total_count,
+      release_year: album.year,
+      payload: album.as_json
     )
   end
 
@@ -81,33 +75,27 @@ class YtmusicAlbum < ApplicationRecord
         ytmusic_album.artists.map(&:name).join(' / ') == album.artist_name
     end
 
-    if ytm_album
-      save_simple_album(album.album_id, ytm_album)
-      return true
-    end
+    return find_and_save(ytm_album.browse_id, album) if ytm_album
 
     false
   end
 
   def self.find_and_save(browse_id, album)
     ytmusic_album = YTMusic::Album.find(browse_id)
-    if ytmusic_album
-      save_album(album.album_id, browse_id, ytmusic_album)
-      return true
-    end
-    false
+    return false if album.total_tracks != ytmusic_album.track_total_count
+
+    save_album(album.album_id, browse_id, ytmusic_album)
+    true
   end
 
   def self.similar_check_and_save(similar, album, ytm_album)
-    if similar.average.to_d == BigDecimal('1.0')
-      save_simple_album(album.album_id, ytm_album)
-      return true
-    end
-    if similar.average.to_d > BigDecimal('0.80') && similar.jarowinkler_similar.to_d > BigDecimal('0.85')
-      save_simple_album(album.album_id, ytm_album)
-      return true
-    end
-    false
+    return false unless similar.average.to_d > BigDecimal('0.80') && similar.jarowinkler_similar.to_d > BigDecimal('0.85')
+
+    ytmusic_album = YTMusic::Album.find(ytm_album.browse_id)
+    return false if album.total_tracks != ytmusic_album.track_total_count
+
+    save_album(album.album_id, ytm_album.browse_id, ytmusic_album)
+    true
   end
 
   def update_album(album)
@@ -117,5 +105,13 @@ class YtmusicAlbum < ApplicationRecord
       total_tracks: album.track_total_count,
       payload: album.as_json
     )
+  end
+
+  def artist_name
+    payload&.dig('artists')&.map { _1['name'] }&.join(' / ')
+  end
+
+  def image_url
+    payload&.dig('thumbnails', -1, 'url')
   end
 end
