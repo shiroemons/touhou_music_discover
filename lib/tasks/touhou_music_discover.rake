@@ -42,39 +42,55 @@ namespace :touhou_music_discover do
     desc 'Touhou music file export'
     task touhou_music: :environment do
       File.open('tmp/touhou_music.tsv', 'w') do |f|
-        f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_artist_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_artist_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url\tline_music_album_artist_name\tline_music_album_name\tline_music_artist_name\tline_music_track_name\tline_music_album_url\tline_music_track_url")
-        Album.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks]).order(jan_code: :asc).each do |album|
+        f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url\tyoutube_music_album_artist_name\tyoutube_music_album_name\tyoutube_music_track_name\tyoutube_music_album_url\tyoutube_music_track_url\tline_music_album_artist_name\tline_music_album_name\tline_music_track_name\tline_music_album_url\tline_music_track_url")
+        Album.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           circle = album.circles&.map{_1.name}&.join(' / ')
-          apple_music_album_url = album.apple_music_album&.url
-          apple_music_album_artist_name = album.apple_music_album&.artist_name
-          apple_music_album_name = album.apple_music_album&.name
-          line_music_album_url = album.line_music_album&.url
-          line_music_album_artist_name = album.line_music_album&.artist_name
-          line_music_album_name = album.line_music_album&.name
+
+          # Spotify
           spotify_album_url = album.spotify_album&.url
           spotify_album_artist_name = album.spotify_album&.artist_name
           spotify_album_name = album.spotify_album&.name
-          album.tracks.sort_by(&:isrc).each do |track|
+          # Apple Music
+          apple_music_album_url = album.apple_music_album&.url
+          apple_music_album_artist_name = album.apple_music_album&.artist_name
+          apple_music_album_name = album.apple_music_album&.name
+          # YouTube Music
+          youtube_music_album_url = album.ytmusic_album&.url
+          youtube_music_album_artist_name = album.ytmusic_album&.artist_name
+          youtube_music_album_name = album.ytmusic_album&.name
+          # LINE MUSIC
+          line_music_album_url = album.line_music_album&.url
+          line_music_album_artist_name = album.line_music_album&.artist_name
+          line_music_album_name = album.line_music_album&.name
+
+          # track_numberでソート
+          tracks = album.tracks.sort_by do |track|
+            track.apple_music_tracks&.find { _1.album == album }&.track_number || track.spotify_tracks&.find { _1.album == album }&.track_number
+          end
+
+          tracks.each do |track|
             isrc = track.isrc
             apple_music_track = track.apple_music_tracks&.find { _1.album == album }
             line_music_track = track.line_music_tracks&.find { _1.album == album }
             spotify_track = track.spotify_tracks&.find { _1.album == album }
+            ytmusic_track = track.ytmusic_tracks&.find { _1.album == album }
 
             track_number = apple_music_track&.track_number || spotify_track&.track_number
 
-            apple_music_artist_name = apple_music_track&.artist_name
-            apple_music_track_url = apple_music_track&.url
-            apple_music_track_name = apple_music_track&.name
-
-            line_music_artist_name = line_music_track&.artist_name
-            line_music_track_url = line_music_track&.url
-            line_music_track_name = line_music_track&.name
-
-            spotify_artist_name = spotify_track&.artist_name
+            # Spotify
             spotify_track_url = spotify_track&.url
             spotify_track_name = spotify_track&.name
-            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{circle}\t#{spotify_album_artist_name}\t#{spotify_album_name}\t#{spotify_artist_name}\t#{spotify_track_name}\t#{spotify_album_url}\t#{spotify_track_url}\t#{apple_music_album_artist_name}\t#{apple_music_album_name}\t#{apple_music_artist_name}\t#{apple_music_track_name}\t#{apple_music_album_url}\t#{apple_music_track_url}\t#{line_music_album_artist_name}\t#{line_music_album_name}\t#{line_music_artist_name}\t#{line_music_track_name}\t#{line_music_album_url}\t#{line_music_track_url}")
+            # Apple Music
+            apple_music_track_url = apple_music_track&.url
+            apple_music_track_name = apple_music_track&.name
+            # YouTube Music
+            youtube_music_track_url = ytmusic_track&.url
+            youtube_music_track_name = ytmusic_track&.name
+            # LINE MUSIC
+            line_music_track_url = line_music_track&.url
+            line_music_track_name = line_music_track&.name
+            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{circle}\t#{spotify_album_artist_name}\t#{spotify_album_name}\t#{spotify_track_name}\t#{spotify_album_url}\t#{spotify_track_url}\t#{apple_music_album_artist_name}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{apple_music_album_url}\t#{apple_music_track_url}\t#{youtube_music_album_artist_name}\t#{youtube_music_album_name}\t#{youtube_music_track_name}\t#{youtube_music_album_url}\t#{youtube_music_track_url}\t#{line_music_album_artist_name}\t#{line_music_album_name}\t#{line_music_track_name}\t#{line_music_album_url}\t#{line_music_track_url}")
           end
         end
       end
