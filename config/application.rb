@@ -23,6 +23,8 @@ Bundler.require(*Rails.groups)
 
 require_relative '../lib/redis_pool'
 require_relative '../lib/line_music'
+require_relative '../lib/ytmusic'
+require_relative '../lib/similar'
 
 module TouhouMusicDiscover
   class Application < Rails::Application

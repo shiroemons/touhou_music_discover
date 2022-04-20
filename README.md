@@ -163,6 +163,23 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails apple_music:update_apple_music_tracks
   ```
 
+### YouTube Music
+
+- YouTube Music アルバムを検索してアルバム情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails ytmusic:search_albums_and_save
+  ```
+
+- YouTube Music アルバム情報からトラック情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails ytmusic:album_tracks_save
+  ```
+
+- YouTube Music アルバムとトラック情報を更新
+  ```shell
+  docker-compose run --rm web bin/rails ytmusic:update_album_and_tracks
+  ```
+
 ### LINE MUSIC
 
 - LINE MUSIC アルバムを検索して情報を取得

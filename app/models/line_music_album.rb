@@ -2,7 +2,7 @@
 
 class LineMusicAlbum < ApplicationRecord
   has_many :line_music_tracks,
-           -> { order(Arel.sql('line_music_tracks.track_number ASC')) },
+           -> { order(Arel.sql('line_music_tracks.disc_number ASC, line_music_tracks.track_number ASC')) },
            inverse_of: :line_music_album,
            dependent: :destroy
 
