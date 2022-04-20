@@ -1,5 +1,7 @@
 <h1>Albums</h1>
 
+<%== pagy_nav(@pagy) %>
+
 <table>
   <thead>
     <tr>
@@ -7,6 +9,7 @@
       <th>Circle</th>
       <th>Spotify</th>
       <th>Apple Music</th>
+      <th>YouTube Music</th>
       <th>LINE MUSIC</th>
     </tr>
   </thead>
@@ -16,7 +19,6 @@
       <td><%= record.jan_code %></td>
       <td>
         <%= record.circle_name %>
-
       </td>
       <td>
         <% if record.spotify_album.present? %>
@@ -37,6 +39,15 @@
         <% end %>
       </td>
       <td>
+        <% if record.ytmusic_album.present? %>
+          <% ytm_album = record.ytmusic_album %>
+          <%= ytm_album.name %><br/>
+          <img src="<%= ytm_album.image_url %>" alt="<%= ytm_album.name %>" width="300" />
+        <% else %>
+          No Album
+        <% end %>
+      </td>
+      <td>
         <% if record.line_music_album.present? %>
           <% lm_album = record.line_music_album %>
           <%= lm_album.name %><br/>
@@ -49,6 +60,5 @@
     <% end %>
   </tbody>
 </table>
-
 
 <%== pagy_nav(@pagy) %>
