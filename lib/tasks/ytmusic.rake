@@ -9,8 +9,6 @@ namespace :ytmusic do
       count += 1
       print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
 
-      next if album.jan_code == '4580547320978' # MICMNIS - Event Horizon
-
       sleep(0.2)
       s_album = album.spotify_album
       am_album = album.apple_music_album
