@@ -168,7 +168,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_apple.json', 'w') do |f|
+      File.open('tmp/apple_music_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(apple_music_songs)
       end
 
@@ -185,7 +185,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_apple_tsa.json', 'w') do |f|
+      File.open('tmp/apple_music_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(apple_music_tsa_songs)
       end
 
@@ -201,7 +201,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_youtube.json', 'w') do |f|
+      File.open('tmp/youtube_music_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(ytmusic_songs)
       end
 
@@ -218,7 +218,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_youtube_tsa.json', 'w') do |f|
+      File.open('tmp/youtube_music_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(ytmusic_tsa_songs)
       end
 
@@ -234,7 +234,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_line.json', 'w') do |f|
+      File.open('tmp/line_music_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(line_music_songs)
       end
 
@@ -251,7 +251,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_line_tsa.json', 'w') do |f|
+      File.open('tmp/line_music_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(line_music_tsa_songs)
       end
 
@@ -267,7 +267,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_spotify.json', 'w') do |f|
+      File.open('tmp/spotify_songs.jso', 'w') do |f|
         f.puts JSON.pretty_generate(spotify_songs)
       end
 
@@ -284,7 +284,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/touhou_music_song_spotify_tsa.json', 'w') do |f|
+      File.open('tmp/spotify_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(spotify_tsa_songs)
       end
     end
