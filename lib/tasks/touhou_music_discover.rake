@@ -189,6 +189,39 @@ namespace :touhou_music_discover do
         f.puts JSON.pretty_generate(apple_music_tsa_songs)
       end
 
+      ytmusic_songs = []
+      YtmusicAlbum.includes(ytmusic_tracks: :track).is_touhou.order(release_year: :asc, id: :asc).each do |album|
+        album.ytmusic_tracks.sort_by(&:track_number).each do |track|
+          next unless track.is_touhou
+
+          track_name = track.name
+          collection_name = album.name
+          url = track.url
+          ytmusic_songs.push({ title: track_name, collection_name:, url: })
+        end
+      end
+
+      File.open('tmp/touhou_music_song_youtube.json', 'w') do |f|
+        f.puts JSON.pretty_generate(ytmusic_songs)
+      end
+
+      ytmusic_tsa_songs = []
+      albums = YtmusicAlbum.includes(album: :circles, ytmusic_tracks: :track).is_touhou.order(release_year: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums.each do |album|
+        album.ytmusic_tracks.sort_by(&:track_number).each do |track|
+          next unless track.is_touhou
+
+          track_name = track.name
+          collection_name = album.name
+          url = track.url
+          ytmusic_tsa_songs.push({ title: track_name, collection_name:, url: })
+        end
+      end
+
+      File.open('tmp/touhou_music_song_youtube_tsa.json', 'w') do |f|
+        f.puts JSON.pretty_generate(ytmusic_tsa_songs)
+      end
+
       line_music_songs = []
       LineMusicAlbum.includes(line_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
         album.line_music_tracks.sort_by(&:track_number).each do |track|
