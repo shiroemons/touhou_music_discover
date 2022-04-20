@@ -2,7 +2,7 @@
 
 class AppleMusicAlbum < ApplicationRecord
   has_many :apple_music_tracks,
-           -> { order(Arel.sql('apple_music_tracks.track_number ASC')) },
+           -> { order(Arel.sql('apple_music_tracks.disc_number ASC, apple_music_tracks.track_number ASC')) },
            inverse_of: :apple_music_album,
            dependent: :destroy
 

@@ -2,7 +2,7 @@
 
 class SpotifyAlbum < ApplicationRecord
   has_many :spotify_tracks,
-           -> { order(Arel.sql('spotify_tracks.track_number ASC')) },
+           -> { order(Arel.sql('spotify_tracks.disc_number ASC, spotify_tracks.track_number ASC')) },
            inverse_of: :spotify_album,
            dependent: :destroy
 
