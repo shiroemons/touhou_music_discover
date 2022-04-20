@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 class YtmusicAlbum < ApplicationRecord
+  has_many :ytmusic_tracks,
+           -> { order(Arel.sql('ytmusic_tracks.track_number ASC')) },
+           inverse_of: :ytmusic_album,
+           dependent: :destroy
+
   belongs_to :album
 
   delegate :jan_code, :is_touhou, to: :album, allow_nil: true
@@ -16,7 +21,7 @@ class YtmusicAlbum < ApplicationRecord
     '4580547315028' => 'MPREb_3LbKcm9Blf0', # SOUND HOLIC - 幻想★あ･ら･もーど
     '4580547315783' => 'MPREb_mTu9AJ0IMQS', # Blackscreen/t0m0h1r0/beth_tear/矢追春樹 - Parallels
     '4580547318647' => 'MPREb_N0ObSy2IBoB',	# 彩音 〜xi-on〜 - Quartet -カルテット-
-    #    '4580547320978' => '', # MICMNIS - Event Horizon
+    '4580547320978' => 'MPREb_YWnLG9wPJbM', # しもしゃん(MICMNIS) - Event Horizon
     #    '4580547331653' => '',	# Amateras Records - 恋繋エピローグ
     #    '4580547331783' => '',	# EastNewSound - Lyrical Crimson
     #    '4580547311440' => '',	# 豚乙女 - 東方猫鍵盤9
