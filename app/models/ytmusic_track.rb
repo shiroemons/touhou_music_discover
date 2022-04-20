@@ -26,6 +26,14 @@ class YtmusicTrack < ApplicationRecord
     ytmusic_track.update(payload: ytm_track)
   end
 
+  def update_track(ytm_track)
+    update(
+      name: ytm_track['title'],
+      track_number: ytm_track['track_number'],
+      payload: ytm_track
+    )
+  end
+
   def artist_name
     payload['artists']&.map{_1['name']}&.join(' / ')
   end
