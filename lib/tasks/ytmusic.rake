@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 namespace :ytmusic do
-  desc 'YouTubeMUSIC アルバムを検索してアルバム情報を取得'
+  desc 'YouTube Music アルバムを検索してアルバム情報を取得'
   task search_albums_and_save: :environment do
     max_count = Album.missing_ytmusic_album.count
     count = 0
@@ -48,7 +48,7 @@ namespace :ytmusic do
     end
   end
 
-  desc 'YouTubeMUSIC アルバムを検索してアルバム情報を取得'
+  desc 'YouTube Music アルバム情報からトラック情報を取得'
   task album_tracks_save: :environment do
     max_count = Album.count
     count = 0
@@ -82,8 +82,8 @@ namespace :ytmusic do
     end
   end
 
-  desc 'YouTubeMUSIC アルバムの詳細情報を取得'
-  task albums_update: :environment do
+  desc 'YouTube Music アルバムとトラック情報を更新'
+  task update_album_and_tracks: :environment do
     max_count = YtmusicAlbum.count
     count = 0
     YtmusicAlbum.all.each do |ytmusic_album|
@@ -92,6 +92,12 @@ namespace :ytmusic do
 
       album = YTMusic::Album.find(ytmusic_album.browse_id)
       ytmusic_album.update_album(album) if album
+
+      tracks = ytmusic_album.payload['tracks']
+      ytmusic_album.ytmusic_tracks.each do |ytm_track|
+        track = tracks.find { _1['track_number'] == ytm_track.track_number }
+        ytm_track.update_track(track) if track
+      end
     end
   end
 end
