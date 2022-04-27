@@ -61,7 +61,7 @@ module YTMusic
         'x-youtube-chrome-connected': 'source=Chrome,mode=0,enable_account_consistency=true,supervised=false,consistency_enabled_by_default=false',
         'x-origin': YTM_DOMAIN,
         origin: YTM_DOMAIN,
-        cookie: ENV['YOUTUBE_MUSIC_COOKIE']
+        cookie: ENV.fetch('YOUTUBE_MUSIC_COOKIE', nil)
       }
     end
 
@@ -98,7 +98,7 @@ module YTMusic
     end
 
     def sapisid
-      @sapisid ||= CGI::Cookie.parse(ENV['YOUTUBE_MUSIC_COOKIE'])['SAPISID']&.first
+      @sapisid ||= CGI::Cookie.parse(ENV.fetch('YOUTUBE_MUSIC_COOKIE', nil))['SAPISID']&.first
     end
 
     def auth_token

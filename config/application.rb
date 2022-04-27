@@ -43,8 +43,8 @@ module TouhouMusicDiscover
     # Middleware like session, flash, cookies can be added back manually.
     # Skip views, helpers and assets when generating a new resource.
 
-    RSpotify.authenticate(ENV['SPOTIFY_CLIENT_ID'], ENV['SPOTIFY_CLIENT_SECRET']) if ENV['SPOTIFY_CLIENT_ID'] && ENV['SPOTIFY_CLIENT_SECRET']
+    RSpotify.authenticate(ENV.fetch('SPOTIFY_CLIENT_ID', nil), ENV.fetch('SPOTIFY_CLIENT_SECRET', nil)) if ENV.fetch('SPOTIFY_CLIENT_ID', nil) && ENV.fetch('SPOTIFY_CLIENT_SECRET', nil)
 
-    config.cache_store = :redis_store, "#{ENV['REDIS_URL']}/0/cache", { expires_in: 90.minutes }
+    config.cache_store = :redis_store, "#{ENV.fetch('REDIS_URL', nil)}/0/cache", { expires_in: 90.minutes }
   end
 end
