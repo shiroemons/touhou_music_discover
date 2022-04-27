@@ -314,7 +314,7 @@ namespace :touhou_music_discover do
     desc 'GitHub fetch Touhou music with original songs file import'
     task fetch_touhou_music_with_original_songs: :environment do
       url = 'https://raw.githubusercontent.com/shiroemons/touhou_streaming_with_original_songs/main/touhou_music_with_original_songs.tsv'
-      token = ENV['GITHUB_TOKEN']
+      token = ENV.fetch('GITHUB_TOKEN', nil)
       if token.present?
         headers = { 'Authorization' => "token #{token}" }
         response = Faraday.get(url, nil, headers)

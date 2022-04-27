@@ -26,7 +26,7 @@ class RedisPool
       @pool ||= ConnectionPool.new(
         size: ENV.fetch('RAILS_MAX_THREADS', 2).to_i,
         timeout: ENV.fetch('REDIS_TIMEOUT', 1).to_i
-      ) { Redis.new(url: ENV['REDIS_URL']) }
+      ) { Redis.new(url: ENV.fetch('REDIS_URL', nil)) }
     end
   end
 end
