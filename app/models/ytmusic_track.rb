@@ -1,11 +1,15 @@
 # frozen_string_literal: true
 
 class YtmusicTrack < ApplicationRecord
+  default_scope { includes(:album).order('albums.jan_code desc').order(track_number: :asc) }
+
   belongs_to :album
   belongs_to :ytmusic_album
   belongs_to :track
 
+  delegate :jan_code, :is_touhou, :circle_name, to: :album, allow_nil: true
   delegate :isrc, :is_touhou, to: :track, allow_nil: true
+  delegate :image_url, to: :ytmusic_album, allow_nil: true
 
   scope :video_id, ->(video_id) { find_by(video_id:) }
   scope :album_browse_id, ->(browse_id) { eager_load(:ytmusic_album).where(ytmusic_album: { browse_id: }) }
