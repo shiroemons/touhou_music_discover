@@ -10,7 +10,7 @@ module SpotifyClient
         keyword = "#{KEYWORD} year:#{year}"
         offset = 0
         loop do
-          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:)
+          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:, market: 'JP')
           s_albums.each do |s_album|
             spotify_album = if SpotifyAlbum.exists?(spotify_id: s_album.id)
                               SpotifyAlbum.find_by(spotify_id: s_album.id)
