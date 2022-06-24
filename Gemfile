@@ -25,10 +25,12 @@ end
 
 gem 'amatch'
 gem 'apple_music'
+gem 'avo'
 gem 'connection_pool'
 gem 'faraday'
 gem 'meilisearch-rails'
 gem 'pagy'
+gem 'ransack'
 gem 'redis'
 gem 'redis-rails'
 gem 'retryable'

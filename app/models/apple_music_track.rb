@@ -1,11 +1,15 @@
 # frozen_string_literal: true
 
 class AppleMusicTrack < ApplicationRecord
+  default_scope { includes(:album).order('albums.jan_code desc').order(disc_number: :asc).order(track_number: :asc) }
+
   belongs_to :album, optional: true
   belongs_to :apple_music_album
   belongs_to :track
 
+  delegate :jan_code, :is_touhou, :circle_name, to: :album, allow_nil: true
   delegate :isrc, :is_touhou, to: :track, allow_nil: true
+  delegate :image_url, to: :apple_music_album, allow_nil: true
 
   scope :apple_music_id, ->(apple_music_id) { find_by(apple_music_id:) }
   scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 class Album < ApplicationRecord
+  default_scope { order(jan_code: :desc) }
   TOUHOU_MUSIC_LABEL = '東方同人音楽流通'
 
   has_many :circles_albums, dependent: :destroy

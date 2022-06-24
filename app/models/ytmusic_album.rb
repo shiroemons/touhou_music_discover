@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class YtmusicAlbum < ApplicationRecord
+  default_scope { includes(:album).order('albums.jan_code desc') }
+
   has_many :ytmusic_tracks,
            -> { order(Arel.sql('ytmusic_tracks.track_number ASC')) },
            inverse_of: :ytmusic_album,
@@ -8,7 +10,7 @@ class YtmusicAlbum < ApplicationRecord
 
   belongs_to :album
 
-  delegate :jan_code, :is_touhou, to: :album, allow_nil: true
+  delegate :jan_code, :is_touhou, :circle_name, to: :album, allow_nil: true
 
   scope :is_touhou, -> { eager_load(:album).where(albums: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
