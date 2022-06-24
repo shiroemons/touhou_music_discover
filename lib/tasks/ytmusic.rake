@@ -73,9 +73,9 @@ namespace :ytmusic do
       am_album = album.apple_music_album
       next if am_album.blank?
 
-      am_album.apple_music_tracks.each_with_index do |s_track, i|
+      am_album.apple_music_tracks.each_with_index do |am_track, i|
         ytm_track = ytm_tracks[i]
-        YtmusicTrack.save_track(album.id, s_track.track_id, ytm_album, ytm_track)
+        YtmusicTrack.save_track(album.id, am_track.track_id, ytm_album, ytm_track)
       end
     end
   end
