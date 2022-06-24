@@ -65,6 +65,8 @@ namespace :ytmusic do
       if s_album.present?
         s_album.spotify_tracks.each_with_index do |s_track, i|
           ytm_track = ytm_tracks[i]
+          next if ytm_track.nil?
+
           YtmusicTrack.save_track(album.id, s_track.track_id, ytm_album, ytm_track)
         end
         next
@@ -75,8 +77,24 @@ namespace :ytmusic do
 
       am_album.apple_music_tracks.each_with_index do |am_track, i|
         ytm_track = ytm_tracks[i]
+        next if ytm_track.nil?
+
         YtmusicTrack.save_track(album.id, am_track.track_id, ytm_album, ytm_track)
       end
+    end
+  end
+
+  desc 'YouTube Music アルバム情報を取得'
+  task fetch_albums: :environment do
+    max_count = YtmusicAlbum.where(url: nil).count
+    count = 0
+    YtmusicAlbum.where(url: nil).each do |ytmusic_album|
+      count += 1
+      print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+
+      album = YTMusic::Album.find(ytmusic_album.browse_id)
+      url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
+      ytmusic_album.update_album(album, url) if album
     end
   end
 
@@ -89,7 +107,8 @@ namespace :ytmusic do
       print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
 
       album = YTMusic::Album.find(ytmusic_album.browse_id)
-      ytmusic_album.update_album(album) if album
+      url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
+      ytmusic_album.update_album(album, url) if album
 
       tracks = ytmusic_album.payload['tracks']
       ytmusic_album.ytmusic_tracks.each do |ytm_track|

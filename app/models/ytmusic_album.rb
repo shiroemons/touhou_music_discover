@@ -105,9 +105,11 @@ class YtmusicAlbum < ApplicationRecord
     true
   end
 
-  def update_album(album)
+  def update_album(album, url)
     update(
       name: album.title,
+      release_year: album.year,
+      url:,
       playlist_url: album.playlist_url,
       total_tracks: album.track_total_count,
       payload: album.as_json

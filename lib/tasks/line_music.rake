@@ -66,6 +66,26 @@ namespace :line_music do
     puts "\n完了しました。"
   end
 
+  desc 'LINE MUSIC LineMusicAlbumの情報を取得'
+  task fetch_albums: :environment do
+    count = 0
+    max_count = LineMusicAlbum.where(url: nil).count
+    LineMusicAlbum.where(url: nil).all.each do |line_music_album|
+      lm_album = LineMusic::Album.find(line_music_album.line_music_id)
+      if lm_album.present?
+        line_music_album.update(
+          name: lm_album.album_title,
+          url: "https://music.line.me/webapp/album/#{line_music_album.line_music_id}",
+          total_tracks: lm_album.track_total_count,
+          release_date: lm_album.release_date,
+          payload: lm_album.as_json
+        )
+      end
+      count += 1
+      print "\rLINE MUSIC アルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+    end
+  end
+
   desc 'LINE MUSIC LineMusicAlbumの情報を更新'
   task update_line_music_albums: :environment do
     count = 0

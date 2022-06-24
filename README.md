@@ -175,6 +175,20 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails ytmusic:album_tracks_save
   ```
 
+- 取得できなかったアルバムを検索
+  ```ruby
+  # キーワードにサークル名やアルバム名を入れる
+  result = YTMusic::Album.search("キーワード")
+  result.data[:albums].each do |a|
+    puts "#{a.title}\t#{a.browse_id}"
+  end;nil
+  ```
+
+- YouTube Music アルバム情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails ytmusic:fetch_albums
+  ```
+
 - YouTube Music アルバムとトラック情報を更新
   ```shell
   docker-compose run --rm web bin/rails ytmusic:update_album_and_tracks
@@ -190,6 +204,11 @@ cp .env.development.local.example .env.development.local
 - LINE MUSIC アルバムのトラック情報を取得
   ```shell
   docker-compose run --rm web bin/rails line_music:album_tracks_find_and_save
+  ```
+
+- LINE MUSIC アルバム情報を取得
+  ```shell
+  docker-compose run --rm web bin/rails line_music:fetch_albums
   ```
 
 - LINE MUSIC LineMusicAlbumの情報を更新
