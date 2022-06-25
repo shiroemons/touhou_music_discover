@@ -63,8 +63,8 @@ namespace :ytmusic do
 
       s_album = album.spotify_album
       if s_album.present?
-        s_album.spotify_tracks.each_with_index do |s_track, i|
-          ytm_track = ytm_tracks[i]
+        s_album.spotify_tracks.each do |s_track|
+          ytm_track = ytm_tracks.find { _1['track_number'] == s_track.track_number }
           next if ytm_track.nil?
 
           YtmusicTrack.save_track(album.id, s_track.track_id, ytm_album, ytm_track)
@@ -75,8 +75,8 @@ namespace :ytmusic do
       am_album = album.apple_music_album
       next if am_album.blank?
 
-      am_album.apple_music_tracks.each_with_index do |am_track, i|
-        ytm_track = ytm_tracks[i]
+      am_album.apple_music_tracks.each do |am_track|
+        ytm_track = ytm_tracks.find { _1['track_number'] == am_track.track_number }
         next if ytm_track.nil?
 
         YtmusicTrack.save_track(album.id, am_track.track_id, ytm_album, ytm_track)
