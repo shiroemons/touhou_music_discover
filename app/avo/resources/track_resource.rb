@@ -10,14 +10,14 @@ class TrackResource < Avo::BaseResource
   # end
 
   field :id, as: :id, hide_on: [:index]
-  field :album, as: :belongs_to
+  field :album, as: :belongs_to, searchable: true
   field :isrc, as: :text
   field :is_touhou, as: :boolean
 
-  field :original_songs, as: :has_many, through: :tracks_original_songs
+  field :original_songs, as: :has_many, through: :tracks_original_songs, searchable: true
 
-  field :apple_music_tracks, as: :has_many
-  field :line_music_tracks, as: :has_many
-  field :spotify_tracks, as: :has_many
-  field :ytmusic_tracks, as: :has_many
+  field :apple_music_tracks, as: :has_many, searchable: true
+  field :line_music_tracks, as: :has_many, searchable: true
+  field :spotify_tracks, as: :has_many, searchable: true
+  field :ytmusic_tracks, as: :has_many, searchable: true
 end
