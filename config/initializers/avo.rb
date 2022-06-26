@@ -61,20 +61,50 @@ Avo.configure do |config|
   # end
 
   ## == Menus ==
-  # config.main_menu = -> {
-  #   section "Dashboards", icon: "dashboards" do
-  #     all_dashboards
-  #   end
+  config.main_menu = lambda {
+    section 'Dashboards', icon: 'dashboards' do
+      all_dashboards
+    end
 
-  #   section "Resources", icon: "resources" do
-  #     all_resources
-  #   end
+    section 'Master data', icon: 'resources' do
+      resource :original
+      resource :original_song
+      resource :master_artist
+    end
 
-  #   section "Tools", icon: "tools" do
-  #     all_tools
-  #   end
-  # }
-  # config.profile_menu = -> {
-  #   link "Profile", path: "/avo/profile", icon: "user-circle"
-  # }
+    section 'Resources', icon: 'resources' do
+      group 'Common' do
+        resource :album
+        resource :track
+      end
+
+      group 'Spotify' do
+        resource :spotify_album
+        resource :spotify_track
+        resource :spotify_track_audio_feature
+      end
+
+      group 'Apple Music' do
+        resource :apple_music_album
+        resource :apple_music_track
+      end
+
+      group 'YouTube Music' do
+        resource :ytmusic_album
+        resource :ytmusic_track
+      end
+
+      group 'LINE MUSIC' do
+        resource :line_music_album
+        resource :line_music_track
+      end
+    end
+
+    #   section "Tools", icon: "tools" do
+    #     all_tools
+    #   end
+    # }
+    # config.profile_menu = -> {
+    #   link "Profile", path: "/avo/profile", icon: "user-circle"
+  }
 end

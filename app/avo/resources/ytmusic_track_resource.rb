@@ -14,16 +14,16 @@ class YtmusicTrackResource < Avo::BaseResource
 
   field :image_url, as: :external_image, name: 'image', hide_on: [:forms], as_avatar: :rounded
   field :id, as: :id, hide_on: [:index]
-  field :album, as: :belongs_to, name: 'jan code'
-  field :track, as: :belongs_to, name: 'isrc'
+  field :album, as: :belongs_to, name: 'jan code', searchable: true
+  field :track, as: :belongs_to, name: 'isrc', searchable: true
   field :circle_name, as: :text, hide_on: [:forms]
-  field :ytmusic_album, as: :belongs_to
-  field :name, as: :text
+  field :ytmusic_album, as: :belongs_to, searchable: true
+  field :name, as: :text, readonly: true
   field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
     "[#{model.circle_name}][#{model.ytmusic_album.name}] #{model.name}"
   end
-  field :track_number, as: :number
-  field :video_id, as: :text
-  field :playlist_id, as: :text
-  field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') }
+  field :track_number, as: :number, readonly: true
+  field :video_id, as: :text, required: true
+  field :playlist_id, as: :text, required: true
+  field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 end
