@@ -79,7 +79,7 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.11.0)
+    avo (2.11.1)
       active_link_to
       addressable
       breadcrumbs_on_rails
@@ -94,7 +94,7 @@ GEM
       pagy
       pundit
       rails (>= 6.0)
-      view_component
+      view_component (= 2.60)
       zeitwerk
     bootsnap (1.12.0)
       msgpack (~> 1.2)
@@ -353,7 +353,7 @@ GEM
       unf_ext
     unf_ext (0.0.8)
     unicode-display_width (2.2.0)
-    view_component (2.61.0)
+    view_component (2.60.0)
       activesupport (>= 5.0.0, < 8.0)
       method_source (~> 1.0)
     webpacker (5.4.3)
