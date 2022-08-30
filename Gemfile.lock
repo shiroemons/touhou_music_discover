@@ -118,7 +118,7 @@ GEM
       railties (>= 3.2)
     dry-initializer (3.1.1)
     erubi (1.11.0)
-    faraday (1.10.1)
+    faraday (1.10.2)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
       faraday-excon (~> 1.1)
