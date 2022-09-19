@@ -69,7 +69,7 @@ module SpotifyClient
     def self.update_albums(spotify_albums)
       s_albums = RSpotify::Album.find(spotify_albums.map(&:spotify_id))
       s_albums.each do |s_album|
-        spotify_album = spotify_albums.find{_1.spotify_id == s_album.id}
+        spotify_album = spotify_albums.find {_1.spotify_id == s_album.id}
         spotify_album&.update(
           album_type: s_album.album_type,
           name: s_album.name,

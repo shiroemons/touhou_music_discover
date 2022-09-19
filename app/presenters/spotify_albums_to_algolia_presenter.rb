@@ -46,7 +46,7 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
       end || [],
       image_url: album.spotify_album_payload&.dig('images')&.first&.dig('url').presence || '',
       release_date: album.spotify_album_release_date,
-      tracks: track_objects(album.spotify_tracks.sort_by{ [_1.disc_number, _1.track_number] })
+      tracks: track_objects(album.spotify_tracks.sort_by { [_1.disc_number, _1.track_number] })
     }
   end
 

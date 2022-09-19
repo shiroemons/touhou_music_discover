@@ -39,7 +39,7 @@ class LineMusicAlbumsToAlgoliaPresenter < Presenter
       end,
       image_url: album.line_music_album_payload&.dig('image_url').presence || '',
       release_date: album.line_music_album_release_date,
-      tracks: track_objects(album.line_music_tracks.sort_by{ [_1.disc_number, _1.track_number] })
+      tracks: track_objects(album.line_music_tracks.sort_by { [_1.disc_number, _1.track_number] })
     }
   end
 

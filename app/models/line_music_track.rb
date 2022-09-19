@@ -33,6 +33,6 @@ class LineMusicTrack < ApplicationRecord
   end
 
   def artist_name
-    payload['artists']&.map{_1['artist_name']}&.join(' / ')
+    payload['artists']&.map {_1['artist_name']}&.join(' / ')
   end
 end

@@ -5,7 +5,7 @@ module SpotifyClient
     def self.update_tracks(spotify_tracks)
       s_tracks = RSpotify::Track.find(spotify_tracks.map(&:spotify_id))
       s_tracks.each do |s_track|
-        spotify_track = spotify_tracks.find{_1.spotify_id == s_track.id}
+        spotify_track = spotify_tracks.find {_1.spotify_id == s_track.id}
         spotify_track&.update(
           spotify_id: s_track.id,
           name: s_track.name,

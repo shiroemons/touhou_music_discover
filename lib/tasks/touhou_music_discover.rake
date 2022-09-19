@@ -45,7 +45,7 @@ namespace :touhou_music_discover do
         f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url\tyoutube_music_album_artist_name\tyoutube_music_album_name\tyoutube_music_track_name\tyoutube_music_album_url\tyoutube_music_track_url\tline_music_album_artist_name\tline_music_album_name\tline_music_track_name\tline_music_album_url\tline_music_track_url")
         Album.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
-          circle = album.circles&.map{_1.name}&.join(' / ')
+          circle = album.circles&.map {_1.name}&.join(' / ')
 
           # Spotify
           spotify_album_url = album.spotify_album&.url
@@ -102,7 +102,7 @@ namespace :touhou_music_discover do
         f.puts("jan\tcircle\tspotify_album_name\tspotify_album_url\tapple_music_album_name\tapple_music_album_url\tytmusic_album_name\tytmusic_album_url\tline_music_album_name\tline_music_album_url")
         Album.includes(:circles, :apple_music_album, :spotify_album, :line_music_album, :ytmusic_album).order(jan_code: :asc).each do |album|
           jan = album.jan_code
-          circle = album.circles&.map{_1.name}&.join(' / ')
+          circle = album.circles&.map {_1.name}&.join(' / ')
           spotify_album_name = album.spotify_album&.name
           spotify_album_url = album.spotify_album&.url
           apple_music_album_name = album.apple_music_album&.name
