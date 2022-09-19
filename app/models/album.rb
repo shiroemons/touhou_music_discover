@@ -33,6 +33,6 @@ class Album < ApplicationRecord
   scope :jan, ->(jan) { find_by(jan_code: jan) }
 
   def circle_name
-    circles&.map { _1.name }&.join(' / ')
+    circles&.map(&:name)&.join(' / ')
   end
 end
