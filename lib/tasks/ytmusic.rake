@@ -16,7 +16,7 @@ namespace :ytmusic do
         browse_id = YtmusicAlbum::JAN_TO_ALBUM_BROWSE_IDS[album.jan_code]
         next if browse_id && YtmusicAlbum.find_and_save(browse_id, s_album)
 
-        spotify_artist_names = s_album.payload['artists'].filter { _1['name'] != 'ZUN' }&.map {_1['name']}&.join(' ')
+        spotify_artist_names = s_album.payload['artists'].filter { _1['name'] != 'ZUN' }&.map { _1['name'] }&.join(' ')
         if s_album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
           s_album_name = s_album.name.unicode_normalize.sub(/\(.*\z/, '').tr('０-９', '0-9').strip
           query = "#{s_album_name} #{spotify_artist_names}"

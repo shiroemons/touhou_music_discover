@@ -12,7 +12,7 @@ module YTMusic
       @playlist_id = flex_columns.dig('navigationEndpoint', 'watchEndpoint', 'playlistId')
       @url = "https://music.youtube.com/watch?v=#{@video_id}&list=#{@playlist_id}" if @video_id && @playlist_id
       @track_number = item.dig('index', 'runs', 0, 'text').to_i
-      artist_contents = item.dig('flexColumns', 1, 'musicResponsiveListItemFlexColumnRenderer', 'text', 'runs')&.filter { _1['text'] != '、'}
+      artist_contents = item.dig('flexColumns', 1, 'musicResponsiveListItemFlexColumnRenderer', 'text', 'runs')&.filter { _1['text'] != '、' }
       @artists = artist_contents.map { Artist.new _1 } if artist_contents.present?
       @duration = item.dig('fixedColumns', 0, 'musicResponsiveListItemFixedColumnRenderer', 'text', 'runs', 0, 'text')
       if @duration
