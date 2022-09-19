@@ -43,6 +43,6 @@ class SpotifyTrack < ApplicationRecord
   end
 
   def artist_name
-    payload['artists']&.map{_1['name']}&.join(' / ')
+    payload['artists']&.map { _1['name'] }&.join(' / ')
   end
 end

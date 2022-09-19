@@ -93,7 +93,7 @@ class LineMusicAlbum < ApplicationRecord
   end
 
   def artist_name
-    payload['artists']&.map{_1['artist_name']}&.join(' / ')
+    payload['artists']&.map { _1['artist_name'] }&.join(' / ')
   end
 
   def image_url

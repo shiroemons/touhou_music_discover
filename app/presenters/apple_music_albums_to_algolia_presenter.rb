@@ -43,7 +43,7 @@ class AppleMusicAlbumsToAlgoliaPresenter < Presenter
       ],
       image_url: album.apple_music_album_payload&.dig('attributes', 'artwork', 'url')&.sub('{w}x{h}', '500x500').presence || '',
       release_date: album.apple_music_album_release_date,
-      tracks: track_objects(album.apple_music_tracks.sort_by{ [_1.disc_number, _1.track_number] })
+      tracks: track_objects(album.apple_music_tracks.sort_by { [_1.disc_number, _1.track_number] })
     }
   end
 
