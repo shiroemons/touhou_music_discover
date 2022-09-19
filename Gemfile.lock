@@ -69,8 +69,8 @@ GEM
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-    addressable (2.8.0)
-      public_suffix (>= 2.0.2, < 5.0)
+    addressable (2.8.1)
+      public_suffix (>= 2.0.2, < 6.0)
     amatch (0.4.1)
       mize
       tins (~> 1.0)
@@ -79,7 +79,7 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.13.0)
+    avo (2.15.3)
       active_link_to
       addressable
       breadcrumbs_on_rails
@@ -90,6 +90,7 @@ GEM
       hotwire-rails
       httparty
       image_processing
+      inline_svg
       meta-tags
       pagy
       pundit
@@ -161,11 +162,14 @@ GEM
     image_processing (1.12.2)
       mini_magick (>= 4.9.5, < 5)
       ruby-vips (>= 2.0.17, < 3)
+    inline_svg (1.8.0)
+      activesupport (>= 3.0)
+      nokogiri (>= 1.6)
     jwt (2.3.0)
     listen (3.7.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
-    loofah (2.18.0)
+    loofah (2.19.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
     mail (2.7.1)
@@ -175,7 +179,7 @@ GEM
       httparty (>= 0.17.1, < 0.21.0)
     meilisearch-rails (0.7.2)
       meilisearch (~> 0.19.2)
-    meta-tags (2.17.0)
+    meta-tags (2.18.0)
       actionpack (>= 3.2.0, < 7.1)
     method_source (1.0.0)
     mime-types (3.4.1)
@@ -231,7 +235,7 @@ GEM
     pg (1.4.3)
     protocol (2.0.0)
       ruby_parser (~> 3.0)
-    public_suffix (4.0.7)
+    public_suffix (5.0.0)
     puma (5.6.5)
       nio4r (~> 2.0)
     pundit (2.2.0)
