@@ -25,7 +25,7 @@ class AppleMusicTrackResource < Avo::BaseResource
   field :label, as: :text, hide_on: [:index], readonly: true
   field :artist_name, as: :text, hide_on: [:index], readonly: true
   field :composer_name, as: :text, hide_on: [:index], readonly: true
-  field :release_date, as: :date, format: '%Y-%m-%d', readonly: true
+  field :release_date, as: :date, format: 'yyyy-LL-dd', readonly: true
   field :disc_number, as: :number, readonly: true
   field :track_number, as: :number, readonly: true
   field :duration_ms, as: :number, readonly: true

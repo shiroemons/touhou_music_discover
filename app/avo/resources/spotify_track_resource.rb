@@ -23,7 +23,7 @@ class SpotifyTrackResource < Avo::BaseResource
     "[#{model.circle_name}][#{model.spotify_album.name}] #{model.name}"
   end
   field :label, as: :text, hide_on: [:index], readonly: true
-  field :release_date, as: :date, format: '%Y-%m-%d', sortable: true, readonly: true
+  field :release_date, as: :date, format: 'yyyy-LL-dd', sortable: true, readonly: true
   field :disc_number, as: :number, readonly: true
   field :track_number, as: :number, readonly: true
   field :duration_ms, as: :number, sortable: true, readonly: true

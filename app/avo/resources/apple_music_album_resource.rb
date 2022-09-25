@@ -18,7 +18,7 @@ class AppleMusicAlbumResource < Avo::BaseResource
     "[#{model.circle_name}] #{model.name}"
   end
   field :label, as: :text, hide_on: [:index], readonly: true
-  field :release_date, as: :date, format: '%Y-%m-%d', sortable: true, readonly: true
+  field :release_date, as: :date, format: 'yyyy-LL-dd', sortable: true, readonly: true
   field :total_tracks, as: :number, sortable: true, readonly: true
   field :apple_music_id, as: :text, sortable: true
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]

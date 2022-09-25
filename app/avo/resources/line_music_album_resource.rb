@@ -19,7 +19,7 @@ class LineMusicAlbumResource < Avo::BaseResource
   end
   field :line_music_id, as: :text, required: true
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
-  field :release_date, as: :date, format: '%Y-%m-%d', readonly: true
+  field :release_date, as: :date, format: 'yyyy-LL-dd', readonly: true
   field :total_tracks, as: :number, readonly: true
 
   field :line_music_tracks, as: :has_many, searchable: true
