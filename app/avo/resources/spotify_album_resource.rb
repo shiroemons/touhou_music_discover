@@ -8,6 +8,13 @@ class SpotifyAlbumResource < Avo::BaseResource
   self.search_query = lambda {
     scope.ransack(name_cont: params[:q], album_circles_name_cont: params[:q], m: 'or').result(distinct: false)
   }
+  self.default_view_type = :grid
+
+  grid do
+    cover :image_url, as: :external_image, is_image: true, link_to_resource: true
+    title :name, as: :text, link_to_resource: true
+    body :circle_name, as: :text
+  end
 
   field :image_url, as: :external_image, name: 'image', hide_on: [:forms], as_avatar: :rounded
   field :album, as: :belongs_to, name: 'jan code', searchable: true
