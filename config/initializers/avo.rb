@@ -59,6 +59,7 @@ Avo.configure do |config|
   # config.set_initial_breadcrumbs do
   #   add_breadcrumb "Home", '/avo'
   # end
+  config.resource_controls_placement = :left
 
   ## == Menus ==
   config.main_menu = lambda {
