@@ -18,7 +18,11 @@ Avo.configure do |config|
   end
 
   ## == Authentication ==
-  # config.current_user_method = {}
+  user = Struct.new(:name)
+
+  config.current_user_method do
+    user.new({ name: 'Anonymous user' })
+  end
   # config.authenticate_with = {}
 
   ## == Authorization ==
