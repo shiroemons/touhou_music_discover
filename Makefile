@@ -42,10 +42,10 @@ minitest: ## Run test
 rubocop: ## Run rubocop
 	docker-compose run --rm web bundle exec rubocop
 
-rubocop: ## Run rubocop autocorrect
+rubocop-autocorrect: ## Run rubocop autocorrect
 	docker-compose run --rm web bundle exec rubocop --autocorrect
 
-rubocop: ## Run rubocop autocorrect-all
+rubocop-autocorrect-all: ## Run rubocop autocorrect-all
 	docker-compose run --rm web bundle exec rubocop --autocorrect-all
 
 bash: ## Run bash in web container
