@@ -26,7 +26,9 @@ class SpotifyTrackResource < Avo::BaseResource
   field :release_date, as: :date, format: 'yyyy-LL-dd', sortable: true, readonly: true
   field :disc_number, as: :number, readonly: true
   field :track_number, as: :number, readonly: true
-  field :duration_ms, as: :number, sortable: true, readonly: true
+  field :duration_ms, as: :number, sortable: true, readonly: true do |model|
+    Time.at(0, model.duration_ms, :millisecond).utc.strftime('%_M分%S秒')
+  end
   field :spotify_id, as: :text, required: true
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 end
