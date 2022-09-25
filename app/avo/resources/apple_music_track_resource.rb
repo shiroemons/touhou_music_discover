@@ -14,23 +14,23 @@ class AppleMusicTrackResource < Avo::BaseResource
 
   field :image_url, as: :external_image, name: 'image', hide_on: [:forms], as_avatar: :rounded
   field :id, as: :id, hide_on: [:index]
-  field :album, as: :belongs_to, name: 'jan code', searchable: true
-  field :track, as: :belongs_to, name: 'isrc', searchable: true
+  field :album, as: :belongs_to, name: 'jan code', hide_on: [:index], readonly: true
+  field :track, as: :belongs_to, name: 'isrc', hide_on: [:index], readonly: true
   field :circle_name, as: :text, hide_on: [:forms]
-  field :apple_music_album, as: :belongs_to, searchable: true
-  field :name, as: :text, sortable: true, readonly: true
+  field :apple_music_album, as: :belongs_to, readonly: true
+  field :name, as: :text, sortable: true, readonly: true, link_to_resource: true
   field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
     "[#{model.circle_name}][#{model.apple_music_album.name}] #{model.name}"
   end
   field :label, as: :text, hide_on: [:index], readonly: true
   field :artist_name, as: :text, hide_on: [:index], readonly: true
   field :composer_name, as: :text, hide_on: [:index], readonly: true
-  field :release_date, as: :date, format: 'yyyy-LL-dd', readonly: true
+  field :release_date, as: :date, format: 'yyyy-LL-dd', hide_on: [:index], readonly: true
   field :disc_number, as: :number, readonly: true
   field :track_number, as: :number, readonly: true
-  field :duration_ms, as: :number, readonly: true do |model|
+  field :duration_ms, as: :number, hide_on: [:index], readonly: true do |model|
     Time.at(0, model.duration_ms, :millisecond).utc.strftime('%_M分%S秒')
   end
-  field :apple_music_id, as: :text, required: true
+  field :apple_music_id, as: :text, required: true, hide_on: [:index]
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 end
