@@ -2,7 +2,7 @@
 
 class OriginalSongResource < Avo::BaseResource
   self.title = :title
-  self.description = '原曲'
+  self.translation_key = 'avo.resource_translations.original_song'
   self.includes = [:original]
   self.record_selector = false
   self.visible_on_sidebar = false

@@ -2,7 +2,7 @@
 
 class AppleMusicTrackResource < Avo::BaseResource
   self.title = :name
-  self.description = 'Apple Music トラック'
+  self.translation_key = 'avo.resource_translations.apple_music_track'
   self.includes = %i[album track apple_music_album]
   self.record_selector = false
   self.search_query = lambda {

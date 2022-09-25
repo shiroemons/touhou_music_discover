@@ -2,7 +2,7 @@
 
 class AppleMusicAlbumResource < Avo::BaseResource
   self.title = :name
-  self.description = 'Apple Music アルバム'
+  self.translation_key = 'avo.resource_translations.apple_music_album'
   self.includes = [:apple_music_tracks, { album: :circles }]
   self.record_selector = false
   self.search_query = lambda {

@@ -2,7 +2,8 @@
 
 class MasterArtistResource < Avo::BaseResource
   self.title = :name
-  self.description = 'アーティストのマスターデータ'
+  self.translation_key = 'avo.resource_translations.master_artist'
+  self.description = 'マスターデータ'
   self.includes = []
   self.record_selector = false
   self.search_query = lambda {

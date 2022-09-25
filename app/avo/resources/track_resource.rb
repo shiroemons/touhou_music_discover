@@ -2,7 +2,7 @@
 
 class TrackResource < Avo::BaseResource
   self.title = :isrc
-  self.description = 'トラック'
+  self.translation_key = 'avo.resource_translations.track'
   self.includes = [:original_songs]
   self.record_selector = false
   # self.search_query = -> do

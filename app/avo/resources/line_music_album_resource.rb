@@ -2,7 +2,7 @@
 
 class LineMusicAlbumResource < Avo::BaseResource
   self.title = :name
-  self.description = 'LINE MUSIC アルバム'
+  self.translation_key = 'avo.resource_translations.line_music_album'
   self.includes = [:line_music_tracks, { album: :circles }]
   self.record_selector = false
   self.search_query = lambda {

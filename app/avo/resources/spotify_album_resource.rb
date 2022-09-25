@@ -2,7 +2,7 @@
 
 class SpotifyAlbumResource < Avo::BaseResource
   self.title = :name
-  self.description = 'Spotify アルバム'
+  self.translation_key = 'avo.resource_translations.spotify_album'
   self.includes = [:spotify_tracks, { album: :circles }]
   self.record_selector = false
   self.search_query = lambda {

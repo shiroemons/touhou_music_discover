@@ -2,7 +2,7 @@
 
 class YtmusicAlbumResource < Avo::BaseResource
   self.title = :name
-  self.description = 'YouTube Music アルバム'
+  self.translation_key = 'avo.resource_translations.ytmusic_album'
   self.includes = [:ytmusic_tracks, { album: :circles }]
   self.record_selector = false
   self.search_query = lambda {

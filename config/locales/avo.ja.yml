@@ -84,10 +84,19 @@ ja:
         one: 'peep'
         other: 'peeps'
     resource_translations:
-      user:
-        zero: 'users'
-        one: 'user'
-        other: 'users'
+      original: '原作'
+      original_song: '原曲'
+      master_artist: 'アーティスト'
+      album: 'アルバム'
+      track: '楽曲'
+      spotify_album: 'Spotifyアルバム'
+      spotify_track: 'Spotify楽曲'
+      apple_music_album: 'AppleMusicアルバム'
+      apple_music_track: 'AppleMusic楽曲'
+      line_music_album: 'LINE MUSICアルバム'
+      line_music_track: 'LINE MUSIC楽曲'
+      ytmusic_album: 'YouTube Musicアルバム'
+      ytmusic_track: 'YouTube Music楽曲'
     reset_filters: 'Reset filters'
     not_authorized: 'You are not authorized to perform this action.'
     search:

@@ -38,12 +38,12 @@ Avo.configure do |config|
   # config.raise_error_on_missing_policy = false
 
   ## == Localization ==
-  # config.locale = 'en-US'
+  config.locale = 'ja'
 
   ## == Customization ==
   # config.app_name = 'Avocadelicious'
-  # config.timezone = 'UTC'
-  # config.currency = 'USD'
+  config.timezone = 'Asia/Tokyo'
+  config.currency = 'JPY'
   # config.per_page = 24
   # config.per_page_steps = [12, 24, 48, 72]
   # config.via_per_page = 8

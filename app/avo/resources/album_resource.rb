@@ -2,7 +2,7 @@
 
 class AlbumResource < Avo::BaseResource
   self.title = :jan_code
-  self.description = 'アルバム'
+  self.translation_key = 'avo.resource_translations.album'
   self.includes = %i[circles
                      tracks
                      apple_music_album
