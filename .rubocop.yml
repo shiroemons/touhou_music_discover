@@ -9,6 +9,7 @@ AllCops:
   NewCops: enable
   DisplayCopNames: true
   Exclude:
+    - bin/*
     - db/schema.rb
     - vendor/**/*
     - tmp/**/*
