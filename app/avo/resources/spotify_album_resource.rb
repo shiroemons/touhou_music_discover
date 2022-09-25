@@ -32,4 +32,7 @@ class SpotifyAlbumResource < Avo::BaseResource
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 
   field :spotify_tracks, as: :has_many, searchable: true
+
+  action FetchSpotifyAlbum
+  action UpdateSpotifyAlbum
 end

@@ -39,3 +39,8 @@ Metrics/ClassLength:
   Enabled: true
   Exclude:
     - app/policies/album_policy.rb
+
+Lint/UnusedBlockArgument:
+  Enabled: true
+  Exclude:
+    - app/avo/actions/*.rb

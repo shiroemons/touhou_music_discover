@@ -24,4 +24,6 @@ class SpotifyTrackAudioFeatureResource < Avo::BaseResource
   field :instrumentalness, as: :number, sortable: true, readonly: true
   field :liveness, as: :number, sortable: true, readonly: true
   field :speechiness, as: :number, sortable: true, readonly: true
+
+  action FetchSpotifyAudioFeatures
 end

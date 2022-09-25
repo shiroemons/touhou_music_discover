@@ -9,6 +9,10 @@ class SpotifyAlbumPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   def attach_spotify_tracks?
     false
   end

@@ -31,4 +31,6 @@ class SpotifyTrackResource < Avo::BaseResource
   end
   field :spotify_id, as: :text, required: true, hide_on: [:index]
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
+
+  action UpdateSpotifyTrack
 end
