@@ -343,7 +343,7 @@ GEM
     semantic_range (3.0.0)
     sexp_processor (4.16.1)
     sixarm_ruby_unaccent (1.2.0)
-    spring (4.0.0)
+    spring (4.1.0)
     stimulus-rails (1.1.0)
       railties (>= 6.0.0)
     strscan (3.0.4)
