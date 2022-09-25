@@ -13,7 +13,7 @@ class AlbumResource < Avo::BaseResource
                      ytmusic_album
                      ytmusic_tracks]
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(jan_code_cont: params[:q], m: 'or').result(distinct: false)
   }
 

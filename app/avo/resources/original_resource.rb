@@ -6,7 +6,7 @@ class OriginalResource < Avo::BaseResource
   self.includes = [:original_songs]
   self.record_selector = false
   self.visible_on_sidebar = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(title_cont: params[:q], m: 'or').result(distinct: false)
   }
 

@@ -5,7 +5,7 @@ class SpotifyTrackResource < Avo::BaseResource
   self.description = 'Spotify トラック'
   self.includes = %i[album track spotify_album]
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(name_cont: params[:q],
                   album_circles_name_cont: params[:q],
                   spotify_album_name_cont: params[:q],

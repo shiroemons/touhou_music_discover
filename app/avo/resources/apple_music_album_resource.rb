@@ -5,7 +5,7 @@ class AppleMusicAlbumResource < Avo::BaseResource
   self.description = 'Apple Music アルバム'
   self.includes = [:apple_music_tracks, { album: :circles }]
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(name_cont: params[:q], album_circles_name_cont: params[:q], m: 'or').result(distinct: false)
   }
 

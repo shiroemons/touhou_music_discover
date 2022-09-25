@@ -5,7 +5,7 @@ class YtmusicTrackResource < Avo::BaseResource
   self.description = 'YouTube Music トラック'
   self.includes = %i[album track ytmusic_album]
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(name_cont: params[:q],
                   album_circles_name_cont: params[:q],
                   ytmusic_album_name_cont: params[:q],

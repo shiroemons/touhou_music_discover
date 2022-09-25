@@ -5,7 +5,7 @@ class SpotifyTrackAudioFeatureResource < Avo::BaseResource
   self.description = 'Spotify トラックオーディオフィーチャー'
   self.includes = %i[track spotify_track]
   self.record_selector = false
-  # self.search_query = ->(params:) do
+  # self.search_query = -> do
   #   scope.ransack(id_eq: params[:q], m: "or").result(distinct: false)
   # end
 

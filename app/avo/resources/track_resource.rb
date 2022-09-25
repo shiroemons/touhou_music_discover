@@ -5,7 +5,7 @@ class TrackResource < Avo::BaseResource
   self.description = 'トラック'
   self.includes = [:original_songs]
   self.record_selector = false
-  # self.search_query = ->(params:) do
+  # self.search_query = -> do
   #   scope.ransack(id_eq: params[:q], m: "or").result(distinct: false)
   # end
 

@@ -5,7 +5,7 @@ class LineMusicAlbumResource < Avo::BaseResource
   self.description = 'LINE MUSIC アルバム'
   self.includes = [:line_music_tracks, { album: :circles }]
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(name_cont: params[:q], album_circles_name_cont: params[:q], m: 'or').result(distinct: false)
   }
 
