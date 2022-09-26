@@ -16,4 +16,8 @@ class OriginalSongResource < Avo::BaseResource
   field :composer, as: :text
   field :track_number, as: :number
   field :is_duplicate, as: :boolean
+
+  field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
+    "[#{model.original_short_title}] #{model.title}"
+  end
 end

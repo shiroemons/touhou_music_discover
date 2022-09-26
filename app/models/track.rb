@@ -22,6 +22,20 @@ class Track < ApplicationRecord
   scope :jan, ->(jan) { where(jan_code: jan) }
   scope :isrc, ->(isrc) { find_by(isrc:) }
 
+  delegate :circle_name, to: :album
+
+  def album_name
+    album.spotify_album&.name || album.apple_music_album&.name
+  end
+
+  def name
+    spotify_tracks.first&.name || apple_music_tracks.first&.name
+  end
+
+  def original_songs_count
+    original_songs.size
+  end
+
   def apple_music_track(album)
     apple_music_tracks.find { _1.album == album }
   end
