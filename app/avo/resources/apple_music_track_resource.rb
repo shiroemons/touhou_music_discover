@@ -33,4 +33,8 @@ class AppleMusicTrackResource < Avo::BaseResource
   end
   field :apple_music_id, as: :text, required: true, hide_on: [:index]
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
+
+  action FetchAppleMusicTrack
+  action FetchAppleMusicTrackByIsrc
+  action UpdateAppleMusicTrack
 end

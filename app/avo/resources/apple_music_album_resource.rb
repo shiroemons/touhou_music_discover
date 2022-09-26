@@ -31,4 +31,8 @@ class AppleMusicAlbumResource < Avo::BaseResource
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 
   field :apple_music_tracks, as: :has_many, searchable: true
+
+  action FetchAppleMusicAlbum
+  action FetchAppleMusicVariousArtistsAlbum
+  action UpdateAppleMusicAlbum
 end

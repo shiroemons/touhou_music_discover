@@ -9,6 +9,10 @@ class AppleMusicAlbumPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   def attach_apple_music_tracks?
     false
   end
