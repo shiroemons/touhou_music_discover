@@ -9,6 +9,10 @@ class YtmusicAlbumPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   def attach_ytmusic_tracks?
     false
   end

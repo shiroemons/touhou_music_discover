@@ -34,4 +34,7 @@ class YtmusicAlbumResource < Avo::BaseResource
   field :playlist_url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 
   field :ytmusic_tracks, as: :has_many, searchable: true
+
+  action FetchYtmusicAlbum
+  action UpdateYtmusicAlbumTrack
 end

@@ -9,6 +9,10 @@ class YtmusicTrackPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   class Scope < Scope
     def resolve
       scope.all
