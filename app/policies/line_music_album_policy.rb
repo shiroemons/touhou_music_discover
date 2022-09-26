@@ -9,6 +9,10 @@ class LineMusicAlbumPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   def attach_line_music_tracks?
     false
   end

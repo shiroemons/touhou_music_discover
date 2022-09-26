@@ -31,4 +31,7 @@ class LineMusicAlbumResource < Avo::BaseResource
   field :total_tracks, as: :number, readonly: true
 
   field :line_music_tracks, as: :has_many, searchable: true
+
+  action FetchLineMusicAlbum
+  action UpdateLineMusicAlbum
 end
