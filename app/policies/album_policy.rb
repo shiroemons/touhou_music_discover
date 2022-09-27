@@ -9,6 +9,10 @@ class AlbumPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   def attach_circles?
     true
   end

@@ -19,7 +19,7 @@ class AlbumResource < Avo::BaseResource
 
   field :id, as: :id, hide_on: [:index]
   field :jan_code, as: :text, sortable: true
-  field :is_touhou, as: :boolean
+  field :is_touhou, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
   field :circle_name, as: :text, hide_on: [:forms]
 
   field :circles, as: :has_many, through: :circles_albums, searchable: true
@@ -33,4 +33,6 @@ class AlbumResource < Avo::BaseResource
   field :spotify_tracks, as: :has_many, searchable: true
   field :ytmusic_album, as: :has_one, searchable: true
   field :ytmusic_tracks, as: :has_many, searchable: true
+
+  action ChangeTouhouFlag
 end
