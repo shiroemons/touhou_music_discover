@@ -44,3 +44,8 @@ Lint/UnusedBlockArgument:
   Enabled: true
   Exclude:
     - app/avo/actions/*.rb
+
+Style/SignalException:
+  Enabled: true
+  Exclude:
+    - app/avo/actions/*.rb

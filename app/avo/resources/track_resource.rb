@@ -28,4 +28,8 @@ class TrackResource < Avo::BaseResource
   field :line_music_tracks, as: :has_many, searchable: true
   field :spotify_tracks, as: :has_many, searchable: true
   field :ytmusic_tracks, as: :has_many, searchable: true
+
+  action ExportMissingOriginalSongsTracks
+  action ImportTracksWithOriginalSongs
+  action ChangeTouhouFlag
 end

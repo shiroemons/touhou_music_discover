@@ -9,6 +9,10 @@ class TrackPolicy < ApplicationPolicy
     true
   end
 
+  def act_on?
+    true
+  end
+
   def attach_original_songs?
     true
   end
