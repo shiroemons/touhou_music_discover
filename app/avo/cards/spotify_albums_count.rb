@@ -2,7 +2,8 @@
 
 class SpotifyAlbumsCount < Avo::Dashboards::MetricCard
   self.id = 'spotify_albums_count'
-  self.label = 'Spotify album total count'
+  self.label = 'Spotify アルバム総数'
+  self.suffix = '枚'
 
   def query
     scope = SpotifyAlbum

@@ -2,7 +2,8 @@
 
 class AppleMusicTracksCount < Avo::Dashboards::MetricCard
   self.id = 'apple_music_tracks_count'
-  self.label = 'AppleMusic track total count'
+  self.label = 'AppleMusic トラック総曲数'
+  self.suffix = '曲'
 
   def query
     scope = AppleMusicTrack

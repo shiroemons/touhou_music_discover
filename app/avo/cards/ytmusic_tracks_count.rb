@@ -2,7 +2,8 @@
 
 class YtmusicTracksCount < Avo::Dashboards::MetricCard
   self.id = 'ytmusic_tracks_count'
-  self.label = 'YouTube Music track total count'
+  self.label = 'YouTube Music トラック総曲数'
+  self.suffix = '曲'
 
   def query
     scope = YtmusicTrack
