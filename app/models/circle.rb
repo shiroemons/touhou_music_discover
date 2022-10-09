@@ -58,4 +58,8 @@ class Circle < ApplicationRecord
     '4580547334869' => '東方LostWord', # サヨナラはどこか蒼い (feat.田原俊彦 & 豚乙女)
     '4580547333640' => '東方ダンジョンダイブ' # 東方ダンジョンダイブ (Original Sound Track)
   }.freeze
+
+  def albums_count
+    albums.size
+  end
 end

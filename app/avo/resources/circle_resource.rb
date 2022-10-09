@@ -2,7 +2,7 @@
 
 class CircleResource < Avo::BaseResource
   self.title = :name
-  self.description = 'サークル'
+  self.translation_key = 'avo.resource_translations.circle'
   self.includes = []
   self.record_selector = false
   self.search_query = lambda {
@@ -11,4 +11,7 @@ class CircleResource < Avo::BaseResource
 
   field :id, as: :id, hide_on: [:index]
   field :name, as: :text
+  field :albums_count, as: :number, only_on: [:index], index_text_align: :right
+
+  field :albums, as: :has_many
 end

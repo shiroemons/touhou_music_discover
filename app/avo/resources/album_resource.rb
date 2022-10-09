@@ -35,6 +35,7 @@ class AlbumResource < Avo::BaseResource
   field :ytmusic_tracks, as: :has_many, searchable: true
 
   action ChangeTouhouFlag
+  action SetCircles
 
   filter NotDeliveredFilter
 end

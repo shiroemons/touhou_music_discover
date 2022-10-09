@@ -75,6 +75,7 @@ Avo.configure do |config|
       resource :original
       resource :original_song
       resource :master_artist
+      resource :circle
     end
 
     section 'Resources', icon: 'resources' do
