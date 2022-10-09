@@ -8,7 +8,7 @@ namespace :touhou_music_discover do
     task touhou_music_with_original_songs: :environment do
       File.open('tmp/touhou_music_with_original_songs.tsv', 'w') do |f|
         f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs")
-        Album.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks]).order(jan_code: :asc).each do |album|
+        Album.unscoped.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           # 特定のアルバムのみ出力する場合、コメントをオフにする
           # next if jan != ''
@@ -43,7 +43,7 @@ namespace :touhou_music_discover do
     task touhou_music: :environment do
       File.open('tmp/touhou_music.tsv', 'w') do |f|
         f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url\tyoutube_music_album_artist_name\tyoutube_music_album_name\tyoutube_music_track_name\tyoutube_music_album_url\tyoutube_music_track_url\tline_music_album_artist_name\tline_music_album_name\tline_music_track_name\tline_music_album_url\tline_music_track_url")
-        Album.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
+        Album.unscoped.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           circle = album.circles&.map(&:name)&.join(' / ')
 
@@ -100,7 +100,7 @@ namespace :touhou_music_discover do
     task touhou_music_album_only: :environment do
       File.open('tmp/touhou_music_album_only.tsv', 'w') do |f|
         f.puts("jan\tcircle\tspotify_album_name\tspotify_album_url\tapple_music_album_name\tapple_music_album_url\tytmusic_album_name\tytmusic_album_url\tline_music_album_name\tline_music_album_url")
-        Album.includes(:circles, :apple_music_album, :spotify_album, :line_music_album, :ytmusic_album).order(jan_code: :asc).each do |album|
+        Album.unscoped.includes(:circles, :apple_music_album, :spotify_album, :line_music_album, :ytmusic_album).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           circle = album.circles&.map(&:name)&.join(' / ')
           spotify_album_name = album.spotify_album&.name
@@ -139,22 +139,22 @@ namespace :touhou_music_discover do
     desc 'Output albums and songs as JSON for Algolia'
     task for_algolia: :environment do
       File.open('tmp/touhou_music_spotify_for_algolia.json', 'w') do |file|
-        albums = Album.eager_load(spotify_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(spotify_tracks: { track: { original_songs: :original } })
         file.puts(JSON.pretty_generate(SpotifyAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
       File.open('tmp/touhou_music_apple_music_for_algolia.json', 'w') do |file|
-        albums = Album.eager_load(apple_music_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(apple_music_tracks: { track: { original_songs: :original } })
         file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
       File.open('tmp/touhou_music_youtube_music_for_algolia.json', 'w') do |file|
-        albums = Album.eager_load(ytmusic_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(ytmusic_tracks: { track: { original_songs: :original } })
         file.puts(JSON.pretty_generate(YtmusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
       File.open('tmp/touhou_music_line_music_for_algolia.json', 'w') do |file|
-        albums = Album.eager_load(line_music_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(line_music_tracks: { track: { original_songs: :original } })
         file.puts(JSON.pretty_generate(LineMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
     end
@@ -162,7 +162,7 @@ namespace :touhou_music_discover do
     desc 'Output files for random_touhou_music'
     task to_random_touhou_music: :environment do
       apple_music_songs = []
-      AppleMusicAlbum.includes(apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
+      AppleMusicAlbum.unscoped.includes(apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
         album.apple_music_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
 
@@ -178,7 +178,7 @@ namespace :touhou_music_discover do
       end
 
       apple_music_tsa_songs = []
-      albums = AppleMusicAlbum.includes(album: :circles, apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums = AppleMusicAlbum.unscoped.includes(album: :circles, apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
       albums.each do |album|
         album.apple_music_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
@@ -195,7 +195,7 @@ namespace :touhou_music_discover do
       end
 
       ytmusic_songs = []
-      YtmusicAlbum.includes(ytmusic_tracks: :track).is_touhou.order(release_year: :asc, id: :asc).each do |album|
+      YtmusicAlbum.unscoped.includes(ytmusic_tracks: :track).is_touhou.order(release_year: :asc, id: :asc).each do |album|
         album.ytmusic_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
 
@@ -211,7 +211,7 @@ namespace :touhou_music_discover do
       end
 
       ytmusic_tsa_songs = []
-      albums = YtmusicAlbum.includes(album: :circles, ytmusic_tracks: :track).is_touhou.order(release_year: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums = YtmusicAlbum.unscoped.includes(album: :circles, ytmusic_tracks: :track).is_touhou.order(release_year: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
       albums.each do |album|
         album.ytmusic_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
@@ -228,7 +228,7 @@ namespace :touhou_music_discover do
       end
 
       line_music_songs = []
-      LineMusicAlbum.includes(line_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
+      LineMusicAlbum.unscoped.includes(line_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
         album.line_music_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
 
@@ -244,7 +244,7 @@ namespace :touhou_music_discover do
       end
 
       line_music_tsa_songs = []
-      albums = LineMusicAlbum.includes(album: :circles, line_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums = LineMusicAlbum.unscoped.includes(album: :circles, line_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
       albums.each do |album|
         album.line_music_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
@@ -261,7 +261,7 @@ namespace :touhou_music_discover do
       end
 
       spotify_songs = []
-      SpotifyAlbum.includes(spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
+      SpotifyAlbum.unscoped.includes(spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
         album.spotify_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
 
@@ -277,7 +277,7 @@ namespace :touhou_music_discover do
       end
 
       spotify_tsa_songs = []
-      albums = SpotifyAlbum.includes(album: :circles, spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
+      albums = SpotifyAlbum.unscoped.includes(album: :circles, spotify_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).where(circles: { name: '上海アリス幻樂団' })
       albums.each do |album|
         album.spotify_tracks.sort_by(&:track_number).each do |track|
           next unless track.is_touhou
