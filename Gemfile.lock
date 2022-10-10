@@ -385,6 +385,7 @@ DEPENDENCIES
   cssbundling-rails
   dotenv-rails
   faraday
+  faraday_middleware
   jsbundling-rails
   listen (~> 3.7)
   meilisearch-rails
