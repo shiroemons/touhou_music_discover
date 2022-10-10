@@ -5,10 +5,11 @@ require 'csv'
 circles = CSV.table('db/fixtures/circles.tsv', col_sep: "\t", converters: nil)
 return if circles.size == Circle.count
 
-ActiveRecord::Base.connection.execute('TRUNCATE TABLE circles_albums, circles;')
 insert_data = []
 now = Time.zone.now
 circles.each do |o|
+  next if Circle.exists?(name: o[:name])
+
   insert_data << {
     name: o[:name],
     created_at: now,
