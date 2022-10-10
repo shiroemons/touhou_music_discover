@@ -272,7 +272,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/spotify_songs.jso', 'w') do |f|
+      File.open('tmp/spotify_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(spotify_songs)
       end
 
