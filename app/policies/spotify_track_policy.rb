@@ -13,6 +13,14 @@ class SpotifyTrackPolicy < ApplicationPolicy
     true
   end
 
+  def attach_spotify_track_audio_feature?
+    false
+  end
+
+  def detach_spotify_track_audio_feature?
+    false
+  end
+
   class Scope < Scope
     def resolve
       scope.all
