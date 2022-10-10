@@ -232,6 +232,9 @@ GEM
     omniauth-oauth2 (1.7.2)
       oauth2 (~> 1.4)
       omniauth (>= 1.9, < 3)
+    omniauth-rails_csrf_protection (1.0.1)
+      actionpack (>= 4.2)
+      omniauth (~> 2.0)
     pagy (5.10.1)
       activesupport
     parallel (1.22.1)
@@ -393,6 +396,7 @@ DEPENDENCIES
   jsbundling-rails
   listen (~> 3.7)
   meilisearch-rails
+  omniauth-rails_csrf_protection
   pagy
   pg (~> 1.4)
   propshaft

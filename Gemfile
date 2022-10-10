@@ -15,6 +15,7 @@ gem 'jsbundling-rails'
 gem 'turbo-rails'
 gem 'stimulus-rails'
 gem 'cssbundling-rails'
+gem 'omniauth-rails_csrf_protection'
 
 group :development, :test do
   gem 'byebug', platforms: %i[mri mingw x64_mingw]
