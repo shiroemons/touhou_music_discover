@@ -1,7 +1,7 @@
 <h1>Root#index</h1>
 <% if logged_in? %>
-  <%= link_to 'Sign out', logout_path, class: 'text-white', method: :delete %>
-  <%= link_to 'Spotify Playlists', spotify_playlists_create_path, method: :post %>
+  <%= button_to 'Sign out', logout_path, class: 'text-white', method: :delete, data: { turbo: false } %>
+  <%= button_to 'Spotify Playlists', spotify_playlists_create_path, method: :post, data: { turbo: false } %>
 <% else %>
-  <%= link_to 'Sign in with Spotify', '/auth/spotify', method: :post %>
+  <%= button_to 'Sign in with Spotify', '/auth/spotify', method: :post, data: { turbo: false } %>
 <% end %>

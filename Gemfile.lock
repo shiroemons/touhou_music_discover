@@ -109,6 +109,8 @@ GEM
     countries (5.1.2)
       sixarm_ruby_unaccent (~> 1.1)
     crass (1.0.6)
+    cssbundling-rails (1.1.1)
+      railties (>= 6.0.0)
     digest (3.1.0)
     docile (1.4.0)
     domain_name (0.5.20190701)
@@ -230,6 +232,9 @@ GEM
     omniauth-oauth2 (1.7.2)
       oauth2 (~> 1.4)
       omniauth (>= 1.9, < 3)
+    omniauth-rails_csrf_protection (1.0.1)
+      actionpack (>= 4.2)
+      omniauth (~> 2.0)
     pagy (5.10.1)
       activesupport
     parallel (1.22.1)
@@ -385,11 +390,13 @@ DEPENDENCIES
   bootsnap (>= 1.4.4)
   byebug
   connection_pool
+  cssbundling-rails
   dotenv-rails
   faraday
   jsbundling-rails
   listen (~> 3.7)
   meilisearch-rails
+  omniauth-rails_csrf_protection
   pagy
   pg (~> 1.4)
   propshaft
@@ -403,6 +410,8 @@ DEPENDENCIES
   rubocop
   rubocop-performance
   rubocop-rails
+  stimulus-rails
+  turbo-rails
 
 RUBY VERSION
    ruby 3.1.2p20
