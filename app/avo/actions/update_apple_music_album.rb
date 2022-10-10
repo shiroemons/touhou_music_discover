@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+class UpdateAppleMusicAlbum < Avo::BaseAction
+  self.name = 'Update apple music album'
+  self.standalone = true
+  self.visible = ->(resource:, view:) { view == :index }
+
+  def handle(_args)
+    AppleMusicAlbum.eager_load(:album).find_in_batches(batch_size: 20) do |apple_music_albums|
+      AppleMusicClient::Album.update_albums(apple_music_albums)
+      sleep 0.5
+    end
+  end
+end

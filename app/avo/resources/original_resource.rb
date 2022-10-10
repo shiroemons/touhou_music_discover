@@ -2,11 +2,11 @@
 
 class OriginalResource < Avo::BaseResource
   self.title = :title
-  self.description = '原作'
+  self.translation_key = 'avo.resource_translations.original'
   self.includes = [:original_songs]
   self.record_selector = false
   self.visible_on_sidebar = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(title_cont: params[:q], m: 'or').result(distinct: false)
   }
 

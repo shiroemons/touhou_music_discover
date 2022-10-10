@@ -11,13 +11,13 @@ class MyDashboard < Avo::Dashboards::BaseDashboard
 
   card AlbumsCount
   card AlbumsCount,
-       label: 'Touhou album count',
+       label: '東方アルバム総数',
        options: {
          is_touhou: true
        }
   card TracksCount
   card TracksCount,
-       label: 'Touhou track count',
+       label: '東方トラック総曲数',
        options: {
          is_touhou: true
        }
@@ -25,13 +25,13 @@ class MyDashboard < Avo::Dashboards::BaseDashboard
   divider label: 'Spotify'
   card SpotifyAlbumsCount
   card SpotifyAlbumsCount,
-       label: 'Spotify touhou album count',
+       label: 'Spotify 東方アルバム総数',
        options: {
          is_touhou: true
        }
   card SpotifyTracksCount
   card SpotifyTracksCount,
-       label: 'Spotify touhou track count',
+       label: 'Spotify 東方トラック総曲数',
        options: {
          is_touhou: true
        }
@@ -39,13 +39,13 @@ class MyDashboard < Avo::Dashboards::BaseDashboard
   divider label: 'AppleMusic'
   card AppleMusicAlbumsCount
   card AppleMusicAlbumsCount,
-       label: 'AppleMusic touhou album count',
+       label: 'AppleMusic 東方アルバム総数',
        options: {
          is_touhou: true
        }
   card AppleMusicTracksCount
   card AppleMusicTracksCount,
-       label: 'AppleMusic touhou track count',
+       label: 'AppleMusic 東方トラック総曲数',
        options: {
          is_touhou: true
        }
@@ -53,13 +53,13 @@ class MyDashboard < Avo::Dashboards::BaseDashboard
   divider label: 'YouTube Music'
   card YtmusicAlbumsCount
   card YtmusicAlbumsCount,
-       label: 'YouTube Music touhou album count',
+       label: 'YouTube Music 東方アルバム総数',
        options: {
          is_touhou: true
        }
   card YtmusicTracksCount
   card YtmusicTracksCount,
-       label: 'YouTube Music touhou track count',
+       label: 'YouTube Music 東方トラック総曲数',
        options: {
          is_touhou: true
        }
@@ -67,13 +67,13 @@ class MyDashboard < Avo::Dashboards::BaseDashboard
   divider label: 'LINE MUSIC'
   card LineMusicAlbumsCount
   card LineMusicAlbumsCount,
-       label: 'LINE MUSIC touhou album count',
+       label: 'LINE MUSIC 東方アルバム総数',
        options: {
          is_touhou: true
        }
   card LineMusicTracksCount
   card LineMusicTracksCount,
-       label: 'LINE MUSIC touhou track count',
+       label: 'LINE MUSIC 東方トラック総曲数',
        options: {
          is_touhou: true
        }

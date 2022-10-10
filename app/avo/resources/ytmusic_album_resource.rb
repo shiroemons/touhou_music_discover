@@ -2,12 +2,19 @@
 
 class YtmusicAlbumResource < Avo::BaseResource
   self.title = :name
-  self.description = 'YouTube Music アルバム'
+  self.translation_key = 'avo.resource_translations.ytmusic_album'
   self.includes = [:ytmusic_tracks, { album: :circles }]
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(name_cont: params[:q], album_circles_name_cont: params[:q], m: 'or').result(distinct: false)
   }
+  self.default_view_type = :grid
+
+  grid do
+    cover :image_url, as: :external_image, is_image: true, link_to_resource: true
+    title :name, as: :text, link_to_resource: true
+    body :circle_name, as: :text
+  end
 
   field :image_url, as: :external_image, name: 'image', hide_on: [:forms], as_avatar: :rounded
   field :album, as: :belongs_to, name: 'jan code', searchable: true
@@ -27,4 +34,7 @@ class YtmusicAlbumResource < Avo::BaseResource
   field :playlist_url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
 
   field :ytmusic_tracks, as: :has_many, searchable: true
+
+  action FetchYtmusicAlbum
+  action UpdateYtmusicAlbumTrack
 end

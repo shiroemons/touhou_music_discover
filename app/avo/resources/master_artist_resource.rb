@@ -2,10 +2,11 @@
 
 class MasterArtistResource < Avo::BaseResource
   self.title = :name
-  self.description = 'アーティストのマスターデータ'
+  self.translation_key = 'avo.resource_translations.master_artist'
+  self.description = 'マスターデータ'
   self.includes = []
   self.record_selector = false
-  self.search_query = lambda { |params:|
+  self.search_query = lambda {
     scope.ransack(name_cont: params[:q], key_eq: params[:q], m: 'or').result(distinct: false)
   }
 

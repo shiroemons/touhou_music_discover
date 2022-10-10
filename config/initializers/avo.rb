@@ -18,7 +18,11 @@ Avo.configure do |config|
   end
 
   ## == Authentication ==
-  # config.current_user_method = {}
+  user = Struct.new(:name)
+
+  config.current_user_method do
+    user.new({ name: 'Anonymous user' })
+  end
   # config.authenticate_with = {}
 
   ## == Authorization ==
@@ -34,12 +38,12 @@ Avo.configure do |config|
   # config.raise_error_on_missing_policy = false
 
   ## == Localization ==
-  # config.locale = 'en-US'
+  config.locale = 'ja'
 
   ## == Customization ==
   # config.app_name = 'Avocadelicious'
-  # config.timezone = 'UTC'
-  # config.currency = 'USD'
+  config.timezone = 'Asia/Tokyo'
+  config.currency = 'JPY'
   # config.per_page = 24
   # config.per_page_steps = [12, 24, 48, 72]
   # config.via_per_page = 8
@@ -59,6 +63,7 @@ Avo.configure do |config|
   # config.set_initial_breadcrumbs do
   #   add_breadcrumb "Home", '/avo'
   # end
+  config.resource_controls_placement = :left
 
   ## == Menus ==
   config.main_menu = lambda {
@@ -70,6 +75,7 @@ Avo.configure do |config|
       resource :original
       resource :original_song
       resource :master_artist
+      resource :circle
     end
 
     section 'Resources', icon: 'resources' do
