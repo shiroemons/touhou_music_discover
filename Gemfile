@@ -10,12 +10,12 @@ gem 'pg', '~> 1.4'
 gem 'puma', '~> 5.6'
 gem 'rails', '~> 7.0.4'
 
-gem 'propshaft'
-gem 'jsbundling-rails'
-gem 'turbo-rails'
-gem 'stimulus-rails'
 gem 'cssbundling-rails'
+gem 'jsbundling-rails'
 gem 'omniauth-rails_csrf_protection'
+gem 'propshaft'
+gem 'stimulus-rails'
+gem 'turbo-rails'
 
 group :development, :test do
   gem 'byebug', platforms: %i[mri mingw x64_mingw]
