@@ -3,7 +3,7 @@
 class ChangeTouhouFlag < Avo::BaseAction
   self.name = 'Change touhou flag'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     # Trackのis_touhouフラグを変更

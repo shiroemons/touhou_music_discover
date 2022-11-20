@@ -3,7 +3,7 @@
 class UpdateAppleMusicAlbum < Avo::BaseAction
   self.name = 'Update apple music album'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     AppleMusicAlbum.eager_load(:album).find_in_batches(batch_size: 20) do |apple_music_albums|

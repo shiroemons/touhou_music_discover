@@ -3,7 +3,7 @@
 class FetchYtmusicAlbum < Avo::BaseAction
   self.name = 'Fetch ytmusic album'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code).find_each do |album|

@@ -3,7 +3,7 @@
 class UpdateLineMusicTrack < Avo::BaseAction
   self.name = 'Update line music track'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     LineMusicAlbum.eager_load(:line_music_tracks).find_each do |line_music_album|

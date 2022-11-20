@@ -3,7 +3,7 @@
 class FetchSpotifyAudioFeatures < Avo::BaseAction
   self.name = 'Fetch spotify audio features'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     count = 0

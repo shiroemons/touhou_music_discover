@@ -3,7 +3,7 @@
 class FetchAppleMusicVariousArtistsAlbum < Avo::BaseAction
   self.name = 'Fetch apple music various artists album'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     AppleMusicAlbum::VARIOUS_ARTISTS_ALBUMS_IDS.each do |album_id|

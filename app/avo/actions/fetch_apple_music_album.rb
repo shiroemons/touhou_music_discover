@@ -3,7 +3,7 @@
 class FetchAppleMusicAlbum < Avo::BaseAction
   self.name = 'Fetch apple music album'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     MasterArtist.apple_music.find_in_batches(batch_size: 25) do |master_artists|

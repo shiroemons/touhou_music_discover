@@ -3,7 +3,7 @@
 class FetchLineMusicAlbum < Avo::BaseAction
   self.name = 'Fetch line music album'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     Album.includes(:spotify_album, :apple_music_album).missing_line_music_album.find_each do |album|

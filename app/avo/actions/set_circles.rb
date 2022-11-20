@@ -3,7 +3,7 @@
 class SetCircles < Avo::BaseAction
   self.name = 'Set circles'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     Album.missing_circles.eager_load(:spotify_album).each do |album|

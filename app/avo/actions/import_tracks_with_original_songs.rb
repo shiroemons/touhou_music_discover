@@ -3,7 +3,7 @@
 class ImportTracksWithOriginalSongs < Avo::BaseAction
   self.name = 'Import tracks with original songs'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   field :tsv_file, as: :file, accept: 'text/tab-separated-values'
 

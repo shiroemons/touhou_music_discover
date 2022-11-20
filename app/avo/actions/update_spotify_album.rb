@@ -3,7 +3,7 @@
 class UpdateSpotifyAlbum < Avo::BaseAction
   self.name = 'Update spotify album'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     count = 0

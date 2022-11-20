@@ -3,7 +3,7 @@
 class UpdateYtmusicAlbumTrack < Avo::BaseAction
   self.name = 'Update ytmusic album track'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
 
   def handle(_args)
     YtmusicAlbum.find_each do |ytmusic_album|

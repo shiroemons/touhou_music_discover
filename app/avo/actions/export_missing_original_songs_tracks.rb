@@ -3,7 +3,7 @@
 class ExportMissingOriginalSongsTracks < Avo::BaseAction
   self.name = 'Export missing original songs tracks'
   self.standalone = true
-  self.visible = ->(resource:, view:) { view == :index }
+  self.visible = -> { view == :index }
   self.may_download_file = true
 
   def handle(_args)
