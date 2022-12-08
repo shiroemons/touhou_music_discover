@@ -79,12 +79,11 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.19.0)
+    avo (2.21.0)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
       addressable
-      breadcrumbs_on_rails
       docile
       dry-initializer
       httparty
@@ -96,8 +95,6 @@ GEM
       zeitwerk (>= 2.6.2)
     bootsnap (1.13.0)
       msgpack (~> 1.2)
-    breadcrumbs_on_rails (4.1.0)
-      railties (>= 5.0)
     builder (3.2.4)
     byebug (11.1.3)
     concurrent-ruby (1.1.10)
@@ -232,7 +229,7 @@ GEM
       nio4r (~> 2.0)
     pundit (2.2.0)
       activesupport (>= 3.0.0)
-    racc (1.6.0)
+    racc (1.6.1)
     rack (2.2.4)
     rack-protection (2.1.0)
       rack
@@ -345,7 +342,7 @@ GEM
       unf_ext
     unf_ext (0.0.8)
     unicode-display_width (2.3.0)
-    view_component (2.75.0)
+    view_component (2.78.0)
       activesupport (>= 5.0.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
