@@ -27,5 +27,8 @@ class FetchLineMusicTrack < Avo::BaseAction
         end
       end
     end
+
+    succeed 'Done!'
+    reload
   end
 end

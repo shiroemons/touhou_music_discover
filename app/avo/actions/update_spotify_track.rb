@@ -18,5 +18,8 @@ class UpdateSpotifyTrack < Avo::BaseAction
       inform "Spotify 楽曲: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
       sleep 0.5
     end
+
+    succeed 'Done!'
+    reload
   end
 end

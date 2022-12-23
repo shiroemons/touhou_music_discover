@@ -10,5 +10,8 @@ class UpdateAppleMusicTrack < Avo::BaseAction
       AppleMusicClient::Track.update_tracks(apple_music_tracks)
       sleep 0.5
     end
+
+    succeed 'Done!'
+    reload
   end
 end

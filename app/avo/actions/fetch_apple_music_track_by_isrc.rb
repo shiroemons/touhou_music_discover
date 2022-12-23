@@ -9,5 +9,8 @@ class FetchAppleMusicTrackByIsrc < Avo::BaseAction
     Track.missing_apple_music_tracks.find_each do |track|
       AppleMusicClient::Track.fetch_tracks_by_isrc(track.isrc)
     end
+
+    succeed 'Done!'
+    reload
   end
 end

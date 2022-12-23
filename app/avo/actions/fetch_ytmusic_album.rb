@@ -48,5 +48,8 @@ class FetchYtmusicAlbum < Avo::BaseAction
       url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
       ytmusic_album.update_album(album, url) if album
     end
+
+    succeed 'Done!'
+    reload
   end
 end

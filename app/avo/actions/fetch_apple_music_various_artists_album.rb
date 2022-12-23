@@ -10,5 +10,8 @@ class FetchAppleMusicVariousArtistsAlbum < Avo::BaseAction
       apple_music_album = AppleMusicClient::Album.fetch(album_id)
       AppleMusicClient::Track.fetch_album_tracks(apple_music_album) if apple_music_album
     end
+
+    succeed 'Done!'
+    reload
   end
 end

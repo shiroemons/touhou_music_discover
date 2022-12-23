@@ -19,5 +19,8 @@ class ChangeTouhouFlag < Avo::BaseAction
       is_touhou = album.tracks.map(&:is_touhou).any?
       album.update!(is_touhou:) if album.is_touhou != is_touhou
     end
+
+    succeed 'Done!'
+    reload
   end
 end

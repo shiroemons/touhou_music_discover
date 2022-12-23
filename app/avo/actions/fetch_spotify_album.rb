@@ -7,5 +7,8 @@ class FetchSpotifyAlbum < Avo::BaseAction
 
   def handle(_args)
     SpotifyClient::Album.fetch_touhou_albums
+
+    succeed 'Done!'
+    reload
   end
 end

@@ -20,5 +20,8 @@ class UpdateLineMusicTrack < Avo::BaseAction
         )
       end
     end
+
+    succeed 'Done!'
+    reload
   end
 end

@@ -9,5 +9,8 @@ class FetchAppleMusicTrack < Avo::BaseAction
     AppleMusicAlbum.find_each do |apple_music_album|
       AppleMusicClient::Track.fetch_album_tracks(apple_music_album)
     end
+
+    succeed 'Done!'
+    reload
   end
 end

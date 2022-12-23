@@ -14,5 +14,8 @@ class FetchAppleMusicAlbum < Avo::BaseAction
     am_artist_ids.each do |am_artist_id|
       AppleMusicClient::Album.fetch_artists_albums(am_artist_id)
     end
+
+    succeed 'Done!'
+    reload
   end
 end

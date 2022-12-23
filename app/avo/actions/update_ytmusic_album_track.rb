@@ -17,5 +17,8 @@ class UpdateYtmusicAlbumTrack < Avo::BaseAction
         ytm_track.update_track(track) if track
       end
     end
+
+    succeed 'Done!'
+    reload
   end
 end

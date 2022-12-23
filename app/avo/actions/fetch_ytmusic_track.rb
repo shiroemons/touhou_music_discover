@@ -34,5 +34,8 @@ class FetchYtmusicTrack < Avo::BaseAction
         YtmusicTrack.save_track(album.id, am_track.track_id, ytm_album, ytm_track)
       end
     end
+
+    succeed 'Done!'
+    reload
   end
 end

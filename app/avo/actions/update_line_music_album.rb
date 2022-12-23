@@ -16,5 +16,8 @@ class UpdateLineMusicAlbum < Avo::BaseAction
         )
       end
     end
+
+    succeed 'Done!'
+    reload
   end
 end

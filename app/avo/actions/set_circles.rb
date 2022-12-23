@@ -21,5 +21,7 @@ class SetCircles < Avo::BaseAction
       circle = Circle.find_by(name: artist)
       album.circles.push(circle) if circle.present?
     end
+    succeed 'Done!'
+    reload
   end
 end
