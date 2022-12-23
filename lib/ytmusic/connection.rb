@@ -5,7 +5,7 @@ require 'digest/sha1'
 require 'faraday'
 
 module YTMusic
-  YTM_VERSION = '1.20220411.01.00'
+  YTM_VERSION = '1.20221219.01.00'
   YTM_DOMAIN = 'https://music.youtube.com'
   YTM_BASE_API = "#{YTM_DOMAIN}/youtubei/v1/".freeze
   YTM_PARAMS = '?alt=json&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30'
