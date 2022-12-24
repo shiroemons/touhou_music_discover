@@ -5,6 +5,8 @@ module YTMusic
     class << self
       def find(id)
         response = super(id, 'album')
+        return nil if response.dig('error').present?
+
         Album.new response
       end
 
