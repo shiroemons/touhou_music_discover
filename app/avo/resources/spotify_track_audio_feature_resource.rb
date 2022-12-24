@@ -26,9 +26,7 @@ class SpotifyTrackAudioFeatureResource < Avo::BaseResource
   field :speechiness, as: :number, sortable: true, readonly: true
   field :payload, as: :code, language: 'javascript', only_on: :edit, readonly: true
   field :payload, as: :code, language: 'javascript' do |model|
-    if model.payload.present?
-      JSON.pretty_generate(model.payload.as_json)
-    end
+    JSON.pretty_generate(model.payload.as_json) if model.payload.present?
   end
 
   action FetchSpotifyAudioFeatures
