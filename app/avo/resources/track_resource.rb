@@ -17,10 +17,18 @@ class TrackResource < Avo::BaseResource
   field :name, as: :text, link_to_resource: true
   field :original_songs_count, as: :number, only_on: [:index], index_text_align: :right
   field :is_touhou, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :apple_music_tracks, as: :text, name: 'apple_music', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :line_music_tracks, as: :text, name: 'ytmusic', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :spotify_tracks, as: :text, name: 'spotify', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
-  field :ytmusic_tracks, as: :text, name: 'line_music', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :apple_music, as: :text, only_on: [:index], index_text_align: :center do |model|
+    model.apple_music_tracks.present? ? '✅' : ''
+  end
+  field :ytmusic, as: :text, only_on: [:index], index_text_align: :center do |model|
+    model.line_music_tracks.present? ? '✅' : ''
+  end
+  field :spotify, as: :text, only_on: [:index], index_text_align: :center do |model|
+    model.spotify_tracks.present? ? '✅' : ''
+  end
+  field :line_music, as: :text, only_on: [:index], index_text_align: :center do |model|
+    model.ytmusic_tracks.present? ? '✅' : ''
+  end
 
   field :original_songs, as: :has_many, through: :tracks_original_songs, searchable: true, attach_scope: -> { query.non_duplicated }
 
