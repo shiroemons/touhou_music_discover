@@ -31,7 +31,10 @@ class YtmusicAlbum < ApplicationRecord
     #    '4580547331646' => '',	# Amateras Records - Amateras Records Extended Selection Vol.2
     '4580547321616' => 'MPREb_k6psJBn5ano',	# ZYTOKINE - Ћ⊿⊿θ▽△
     '4580547327571' => 'MPREb_KVu5QJe1rZh', # 幽閉サテライト - 色は匂へど 散りぬるを (BAND arrange version vol.1)
-    '4580547334661' => 'MPREb_jcbfEMq2FSt'  # 幽閉サテライト - 色は匂へど散りぬるを BAND arrange version vol.1
+    '4580547334661' => 'MPREb_jcbfEMq2FSt', # 幽閉サテライト - 色は匂へど散りぬるを BAND arrange version vol.1
+    '4580547337068' => 'MPREb_BIzpXNML9zZ', # K2E†Cradle - TOHO EURO TRIGGER VOL.17 Non-Stop BEST
+    '4580547337150' => 'MPREb_Bi4eL7O8d2W', # SOUND HOLIC - EUROBEAT HOLIC III -SEPARATED EDITION-
+    '4580547337266' => 'MPREb_ledPRnZolOY'  # 上海アリス幻樂団 - 虹色のセプテントリオン
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
