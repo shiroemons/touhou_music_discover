@@ -29,6 +29,12 @@ class LineMusicAlbumResource < Avo::BaseResource
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
   field :release_date, as: :date, format: 'yyyy-LL-dd', readonly: true
   field :total_tracks, as: :number, readonly: true
+  field :payload, as: :code, language: 'javascript', only_on: :edit, readonly: true
+  field :payload, as: :code, language: 'javascript' do |model|
+    if model.payload.present?
+      JSON.pretty_generate(model.payload.as_json)
+    end
+  end
 
   field :line_music_tracks, as: :has_many, searchable: true
 

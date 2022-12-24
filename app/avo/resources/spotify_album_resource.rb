@@ -30,6 +30,12 @@ class SpotifyAlbumResource < Avo::BaseResource
   field :total_tracks, as: :number, sortable: true, readonly: true
   field :spotify_id, as: :text, required: true
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
+  field :payload, as: :code, language: 'javascript', only_on: :edit, readonly: true
+  field :payload, as: :code, language: 'javascript' do |model|
+    if model.payload.present?
+      JSON.pretty_generate(model.payload.as_json)
+    end
+  end
 
   field :spotify_tracks, as: :has_many, searchable: true
 

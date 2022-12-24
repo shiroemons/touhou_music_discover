@@ -33,6 +33,13 @@ class AppleMusicTrackResource < Avo::BaseResource
   end
   field :apple_music_id, as: :text, required: true, hide_on: [:index]
   field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
+  field :payload, as: :code, language: 'javascript', only_on: :edit, readonly: true
+  field :payload, as: :code, language: 'javascript' do |model|
+    if model.payload.present?
+      JSON.pretty_generate(model.payload.as_json)
+    end
+  end
+
 
   action FetchAppleMusicTrack
   action FetchAppleMusicTrackByIsrc
