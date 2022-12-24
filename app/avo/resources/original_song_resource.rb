@@ -20,4 +20,6 @@ class OriginalSongResource < Avo::BaseResource
   field :complex_name, as: :text, hide_on: :all, as_label: true do |model|
     "[#{model.original_short_title}] #{model.title}"
   end
+
+  field :tracks, as: :has_many
 end
