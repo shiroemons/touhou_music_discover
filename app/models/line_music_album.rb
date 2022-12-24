@@ -26,7 +26,8 @@ class LineMusicAlbum < ApplicationRecord
     '4580547320404' => 'mb00000000022967d9', # Crest - CrestⅡ
     '4580547320817' => 'mb0000000002296798', # Lunatico_fEs(ヤヤネヒロコ) - The mormental E.P - 少女洋琴倶楽部III-
     '4580547326758' => 'mb000000000229afcc', # 幽閉サテライト - 雅-MIYABI-SinglesBestvol.7～明鏡止水～
-    '4580547336740' => 'mb000000000299dbcb'  # 彩音 ～xi-on～ - BEST selection III -彩音 ～xi-on～ ベスト-
+    '4580547336740' => 'mb000000000299dbcb', # 彩音 ～xi-on～ - BEST selection III -彩音 ～xi-on～ ベスト-
+    '4580547337273' => 'mb0000000002afa6a9'  # 凋叶棕 - 𠷡
   }.freeze
 
   # LineMusicのアルバム情報を保存する
