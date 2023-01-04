@@ -79,7 +79,7 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.22.0)
+    avo (2.23.0)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
@@ -110,7 +110,7 @@ GEM
       dotenv (= 2.8.1)
       railties (>= 3.2)
     dry-initializer (3.1.1)
-    erubi (1.11.0)
+    erubi (1.12.0)
     faraday (1.10.2)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
@@ -174,7 +174,7 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2022.0105)
     mini_mime (1.1.2)
-    minitest (5.16.3)
+    minitest (5.17.0)
     mize (0.4.0)
       protocol (~> 2.0)
     msgpack (1.6.0)
@@ -229,8 +229,8 @@ GEM
       nio4r (~> 2.0)
     pundit (2.3.0)
       activesupport (>= 3.0.0)
-    racc (1.6.1)
-    rack (2.2.4)
+    racc (1.6.2)
+    rack (2.2.5)
     rack-protection (2.1.0)
       rack
     rack-test (2.0.2)
@@ -342,8 +342,8 @@ GEM
       unf_ext
     unf_ext (0.0.8)
     unicode-display_width (2.3.0)
-    view_component (2.79.0)
-      activesupport (>= 5.0.0, < 8.0)
+    view_component (2.80.0)
+      activesupport (>= 5.2.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
     websocket-driver (0.7.5)
