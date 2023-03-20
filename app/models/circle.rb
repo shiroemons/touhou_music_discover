@@ -17,6 +17,7 @@ class Circle < ApplicationRecord
     'RoundLoudness with.タンタル' => 'RoundLoudness',
     'SOUND HOLIC Vs. Eurobeat Union' => ['SOUND HOLIC', 'Eurobeat Union'],
     'SWING HOLIC (from SOUND HOLIC)' => 'SWING HOLIC',
+    'SYNC ART`S' => "SYNC.ART'S",
     't0m0h1r0' => 'Blackscreen',
     'UNDEAD CORPORATION DOUJIN WORKS' => 'UNDEAD CORPORATION',
     'はちみつれもん' => 'はちみつれもん/Hachimitsu-Lemon',
