@@ -93,7 +93,7 @@ GEM
       turbo-rails
       view_component
       zeitwerk (>= 2.6.2)
-    bootsnap (1.15.0)
+    bootsnap (1.16.0)
       msgpack (~> 1.2)
     builder (3.2.4)
     byebug (11.1.3)
