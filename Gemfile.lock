@@ -69,7 +69,7 @@ GEM
       i18n (>= 1.6, < 2)
       minitest (>= 5.1)
       tzinfo (~> 2.0)
-    addressable (2.8.1)
+    addressable (2.8.4)
       public_suffix (>= 2.0.2, < 6.0)
     amatch (0.4.1)
       mize
@@ -79,7 +79,7 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.28.0)
+    avo (2.34.6)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
@@ -91,7 +91,7 @@ GEM
       meta-tags
       pagy
       turbo-rails
-      view_component
+      view_component (>= 2.54.0)
       zeitwerk (>= 2.6.2)
     bootsnap (1.16.0)
       msgpack (~> 1.2)
@@ -148,7 +148,7 @@ GEM
       multi_xml (>= 0.5.2)
     i18n (1.14.1)
       concurrent-ruby (~> 1.0)
-    inline_svg (1.8.0)
+    inline_svg (1.9.0)
       activesupport (>= 3.0)
       nokogiri (>= 1.6)
     jsbundling-rails (1.1.2)
@@ -347,7 +347,7 @@ GEM
       unf_ext
     unf_ext (0.0.8)
     unicode-display_width (2.3.0)
-    view_component (2.82.0)
+    view_component (3.2.0)
       activesupport (>= 5.2.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
