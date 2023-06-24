@@ -39,9 +39,7 @@ Lint/MissingSuper:
     - lib/redis_pool.rb
 
 Metrics/ClassLength:
-  Enabled: true
-  Exclude:
-    - app/policies/album_policy.rb
+  Enabled: false
 
 Lint/UnusedBlockArgument:
   Enabled: true
