@@ -21,6 +21,9 @@ Rails:
 Rails/FilePath:
   Enabled: false
 
+Rails/Pluck:
+  Enabled: false
+
 Rails/UnknownEnv:
   Environments:
     - development
