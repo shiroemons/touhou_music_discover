@@ -64,4 +64,8 @@ class Circle < ApplicationRecord
   def albums_count
     albums.size
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    ['name']
+  end
 end

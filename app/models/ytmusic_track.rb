@@ -41,4 +41,8 @@ class YtmusicTrack < ApplicationRecord
   def artist_name
     payload['artists']&.map { _1['name'] }&.join(' / ')
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[album_id name payload playlist_id track_id track_number url video_id ytmusic_album_id]
+  end
 end

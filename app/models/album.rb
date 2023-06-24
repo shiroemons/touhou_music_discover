@@ -35,4 +35,8 @@ class Album < ApplicationRecord
   def circle_name
     circles&.map(&:name)&.join(' / ')
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    ['jan_code']
+  end
 end

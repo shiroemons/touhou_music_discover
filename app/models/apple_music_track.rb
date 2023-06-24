@@ -38,4 +38,8 @@ class AppleMusicTrack < ApplicationRecord
     )
     apple_music_track
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[album_id apple_music_album_id apple_music_id artist_name composer_name label name payload release_date track_id track_number url]
+  end
 end

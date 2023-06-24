@@ -45,4 +45,8 @@ class SpotifyTrack < ApplicationRecord
   def artist_name
     payload['artists']&.map { _1['name'] }&.join(' / ')
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[album_id disc_number duration_ms label name payload release_date spotify_album_id spotify_id track_id track_number url]
+  end
 end

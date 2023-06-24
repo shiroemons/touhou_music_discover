@@ -128,4 +128,8 @@ class YtmusicAlbum < ApplicationRecord
   def image_url
     payload&.dig('thumbnails', -1, 'url')&.sub(/=w.*\z/, '')
   end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[album_id browse_id name payload playlist_url release_year total_tracks url]
+  end
 end
