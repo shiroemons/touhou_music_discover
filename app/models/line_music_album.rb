@@ -69,7 +69,7 @@ class LineMusicAlbum < ApplicationRecord
         la.release_date == album.release_date && la.track_total_count == album.total_tracks
       end
 
-      return false if line_albums.size.zero?
+      return false if line_albums.empty?
 
       line_album = if line_albums.size == 1
                      line_albums.first

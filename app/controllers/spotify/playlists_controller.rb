@@ -41,7 +41,7 @@ module Spotify
         next if os.is_duplicate
 
         spotify_tracks = os.spotify_tracks
-        next if spotify_tracks.size.zero?
+        next if spotify_tracks.empty?
 
         original_song_title = os.title
         playlist = playlist_find(original_song_title)

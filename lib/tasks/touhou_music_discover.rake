@@ -368,7 +368,7 @@ namespace :touhou_music_discover do
         circle = Circle.find_by(name: artist)
         album.circles.push(circle) if circle.present?
       end
-      next unless album.circles.size.zero?
+      next unless album.circles.empty?
 
       artist = Circle::JAN_TO_CIRCLE[album.jan_code]
       circle = Circle.find_by(name: artist)
