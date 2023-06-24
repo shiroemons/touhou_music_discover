@@ -112,7 +112,7 @@ GEM
       railties (>= 3.2)
     dry-initializer (3.1.1)
     erubi (1.12.0)
-    faraday (1.10.2)
+    faraday (1.10.3)
       faraday-em_http (~> 1.0)
       faraday-em_synchrony (~> 1.0)
       faraday-excon (~> 1.1)
@@ -184,7 +184,7 @@ GEM
     msgpack (1.6.0)
     multi_json (1.15.0)
     multi_xml (0.6.0)
-    multipart-post (2.2.3)
+    multipart-post (2.3.0)
     net-imap (0.3.6)
       date
       net-protocol
