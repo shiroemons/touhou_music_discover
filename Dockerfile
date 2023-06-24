@@ -1,9 +1,9 @@
-FROM ruby:3.1.3
+FROM ruby:3.2.2
 
 WORKDIR /app
 
-# Using Node.js v14.x(LTS)
-RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+# Using Node.js v18.x(LTS)
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
 
 # Add packages
 RUN apt-get update && apt-get install -y \
