@@ -19,7 +19,7 @@ class AlbumResource < Avo::BaseResource
 
   field :id, as: :id, hide_on: [:index]
   field :jan_code, as: :text, sortable: true
-  field :is_touhou, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :is_touhou, as: :text, name: 'touhou', only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
   field :circle_name, as: :text, hide_on: [:forms]
 
   field :circles, as: :has_many, through: :circles_albums, searchable: true

@@ -25,7 +25,7 @@ class YtmusicTrackResource < Avo::BaseResource
   field :track_number, as: :number, readonly: true
   field :video_id, as: :text, required: true, hide_on: [:index]
   field :playlist_id, as: :text, required: true, hide_on: [:index]
-  field :url, as: :text, format_using: ->(url) { link_to(url, url, target: '_blank', rel: 'noopener') if url.present? }, hide_on: [:forms]
+  field :url, as: :text, format_using: -> { link_to(value, value, target: '_blank', rel: 'noopener') if value.present? }, hide_on: [:forms]
   field :payload, as: :code, language: 'javascript', only_on: :edit, readonly: true
   field :payload, as: :code, language: 'javascript' do |model|
     JSON.pretty_generate(model.payload.as_json) if model.payload.present?

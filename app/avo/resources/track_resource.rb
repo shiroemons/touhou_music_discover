@@ -16,7 +16,7 @@ class TrackResource < Avo::BaseResource
   field :album_name, as: :text, only_on: [:index]
   field :name, as: :text, link_to_resource: true
   field :original_songs_count, as: :number, only_on: [:index], index_text_align: :right
-  field :is_touhou, as: :text, name: 'touhou', only_on: [:index], format_using: ->(value) { value.present? ? '✅' : '' }, index_text_align: :center
+  field :is_touhou, as: :text, name: 'touhou', only_on: [:index], format_using: -> { value.present? ? '✅' : '' }, index_text_align: :center
   field :apple_music, as: :text, only_on: [:index], index_text_align: :center do |model|
     model.apple_music_tracks.present? ? '✅' : ''
   end
