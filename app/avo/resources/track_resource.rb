@@ -20,13 +20,13 @@ class TrackResource < Avo::BaseResource
   field :apple_music, as: :text, only_on: [:index], index_text_align: :center do |model|
     model.apple_music_tracks.present? ? '✅' : ''
   end
-  field :ytmusic, as: :text, only_on: [:index], index_text_align: :center do |model|
+  field :line_music, as: :text, only_on: [:index], index_text_align: :center do |model|
     model.line_music_tracks.present? ? '✅' : ''
   end
   field :spotify, as: :text, only_on: [:index], index_text_align: :center do |model|
     model.spotify_tracks.present? ? '✅' : ''
   end
-  field :line_music, as: :text, only_on: [:index], index_text_align: :center do |model|
+  field :ytmusic, as: :text, only_on: [:index], index_text_align: :center do |model|
     model.ytmusic_tracks.present? ? '✅' : ''
   end
 
