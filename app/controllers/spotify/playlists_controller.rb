@@ -38,26 +38,36 @@ module Spotify
 
     def add_tracks(original)
       original.original_songs.each do |os|
-        next if os.is_duplicate
+        count = 0
+        begin
+          next if os.is_duplicate
 
-        spotify_tracks = os.spotify_tracks
-        next if spotify_tracks.empty?
+          spotify_tracks = os.spotify_tracks
+          next if spotify_tracks.empty?
 
-        original_song_title = os.title
-        playlist = playlist_find(original_song_title)
-        # playlist = @spotify_user.create_playlist!(original_song_title) if playlist.nil?
-        next if playlist.nil?
+          original_song_title = os.title
+          playlist = playlist_find(original_song_title)
+          # playlist = @spotify_user.create_playlist!(original_song_title) if playlist.nil?
+          next if playlist.nil?
 
-        playlist_tracks = playlist.tracks
-        # 既存のプレイリストのtrackをすべて削除する
-        until playlist_tracks.empty?
-          playlist.remove_tracks!(playlist_tracks)
           playlist_tracks = playlist.tracks
-        end
-        spotify_track_ids = spotify_tracks.map(&:spotify_id)
-        spotify_track_ids&.each_slice(50) do |ids|
-          tracks = RSpotify::Track.find(ids)
-          playlist.add_tracks!(tracks)
+          # 既存のプレイリストのtrackをすべて削除する
+          until playlist_tracks.empty?
+            playlist.remove_tracks!(playlist_tracks)
+            playlist_tracks = playlist.tracks
+          end
+          spotify_track_ids = spotify_tracks.map(&:spotify_id)
+          spotify_track_ids&.each_slice(50) do |ids|
+            tracks = RSpotify::Track.find(ids)
+            playlist.add_tracks!(tracks)
+          end
+        rescue OpenSSL::SSL::SSLError => e
+          Rails.logger.warn(e)
+          count += 1
+          next unless count < 3
+
+          sleep 1
+          retry
         end
       end
     end
