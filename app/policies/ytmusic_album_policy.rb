@@ -9,6 +9,10 @@ class YtmusicAlbumPolicy < ApplicationPolicy
     true
   end
 
+  def destroy?
+    true
+  end
+
   def act_on?
     true
   end
