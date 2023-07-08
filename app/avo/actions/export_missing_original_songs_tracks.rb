@@ -8,11 +8,12 @@ class ExportMissingOriginalSongsTracks < Avo::BaseAction
 
   def handle(_args)
     tsv_data = CSV.generate(col_sep: "\t") do |csv|
-      csv << %w[jan_code isrc album_name track_name original_songs]
+      csv << %w[jan_code isrc circle_name album_name track_name original_songs]
       Track.includes(:spotify_tracks, :apple_music_tracks).missing_original_songs.order(jan_code: :desc).order(isrc: :asc).each do |track|
         column_values = [
           track.jan_code,
           track.isrc,
+          track.circle_name,
           track.album_name,
           track.name,
           track.original_songs.map(&:title).join('/')
