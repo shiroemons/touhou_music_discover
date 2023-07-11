@@ -36,7 +36,8 @@ class YtmusicAlbum < ApplicationRecord
     '4580547337150' => 'MPREb_Bi4eL7O8d2W', # SOUND HOLIC - EUROBEAT HOLIC III -SEPARATED EDITION-
     '4580547337266' => 'MPREb_ledPRnZolOY', # 上海アリス幻樂団 - 虹色のセプテントリオン
     '4580547337693' => 'MPREb_r2gBqTAcOl7', # 魂音泉 - Lu○Na
-    '4580547337709' => 'MPREb_6q8Ngwz42zE'  # 魂音泉 - Lu○Na -eclipse-
+    '4580547337709' => 'MPREb_6q8Ngwz42zE', # 魂音泉 - Lu○Na -eclipse-
+    '4580547337907' => 'MPREb_MD7iqNzhx9G'  # Dドライブ - -10400000k
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
