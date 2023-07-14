@@ -79,7 +79,7 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.36.1)
+    avo (2.36.2)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
@@ -230,7 +230,7 @@ GEM
       railties (>= 7.0.0)
     protocol (2.0.0)
       ruby_parser (~> 3.0)
-    public_suffix (5.0.1)
+    public_suffix (5.0.3)
     puma (6.3.0)
       nio4r (~> 2.0)
     pundit (2.3.0)
