@@ -79,7 +79,7 @@ GEM
       faraday_middleware
       jwt (>= 2.2)
     ast (2.4.2)
-    avo (2.36.2)
+    avo (2.37.2)
       actionview (>= 6.0)
       active_link_to
       activerecord (>= 6.0)
@@ -351,14 +351,14 @@ GEM
       unf_ext
     unf_ext (0.0.8)
     unicode-display_width (2.4.2)
-    view_component (3.3.0)
+    view_component (3.5.0)
       activesupport (>= 5.2.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
     websocket-driver (0.7.5)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
-    zeitwerk (2.6.8)
+    zeitwerk (2.6.9)
 
 PLATFORMS
   x86_64-darwin-20
