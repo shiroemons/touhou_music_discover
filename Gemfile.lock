@@ -236,7 +236,7 @@ GEM
     pundit (2.3.0)
       activesupport (>= 3.0.0)
     racc (1.7.1)
-    rack (2.2.7)
+    rack (2.2.8)
     rack-protection (2.1.0)
       rack
     rack-test (2.1.0)
@@ -334,7 +334,7 @@ GEM
     ruby_parser (3.19.1)
       sexp_processor (~> 4.16)
     sexp_processor (4.16.1)
-    stimulus-rails (1.2.1)
+    stimulus-rails (1.2.2)
       railties (>= 6.0.0)
     sync (0.5.0)
     thor (1.2.2)
@@ -358,7 +358,7 @@ GEM
     websocket-driver (0.7.5)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
-    zeitwerk (2.6.9)
+    zeitwerk (2.6.11)
 
 PLATFORMS
   x86_64-darwin-20
