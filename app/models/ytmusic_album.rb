@@ -37,7 +37,9 @@ class YtmusicAlbum < ApplicationRecord
     '4580547337266' => 'MPREb_ledPRnZolOY', # 上海アリス幻樂団 - 虹色のセプテントリオン
     '4580547337693' => 'MPREb_r2gBqTAcOl7', # 魂音泉 - Lu○Na
     '4580547337709' => 'MPREb_6q8Ngwz42zE', # 魂音泉 - Lu○Na -eclipse-
-    '4580547337907' => 'MPREb_MD7iqNzhx9G'  # Dドライブ - -10400000k
+    '4580547337907' => 'MPREb_MD7iqNzhx9G', # Dドライブ - -10400000k
+    '4580547339109' => 'MPREb_7m49E8zKaBH', # Astral Sky、非可逆リズム - SUPERNOV∀
+    '4580547338638' => 'MPREb_oygvl00mVC5'  # A-One - U.N. Owen Was Her? feat. HIKO
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
