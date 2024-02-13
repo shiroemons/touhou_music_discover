@@ -39,7 +39,9 @@ class YtmusicAlbum < ApplicationRecord
     '4580547337709' => 'MPREb_6q8Ngwz42zE', # 魂音泉 - Lu○Na -eclipse-
     '4580547337907' => 'MPREb_MD7iqNzhx9G', # Dドライブ - -10400000k
     '4580547339109' => 'MPREb_7m49E8zKaBH', # Astral Sky、非可逆リズム - SUPERNOV∀
-    '4580547338638' => 'MPREb_oygvl00mVC5'  # A-One - U.N. Owen Was Her? feat. HIKO
+    '4580547338638' => 'MPREb_oygvl00mVC5', # A-One - U.N. Owen Was Her? feat. HIKO
+    '4580547339161' => 'MPREb_p7J6QrGPW2W', # A-One - What's the white magic（feat. lily-an）
+    '4580547339208' => 'MPREb_CE4fc2sV3Mc'  # A-One - What's the white magic
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
