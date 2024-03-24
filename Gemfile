@@ -3,7 +3,7 @@
 source 'https://rubygems.org'
 git_source(:github) { |repo| "https://github.com/#{repo}.git" }
 
-ruby '3.2.2'
+ruby file: '.ruby-version'
 
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'pg', '~> 1.5'
