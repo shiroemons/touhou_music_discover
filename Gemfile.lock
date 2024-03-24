@@ -185,10 +185,10 @@ GEM
       net-pop
       net-smtp
     marcel (1.0.4)
-    meilisearch (0.25.1)
+    meilisearch (0.26.0)
       httparty (>= 0.17.1, < 0.22.0)
-    meilisearch-rails (0.10.1)
-      meilisearch (~> 0.25.0)
+    meilisearch-rails (0.12.0)
+      meilisearch (~> 0.26.0)
     meta-tags (2.20.0)
       actionpack (>= 6.0.0, < 7.2)
     method_source (1.0.0)
