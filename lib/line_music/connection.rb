@@ -19,9 +19,9 @@ module LineMusic
       end
     end
 
-    def method_missing(name, *args, &)
+    def method_missing(name, *, &)
       if client.respond_to?(name)
-        client.send(name, *args, &)
+        client.send(name, *, &)
       else
         super
       end
