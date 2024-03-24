@@ -28,6 +28,8 @@ class AppleMusicAlbum < ApplicationRecord
 
   # AppleMusicのアルバム情報を保存する
   def self.save_album(am_album)
+    return nil unless am_album.respond_to?(:record_label)
+
     return nil if am_album.record_label != ::Album::TOUHOU_MUSIC_LABEL
 
     apple_music_album = ::AppleMusicAlbum.find_or_create_by!(
