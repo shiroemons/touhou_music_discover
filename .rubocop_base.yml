@@ -24,3 +24,6 @@ Style/AsciiComments:
 
 Style/Documentation:
   Enabled: false
+
+Rails/FindEach:
+  Enabled: false
