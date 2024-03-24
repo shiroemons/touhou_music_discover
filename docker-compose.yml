@@ -1,9 +1,9 @@
 version: "3.8"
 services:
-  db:
-    image: postgres:15-alpine
+  postgres-16:
+    image: postgres:16-alpine
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres-16:/var/lib/postgresql/data
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
 
@@ -29,11 +29,11 @@ services:
       WD_INSTALL_DIR: "/usr/local/bin"
       HISTFILE: "/app/log/.bash_history"
       EDITOR: "vi"
-      DATABASE_URL: "postgres://postgres:postgres@db:5432"
+      DATABASE_URL: "postgres://postgres:postgres@postgres-16:5432"
       REDIS_URL: "redis://redis:6379/"
       RAILS_MASTER_KEY:
     depends_on:
-      - db
+      - postgres-16
       - redis
     command: ["bin/rails", "server", "-b", "0.0.0.0"]
     expose: ["3000"]
@@ -42,7 +42,7 @@ services:
     working_dir: /app
 
 volumes:
-  postgres:
+  postgres-16:
   redis:
   bundle:
   rails_cache:
