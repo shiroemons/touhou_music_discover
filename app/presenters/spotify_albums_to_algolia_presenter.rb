@@ -13,7 +13,7 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
   COPYRIGHT_TYPE = { 'C' => '©', 'P' => '℗' }.freeze
 
   def as_json(*)
-    @object&.map { |o| album_object(o) }&.compact || []
+    @object&.filter_map { |o| album_object(o) } || []
   end
 
   private

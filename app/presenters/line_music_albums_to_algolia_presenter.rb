@@ -11,7 +11,7 @@ class LineMusicAlbumsToAlgoliaPresenter < Presenter
   }.freeze
 
   def as_json(*)
-    @object&.map { |o| album_object(o) }&.compact || []
+    @object&.filter_map { |o| album_object(o) } || []
   end
 
   private

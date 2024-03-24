@@ -8,7 +8,7 @@ class SetCircles < Avo::BaseAction
   def handle(_args)
     Album.missing_circles.eager_load(:spotify_album).each do |album|
       artist_name = album&.spotify_album&.artist_name
-      artist_name = artist_name&.sub(%r{\AZUN / }, '')
+      artist_name = artist_name&.delete_prefix('ZUN / ')
       artists = artist_name&.split(' / ')
       artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[_1].presence || _1 }&.flatten
       artists&.uniq&.each do |artist|
