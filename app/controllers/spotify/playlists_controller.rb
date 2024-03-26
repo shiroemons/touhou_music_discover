@@ -47,8 +47,10 @@ module Spotify
 
           original_song_title = os.title
           playlist = playlist_find(original_song_title)
-          # playlist = @spotify_user.create_playlist!(original_song_title) if playlist.nil?
-          next if playlist.nil?
+          if playlist.nil?
+            new_playlist = @spotify_user.create_playlist!(original_song_title)
+            playlist = RSpotify::Playlist.find_by_id(new_playlist.id)
+          end
 
           playlist_tracks = playlist.tracks
           # 既存のプレイリストのtrackをすべて削除する
@@ -59,7 +61,7 @@ module Spotify
           spotify_track_ids = spotify_tracks.map(&:spotify_id)
           spotify_track_ids&.each_slice(50) do |ids|
             tracks = RSpotify::Track.find(ids)
-            playlist.add_tracks!(tracks)
+            playlist.add_tracks!(tracks) if tracks.length > 0
           end
         rescue OpenSSL::SSL::SSLError => e
           Rails.logger.warn(e)
