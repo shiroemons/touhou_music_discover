@@ -243,6 +243,11 @@ cp .env.development.local.example .env.development.local
   docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music
   ```
 
+- 東方同人音楽流通 配信曲リストスリム版出力
+  ```shell
+  docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music_slim
+  ```
+
 - 東方同人音楽流通 配信アルバムリスト出力
   ```shell
   docker-compose run --rm web bin/rails touhou_music_discover:export:touhou_music_album_only

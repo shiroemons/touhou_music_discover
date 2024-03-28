@@ -96,6 +96,59 @@ namespace :touhou_music_discover do
       end
     end
 
+    desc 'Touhou music file slim export'
+    task touhou_music_slim: :environment do
+      File.open('tmp/touhou_music_slim.tsv', 'w') do |f|
+        f.puts("circle\talbum_name\tno\ttrack_name\tapple_music_track_url\tyoutube_music_track_url\tspotify_track_url\tline_music_track_url")
+        Album.unscoped.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
+          circle = album.circles&.map(&:name)&.join(' / ')
+
+          # Apple Music
+          apple_music_album_name = album.apple_music_album&.name
+          # YouTube Music
+          youtube_music_album_name = album.ytmusic_album&.name
+          # Spotify
+          spotify_album_name = album.spotify_album&.name
+          # LINE MUSIC
+          line_music_album_name = album.line_music_album&.name
+
+          # Album name
+          album_name = youtube_music_album_name || apple_music_album_name || spotify_album_name || line_music_album_name
+
+          # track_numberでソート
+          tracks = album.tracks.sort_by do |track|
+            track.apple_music_tracks&.find { _1.album == album }&.track_number || track.spotify_tracks&.find { _1.album == album }&.track_number
+          end
+
+          tracks.each do |track|
+            apple_music_track = track.apple_music_tracks&.find { _1.album == album }
+            line_music_track = track.line_music_tracks&.find { _1.album == album }
+            spotify_track = track.spotify_tracks&.find { _1.album == album }
+            ytmusic_track = track.ytmusic_tracks&.find { _1.album == album }
+
+            track_number = apple_music_track&.track_number || spotify_track&.track_number
+
+            # Apple Music
+            apple_music_track_url = apple_music_track&.url
+            apple_music_track_name = apple_music_track&.name
+            # YouTube Music
+            youtube_music_track_url = ytmusic_track&.url
+            youtube_music_track_name = ytmusic_track&.name
+            # Spotify
+            spotify_track_url = spotify_track&.url
+            spotify_track_name = spotify_track&.name
+            # LINE MUSIC
+            line_music_track_url = line_music_track&.url
+            line_music_track_name = line_music_track&.name
+
+            # Track name
+            track_name = youtube_music_track_name || apple_music_track_name || spotify_track_name || line_music_track_name
+            f.puts("#{circle}\t#{album_name}\t#{track_number}\t#{track_name}\t#{apple_music_track_url}\t#{youtube_music_track_url}\t#{spotify_track_url}\t#{line_music_track_url}")
+          end
+        end
+      end
+    end
+
     desc 'Touhou music album only file export'
     task touhou_music_album_only: :environment do
       File.open('tmp/touhou_music_album_only.tsv', 'w') do |f|
