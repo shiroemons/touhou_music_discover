@@ -27,3 +27,6 @@ Style/Documentation:
 
 Rails/FindEach:
   Enabled: false
+
+Rails/DynamicFindBy:
+  Enabled: false

@@ -61,7 +61,7 @@ module Spotify
           spotify_track_ids = spotify_tracks.map(&:spotify_id)
           spotify_track_ids&.each_slice(50) do |ids|
             tracks = RSpotify::Track.find(ids)
-            playlist.add_tracks!(tracks) if tracks.length > 0
+            playlist.add_tracks!(tracks) if tracks.length.positive?
           end
         rescue OpenSSL::SSL::SSLError => e
           Rails.logger.warn(e)
