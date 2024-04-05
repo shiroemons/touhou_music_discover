@@ -416,6 +416,7 @@ DEPENDENCIES
   meilisearch-rails
   omniauth-rails_csrf_protection
   pagy
+  parallel
   pg (~> 1.5)
   propshaft
   puma (~> 6.3)
