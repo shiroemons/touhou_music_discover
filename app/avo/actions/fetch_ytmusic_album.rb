@@ -37,8 +37,8 @@ class FetchYtmusicAlbum < Avo::BaseAction
     return if YtmusicAlbum.search_and_save(query, am_album)
 
     # Apple Musicアルバム名の様々なバリエーションで検索
-    [am_album_name, am_album_name.sub(/ [(|\[].*[)|\]]\z/, ''), am_album.name, am_album.name.sub(' - EP', '')].each do |query|
-      return if YtmusicAlbum.search_and_save(query, am_album)
+    [am_album_name, am_album_name.sub(/ [(|\[].*[)|\]]\z/, ''), am_album.name, am_album.name.sub(' - EP', '')].each do |q|
+      return if YtmusicAlbum.search_and_save(q, am_album)
     end
   end
 
@@ -47,8 +47,8 @@ class FetchYtmusicAlbum < Avo::BaseAction
       [s_album.name.unicode_normalize, artist_names],
       [s_album.name.unicode_normalize.gsub(/( -|─|☆|■|≒|⇔)/, ' ')
               .gsub(/\p{In_Halfwidth_and_Fullwidth_Forms}+/) { |str| str.unicode_normalize(:nfkd) }
-         .gsub(/ [(|（\[].*[)|）\]]/, '')
-         .tr('０-９', '0-9').strip, artist_names]
+              .gsub(/ [(|（\[].*[)|）\]]/, '')
+              .tr('０-９', '0-9').strip, artist_names]
     ]
     queries << [s_album.name, ''] if s_album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
     queries.each do |name, names|

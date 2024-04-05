@@ -53,7 +53,7 @@ class FetchLineMusicAlbum < Avo::BaseAction
       LineMusicAlbum.where(id: ids).then do |records|
         Parallel.each(records, in_processes: 7) do |line_music_album|
           lm_album = LineMusic::Album.find(line_music_album.line_music_id)
-          next unless lm_album.present?
+          next if lm_album.blank?
 
           line_music_album.update(
             name: lm_album.album_title,

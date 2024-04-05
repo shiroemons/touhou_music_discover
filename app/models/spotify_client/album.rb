@@ -12,17 +12,16 @@ module SpotifyClient
       end
     end
 
-    private
-
     def self.search_and_save_albums(keyword, year)
       offset = 0
       loop do
-        s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset: offset, market: 'JP')
+        s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:, market: 'JP')
         s_albums.each do |s_album|
           process_album(s_album)
         end
         offset += s_albums.size
         break if s_albums.size < LIMIT
+
         puts "year:#{year}\toffset: #{offset}"
       end
     end
