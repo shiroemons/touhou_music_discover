@@ -6,31 +6,38 @@ module SpotifyClient
     KEYWORD = 'label:東方同人音楽流通'
 
     def self.fetch_touhou_albums
-      (2000..(Time.zone.today.year)).each do |year|
+      Parallel.each((2000..Time.zone.today.year), in_processes: 7) do |year|
         keyword = "#{KEYWORD} year:#{year}"
-        offset = 0
-        loop do
-          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:, market: 'JP')
-          s_albums.each do |s_album|
-            spotify_album = if SpotifyAlbum.exists?(spotify_id: s_album.id)
-                              SpotifyAlbum.find_by(spotify_id: s_album.id)
-                            else
-                              SpotifyAlbum.save_album(s_album)
-                            end
+        search_and_save_albums(keyword, year)
+      end
+    end
 
-            next if spotify_album.nil?
-            next if spotify_album.total_tracks == spotify_album.spotify_tracks.count
+    private
 
-            s_tracks = fetch_tracks(s_album)
-            s_tracks.each do |s_track|
-              SpotifyTrack.save_track(spotify_album, s_track)
-              sleep 0.1
-            end
-          end
-          offset += s_albums.size
-          break if s_albums.size < LIMIT
+    def self.search_and_save_albums(keyword, year)
+      offset = 0
+      loop do
+        s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset: offset, market: 'JP')
+        s_albums.each do |s_album|
+          process_album(s_album)
         end
+        offset += s_albums.size
+        break if s_albums.size < LIMIT
         puts "year:#{year}\toffset: #{offset}"
+      end
+    end
+
+    def self.process_album(s_album)
+      spotify_album = SpotifyAlbum.exists?(spotify_id: s_album.id) ? SpotifyAlbum.find_by(spotify_id: s_album.id) : SpotifyAlbum.save_album(s_album)
+      return if spotify_album.nil? || spotify_album.total_tracks == spotify_album.spotify_tracks.count
+
+      s_tracks = s_album.tracks
+      save_tracks(spotify_album, s_tracks)
+    end
+
+    def self.save_tracks(spotify_album, s_tracks)
+      s_tracks.each do |s_track|
+        SpotifyTrack.save_track(spotify_album, s_track)
       end
     end
 
