@@ -10,7 +10,7 @@ class FetchYtmusicTrack < Avo::BaseAction
     batch_size = 1000
     album_ids.each_slice(batch_size) do |ids|
       Album.includes(:ytmusic_album, spotify_album: [:spotify_tracks], apple_music_album: [:apple_music_tracks]).where(id: ids).then do |records|
-        Parallel.each_with_index(records, in_processes: 7) do |r|
+        Parallel.each(records, in_processes: 7) do |r|
           process_album(r)
         end
       end
