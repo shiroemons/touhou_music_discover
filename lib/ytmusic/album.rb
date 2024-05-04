@@ -25,6 +25,8 @@ module YTMusic
       @type = contents&.shift&.dig('text')
       @year = contents&.pop&.dig('text')
       artist_contents = contents&.filter { _1['text'] != ' • ' }&.filter { _1['text'] != '、' }
+      return if artist_contents.blank?
+
       @artists = artist_contents.map { Artist.new _1 }
 
       @track_total_count = response.dig('header', 'musicDetailHeaderRenderer', 'secondSubtitle', 'runs', 0, 'text').to_i

@@ -41,7 +41,21 @@ class YtmusicAlbum < ApplicationRecord
     '4580547339109' => 'MPREb_7m49E8zKaBH', # Astral Sky、非可逆リズム - SUPERNOV∀
     '4580547338638' => 'MPREb_oygvl00mVC5', # A-One - U.N. Owen Was Her? feat. HIKO
     '4580547339161' => 'MPREb_p7J6QrGPW2W', # A-One - What's the white magic（feat. lily-an）
-    '4580547339208' => 'MPREb_CE4fc2sV3Mc'  # A-One - What's the white magic
+    '4580547339208' => 'MPREb_CE4fc2sV3Mc', # A-One - What's the white magic
+    '4582736130665' => 'MPREb_JH8ScoLuuR8', # COOL&CREATE - Help me, ERINNNNNN!! (～たすけてえーりん!!～) [feat. 初音ミク]
+    '4582736130658' => 'MPREb_cnPmw96cCjF', # COOL&CREATE - Help me, ERINNNNNN!! (～たすけてえーりん!!～)
+    '4582736130344' => 'MPREb_Q9ZBcfoRVzn', # 東方LostWord - 刻の境界 feat.いとうかなこ×東京アクティブNEETs
+    '4582736130351' => 'MPREb_t91yIcLUOL2', # 東方LostWord - PHANTOM PAIN feat.KOTOKO×ZYTOKINE
+    '4582736130368' => 'MPREb_HBkwY3WaipO', # 東方LostWord - Be the change feat.大坪由佳×DiGiTAL WiNG
+    '4582736130375' => 'MPREb_DIQH9nxXAtf', # 東方LostWord - 月、想ふ時 feat.宮村優子×幽閉サテライト
+    '4582736130382' => 'MPREb_9iyV9K8e5P0', # 東方LostWord - タタエロスト feat.岸田メル×石鹸屋
+    '4582736130399' => 'MPREb_YoBnANz3ocb', # 東方LostWord - ナシミのデグチ feat.榎本温子×はにーぽけっと
+    '4582736130405' => 'MPREb_tRx3JKkZLVm', # 東方LostWord - (TT)プレシャスワード feat.桃井はるこ×IOSYS
+    '4582736130412' => 'MPREb_fXttSxGXJj0', # 東方LostWord - 命に名前をつけるなら feat.渕上舞×少女理論観測所
+    '4582736130429' => 'MPREb_6vsGYW7ehPy', # 東方LostWord - Holy Again feat.Teresa×発熱巫女～ず
+    '4582736130436' => 'MPREb_Z8xryUnkOby', # 東方LostWord - 感傷のシグナル feat.花守ゆみり×東方事変
+    '4582736130443' => 'MPREb_tL0wx5vVUlj', # 東方LostWord - 追想の愛 feat.大槻ケンヂ×豚乙女
+    '4582736130450' => 'MPREb_kfT1GYMCGg1'  # 東方LostWord - 世界一位 feat.徳井青空×Alstroemeria Records
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
