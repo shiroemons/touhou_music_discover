@@ -335,7 +335,7 @@ GEM
       netrc (~> 0.8)
     retryable (3.0.5)
     rexml (3.2.6)
-    rspotify (2.12.1)
+    rspotify (2.12.2)
       addressable (~> 2.8.0)
       omniauth-oauth2 (>= 1.6)
       rest-client (~> 2.0.2)
