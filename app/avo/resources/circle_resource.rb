@@ -13,5 +13,5 @@ class CircleResource < Avo::BaseResource
   field :name, as: :text
   field :albums_count, as: :number, only_on: [:index], index_text_align: :right
 
-  field :albums, as: :has_many, hide_on: [:new, :edit]
+  field :albums, as: :has_many, hide_on: %i[new edit]
 end

@@ -3,10 +3,10 @@
 class TrackResource < Avo::BaseResource
   self.title = :isrc
   self.translation_key = 'avo.resource_translations.track'
-  self.includes = [:original_songs, { album: [:spotify_album, :apple_music_album, :circles]}, :spotify_tracks, :apple_music_tracks, :line_music_tracks, :ytmusic_tracks]
+  self.includes = [:original_songs, { album: %i[spotify_album apple_music_album circles] }, :spotify_tracks, :apple_music_tracks, :line_music_tracks, :ytmusic_tracks]
   self.record_selector = false
   self.resolve_query_scope = lambda { |model_class:|
-    model_class.order("albums.jan_code DESC")
+    model_class.order('albums.jan_code DESC')
   }
   # self.search_query = -> do
   #   scope.ransack(id_eq: params[:q], m: "or").result(distinct: false)
