@@ -5,6 +5,9 @@ class TrackResource < Avo::BaseResource
   self.translation_key = 'avo.resource_translations.track'
   self.includes = [:original_songs]
   self.record_selector = false
+  self.resolve_query_scope = lambda { |model_class:|
+    model_class.includes("album").order("albums.jan_code DESC")
+  }
   # self.search_query = -> do
   #   scope.ransack(id_eq: params[:q], m: "or").result(distinct: false)
   # end
