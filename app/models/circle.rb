@@ -35,7 +35,7 @@ class Circle < ApplicationRecord
     '狐夢想屋×ゼッケン屋' => %w[狐夢想屋 ゼッケン屋],
     '白鳳(Ende der Welt)' => 'Ende der Welt',
     '埼玉最終兵器&Aether' => %w[埼玉最終兵器 Aether],
-    'みゅい' => 'MyuiPlaying'
+    'みゅい' => 'Myui Playing'
   }.freeze
 
   JAN_TO_CIRCLE = {
