@@ -55,7 +55,8 @@ class YtmusicAlbum < ApplicationRecord
     '4582736130429' => 'MPREb_6vsGYW7ehPy', # 東方LostWord - Holy Again feat.Teresa×発熱巫女～ず
     '4582736130436' => 'MPREb_Z8xryUnkOby', # 東方LostWord - 感傷のシグナル feat.花守ゆみり×東方事変
     '4582736130443' => 'MPREb_tL0wx5vVUlj', # 東方LostWord - 追想の愛 feat.大槻ケンヂ×豚乙女
-    '4582736130450' => 'MPREb_kfT1GYMCGg1'  # 東方LostWord - 世界一位 feat.徳井青空×Alstroemeria Records
+    '4582736130450' => 'MPREb_kfT1GYMCGg1', # 東方LostWord - 世界一位 feat.徳井青空×Alstroemeria Records
+    '4582736130627' => 'MPREb_iEdWKdsLr40'  # 凋叶棕 - Ｑ（愛蔵版）
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
