@@ -752,6 +752,17 @@ code	original_code	title	composer	track_number	is_duplicate
 031101	0311	七ツ石の狼、雲を取りに駆ける	ZUN	1	0
 031102	0311	幻想のホワイトトラベラー	ZUN	2	1
 031103	0311	あの賑やかな市場は今どこに　～ Immemorial Marketeers	ZUN	3	1
+031201	0312	七夕坂に朝が来る	ZUN	1	0
+031202	0312	不等式のティンカーベル	ZUN	2	0
+031203	0312	禁断の扉の向こうは、この世かあの世か	ZUN	3	1
+031204	0312	スモーキングドラゴン	ZUN	4	1
+031205	0312	夢幻能　〜 Taboo Marionette	ZUN	5	0
+031206	0312	クレイジーバックダンサーズ	ZUN	6	1
+031207	0312	憑坐は夢と現の間に　〜 Necro-Fantasia	ZUN	7	1
+031208	0312	ひとりぼっちの常陸行路	ZUN	8	0
+031209	0312	地蔵だけが知る哀嘆	ZUN	9	1
+031210	0312	秘匿されたフォーシーズンズ	ZUN	10	1
+031211	0312	夜じゃなくてもお化けはいるから	ZUN	11	0
 040101	0401	幻想郷　～ Lotus Land Story	ZUN	1	1
 040102	0401	Witching Dream	ZUN	2	1
 040103	0401	Selene's light	ZUN	3	1
@@ -950,6 +961,7 @@ code	original_code	title	composer	track_number	is_duplicate
 061101	0611	心綺楼祭囃子	あきやまうに	1	0
 061201	0612	憑依華	あきやまうに	1	0
 061301	0613	日々是紅日　～ Folksy Touhou days.	ZUN	1	0
+061412	0614	Mysterious Shrine	ZUN	12	0
 069901	0699	オリジナル		1	0
 069902	0699	原曲多数		2	0
 069999	0699	その他		3	0
