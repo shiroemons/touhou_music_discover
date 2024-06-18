@@ -15,6 +15,12 @@ class AppleMusicTrack < ApplicationRecord
   scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
 
+  def self.fetch_tracks_and_albums
+    Track.missing_apple_music_tracks.find_each do |track|
+      AppleMusicClient::Track.fetch_tracks_by_isrc(track.isrc)
+    end
+  end
+
   def self.save_track(apple_music_album, am_track)
     track = ::Track.find_or_create_by!(jan_code: apple_music_album.album.jan_code, isrc: am_track.isrc)
 

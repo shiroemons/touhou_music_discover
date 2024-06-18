@@ -34,6 +34,7 @@ class AlbumResource < Avo::BaseResource
   field :ytmusic_album, as: :has_one, searchable: true
   field :ytmusic_tracks, as: :has_many, searchable: true
 
+  action BulkRetrieval
   action ChangeTouhouFlag
   action SetCircles
 
