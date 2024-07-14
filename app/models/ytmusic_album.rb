@@ -103,7 +103,7 @@ class YtmusicAlbum < ApplicationRecord
 
     ytm_album = ytmusic_albums.find do |ytmusic_album|
       ytmusic_album.title == album.name &&
-        ytmusic_album.year != album.release_date.year.to_s &&
+        ytmusic_album.year == album.release_date.year.to_s &&
         ytmusic_album.artists.map(&:name).join(' / ') == album.artist_name
     end
 
