@@ -34,6 +34,7 @@ module YTMusic
       @track_total_count = header.dig('secondSubtitle', 'runs', 0, 'text').to_i
       @duration_text = header.dig('secondSubtitle', 'runs', 2, 'text')
       thumbnails = header.dig('straplineThumbnail', 'musicThumbnailRenderer', 'thumbnail', 'thumbnails')
+      thumbnails ||= header.dig('thumbnail', 'musicThumbnailRenderer', 'thumbnail', 'thumbnails')
       @thumbnails = thumbnails.map { Thumbnail.new _1 }
       @playlist_url = response.dig('microformat', 'microformatDataRenderer', 'urlCanonical')
       track_contents = response.dig('contents', 'twoColumnBrowseResultsRenderer', 'secondaryContents', 'sectionListRenderer', 'contents', 0, 'musicShelfRenderer', 'contents')
