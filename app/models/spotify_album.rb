@@ -47,6 +47,11 @@ class SpotifyAlbum < ApplicationRecord
   end
 
   def artist_name
+    # payload['artists']が1つ以上でその1つの名前がZUNの場合は、ZUNを削除して連結する
+    if payload['artists'].size > 1 && payload['artists'].any? { _1['name'] == 'ZUN' }
+      return payload['artists'].reject { _1['name'] == 'ZUN' }.map { _1['name'] }.join(' / ')
+    end
+
     payload['artists']&.map { _1['name'] }&.join(' / ')
   end
 
