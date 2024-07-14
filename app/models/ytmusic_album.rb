@@ -193,8 +193,8 @@ class YtmusicAlbum < ApplicationRecord
       [s_album.name.unicode_normalize, artist_names],
       [s_album.name.unicode_normalize.gsub(/( -|─|☆|■|≒|⇔)/, ' ')
               .gsub(/\p{In_Halfwidth_and_Fullwidth_Forms}+/) { |str| str.unicode_normalize(:nfkd) }
-         .gsub(/ [(|（\[].*[)|）\]]/, '')
-         .tr('０-９', '0-9').strip, artist_names]
+              .gsub(/ [(|（\[].*[)|）\]]/, '')
+              .tr('０-９', '0-9').strip, artist_names]
     ]
     queries << [s_album.name, ''] if s_album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
     queries.each do |name, names|

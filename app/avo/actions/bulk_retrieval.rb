@@ -1,9 +1,11 @@
+# frozen_string_literal: true
+
 class BulkRetrieval < Avo::BaseAction
-  self.name = "一括取得"
+  self.name = '一括取得'
   self.standalone = true
   self.visible = -> { view == :index }
 
-  def handle(**args)
+  def handle(**_args)
     # Spotify
     SpotifyClient::Album.fetch_touhou_albums
 
