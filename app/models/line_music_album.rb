@@ -31,7 +31,8 @@ class LineMusicAlbum < ApplicationRecord
     '4580547337495' => 'mb0000000002c776eb', # StarlessTrilogy - StarlessTrilogyII
     '4580547338485' => 'mb0000000002e9d62c', # 幽閉サテライト - 彩-IRODORI-Singles Best vol.8～穢れなきユーフォリア～
     '4580547338959' => 'mb00000000031ee6e5', # StarlessTrilogy - Ode to a VladⅢ
-    '4580547339802' => 'mb00000000036874f9'  # イノライ - ずんだもんが東方にやってきたのだ！
+    '4580547339802' => 'mb00000000036874f9', # イノライ - ずんだもんが東方にやってきたのだ！
+    '4582736131150' => 'mb0000000003ba6b5b'  # 少女理論観測所 - showcase ⅳ
   }.freeze
 
   def self.fetch_albums
