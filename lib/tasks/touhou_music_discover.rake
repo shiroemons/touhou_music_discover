@@ -192,22 +192,22 @@ namespace :touhou_music_discover do
     desc 'Output albums and songs as JSON for Algolia'
     task for_algolia: :environment do
       File.open('tmp/touhou_music_spotify_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(spotify_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(spotify_tracks: { track: { original_songs: :original } }).where('spotify_tracks.updated_at >= ?', 1.month.ago)
         file.puts(JSON.pretty_generate(SpotifyAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
       File.open('tmp/touhou_music_apple_music_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(apple_music_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(apple_music_tracks: { track: { original_songs: :original } }).where('apple_music_tracks.updated_at >= ?', 1.month.ago)
         file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
       File.open('tmp/touhou_music_youtube_music_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(ytmusic_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(ytmusic_tracks: { track: { original_songs: :original } }).where('ytmusic_tracks.updated_at >= ?', 1.month.ago)
         file.puts(JSON.pretty_generate(YtmusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
       File.open('tmp/touhou_music_line_music_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(line_music_tracks: { track: { original_songs: :original } })
+        albums = Album.unscoped.eager_load(line_music_tracks: { track: { original_songs: :original } }).where('line_music_tracks.updated_at >= ?', 1.month.ago)
         file.puts(JSON.pretty_generate(LineMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
     end
