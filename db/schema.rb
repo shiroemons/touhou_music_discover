@@ -15,7 +15,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
   enable_extension "pgcrypto"
   enable_extension "plpgsql"
 
-  create_table "albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "jan_code", null: false
     t.boolean "is_touhou", default: true, null: false
     t.datetime "created_at", null: false
@@ -23,7 +23,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["jan_code"], name: "index_albums_on_jan_code", unique: true
   end
 
-  create_table "apple_music_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "apple_music_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id"
     t.string "apple_music_id", null: false
     t.string "name", null: false
@@ -37,7 +37,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["album_id"], name: "index_apple_music_albums_on_album_id"
   end
 
-  create_table "apple_music_artists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "apple_music_artists", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "apple_music_id", null: false
     t.string "name", null: false
     t.string "url"
@@ -46,7 +46,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "apple_music_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "apple_music_tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id"
     t.uuid "track_id", null: false
     t.uuid "apple_music_album_id", null: false
@@ -68,14 +68,14 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["track_id"], name: "index_apple_music_tracks_on_track_id"
   end
 
-  create_table "circles", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "circles", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "name", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["name"], name: "index_circles_on_name", unique: true
   end
 
-  create_table "circles_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "circles_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "circle_id", null: false
     t.uuid "album_id", null: false
     t.datetime "created_at", null: false
@@ -83,7 +83,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["circle_id", "album_id"], name: "index_circles_albums_on_circle_id_and_album_id", unique: true
   end
 
-  create_table "line_music_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "line_music_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id", null: false
     t.string "line_music_id", null: false
     t.string "name", null: false
@@ -96,7 +96,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["album_id"], name: "index_line_music_albums_on_album_id"
   end
 
-  create_table "line_music_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "line_music_tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id"
     t.uuid "track_id", null: false
     t.uuid "line_music_album_id", null: false
@@ -142,7 +142,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "spotify_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "spotify_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id", null: false
     t.string "spotify_id", null: false
     t.string "album_type", null: false
@@ -157,7 +157,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["album_id"], name: "index_spotify_albums_on_album_id"
   end
 
-  create_table "spotify_artists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "spotify_artists", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "spotify_id", null: false
     t.string "name", null: false
     t.string "url"
@@ -167,7 +167,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "spotify_track_audio_features", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "spotify_track_audio_features", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "track_id", null: false
     t.uuid "spotify_track_id", null: false
     t.string "spotify_id", null: false
@@ -192,7 +192,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["track_id"], name: "index_spotify_track_audio_features_on_track_id"
   end
 
-  create_table "spotify_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "spotify_tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id", null: false
     t.uuid "track_id", null: false
     t.uuid "spotify_album_id", null: false
@@ -212,7 +212,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["track_id"], name: "index_spotify_tracks_on_track_id"
   end
 
-  create_table "tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "jan_code", null: false
     t.string "isrc", null: false
     t.boolean "is_touhou", default: true, null: false
@@ -221,7 +221,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["jan_code", "isrc"], name: "index_tracks_on_jan_code_and_isrc", unique: true
   end
 
-  create_table "tracks_original_songs", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "tracks_original_songs", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "track_id", null: false
     t.string "original_song_code", null: false
     t.datetime "created_at", null: false
@@ -231,7 +231,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["track_id"], name: "index_tracks_original_songs_on_track_id"
   end
 
-  create_table "users", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "users", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.string "provider", null: false
     t.string "uid", null: false
     t.string "name", null: false
@@ -243,7 +243,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "ytmusic_albums", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "ytmusic_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id", null: false
     t.string "browse_id", null: false
     t.string "name", null: false
@@ -257,7 +257,7 @@ ActiveRecord::Schema[7.1].define(version: 2022_04_20_104407) do
     t.index ["album_id"], name: "index_ytmusic_albums_on_album_id"
   end
 
-  create_table "ytmusic_tracks", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+  create_table "ytmusic_tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id"
     t.uuid "track_id", null: false
     t.uuid "ytmusic_album_id", null: false
