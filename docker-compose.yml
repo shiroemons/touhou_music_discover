@@ -4,6 +4,7 @@ services:
     image: postgres:16-alpine
     volumes:
       - postgres-16:/var/lib/postgresql/data
+      - ./tmp:/tmp/data
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
 

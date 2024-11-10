@@ -57,5 +57,17 @@ rubocop-autocorrect-all: ## Run rubocop autocorrect-all
 bash: ## Run bash in web container
 	docker compose run --rm web bash
 
+db-dump: ## db dump
+	mkdir -p tmp/data
+	docker compose exec postgres-16 pg_dump -Fc --no-owner -v -d postgres://postgres:@localhost/touhou_music_discover_development -f /tmp/data/dev.bak
+
+db-restore: ## db restore
+	@if test -f ./tmp/dev.bak; then \
+		docker compose exec postgres-16 pg_restore --no-privileges --no-owner --clean -v -d postgres://postgres:@localhost/touhou_music_discover_development /tmp/data/dev.bak; \
+	else \
+		echo "Error: ./tmp/dev.bak does not exist."; \
+		exit 1; \
+	fi
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
