@@ -346,6 +346,42 @@ namespace :touhou_music_discover do
         f.puts JSON.pretty_generate(spotify_tsa_songs)
       end
     end
+
+    desc 'Export newly added albums missing original songs with prioritized Spotify album names and sorted output including YouTube URL'
+    task missing_original_songs_albums: :environment do
+      file_path = 'tmp/missing_original_songs_albums.tsv'
+
+      # TSV ファイルの作成
+      File.open(file_path, 'w') do |file|
+        file.puts("サークル\tアルバム\tYouTube URL")
+
+        # `tracks_missing_original_songs` スコープを利用してアルバムを取得
+        albums = Album.tracks_missing_original_songs.includes(:circles, :spotify_album, :apple_music_album, :line_music_album, :ytmusic_album)
+
+        # サークル名、アルバム名、YouTube URLを取得し、配列に格納
+        result = albums.map do |album|
+          circle_name = album.circles&.map(&:name)&.join(' / ')
+          # アルバム名は Spotify を最優先に取得
+          album_name = album.spotify_album&.name || album.apple_music_album&.name || album.line_music_album&.name || album.ytmusic_album&.name
+
+          # YouTube Music の URL を修正
+          ytmusic_url = album.ytmusic_album&.playlist_url
+          youtube_url = ytmusic_url&.gsub('https://music.youtube.com/', 'https://youtube.com/')
+
+          [circle_name, album_name, youtube_url]
+        end
+
+        # サークル名とアルバム名でソート
+        sorted_result = result.sort_by { |circle_name, album_name| [circle_name, album_name] }
+
+        # TSV ファイルに書き込み
+        sorted_result.each do |circle_name, album_name, youtube_url|
+          file.puts("#{circle_name}\t#{album_name}\t#{youtube_url}")
+        end
+      end
+
+      puts "Export completed: #{file_path}"
+    end
   end
 
   namespace :import do

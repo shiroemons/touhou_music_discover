@@ -32,6 +32,14 @@ class Album < ApplicationRecord
   scope :non_touhou, -> { where(is_touhou: false) }
   scope :jan, ->(jan) { find_by(jan_code: jan) }
 
+  # Albumに紐づくTrackのうち、original_songsが紐づいていないものが1つでも存在するAlbumを絞り込みます
+  scope :tracks_missing_original_songs, -> {
+    joins(:tracks)
+      .left_joins(tracks: :original_songs)
+      .group('albums.id')
+      .having('COUNT(original_songs.code) = 0')
+  }
+
   def circle_name
     circles&.map(&:name)&.join(' / ')
   end
