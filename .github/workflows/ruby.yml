@@ -29,18 +29,24 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    container:
-      image: cimg/ruby:3.3.0-node
-      options: --user root
-      env:
-        PG_HOST: postgres
-        PG_USER: postgres
-        PG_PASSWORD: password
-        RAILS_ENV: test
 
+    # Ruby のセットアップ
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+
+      # 環境変数の設定
+      - name: Set environment variables
+        run: |
+          echo "PG_HOST=localhost" >> $GITHUB_ENV
+          echo "PG_USER=postgres" >> $GITHUB_ENV
+          echo "PG_PASSWORD=password" >> $GITHUB_ENV
+          echo "RAILS_ENV=test" >> $GITHUB_ENV
 
       - name: Cache vendor/bundle
         uses: actions/cache@v4
@@ -49,7 +55,7 @@ jobs:
           path: vendor/bundle
           key: v1-gem-${{ runner.os }}-${{ github.sha }}
           restore-keys: |
-            v1-gem-{{ runner.os }}-
+            v1-gem-${{ runner.os }}-
 
       - name: Build and setup
         run: |
