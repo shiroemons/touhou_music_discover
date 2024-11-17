@@ -10,7 +10,7 @@ module YTMusic
       @url = "https://music.youtube.com/browse/#{@browse_id}" if @browse_id
       contents = item.dig('flexColumns', 1, 'musicResponsiveListItemFlexColumnRenderer', 'text', 'runs')
       @type = contents&.shift&.dig('text')
-      @year = contents&.pop&.dig('text')
+      @year = contents&.pop&.dig('text')&.to_i&.to_s
       artist_contents = contents&.filter { _1['text'] != ' • ' }&.filter { _1['text'] != '、' }
       @artists = artist_contents.map { Artist.new _1 }
       super()

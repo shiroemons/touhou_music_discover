@@ -24,7 +24,7 @@ module YTMusic
       @title = header.dig('title', 'runs', 0, 'text')
       subtitle = header.dig('subtitle', 'runs')
       @type = subtitle&.shift&.dig('text')
-      @year = subtitle&.pop&.dig('text')
+      @year = subtitle&.pop&.dig('text')&.to_i&.to_s
       strapline_text_one = header.dig('straplineTextOne', 'runs')
       artist_contents = strapline_text_one&.filter { _1['text'] != ' • ' }&.filter { _1['text'] != '、' }
       return if artist_contents.blank?

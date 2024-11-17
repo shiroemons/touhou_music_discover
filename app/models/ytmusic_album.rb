@@ -79,6 +79,15 @@ class YtmusicAlbum < ApplicationRecord
 
     ytmusic_albums = response.data[:albums]
     ytm_albums = ytmusic_albums.filter { _1.year == album.release_date.year.to_s }
+    return false if ytm_albums.size.zero?
+
+    if album.is_a?(SpotifyAlbum)
+      ytm_albums.each do |ytm_album|
+        if ytm_album.title == album.name && album.payload["artists"].map { |artist| artist["name"] }.join(" ")
+          return find_and_save(ytm_album.browse_id, album)
+        end
+      end
+    end
 
     ytm_albums.each do |ytm_album|
       if album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
@@ -197,8 +206,15 @@ class YtmusicAlbum < ApplicationRecord
               .tr('０-９', '0-9').strip, artist_names]
     ]
     queries << [s_album.name, ''] if s_album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
+
+    search_queries = []
     queries.each do |name, names|
-      query = "#{name} #{names}".strip
+      search_queries << "#{name} #{names}".strip
+    end
+
+    search_queries.uniq!
+    search_queries.each do |query|
+      Rails.logger.debug("Query: #{query}")
       return if search_and_save(query, s_album)
     end
   end

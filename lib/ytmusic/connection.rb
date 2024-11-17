@@ -5,7 +5,7 @@ require 'digest/sha1'
 require 'faraday'
 
 module YTMusic
-  YTM_VERSION = '1.20221219.01.00'
+  YTM_VERSION = '1.20241111.01.00'
   YTM_DOMAIN = 'https://music.youtube.com'
   YTM_BASE_API = "#{YTM_DOMAIN}/youtubei/v1/".freeze
   YTM_PARAMS = '?alt=json&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30'
@@ -43,6 +43,7 @@ module YTMusic
 
     def client
       @client ||= Faraday.new(YTM_BASE_API) do |conn|
+        conn.request :retry, max: 3, interval: 0.5, backoff_factor: 2, exceptions: [Faraday::ConnectionFailed, Faraday::SSLError, Net::OpenTimeout]
         conn.response :json, content_type: /\bjson\z/
       end
     end
@@ -55,8 +56,8 @@ module YTMusic
         'accept-language': 'en-US,en;q=0.5',
         'content-type': 'application/json',
         'x-goog-authUser': '0',
-        'x-goog-visitor-id': 'CgtWaTB2WWRDeEFUYyjhv-X8BQ%3D%3D',
-        'x-youtube-client-name': '1',
+        'x-goog-visitor-id': 'Cgs3TE1LMHQyTE5DNCjItua5BjIKCgJKUBIEGgAgaQ%3D%3D',
+        'x-youtube-client-name': '67',
         'x-youtube-client-version': YTM_VERSION,
         'x-youtube-chrome-connected': 'source=Chrome,mode=0,enable_account_consistency=true,supervised=false,consistency_enabled_by_default=false',
         'x-origin': YTM_DOMAIN,
