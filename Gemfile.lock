@@ -112,6 +112,7 @@ GEM
     crass (1.0.6)
     cssbundling-rails (1.4.1)
       railties (>= 6.0.0)
+    csv (3.3.0)
     date (3.4.0)
     docile (1.4.1)
     domain_name (0.5.20190701)
@@ -413,6 +414,7 @@ DEPENDENCIES
   byebug
   connection_pool
   cssbundling-rails
+  csv
   dotenv-rails
   faraday
   faraday_middleware
