@@ -8,7 +8,7 @@ ruby file: '.ruby-version'
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'pg', '~> 1.5'
 gem 'puma', '~> 6.3'
-gem 'rails', '~> 7.1.0'
+gem 'rails', '~> 7.2.0'
 
 gem 'cssbundling-rails'
 gem 'jsbundling-rails'
