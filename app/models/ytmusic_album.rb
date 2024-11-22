@@ -79,13 +79,11 @@ class YtmusicAlbum < ApplicationRecord
 
     ytmusic_albums = response.data[:albums]
     ytm_albums = ytmusic_albums.filter { _1.year == album.release_date.year.to_s }
-    return false if ytm_albums.size.zero?
+    return false if ytm_albums.empty?
 
     if album.is_a?(SpotifyAlbum)
       ytm_albums.each do |ytm_album|
-        if ytm_album.title == album.name && album.payload["artists"].map { |artist| artist["name"] }.join(" ")
-          return find_and_save(ytm_album.browse_id, album)
-        end
+        return find_and_save(ytm_album.browse_id, album) if ytm_album.title == album.name && album.payload['artists'].map { |artist| artist['name'] }.join(' ')
       end
     end
 
@@ -214,7 +212,7 @@ class YtmusicAlbum < ApplicationRecord
 
     search_queries.uniq!
     search_queries.each do |query|
-      Rails.logger.debug("Query: #{query}")
+      Rails.logger.debug { "Query: #{query}" }
       return if search_and_save(query, s_album)
     end
   end

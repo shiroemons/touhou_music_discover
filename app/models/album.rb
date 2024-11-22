@@ -33,7 +33,7 @@ class Album < ApplicationRecord
   scope :jan, ->(jan) { find_by(jan_code: jan) }
 
   # Albumに紐づくTrackのうち、original_songsが紐づいていないものが1つでも存在するAlbumを絞り込みます
-  scope :tracks_missing_original_songs, -> {
+  scope :tracks_missing_original_songs, lambda {
     joins(:tracks)
       .left_joins(tracks: :original_songs)
       .group('albums.id')

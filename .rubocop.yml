@@ -14,6 +14,7 @@ AllCops:
     - vendor/**/*
     - tmp/**/*
     - .git/**/*
+    - 'node_modules/**/*'
 
 Rails:
   Enabled: true
