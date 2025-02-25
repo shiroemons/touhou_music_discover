@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ImportTracksWithOriginalSongs < Avo::BaseAction
-  self.name = 'Import tracks with original songs'
+  self.name = 'TSVファイルから楽曲と原曲の関連付けをインポート'
   self.standalone = true
   self.visible = -> { view == :index }
 

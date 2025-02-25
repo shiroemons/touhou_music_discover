@@ -36,7 +36,9 @@ class Circle < ApplicationRecord
     '白鳳(Ende der Welt)' => 'Ende der Welt',
     '埼玉最終兵器&Aether' => %w[埼玉最終兵器 Aether],
     'みゅい' => 'Myui Playing',
-    'ともきち' => '幻光庭'
+    'ともきち' => '幻光庭',
+    'askey' => '.new label',
+    '激戦の人' => '激戦魂 -Gekisen Soul-',
   }.freeze
 
   JAN_TO_CIRCLE = {

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ExportMissingOriginalSongsTracks < Avo::BaseAction
-  self.name = 'Export missing original songs tracks'
+  self.name = '原曲未設定の楽曲一覧をエクスポート'
   self.standalone = true
   self.visible = -> { view == :index }
   self.may_download_file = true
