@@ -57,7 +57,8 @@ class YtmusicAlbum < ApplicationRecord
     '4582736130443' => 'MPREb_tL0wx5vVUlj', # 東方LostWord - 追想の愛 feat.大槻ケンヂ×豚乙女
     '4582736130450' => 'MPREb_kfT1GYMCGg1', # 東方LostWord - 世界一位 feat.徳井青空×Alstroemeria Records
     '4582736130627' => 'MPREb_iEdWKdsLr40', # 凋叶棕 - Ｑ（愛蔵版）
-    '4582736131082' => 'MPREb_vPJVoQJ3PrA'  # ガネメ - Chu♡Chu♡Chu
+    '4582736131082' => 'MPREb_vPJVoQJ3PrA', # ガネメ - Chu♡Chu♡Chu
+    '4582736133666' => 'MPREb_QKaLdYekFWj'  # .new label - ( ੭´ •ω•`)⊃━☆₷₪$₤₦฿₮₫₯₥₰₫₮฿₶∝₯₥
   }.freeze
 
   def self.save_album(album_id, browse_id, album)

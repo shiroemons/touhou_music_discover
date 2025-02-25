@@ -32,7 +32,8 @@ class LineMusicAlbum < ApplicationRecord
     '4580547338485' => 'mb0000000002e9d62c', # 幽閉サテライト - 彩-IRODORI-Singles Best vol.8～穢れなきユーフォリア～
     '4580547338959' => 'mb00000000031ee6e5', # StarlessTrilogy - Ode to a VladⅢ
     '4580547339802' => 'mb00000000036874f9', # イノライ - ずんだもんが東方にやってきたのだ！
-    '4582736131150' => 'mb0000000003ba6b5b'  # 少女理論観測所 - showcase ⅳ
+    '4582736131150' => 'mb0000000003ba6b5b', # 少女理論観測所 - showcase ⅳ
+    '4582736133420' => 'mb00000000040ff58d'  # TAMUSIC - 東方バイオリンロック X-XFD-(TOUHOU VIOLIN ROCK)
   }.freeze
 
   def self.fetch_albums
@@ -45,6 +46,12 @@ class LineMusicAlbum < ApplicationRecord
   end
 
   def self.process_spotify_albums(s_album)
+    line_album_id = JAN_TO_ALBUM_IDS[s_album.album.jan_code]
+    if line_album_id.present?
+      find_and_save(line_album_id, s_album)
+      return
+    end
+
     search_queries = [
       "#{s_album.name} #{s_album.payload['artists'].map { _1['name'] }.sort}",
       s_album.name,
@@ -56,9 +63,6 @@ class LineMusicAlbum < ApplicationRecord
     search_queries.each do |query|
       return if search_and_save(query, s_album)
     end
-
-    line_album_id = JAN_TO_ALBUM_IDS[s_album.album.jan_code]
-    find_and_save(line_album_id, s_album) if line_album_id
   end
 
   def self.process_apple_music_albums(am_album)
@@ -151,7 +155,8 @@ class LineMusicAlbum < ApplicationRecord
 
   def self.find_and_save(id, album)
     line_album = LineMusic::Album.find(id)
-    if line_album.release_date == album.release_date && line_album.track_total_count == album.total_tracks
+    release_date_difference = (line_album.release_date - album.release_date).abs
+    if release_date_difference <= 1 && line_album.track_total_count == album.total_tracks
       LineMusicAlbum.save_album(album.album_id, line_album)
       return true
     end
