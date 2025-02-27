@@ -58,7 +58,12 @@ class YtmusicAlbum < ApplicationRecord
     '4582736130450' => 'MPREb_kfT1GYMCGg1', # 東方LostWord - 世界一位 feat.徳井青空×Alstroemeria Records
     '4582736130627' => 'MPREb_iEdWKdsLr40', # 凋叶棕 - Ｑ（愛蔵版）
     '4582736131082' => 'MPREb_vPJVoQJ3PrA', # ガネメ - Chu♡Chu♡Chu
-    '4582736133666' => 'MPREb_QKaLdYekFWj'  # .new label - ( ੭´ •ω•`)⊃━☆₷₪$₤₦฿₮₫₯₥₰₫₮฿₶∝₯₥
+    '4582736133666' => 'MPREb_QKaLdYekFWj', # .new label - ( ੭´ •ω•`)⊃━☆₷₪$₤₦฿₮₫₯₥₰₫₮฿₶∝₯₥
+    '4582736134021' => 'MPREb_qfkiNe55GcX', # 非可逆リズム - 妖魔夜行 (MRM REMIX) feat. モリモリあつし
+    '4582736134007' => 'MPREb_qkhRjC18qsZ', # 非可逆リズム - 満月の竹林 (MRM REMIX) feat. モリモリあつし
+    '4582736133987' => 'MPREb_twy0YQaTUy6', # 非可逆リズム - 遠野幻想物語 (MRM REMIX) feat. モリモリあつし
+    '4582736133970' => 'MPREb_CgG1tmhnQz8', # 非可逆リズム - パリピフラン feat. モリモリあつし
+    '4582736133932' => 'MPREb_8rF6ZB4kmJd'  # 非可逆リズム - LIMIT BURST (GC Mix.) feat. adaptor, モリモリあつし
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
