@@ -38,7 +38,7 @@ class Circle < ApplicationRecord
     'みゅい' => 'Myui Playing',
     'ともきち' => '幻光庭',
     'askey' => '.new label',
-    '激戦の人' => '激戦魂 -Gekisen Soul-',
+    '激戦の人' => '激戦魂 -Gekisen Soul-'
   }.freeze
 
   JAN_TO_CIRCLE = {
