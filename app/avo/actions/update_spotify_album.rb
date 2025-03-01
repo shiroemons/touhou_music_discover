@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UpdateSpotifyAlbum < Avo::BaseAction
-  self.name = 'Update spotify album'
+  self.name = 'Spotify アルバムを更新'
   self.standalone = true
   self.visible = -> { view == :index }
 

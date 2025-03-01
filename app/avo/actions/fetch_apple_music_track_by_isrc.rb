@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class FetchAppleMusicTrackByIsrc < Avo::BaseAction
-  self.name = 'Fetch apple music track by isrc'
+  self.name = 'ISRCからApple Music トラックを取得'
   self.standalone = true
   self.visible = -> { view == :index }
 

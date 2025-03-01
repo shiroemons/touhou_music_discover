@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class FetchSpotifyAudioFeatures < Avo::BaseAction
-  self.name = 'Fetch spotify audio features'
+  self.name = 'Spotify オーディオ特性を取得'
   self.standalone = true
   self.visible = -> { view == :index }
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UpdateLineMusicAlbum < Avo::BaseAction
-  self.name = 'Update line music album'
+  self.name = 'LINE MUSIC アルバムを更新'
   self.standalone = true
   self.visible = -> { view == :index }
 

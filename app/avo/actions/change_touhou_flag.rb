@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ChangeTouhouFlag < Avo::BaseAction
-  self.name = 'Change touhou flag'
+  self.name = '東方フラグを変更'
   self.standalone = true
   self.visible = -> { view == :index }
 

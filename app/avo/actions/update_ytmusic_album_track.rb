@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UpdateYtmusicAlbumTrack < Avo::BaseAction
-  self.name = 'Update ytmusic album track'
+  self.name = 'YouTube Music アルバム・トラックを更新'
   self.standalone = true
   self.visible = -> { view == :index }
 

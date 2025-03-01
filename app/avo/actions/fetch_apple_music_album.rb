@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class FetchAppleMusicAlbum < Avo::BaseAction
-  self.name = 'Fetch apple music album'
+  self.name = 'Apple Musicアルバムを取得'
   self.standalone = true
   self.visible = -> { view == :index }
 

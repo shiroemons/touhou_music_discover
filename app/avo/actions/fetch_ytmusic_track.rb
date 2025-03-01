@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class FetchYtmusicTrack < Avo::BaseAction
-  self.name = 'Fetch ytmusic track'
+  self.name = 'YouTube Music トラックを取得'
   self.standalone = true
   self.visible = -> { view == :index }
 
