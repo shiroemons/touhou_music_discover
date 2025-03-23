@@ -44,7 +44,7 @@ class LineMusicAlbum < ApplicationRecord
     processed_count = 0
     Album.includes(:spotify_album, :apple_music_album).missing_line_music_album.find_each do |album|
       processed_count += 1
-      Rails.logger.info "アルバム処理中 (#{processed_count}/#{album_count}): #{album.title}"
+      Rails.logger.info "アルバム処理中 (#{processed_count}/#{album_count})"
 
       process_spotify_albums(album.spotify_album) if album.spotify_album.present?
       process_apple_music_albums(album.apple_music_album) if album.apple_music_album.present?

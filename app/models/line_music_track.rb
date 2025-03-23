@@ -41,10 +41,10 @@ class LineMusicTrack < ApplicationRecord
   end
 
   def self.process_album(album)
-    Rails.logger.info "アルバム処理: #{album.title} (ID: #{album.id})"
+    Rails.logger.info "アルバム処理: (ID: #{album.id})"
 
     if album.line_music_album.blank?
-      Rails.logger.info "LINE MUSIC アルバムが存在しないためスキップします: #{album.title}"
+      Rails.logger.info "LINE MUSIC アルバムが存在しないためスキップします"
       return
     end
 
