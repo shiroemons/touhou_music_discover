@@ -69,5 +69,39 @@ db-restore: ## db restore
 		exit 1; \
 	fi
 
+# 共通コマンド
+fetch-touhou-music-with-original-songs: ## 外部から原曲紐付けデータを取得し紐付けを行う
+	docker compose run --rm web bin/rails touhou_music_discover:import:fetch_touhou_music_with_original_songs
+
+export-touhou-music-with-original-songs: ## 原曲付きリストを出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music_with_original_songs
+
+import-touhou-music-with-original-songs: ## 原曲付きリストを読み込み原曲紐付けを行う
+	docker compose run --rm web bin/rails touhou_music_discover:import:touhou_music_with_original_songs
+
+export-touhou-music: ## 東方同人音楽流通 配信曲リスト出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music
+
+export-touhou-music-slim: ## 東方同人音楽流通 配信曲リストスリム版出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music_slim
+
+export-touhou-music-album-only: ## 東方同人音楽流通 配信アルバムリスト出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music_album_only
+
+export-for-algolia: ## Algolia向けのJSON出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:for_algolia
+
+export-to-random-touhou-music: ## 東方サブスクランダム選曲アプリ用JSON出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:to_random_touhou_music
+
+change-is-touhou-flag: ## 原曲情報を見て、is_touhouフラグを変更する
+	docker compose run --rm web bin/rails touhou_music_discover:change_is_touhou_flag
+
+associate-album-with-circle: ## アルバムにサークルを紐付ける
+	docker compose run --rm web bin/rails touhou_music_discover:associate_album_with_circle
+
+export-missing-original-songs-albums: ## 原曲紐づけがないアルバム一覧
+	docker compose run --rm web bin/rails touhou_music_discover:export:missing_original_songs_albums
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
