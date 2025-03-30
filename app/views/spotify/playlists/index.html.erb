@@ -1,0 +1,245 @@
+<div class="container">
+  <div class="header-container">
+    <h1>Spotify原曲プレイリスト一覧</h1>
+    <div class="actions">
+      <%= link_to 'トップページに戻る', root_path, class: 'btn btn-outline' %>
+      <button id="copyTableButton" class="btn btn-primary">テーブルをコピー</button>
+    </div>
+  </div>
+
+  <% if @error.present? %>
+    <div class="error-message">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <p><%= @error %></p>
+    </div>
+  <% end %>
+
+  <% if @playlists.present? %>
+    <div class="playlist-list">
+      <table class="playlist-table" id="playlistTable">
+        <thead>
+          <tr>
+            <th>プレイリスト名</th>
+            <th>URL</th>
+            <th>曲数</th>
+            <th>いいね数</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @playlists.each do |playlist| %>
+            <tr>
+              <td><%= playlist[:name] %></td>
+              <td><%= link_to 'Spotifyで開く', playlist[:external_urls]["spotify"], target: "_blank", class: 'spotify-link' %></td>
+              <td><%= playlist[:total] %></td>
+              <td><%= playlist[:followers] %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div id="copyStatus" class="copy-status"></div>
+  <% else %>
+    <div class="empty-message">
+      <p>表示できる原曲別プレイリストがありません。</p>
+    </div>
+  <% end %>
+
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: #333;
+      margin: 0;
+    }
+    
+    .actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #ccc;
+      color: #333;
+    }
+    
+    .btn-outline:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .btn-primary {
+      background-color: #1DB954;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #1ed760;
+    }
+    
+    .error-message {
+      background-color: rgba(255, 59, 48, 0.1);
+      border-left: 4px solid #ff3b30;
+      padding: 15px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      border-radius: 4px;
+    }
+    
+    .error-message p {
+      margin: 0;
+      color: #333;
+    }
+    
+    .error-icon {
+      margin-right: 15px;
+      color: #ff3b30;
+      flex-shrink: 0;
+    }
+    
+    .playlist-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .playlist-table th,
+    .playlist-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .playlist-table th {
+      background-color: #f5f5f5;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .playlist-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .playlist-table tr:hover {
+      background-color: #f9f9f9;
+    }
+    
+    .spotify-link {
+      color: #1DB954;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .spotify-link:hover {
+      text-decoration: underline;
+    }
+    
+    .empty-message {
+      text-align: center;
+      margin: 40px 0;
+      color: #666;
+    }
+    
+    .copy-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .copy-status.success {
+      background-color: rgba(29, 185, 84, 0.1);
+      color: #1DB954;
+      opacity: 1;
+    }
+    
+    .copy-status.error {
+      background-color: rgba(255, 59, 48, 0.1);
+      color: #ff3b30;
+      opacity: 1;
+    }
+  </style>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const copyButton = document.getElementById('copyTableButton');
+      const statusElement = document.getElementById('copyStatus');
+      
+      copyButton.addEventListener('click', function() {
+        const table = document.getElementById('playlistTable');
+        const rows = table.querySelectorAll('tr');
+        let tableText = '';
+        
+        rows.forEach(row => {
+          const cells = row.querySelectorAll('th, td');
+          let rowData = [];
+          
+          cells.forEach(cell => {
+            // URLの列はリンクのテキストではなく、実際のURLを取得
+            if (cell.querySelector('a.spotify-link')) {
+              const link = cell.querySelector('a.spotify-link');
+              rowData.push(link.href);
+            } else {
+              rowData.push(cell.innerText);
+            }
+          });
+          
+          tableText += rowData.join('\t') + '\n';
+        });
+        
+        // クリップボードにコピー
+        navigator.clipboard.writeText(tableText)
+          .then(() => {
+            statusElement.textContent = 'テーブルのデータがクリップボードにコピーされました！';
+            statusElement.classList.add('success');
+            statusElement.classList.remove('error');
+            
+            // 3秒後にメッセージを消す
+            setTimeout(() => {
+              statusElement.style.opacity = 0;
+            }, 3000);
+          })
+          .catch(err => {
+            statusElement.textContent = 'コピーに失敗しました: ' + err;
+            statusElement.classList.add('error');
+            statusElement.classList.remove('success');
+          });
+      });
+    });
+  </script>
+</div> 

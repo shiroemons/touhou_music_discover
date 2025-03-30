@@ -3,6 +3,105 @@
 module Spotify
   class PlaylistsController < ApplicationController
     LIMIT = 50
+    MAX_RETRIES = 3
+
+    def index
+      redirect_to root_url unless session[:user_id]
+
+      redis = RedisPool.get
+      auth_hash = JSON.parse(redis.get(session[:user_id]))
+      @spotify_user = RSpotify::User.new(auth_hash)
+
+      @playlists = []
+      @error = nil
+
+      begin
+        # 通常のプレイリスト表示処理
+        offset = 0
+        retry_count = 0
+
+        loop do
+          playlists = @spotify_user.playlists(limit: LIMIT, offset:)
+
+          # 事前にフォロワー情報とトラック数を安全に取得して保存
+          playlists.each do |playlist|
+            # フォロワー数とトラック数を事前に安全に取得
+            followers = begin
+              playlist.followers['total']
+            rescue StandardError
+              0
+            end
+            total_tracks = begin
+              playlist.total
+            rescue StandardError
+              0
+            end
+
+            # 必要な情報を含むハッシュを作成
+            safe_playlist = {
+              id: playlist.id,
+              name: playlist.name,
+              external_urls: playlist.external_urls,
+              followers:,
+              total: total_tracks
+            }
+
+            @playlists << safe_playlist
+          rescue StandardError => e
+            Rails.logger.error("プレイリスト情報取得エラー: #{e.message}")
+            # エラーが発生しても処理を継続
+            next
+          end
+
+          offset += LIMIT
+          break if playlists.count < LIMIT
+
+          # API制限に引っかからないよう、リクエスト間に少し待機
+          sleep 1
+        rescue RestClient::TooManyRequests => e
+          retry_count += 1
+
+          # 429エラーの詳細情報をログに出力
+          Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{e.http_code}, ヘッダー=#{e.http_headers.inspect}")
+          Rails.logger.error("レスポンス本文: #{e.http_body}") if e.respond_to?(:http_body)
+
+          # Retry-Afterヘッダーの確認
+          retry_after = e.respond_to?(:http_headers) && e.http_headers[:retry_after].to_i
+          if retry_after && retry_after > 60
+            Rails.logger.error("APIレート制限の待機時間が長すぎます: #{retry_after}秒")
+            formatted_time = format_seconds(retry_after)
+            @error = "Spotify APIのレート制限に達しました。サーバーが #{formatted_time} の待機を要求しています。"
+            break
+          end
+
+          if retry_count <= MAX_RETRIES
+            # 429エラーの場合は待機時間を増やしてリトライ
+            wait_time = 2**retry_count # エクスポネンシャルバックオフ
+            Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします (#{retry_count}/#{MAX_RETRIES})")
+            sleep wait_time
+            retry
+          else
+            # 最大リトライ回数を超えた場合
+            Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
+            @error = 'Spotify APIのレート制限に達しました。しばらく時間をおいて再度お試しください。'
+            break
+          end
+        rescue StandardError => e
+          Rails.logger.error("プレイリスト取得エラー: #{e.message}")
+          @error = "プレイリスト情報の取得中にエラーが発生しました: #{e.message}"
+          break
+        end
+
+        @playlists.reverse!
+
+        # 原曲名と一致するプレイリストのみ抽出するための処理
+        original_song_titles = OriginalSong.distinct.pluck(:title)
+        @playlists = @playlists.select { |p| p[:name].in?(original_song_titles) }
+      rescue StandardError => e
+        Rails.logger.error("予期せぬエラー: #{e.message}")
+        @error = "プレイリスト情報の取得中に予期せぬエラーが発生しました: #{e.message}"
+      end
+    end
 
     def create
       redirect_to root_url unless session[:user_id]
@@ -49,20 +148,8 @@ module Spotify
         # 進捗確認ページにリダイレクト
         redirect_to spotify_playlists_progress_path
       else
-        # 通常のプレイリスト表示処理
-        offset = 0
-        @playlists = []
-        loop do
-          playlists = @spotify_user.playlists(limit: LIMIT, offset:)
-          offset += LIMIT
-          @playlists.push(*playlists)
-          break if playlists.count < LIMIT
-        end
-        @playlists.reverse!
-
-        # 原曲名と一致するプレイリストのみ抽出するための処理
-        original_song_titles = OriginalSong.distinct.pluck(:title)
-        @playlists = @playlists.select { |p| original_song_titles.include?(p.name) }
+        # 一覧表示にリダイレクト
+        redirect_to spotify_playlists_path
       end
     end
 
@@ -100,6 +187,20 @@ module Spotify
     end
 
     private
+
+    def format_seconds(seconds)
+      hours = seconds / 3600
+      minutes = (seconds % 3600) / 60
+      remaining_seconds = seconds % 60
+
+      if hours.positive?
+        "#{hours}時間#{minutes}分#{remaining_seconds}秒（#{seconds}秒）"
+      elsif minutes.positive?
+        "#{minutes}分#{remaining_seconds}秒（#{seconds}秒）"
+      else
+        "#{seconds}秒"
+      end
+    end
 
     def process_playlist_update(update_type, spotify_user, user_id)
       redis = RedisPool.get
@@ -185,6 +286,35 @@ module Spotify
 
           sleep 1
           retry
+        rescue RestClient::TooManyRequests => e
+          # 429エラーの詳細情報をログに出力
+          Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{e.http_code}, ヘッダー=#{e.http_headers.inspect}")
+          Rails.logger.error("レスポンス本文: #{e.http_body}") if e.respond_to?(:http_body)
+
+          # Retry-Afterヘッダーの確認
+          retry_after = e.respond_to?(:http_headers) && e.http_headers[:retry_after].to_i
+          if retry_after && retry_after > 60
+            Rails.logger.error("APIレート制限の待機時間が長すぎます: #{retry_after}秒")
+
+            # 進捗情報の更新
+            formatted_time = format_seconds(retry_after)
+            update_info = JSON.parse(redis.get(progress_key))
+            update_info['status'] = 'error'
+            update_info['error_message'] = "APIレート制限に達しました。サーバーが #{formatted_time} の待機を要求しています。"
+            redis.set(progress_key, update_info.to_json)
+            return
+          end
+
+          retry_count = retry_count.to_i + 1
+          if retry_count <= MAX_RETRIES
+            wait_time = 2**retry_count # エクスポネンシャルバックオフ
+            Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします (#{retry_count}/#{MAX_RETRIES})")
+            sleep wait_time
+            retry
+          else
+            Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
+            next
+          end
         rescue StandardError => e
           Rails.logger.error("Error processing song #{os.title}: #{e.message}")
           next
@@ -210,10 +340,44 @@ module Spotify
           offset += LIMIT
           @playlists.push(*playlists)
           break if playlists.count < LIMIT
+
+          # API制限に引っかからないよう、リクエスト間に少し待機
+          sleep 1
+        rescue RestClient::TooManyRequests => e
+          # 429エラーの詳細情報をログに出力
+          Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{e.http_code}, ヘッダー=#{e.http_headers.inspect}")
+          Rails.logger.error("レスポンス本文: #{e.http_body}") if e.respond_to?(:http_body)
+
+          # Retry-Afterヘッダーの確認
+          retry_after = e.respond_to?(:http_headers) && e.http_headers[:retry_after].to_i
+          if retry_after && retry_after > 60
+            Rails.logger.error("APIレート制限の待機時間が長すぎます: #{retry_after}秒")
+            formatted_time = format_seconds(retry_after)
+            @error = "Spotify APIのレート制限に達しました。サーバーが #{formatted_time} の待機を要求しています。"
+            break
+          end
+
+          retry_count = retry_count.to_i + 1
+          if retry_count <= MAX_RETRIES
+            wait_time = 2**retry_count # エクスポネンシャルバックオフ
+            Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします (#{retry_count}/#{MAX_RETRIES})")
+            sleep wait_time
+            retry
+          else
+            Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
+            break
+          end
         end
       end
 
-      @playlists.find { _1.name == playlist_name }
+      # ハッシュの場合とオブジェクトの場合の両方に対応
+      @playlists.find do |p|
+        if p.is_a?(Hash) || p.is_a?(ActiveSupport::HashWithIndifferentAccess)
+          p[:name] == playlist_name
+        else
+          p.name == playlist_name
+        end
+      end
     end
   end
 end
