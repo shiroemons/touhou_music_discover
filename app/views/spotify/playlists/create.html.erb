@@ -1,16 +1,164 @@
-<table>
-  <tr>
-    <th>プレイリスト名</th>
-    <th>URL</th>
-    <th>曲数</th>
-    <th>いいね数</th>
-  </tr>
-  <% @playlists.each do |playlist| %>
-    <tr>
-      <td><%= playlist.name %></td>
-      <td><%= playlist.external_urls["spotify"] %></td>
-      <td><%= playlist.total %></td>
-      <td><%= playlist.followers["total"] %></td>
-    </tr>
+<div class="container">
+  <% if @updated %>
+    <div class="message-container">
+      <div class="message-card">
+        <h2><%= @message %></h2>
+        <p><%= link_to 'トップページに戻る', root_path, class: 'btn btn-primary' %></p>
+      </div>
+    </div>
+  <% else %>
+    <div class="header-container">
+      <h1>Spotify原曲プレイリスト一覧</h1>
+      <div class="actions">
+        <%= link_to 'トップページに戻る', root_path, class: 'btn btn-outline' %>
+      </div>
+    </div>
+
+    <% if @playlists.present? %>
+      <div class="playlist-list">
+        <table class="playlist-table">
+          <thead>
+            <tr>
+              <th>プレイリスト名</th>
+              <th>URL</th>
+              <th>曲数</th>
+              <th>いいね数</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @playlists.each do |playlist| %>
+              <tr>
+                <td><%= playlist.name %></td>
+                <td><%= link_to 'Spotifyで開く', playlist.external_urls["spotify"], target: "_blank", class: 'spotify-link' %></td>
+                <td><%= playlist.total %></td>
+                <td><%= playlist.followers["total"] %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% else %>
+      <div class="empty-message">
+        <p>表示できる原曲別プレイリストがありません。</p>
+      </div>
+    <% end %>
   <% end %>
-</table>
+
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      color: #333;
+      margin: 0;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      text-decoration: none;
+      display: inline-block;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #ccc;
+      color: #333;
+    }
+    
+    .btn-outline:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .btn-primary {
+      background-color: #1DB954;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #1ed760;
+    }
+    
+    .playlist-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .playlist-table th,
+    .playlist-table td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .playlist-table th {
+      background-color: #f5f5f5;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .playlist-table tr:last-child td {
+      border-bottom: none;
+    }
+    
+    .playlist-table tr:hover {
+      background-color: #f9f9f9;
+    }
+    
+    .spotify-link {
+      color: #1DB954;
+      text-decoration: none;
+      font-weight: 500;
+    }
+    
+    .spotify-link:hover {
+      text-decoration: underline;
+    }
+    
+    .message-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 50vh;
+    }
+    
+    .message-card {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 30px;
+      text-align: center;
+      max-width: 600px;
+    }
+    
+    .message-card h2 {
+      color: #1DB954;
+      margin-top: 0;
+    }
+    
+    .empty-message {
+      text-align: center;
+      margin: 40px 0;
+      color: #666;
+    }
+  </style>
+</div>

@@ -11,27 +11,48 @@ module Spotify
       auth_hash = JSON.parse(redis.get(session[:user_id]))
       @spotify_user = RSpotify::User.new(auth_hash)
 
-      offset = 0
-      @playlists = []
-      loop do
-        playlists = @spotify_user.playlists(limit: LIMIT, offset:)
-        offset += LIMIT
-        @playlists.push(*playlists)
-        break if playlists.count < LIMIT
+      @update_type = params[:update_type]
+      @updated = false
+      @message = nil
+
+      # プレイリスト更新の処理
+      if @update_type.present?
+        case @update_type
+        when 'windows'
+          Original.includes(:original_songs).windows.each { |original| add_tracks(original) }
+          @message = 'Windowsシリーズの原曲別プレイリストの更新が完了しました'
+        when 'pc98'
+          Original.includes(:original_songs).pc98.each { |original| add_tracks(original) }
+          @message = 'PC-98シリーズの原曲別プレイリストの更新が完了しました'
+        when 'zuns_music_collection'
+          Original.includes(:original_songs).zuns_music_collection.each { |original| add_tracks(original) }
+          @message = "ZUN's Music Collectionの原曲別プレイリストの更新が完了しました"
+        when 'akyus_untouched_score'
+          Original.includes(:original_songs).akyus_untouched_score.each { |original| add_tracks(original) }
+          @message = '幺樂団の歴史の原曲別プレイリストの更新が完了しました'
+        when 'commercial_books'
+          Original.includes(:original_songs).commercial_books.each { |original| add_tracks(original) }
+          @message = '商業書籍の原曲別プレイリストの更新が完了しました'
+        else
+          @message = '無効な更新タイプが指定されました'
+        end
+        @updated = true
+      else
+        # 通常のプレイリスト表示処理
+        offset = 0
+        @playlists = []
+        loop do
+          playlists = @spotify_user.playlists(limit: LIMIT, offset:)
+          offset += LIMIT
+          @playlists.push(*playlists)
+          break if playlists.count < LIMIT
+        end
+        @playlists.reverse!
+
+        # 原曲名と一致するプレイリストのみ抽出するための処理
+        original_song_titles = OriginalSong.distinct.pluck(:title)
+        @playlists = @playlists.select { |p| original_song_titles.include?(p.name) }
       end
-      @playlists.reverse!
-
-      # @playlists.each do |p|
-      #   puts "#{p.name}\t#{p.external_urls["spotify"]}\t#{p.total}\t#{p.followers["total"]}"
-      # end
-
-      # Spotifyの原曲別プレイリストを更新する場合は、以下のコメントを外す。
-      # 原曲別プレイリストの更新は時間がかかるため、1つずつ進めるのが良い。
-      # Original.includes(:original_songs).windows.each { |original| add_tracks(original) }
-      # Original.includes(:original_songs).pc98.each { |original| add_tracks(original) }
-      # Original.includes(:original_songs).zuns_music_collection.each { |original| add_tracks(original) }
-      # Original.includes(:original_songs).akyus_untouched_score.each { |original| add_tracks(original) }
-      # Original.includes(:original_songs).commercial_books.each { |original| add_tracks(original) }
     end
 
     private
@@ -75,6 +96,18 @@ module Spotify
     end
 
     def playlist_find(playlist_name)
+      @playlists ||= []
+
+      offset = 0
+      if @playlists.empty?
+        loop do
+          playlists = @spotify_user.playlists(limit: LIMIT, offset:)
+          offset += LIMIT
+          @playlists.push(*playlists)
+          break if playlists.count < LIMIT
+        end
+      end
+
       @playlists.find { _1.name == playlist_name }
     end
   end

@@ -9,6 +9,6 @@ Rails.application.routes.draw do
   delete '/logout', to: 'sessions#destroy'
 
   namespace :spotify do
-    post 'playlists/create'
+    match 'playlists/create', to: 'playlists#create', via: [:get, :post]
   end
 end

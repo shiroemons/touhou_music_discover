@@ -1,7 +1,173 @@
-<h1>Root#index</h1>
-<% if logged_in? %>
-  <%= button_to 'Sign out', logout_path, class: 'text-white', method: :delete, data: { turbo: false } %>
-  <%= button_to 'Spotify Playlists', spotify_playlists_create_path, method: :post, data: { turbo: false } %>
-<% else %>
-  <%= button_to 'Sign in with Spotify', '/auth/spotify', method: :post, data: { turbo: false } %>
-<% end %>
+<div class="container">
+  <h1 class="title">東方音楽発掘</h1>
+  
+  <% if logged_in? %>
+    <div class="user-actions">
+      <%= button_to 'ログアウト', logout_path, class: 'btn btn-outline', data: { turbo_method: :delete } %>
+      <%= link_to 'プレイリスト一覧表示', spotify_playlists_create_path, class: 'btn btn-primary' %>
+    </div>
+    
+    <div class="playlist-management">
+      <h2>Spotifyプレイリスト更新</h2>
+      <div class="playlist-card-container">
+        <%= link_to spotify_playlists_create_path(update_type: 'windows'), data: { turbo_method: :post }, class: 'playlist-card' do %>
+          <div class="card">
+            <h3>Windowsシリーズ</h3>
+            <p>紅魔郷、妖々夢、永夜抄、風神録、地霊殿、星蓮船など</p>
+          </div>
+        <% end %>
+        
+        <%= link_to spotify_playlists_create_path(update_type: 'pc98'), data: { turbo_method: :post }, class: 'playlist-card' do %>
+          <div class="card">
+            <h3>PC-98シリーズ</h3>
+            <p>靈異伝、封魔録、夢時空、幻想郷、怪綺談</p>
+          </div>
+        <% end %>
+        
+        <%= link_to spotify_playlists_create_path(update_type: 'zuns_music_collection'), data: { turbo_method: :post }, class: 'playlist-card' do %>
+          <div class="card">
+            <h3>ZUN's Music Collection</h3>
+            <p>蓬莱人形、蓮台野夜行など</p>
+          </div>
+        <% end %>
+        
+        <%= link_to spotify_playlists_create_path(update_type: 'akyus_untouched_score'), data: { turbo_method: :post }, class: 'playlist-card' do %>
+          <div class="card">
+            <h3>幺樂団の歴史</h3>
+            <p>幺樂団の歴史関連の原曲</p>
+          </div>
+        <% end %>
+        
+        <%= link_to spotify_playlists_create_path(update_type: 'commercial_books'), data: { turbo_method: :post }, class: 'playlist-card' do %>
+          <div class="card">
+            <h3>商業書籍</h3>
+            <p>商業書籍関連の原曲</p>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <div class="login-container">
+      <p>Spotifyアカウントでログインして、プレイリスト管理を行いましょう</p>
+      <%= button_to 'Spotifyでログイン', '/auth/spotify', class: 'btn btn-spotify', method: :post, data: { turbo: false } %>
+    </div>
+  <% end %>
+
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    
+    .title {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #333;
+    }
+    
+    .user-actions {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+    
+    .btn {
+      padding: 10px 20px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid #ccc;
+      color: #333;
+    }
+    
+    .btn-outline:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .btn-primary {
+      background-color: #1DB954;
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      background-color: #1ed760;
+    }
+    
+    .btn-spotify {
+      background-color: #1DB954;
+      color: white;
+      padding: 12px 24px;
+      font-weight: bold;
+    }
+    
+    .btn-spotify:hover {
+      background-color: #1ed760;
+    }
+    
+    .playlist-management {
+      margin-top: 40px;
+    }
+    
+    .playlist-management h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    
+    .playlist-card-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    
+    .playlist-card {
+      text-decoration: none;
+      color: inherit;
+    }
+    
+    .card {
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      height: 100%;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      color: #1DB954;
+    }
+    
+    .card p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+    
+    .login-container {
+      text-align: center;
+      margin-top: 40px;
+    }
+    
+    .login-container p {
+      margin-bottom: 20px;
+      color: #666;
+    }
+  </style>
+</div>
