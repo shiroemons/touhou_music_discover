@@ -35,37 +35,33 @@ module SpotifyClient
     def self.search_and_save_albums(keyword, year)
       offset = 0
       loop do
-        begin
-          s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:, market: 'JP')
-          s_albums.each do |s_album|
-            process_album(s_album)
-          end
-          offset += s_albums.size
-          break if s_albums.size < LIMIT
-
-          puts "year:#{year}\toffset: #{offset}"
-          # リクエスト間に短いディレイを追加
-          sleep 1
-        rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
-          puts "Timeout error during search at offset #{offset} for year:#{year}. Retrying after 10 seconds..."
-          puts "Error: #{e.message}"
-          sleep 10
-          retry
+        s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:, market: 'JP')
+        s_albums.each do |s_album|
+          process_album(s_album)
         end
+        offset += s_albums.size
+        break if s_albums.size < LIMIT
+
+        puts "year:#{year}\toffset: #{offset}"
+        # リクエスト間に短いディレイを追加
+        sleep 1
+      rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
+        puts "Timeout error during search at offset #{offset} for year:#{year}. Retrying after 10 seconds..."
+        puts "Error: #{e.message}"
+        sleep 10
+        retry
       end
     end
 
     def self.process_album(s_album)
-      begin
-        spotify_album = SpotifyAlbum.exists?(spotify_id: s_album.id) ? SpotifyAlbum.find_by(spotify_id: s_album.id) : SpotifyAlbum.save_album(s_album)
-        return if spotify_album.nil? || spotify_album.total_tracks == spotify_album.spotify_tracks.count
+      spotify_album = SpotifyAlbum.exists?(spotify_id: s_album.id) ? SpotifyAlbum.find_by(spotify_id: s_album.id) : SpotifyAlbum.save_album(s_album)
+      return if spotify_album.nil? || spotify_album.total_tracks == spotify_album.spotify_tracks.count
 
-        s_tracks = s_album.tracks
-        save_tracks(spotify_album, s_tracks)
-      rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
-        puts "Timeout error processing album #{s_album.id}. Skipping..."
-        puts "Error: #{e.message}"
-      end
+      s_tracks = s_album.tracks
+      save_tracks(spotify_album, s_tracks)
+    rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
+      puts "Timeout error processing album #{s_album.id}. Skipping..."
+      puts "Error: #{e.message}"
     end
 
     def self.save_tracks(spotify_album, s_tracks)
