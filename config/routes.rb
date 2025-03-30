@@ -10,5 +10,6 @@ Rails.application.routes.draw do
 
   namespace :spotify do
     match 'playlists/create', to: 'playlists#create', via: [:get, :post]
+    get 'playlists/progress', to: 'playlists#progress'
   end
 end

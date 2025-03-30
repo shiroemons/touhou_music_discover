@@ -1,173 +1,673 @@
-<div class="container">
-  <h1 class="title">東方音楽発掘</h1>
-  
-  <% if logged_in? %>
-    <div class="user-actions">
-      <%= button_to 'ログアウト', logout_path, class: 'btn btn-outline', data: { turbo_method: :delete } %>
-      <%= link_to 'プレイリスト一覧表示', spotify_playlists_create_path, class: 'btn btn-primary' %>
-    </div>
-    
-    <div class="playlist-management">
-      <h2>Spotifyプレイリスト更新</h2>
-      <div class="playlist-card-container">
-        <%= link_to spotify_playlists_create_path(update_type: 'windows'), data: { turbo_method: :post }, class: 'playlist-card' do %>
-          <div class="card">
-            <h3>Windowsシリーズ</h3>
-            <p>紅魔郷、妖々夢、永夜抄、風神録、地霊殿、星蓮船など</p>
-          </div>
-        <% end %>
-        
-        <%= link_to spotify_playlists_create_path(update_type: 'pc98'), data: { turbo_method: :post }, class: 'playlist-card' do %>
-          <div class="card">
-            <h3>PC-98シリーズ</h3>
-            <p>靈異伝、封魔録、夢時空、幻想郷、怪綺談</p>
-          </div>
-        <% end %>
-        
-        <%= link_to spotify_playlists_create_path(update_type: 'zuns_music_collection'), data: { turbo_method: :post }, class: 'playlist-card' do %>
-          <div class="card">
-            <h3>ZUN's Music Collection</h3>
-            <p>蓬莱人形、蓮台野夜行など</p>
-          </div>
-        <% end %>
-        
-        <%= link_to spotify_playlists_create_path(update_type: 'akyus_untouched_score'), data: { turbo_method: :post }, class: 'playlist-card' do %>
-          <div class="card">
-            <h3>幺樂団の歴史</h3>
-            <p>幺樂団の歴史関連の原曲</p>
-          </div>
-        <% end %>
-        
-        <%= link_to spotify_playlists_create_path(update_type: 'commercial_books'), data: { turbo_method: :post }, class: 'playlist-card' do %>
-          <div class="card">
-            <h3>商業書籍</h3>
-            <p>商業書籍関連の原曲</p>
-          </div>
-        <% end %>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>東方音楽発掘</title>
+</head>
+<body>
+  <div class="container">
+    <div class="app-header">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="5.5" cy="17.5" r="2.5"></circle>
+            <circle cx="18.5" cy="17.5" r="2.5"></circle>
+            <path d="M20 17.5v-8a2 2 0 0 0-2-2h-5l-5-3v9.5"></path>
+            <path d="M8 14.5v3"></path>
+          </svg>
+        </div>
+        <h1 class="app-title">東方音楽発掘</h1>
       </div>
+      
+      <% if logged_in? %>
+        <div class="user-profile">
+          <div class="user-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <span class="spotify-name">Spotifyユーザー</span>
+          <%= button_to 'ログアウト', logout_path, class: 'btn btn-outline', data: { turbo_method: :delete } %>
+        </div>
+      <% end %>
     </div>
-  <% else %>
-    <div class="login-container">
-      <p>Spotifyアカウントでログインして、プレイリスト管理を行いましょう</p>
-      <%= button_to 'Spotifyでログイン', '/auth/spotify', class: 'btn btn-spotify', method: :post, data: { turbo: false } %>
-    </div>
-  <% end %>
+
+    <% if logged_in? %>
+      <div class="dashboard-container">
+        <div class="welcome-card">
+          <div class="welcome-icon bounce">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"></path>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+          </div>
+          <div class="welcome-content">
+            <h2>プレイリスト管理</h2>
+            <p>Spotifyで原曲別プレイリストを見る・更新します</p>
+            <%= link_to 'プレイリスト一覧表示', spotify_playlists_create_path, class: 'btn btn-primary' %>
+          </div>
+        </div>
+        
+        <div class="update-section">
+          <h2>原曲別プレイリスト更新</h2>
+          <div class="update-cards">
+            <%= link_to spotify_playlists_create_path(update_type: 'windows'), data: { turbo_method: :post }, class: 'update-card windows-card' do %>
+              <div class="card-inner">
+                <div class="card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                    <line x1="8" y1="21" x2="16" y2="21"></line>
+                    <line x1="12" y1="17" x2="12" y2="21"></line>
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>Windowsシリーズ</h3>
+                  <p>紅魔郷、妖々夢、永夜抄、風神録など</p>
+                </div>
+                <div class="card-arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              </div>
+            <% end %>
+            
+            <%= link_to spotify_playlists_create_path(update_type: 'pc98'), data: { turbo_method: :post }, class: 'update-card pc98-card' do %>
+              <div class="card-inner">
+                <div class="card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                    <rect x="9" y="9" width="6" height="6"></rect>
+                    <line x1="9" y1="1" x2="9" y2="4"></line>
+                    <line x1="15" y1="1" x2="15" y2="4"></line>
+                    <line x1="9" y1="20" x2="9" y2="23"></line>
+                    <line x1="15" y1="20" x2="15" y2="23"></line>
+                    <line x1="20" y1="9" x2="23" y2="9"></line>
+                    <line x1="20" y1="14" x2="23" y2="14"></line>
+                    <line x1="1" y1="9" x2="4" y2="9"></line>
+                    <line x1="1" y1="14" x2="4" y2="14"></line>
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>PC-98シリーズ</h3>
+                  <p>靈異伝、封魔録、夢時空、幻想郷、怪綺談</p>
+                </div>
+                <div class="card-arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              </div>
+            <% end %>
+            
+            <%= link_to spotify_playlists_create_path(update_type: 'zuns_music_collection'), data: { turbo_method: :post }, class: 'update-card zun-card' do %>
+              <div class="card-inner">
+                <div class="card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>ZUN's Music Collection</h3>
+                  <p>蓬莱人形、蓮台野夜行など</p>
+                </div>
+                <div class="card-arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              </div>
+            <% end %>
+            
+            <%= link_to spotify_playlists_create_path(update_type: 'akyus_untouched_score'), data: { turbo_method: :post }, class: 'update-card akyu-card' do %>
+              <div class="card-inner">
+                <div class="card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>幺樂団の歴史</h3>
+                  <p>幺樂団の歴史関連の原曲</p>
+                </div>
+                <div class="card-arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              </div>
+            <% end %>
+            
+            <%= link_to spotify_playlists_create_path(update_type: 'commercial_books'), data: { turbo_method: :post }, class: 'update-card books-card' do %>
+              <div class="card-inner">
+                <div class="card-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                    <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                  </svg>
+                </div>
+                <div class="card-content">
+                  <h3>商業書籍</h3>
+                  <p>商業書籍関連の原曲</p>
+                </div>
+                <div class="card-arrow">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"></path>
+                    <path d="M12 5l7 7-7 7"></path>
+                  </svg>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% else %>
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-graphic">
+            <div class="spotify-logo pulse">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <circle cx="12" cy="12" r="4"></circle>
+                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
+                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
+                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
+                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
+              </svg>
+            </div>
+          </div>
+          <div class="login-content">
+            <h2>東方原曲別プレイリスト管理ツール</h2>
+            <p>Spotifyアカウントでログインして、原曲別プレイリストの管理を始めましょう</p>
+            <div class="feature-list">
+              <div class="feature-item">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                </div>
+                <span>原曲別プレイリストの一覧表示</span>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                </div>
+                <span>自動プレイリスト作成・更新</span>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                  </svg>
+                </div>
+                <span>豊富なカテゴリと原曲対応</span>
+              </div>
+            </div>
+            <%= button_to 'Spotifyでログイン', '/auth/spotify', class: 'btn btn-spotify', method: :post, data: { turbo: false } %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <footer class="app-footer">
+      <p>東方音楽発掘 &copy; <%= Time.current.year %></p>
+    </footer>
+  </div>
 
   <style>
+    :root {
+      --primary-color: #1DB954;
+      --primary-hover: #1ed760;
+      --secondary-color: #ff6b1a;
+      --text-color: #333333;
+      --light-text: #666666;
+      --lighter-text: #888888;
+      --border-color: #e0e0e0;
+      --card-bg: #ffffff;
+      --body-bg: #f5f7fa;
+      --success-bg: #f0fff0;
+      --shadow-color: rgba(0, 0, 0, 0.1);
+      --shadow-hover: rgba(0, 0, 0, 0.15);
+      --border-radius: 12px;
+      
+      /* カードタイプごとの色 */
+      --windows-color: #64B5F6;
+      --pc98-color: #BA68C8;
+      --zun-color: #FFB74D;
+      --akyu-color: #4DB6AC;
+      --books-color: #F06292;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--body-bg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--text-color);
+      line-height: 1.6;
+    }
+    
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     }
     
-    .title {
+    .app-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .logo-container {
+      display: flex;
+      align-items: center;
+    }
+    
+    .logo-icon {
+      color: var(--primary-color);
+      margin-right: 15px;
+    }
+    
+    .app-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-color);
+      margin: 0;
+    }
+    
+    .user-profile {
+      display: flex;
+      align-items: center;
+    }
+    
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background-color: rgba(29, 185, 84, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+      margin-right: 12px;
+    }
+    
+    .spotify-name {
+      font-weight: 600;
+      margin-right: 15px;
+    }
+    
+    .dashboard-container {
+      margin-bottom: 40px;
+    }
+    
+    .welcome-card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: 0 8px 30px var(--shadow-color);
+      padding: 30px;
+      margin-bottom: 40px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .welcome-icon {
+      color: var(--primary-color);
+      margin-right: 30px;
+      flex-shrink: 0;
+    }
+    
+    .welcome-content h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+      font-size: 1.6rem;
+      color: var(--text-color);
+    }
+    
+    .welcome-content p {
+      color: var(--light-text);
+      margin-bottom: 20px;
+      font-size: 1.1rem;
+    }
+    
+    .update-section {
+      margin-bottom: 40px;
+    }
+    
+    .update-section h2 {
+      font-size: 1.5rem;
+      color: var(--text-color);
+      margin-bottom: 20px;
       text-align: center;
-      margin-bottom: 30px;
-      color: #333;
     }
     
-    .user-actions {
+    .update-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .update-card {
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      border-radius: var(--border-radius);
+      overflow: hidden;
+      height: 160px;
+    }
+    
+    .update-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px var(--shadow-hover);
+    }
+    
+    .card-inner {
+      height: 100%;
+      background-color: var(--card-bg);
+      box-shadow: 0 8px 30px var(--shadow-color);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-radius: var(--border-radius);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .windows-card .card-inner {
+      border-top: 4px solid var(--windows-color);
+    }
+    
+    .pc98-card .card-inner {
+      border-top: 4px solid var(--pc98-color);
+    }
+    
+    .zun-card .card-inner {
+      border-top: 4px solid var(--zun-color);
+    }
+    
+    .akyu-card .card-inner {
+      border-top: 4px solid var(--akyu-color);
+    }
+    
+    .books-card .card-inner {
+      border-top: 4px solid var(--books-color);
+    }
+    
+    .card-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin-bottom: 15px;
+    }
+    
+    .windows-card .card-icon {
+      color: var(--windows-color);
+      background-color: rgba(100, 181, 246, 0.1);
+    }
+    
+    .pc98-card .card-icon {
+      color: var(--pc98-color);
+      background-color: rgba(186, 104, 200, 0.1);
+    }
+    
+    .zun-card .card-icon {
+      color: var(--zun-color);
+      background-color: rgba(255, 183, 77, 0.1);
+    }
+    
+    .akyu-card .card-icon {
+      color: var(--akyu-color);
+      background-color: rgba(77, 182, 172, 0.1);
+    }
+    
+    .books-card .card-icon {
+      color: var(--books-color);
+      background-color: rgba(240, 98, 146, 0.1);
+    }
+    
+    .card-content {
+      flex-grow: 1;
+    }
+    
+    .card-content h3 {
+      margin: 0 0 10px 0;
+      font-size: 1.2rem;
+    }
+    
+    .windows-card .card-content h3 {
+      color: var(--windows-color);
+    }
+    
+    .pc98-card .card-content h3 {
+      color: var(--pc98-color);
+    }
+    
+    .zun-card .card-content h3 {
+      color: var(--zun-color);
+    }
+    
+    .akyu-card .card-content h3 {
+      color: var(--akyu-color);
+    }
+    
+    .books-card .card-content h3 {
+      color: var(--books-color);
+    }
+    
+    .card-content p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--light-text);
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .card-arrow {
+      position: absolute;
+      bottom: 15px;
+      right: 15px;
+      opacity: 0.5;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    
+    .update-card:hover .card-arrow {
+      opacity: 1;
+      transform: translateX(5px);
+    }
+    
+    .login-container {
       display: flex;
       justify-content: center;
-      gap: 10px;
+      align-items: center;
+      min-height: 70vh;
+    }
+    
+    .login-card {
+      background-color: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: 0 8px 30px var(--shadow-color);
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      overflow: hidden;
+    }
+    
+    @media (max-width: 768px) {
+      .login-card {
+        flex-direction: column;
+      }
+    }
+    
+    .login-graphic {
+      background: linear-gradient(135deg, #1DB954, #1ed760);
+      color: white;
+      padding: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 300px;
+    }
+    
+    .login-content {
+      padding: 40px;
+      flex-grow: 1;
+    }
+    
+    .login-content h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 1.6rem;
+      color: var(--text-color);
+    }
+    
+    .login-content p {
+      color: var(--light-text);
+      margin-bottom: 25px;
+      font-size: 1.1rem;
+    }
+    
+    .feature-list {
       margin-bottom: 30px;
+    }
+    
+    .feature-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+    
+    .feature-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: rgba(29, 185, 84, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--primary-color);
+      margin-right: 12px;
     }
     
     .btn {
-      padding: 10px 20px;
-      border-radius: 4px;
+      padding: 12px 24px;
+      border-radius: 30px;
       border: none;
       cursor: pointer;
-      font-size: 16px;
+      font-size: 1rem;
+      text-decoration: none;
+      display: inline-block;
       transition: all 0.3s ease;
+      font-weight: 600;
     }
     
     .btn-outline {
       background-color: transparent;
-      border: 1px solid #ccc;
-      color: #333;
+      border: 1px solid var(--border-color);
+      color: var(--light-text);
     }
     
     .btn-outline:hover {
-      background-color: #f5f5f5;
+      background-color: rgba(0, 0, 0, 0.05);
     }
     
     .btn-primary {
-      background-color: #1DB954;
+      background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
       color: white;
+      box-shadow: 0 4px 10px rgba(29, 185, 84, 0.3);
     }
     
     .btn-primary:hover {
-      background-color: #1ed760;
+      box-shadow: 0 6px 15px rgba(29, 185, 84, 0.4);
+      transform: translateY(-2px);
     }
     
     .btn-spotify {
-      background-color: #1DB954;
+      background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
       color: white;
-      padding: 12px 24px;
-      font-weight: bold;
+      padding: 15px 30px;
+      box-shadow: 0 4px 10px rgba(29, 185, 84, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
     }
     
     .btn-spotify:hover {
-      background-color: #1ed760;
+      box-shadow: 0 6px 15px rgba(29, 185, 84, 0.4);
+      transform: translateY(-2px);
     }
     
-    .playlist-management {
-      margin-top: 40px;
-    }
-    
-    .playlist-management h2 {
+    .app-footer {
       text-align: center;
-      margin-bottom: 20px;
-      color: #333;
-    }
-    
-    .playlist-card-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-    
-    .playlist-card {
-      text-decoration: none;
-      color: inherit;
-    }
-    
-    .card {
-      background-color: #fff;
-      border-radius: 8px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      padding: 20px;
-      height: 100%;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    
-    .card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
-    }
-    
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      color: #1DB954;
-    }
-    
-    .card p {
-      margin: 0;
-      color: #666;
-      font-size: 14px;
-    }
-    
-    .login-container {
-      text-align: center;
+      padding-top: 20px;
       margin-top: 40px;
+      border-top: 1px solid var(--border-color);
+      color: var(--lighter-text);
+      font-size: 0.9rem;
     }
     
-    .login-container p {
-      margin-bottom: 20px;
-      color: #666;
+    /* アニメーション */
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% {
+        transform: translateY(0);
+      }
+      40% {
+        transform: translateY(-20px);
+      }
+      60% {
+        transform: translateY(-10px);
+      }
+    }
+    
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    
+    .bounce {
+      animation: bounce 2s ease-in-out;
     }
   </style>
-</div>
+</body>
+</html>
