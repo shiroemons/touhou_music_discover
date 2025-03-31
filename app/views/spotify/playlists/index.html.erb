@@ -200,45 +200,38 @@
       const copyButton = document.getElementById('copyTableButton');
       const statusElement = document.getElementById('copyStatus');
       
-      copyButton.addEventListener('click', function() {
-        const table = document.getElementById('playlistTable');
-        const rows = table.querySelectorAll('tr');
-        let tableText = '';
-        
-        rows.forEach(row => {
-          const cells = row.querySelectorAll('th, td');
-          let rowData = [];
+      copyButton.addEventListener('click', async function() {
+        try {
+          const table = document.getElementById('playlistTable');
+          const rows = Array.from(table.querySelectorAll('tr'));
+          let tableText = '';
           
-          cells.forEach(cell => {
-            // URLの列はリンクのテキストではなく、実際のURLを取得
-            if (cell.querySelector('a.spotify-link')) {
+          rows.forEach(row => {
+            const cells = Array.from(row.querySelectorAll('th, td'));
+            const rowData = cells.map(cell => {
               const link = cell.querySelector('a.spotify-link');
-              rowData.push(link.href);
-            } else {
-              rowData.push(cell.innerText);
-            }
+              return link ? link.href : cell.textContent.trim();
+            });
+            tableText += rowData.join('\t') + '\n';
           });
           
-          tableText += rowData.join('\t') + '\n';
-        });
-        
-        // クリップボードにコピー
-        navigator.clipboard.writeText(tableText)
-          .then(() => {
-            statusElement.textContent = 'テーブルのデータがクリップボードにコピーされました！';
-            statusElement.classList.add('success');
-            statusElement.classList.remove('error');
-            
-            // 3秒後にメッセージを消す
-            setTimeout(() => {
-              statusElement.style.opacity = 0;
-            }, 3000);
-          })
-          .catch(err => {
-            statusElement.textContent = 'コピーに失敗しました: ' + err;
-            statusElement.classList.add('error');
-            statusElement.classList.remove('success');
-          });
+          await navigator.clipboard.writeText(tableText);
+          
+          statusElement.textContent = 'テーブルのデータがクリップボードにコピーされました！';
+          statusElement.classList.add('success');
+          statusElement.classList.remove('error');
+          statusElement.style.opacity = 1;
+          
+          setTimeout(() => {
+            statusElement.style.opacity = 0;
+          }, 3000);
+        } catch (err) {
+          console.error('コピーエラー:', err);
+          statusElement.textContent = 'コピーに失敗しました。手動でテーブルを選択してコピーしてください。';
+          statusElement.classList.add('error');
+          statusElement.classList.remove('success');
+          statusElement.style.opacity = 1;
+        }
       });
     });
   </script>
