@@ -3,7 +3,7 @@
 class Original < ApplicationRecord
   self.primary_key = :code
 
-  enum original_type: {
+  enum :original_type, {
     pc98: 'pc98',
     windows: 'windows',
     zuns_music_collection: 'zuns_music_collection',
