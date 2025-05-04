@@ -1,6 +1,6 @@
 services:
   postgres-16:
-    image: postgres:16-alpine
+    image: postgres:17-alpine
     volumes:
       - postgres-16:/var/lib/postgresql/data
       - ./tmp:/tmp/data
