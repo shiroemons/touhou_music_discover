@@ -38,5 +38,6 @@ class AppleMusicAlbumResource < Avo::BaseResource
 
   action FetchAppleMusicAlbum
   action FetchAppleMusicVariousArtistsAlbum
+  action FetchAppleMusicAlbumById
   action UpdateAppleMusicAlbum
 end
