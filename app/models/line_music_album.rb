@@ -67,55 +67,42 @@ class LineMusicAlbum < ApplicationRecord
       return
     end
 
-    with_retry(max_attempts: 3) do
-      search_queries = [
-        "#{s_album.name} #{s_album.payload['artists'].map { _1['name'] }.sort}",
-        s_album.name,
-        s_album.name.tr('〜~', '～'),
-        s_album.name.unicode_normalize,
-        s_album.name.sub(/ [(|\[].*[)|\]]\z/, '')
-      ]
+    # 最も正確な検索クエリから順番に試す
+    search_queries = [
+      "#{s_album.name} #{s_album.payload['artists'].map { _1['name'] }.sort.join(' ')}", # アーティスト名を空白区切りで結合
+      "#{s_album.name} #{s_album.payload['artists'].first['name']}", # 最初のアーティスト名のみ使用
+      s_album.name # アルバム名のみ
+    ]
 
-      Rails.logger.info "LINE MUSIC検索クエリ: #{search_queries.join(' | ')}"
+    # 特殊文字の置換や正規化が必要な場合のみ追加のクエリを生成
+    search_queries << s_album.name.tr('〜~', '～') if /[〜~～]/.match?(s_album.name)
 
-      search_queries.each_with_index do |query, index|
-        Rails.logger.info "検索クエリ #{index + 1}/#{search_queries.size}: #{query}"
-        result = search_and_save(query, s_album)
-        if result
-          Rails.logger.info "LINE MUSICアルバムが見つかりました: #{query}"
-          return result
-        else
-          Rails.logger.info "LINE MUSICアルバムが見つかりませんでした: #{query}"
-        end
-      end
-      Rails.logger.warn "すべての検索クエリでLINE MUSICアルバムが見つかりませんでした: #{s_album.name}"
-    end
+    search_queries << s_album.name.unicode_normalize if s_album.name != s_album.name.unicode_normalize
+
+    # かっこや括弧付きの追加情報を削除
+    base_name = s_album.name.sub(/ [(|\[].*[)|\]]\z/, '')
+    search_queries << base_name if base_name != s_album.name
+
+    search_and_save_with_queries(search_queries.uniq, s_album)
   end
 
   def self.process_apple_music_albums(am_album)
     Rails.logger.info "Apple Musicアルバム処理: #{am_album.name}"
 
-    with_retry(max_attempts: 3) do
-      search_queries = [
-        "#{am_album.name.sub(' - EP', '')} #{am_album.payload.dig('attributes', 'artist_name')}",
-        am_album.name,
-        am_album.name.sub(/ [(|\[].*[)|\]]\z/, '')
-      ]
+    # 最も正確な検索クエリから順番に試す
+    artist_name = am_album.payload.dig('attributes', 'artist_name')
+    album_name = am_album.name.sub(' - EP', '') # EPの表記を削除
 
-      Rails.logger.info "LINE MUSIC検索クエリ: #{search_queries.join(' | ')}"
+    search_queries = [
+      "#{album_name} #{artist_name}", # アルバム名とアーティスト名
+      am_album.name # 元のアルバム名
+    ]
 
-      search_queries.each_with_index do |query, index|
-        Rails.logger.info "検索クエリ #{index + 1}/#{search_queries.size}: #{query}"
-        result = search_and_save(query, am_album)
-        if result
-          Rails.logger.info "LINE MUSICアルバムが見つかりました: #{query}"
-          return result
-        else
-          Rails.logger.info "LINE MUSICアルバムが見つかりませんでした: #{query}"
-        end
-      end
-      Rails.logger.warn "すべての検索クエリでLINE MUSICアルバムが見つかりませんでした: #{am_album.name}"
-    end
+    # かっこや括弧付きの追加情報を削除
+    base_name = am_album.name.sub(/ [(|\[].*[)|\]]\z/, '')
+    search_queries << base_name if base_name != am_album.name
+
+    search_and_save_with_queries(search_queries.uniq, am_album)
   end
 
   def self.update_line_music_album_info
@@ -185,49 +172,75 @@ class LineMusicAlbum < ApplicationRecord
       Rails.logger.info "検索結果なし: #{query}"
       return false
     when 1
-      line_album = line_albums.find do |la|
-        la.release_date == album.release_date && la.track_total_count == album.total_tracks
-      end
-      line_album ||= line_albums.find do |la|
-        la.album_title == album.name && la.track_total_count == album.total_tracks
-      end
-
-      if line_album
+      line_album = line_albums.first
+      if matches_album?(line_album, album)
         Rails.logger.info "一致するアルバムが見つかりました: #{line_album.album_title}"
         LineMusicAlbum.save_album(album.album_id, line_album)
         return true
       else
-        Rails.logger.info '一致するアルバムが見つかりませんでした'
+        Rails.logger.info "アルバムが条件に一致しませんでした: リリース日=#{line_album.release_date}, トラック数=#{line_album.track_total_count} vs #{album.total_tracks}"
+        return false
       end
     else
       Rails.logger.info '複数の検索結果から条件に一致するアルバムを探しています'
-      line_albums = line_albums.select do |la|
-        la.release_date == album.release_date && la.track_total_count == album.total_tracks
+
+      # トラック数が一致するアルバムを優先してフィルタリング
+      matching_by_tracks = line_albums.select { |la| la.track_total_count == album.total_tracks }
+      Rails.logger.info "トラック数が一致するアルバム: #{matching_by_tracks.size}件"
+
+      if matching_by_tracks.any?
+        # トラック数が一致する中から、タイトルが完全一致するか、リリース日が近いものを選択
+        exact_title_match = matching_by_tracks.find { |la| la.album_title == album.name }
+
+        if exact_title_match
+          Rails.logger.info "タイトルが完全一致するアルバムを選択: #{exact_title_match.album_title}"
+          LineMusicAlbum.save_album(album.album_id, exact_title_match)
+          return true
+        end
+
+        # リリース日が最も近いアルバムを選択
+        closest_date_match = matching_by_tracks.min_by { |la| (la.release_date - album.release_date).abs }
+        if closest_date_match && (closest_date_match.release_date - album.release_date).abs <= 7
+          Rails.logger.info "リリース日が近いアルバムを選択: #{closest_date_match.album_title}, 日付差: #{(closest_date_match.release_date - album.release_date).abs}日"
+          LineMusicAlbum.save_album(album.album_id, closest_date_match)
+          return true
+        end
       end
 
-      if line_albums.empty?
+      # 条件に一致するアルバムをフィルタリング
+      matching_albums = line_albums.select { |la| matches_album?(la, album) }
+      Rails.logger.info "条件に一致するアルバム: #{matching_albums.size}件"
+
+      if matching_albums.empty?
         Rails.logger.info '条件に一致するアルバムが見つかりませんでした'
         return false
       end
 
-      line_album = if line_albums.size == 1
+      line_album = if matching_albums.size == 1
                      Rails.logger.info '条件に一致するアルバムが1件見つかりました'
-                     line_albums.first
+                     matching_albums.first
                    else
                      Rails.logger.info '複数の候補から名前が一致するアルバムを探しています'
-                     line_albums.find { _1.album_title.include?(album.name) }
+                     matching_albums.find { |la| la.album_title.include?(album.name) } || matching_albums.first
                    end
 
       if line_album
         Rails.logger.info "一致するアルバムが見つかりました: #{line_album.album_title}"
         LineMusicAlbum.save_album(album.album_id, line_album)
         return true
-      else
-        Rails.logger.info '一致するアルバムが見つかりませんでした'
       end
     end
 
     false
+  end
+
+  # アルバムがマッチするかどうかを判定するヘルパーメソッド
+  def self.matches_album?(line_album, album)
+    release_date_match = line_album.release_date == album.release_date
+    track_count_match = line_album.track_total_count == album.total_tracks
+    title_match = line_album.album_title == album.name
+
+    (release_date_match && track_count_match) || (title_match && track_count_match)
   end
 
   def self.find_and_save(id, album)
@@ -236,10 +249,13 @@ class LineMusicAlbum < ApplicationRecord
       line_album = LineMusic::Album.find(id)
       Rails.logger.info "LINE MUSIC アルバム取得成功: #{line_album.album_title}"
 
+      # リリース日の差を1日まで許容する
       release_date_difference = (line_album.release_date - album.release_date).abs
+      track_count_match = line_album.track_total_count == album.total_tracks
+
       Rails.logger.info "リリース日の差: #{release_date_difference}日, トラック数: #{line_album.track_total_count} vs #{album.total_tracks}"
 
-      if release_date_difference <= 1 && line_album.track_total_count == album.total_tracks
+      if release_date_difference <= 1 && track_count_match
         Rails.logger.info 'アルバム情報が一致しました'
         LineMusicAlbum.save_album(album.album_id, line_album)
         return true
@@ -265,6 +281,30 @@ class LineMusicAlbum < ApplicationRecord
         Rails.logger.error "最大リトライ回数(#{max_attempts}回)に達しました: #{e.message}"
         raise
       end
+    end
+  end
+
+  # 複数のクエリで検索を行い、一致するアルバムを保存する
+  def self.search_and_save_with_queries(search_queries, album)
+    with_retry(max_attempts: 3) do
+      Rails.logger.info "LINE MUSIC検索クエリ候補: #{search_queries.join(' | ')}"
+
+      search_queries.each_with_index do |query, index|
+        Rails.logger.info "検索クエリ #{index + 1}/#{search_queries.size}: #{query}"
+
+        # 検索結果が見つかった場合は早期リターン
+        result = search_and_save(query, album)
+        if result
+          Rails.logger.info "LINE MUSICアルバムが見つかりました: #{query}"
+          return result
+        end
+
+        # 検索間隔を少し空ける
+        sleep 0.5 unless index == search_queries.size - 1
+      end
+
+      Rails.logger.warn "すべての検索クエリでLINE MUSICアルバムが見つかりませんでした: #{album.name}"
+      false
     end
   end
 
