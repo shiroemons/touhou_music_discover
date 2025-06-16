@@ -25,9 +25,9 @@ module YTMusic
         Response.new(response.body)
       end
 
-      private
-
       FILTERED_PARAM1 = 'EgWKAQI'
+
+      private
 
       def search_params(filter:)
         params = nil

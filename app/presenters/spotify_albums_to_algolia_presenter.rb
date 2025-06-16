@@ -44,7 +44,7 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
           text: "#{COPYRIGHT_TYPE[copyright['type']]} #{copyright['text']}"
         }
       end || [],
-      image_url: album.spotify_album_payload&.dig('images')&.first&.dig('url').presence || '',
+      image_url: extract_image_url(album.spotify_album_payload),
       release_date: album.spotify_album_release_date,
       tracks: track_objects(album.spotify_tracks.sort_by { [_1.disc_number, _1.track_number] })
     }
@@ -95,5 +95,14 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
   def third_category(original_song)
     original = original_song.original
     "#{second_category(original)} > #{format('%02d', original_song.track_number)}. #{original_song.title}"
+  end
+
+  def extract_image_url(payload)
+    return '' unless payload
+
+    images = payload['images']
+    return '' unless images&.first
+
+    images.first['url'].presence || ''
   end
 end

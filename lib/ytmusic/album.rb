@@ -24,7 +24,7 @@ module YTMusic
       @title = header.dig('title', 'runs', 0, 'text')
       subtitle = header.dig('subtitle', 'runs')
       @type = subtitle&.shift&.dig('text')
-      @year = subtitle&.pop&.dig('text')&.to_i&.to_s
+      @year = extract_year_from_subtitle(subtitle)
       strapline_text_one = header.dig('straplineTextOne', 'runs')
       artist_contents = strapline_text_one&.filter { _1['text'] != ' • ' }&.filter { _1['text'] != '、' }
       return if artist_contents.blank?
@@ -40,6 +40,20 @@ module YTMusic
       @tracks = track_contents.map { Track.new _1 }
       @duration_seconds = @tracks.sum(&:duration_seconds)
       super()
+    end
+
+    private
+
+    def extract_year_from_subtitle(subtitle)
+      return nil unless subtitle
+
+      last_element = subtitle.pop
+      return nil unless last_element
+
+      text = last_element['text']
+      return nil unless text
+
+      text.to_i.to_s
     end
   end
 end

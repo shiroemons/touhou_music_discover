@@ -2,8 +2,10 @@ inherit_from:
   - .rubocop_base.yml
 
 require:
-  - rubocop-performance
   - rubocop-rails
+
+plugins:
+  - rubocop-performance
 
 AllCops:
   NewCops: enable
