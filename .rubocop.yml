@@ -1,10 +1,8 @@
 inherit_from:
   - .rubocop_base.yml
 
-require:
-  - rubocop-rails
-
 plugins:
+  - rubocop-rails
   - rubocop-performance
 
 AllCops:
