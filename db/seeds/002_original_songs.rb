@@ -3,10 +3,9 @@
 require 'csv'
 
 ActiveRecord::Base.connection.execute('TRUNCATE TABLE original_songs;')
-insert_data = []
 now = Time.zone.now
-CSV.table('db/fixtures/original_songs.tsv', col_sep: "\t", converters: nil).each do |os|
-  insert_data << {
+insert_data = CSV.table('db/fixtures/original_songs.tsv', col_sep: "\t", converters: nil).map do |os|
+  {
     code: os[:code],
     original_code: os[:original_code],
     title: os[:title],

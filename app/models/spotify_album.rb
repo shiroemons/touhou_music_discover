@@ -54,7 +54,12 @@ class SpotifyAlbum < ApplicationRecord
   end
 
   def image_url
-    payload&.dig('images')&.first&.dig('url').presence
+    return nil unless payload
+
+    images = payload['images']
+    return nil unless images&.first
+
+    images.first['url'].presence
   end
 
   def self.ransackable_attributes(_auth_object = nil)

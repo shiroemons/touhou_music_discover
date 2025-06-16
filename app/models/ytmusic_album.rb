@@ -211,9 +211,8 @@ class YtmusicAlbum < ApplicationRecord
     ]
     queries << [s_album.name, ''] if s_album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
 
-    search_queries = []
-    queries.each do |name, names|
-      search_queries << "#{name} #{names}".strip
+    search_queries = queries.map do |name, names|
+      "#{name} #{names}".strip
     end
 
     search_queries.uniq!
