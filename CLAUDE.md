@@ -100,10 +100,11 @@ This workflow ensures code changes are properly reviewed and tracked through ver
 - **Commit messages**: Must be written in Japanese
 - **Pull Request titles and descriptions**: Must be written in Japanese
 - **Branch naming**: Use descriptive English branch names (e.g., `feature/add-feature-name`, `fix/bug-description`)
+- **Do NOT include**: `🤖 Generated with [Claude Code]` or `Co-Authored-By: Claude` in commit messages
 
 Example commit message format:
 ```
-機能: ユーザー認証システムを追加
+ユーザー認証システムを追加
 
 - JWTトークンによる認証を実装
 - ログイン/ログアウトAPIを追加
