@@ -6,7 +6,7 @@ module SpotifyClient
     KEYWORD = 'label:東方同人音楽流通'
 
     def self.fetch_touhou_albums
-      Parallel.each((2000..Time.zone.today.year), in_processes: 3) do |year|
+      Parallel.each(2000..Time.zone.today.year, in_processes: 3) do |year|
         keyword = "#{KEYWORD} year:#{year}"
         retry_count = 0
         max_retries = 5

@@ -126,6 +126,7 @@ class YtmusicAlbum < ApplicationRecord
     false
   end
 
+  # rubocop:disable Naming/PredicateMethod
   def self.find_and_save(browse_id, album)
     ytmusic_album = YTMusic::Album.find(browse_id)
     return false if album.total_tracks != ytmusic_album.track_total_count
@@ -133,7 +134,9 @@ class YtmusicAlbum < ApplicationRecord
     save_album(album.album_id, browse_id, ytmusic_album)
     true
   end
+  # rubocop:enable Naming/PredicateMethod
 
+  # rubocop:disable Naming/PredicateMethod
   def self.similar_check_and_save(similar, album, ytm_album)
     return false unless similar.average.to_d > BigDecimal('0.80') && similar.jarowinkler_similar.to_d > BigDecimal('0.85')
 
@@ -143,6 +146,7 @@ class YtmusicAlbum < ApplicationRecord
     save_album(album.album_id, ytm_album.browse_id, ytmusic_album)
     true
   end
+  # rubocop:enable Naming/PredicateMethod
 
   def update_album(album, url)
     update(

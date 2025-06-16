@@ -8,7 +8,7 @@ class YtmusicTrack < ApplicationRecord
   belongs_to :track
 
   delegate :jan_code, :is_touhou, :circle_name, to: :album, allow_nil: true
-  delegate :isrc, :is_touhou, to: :track, allow_nil: true
+  delegate :isrc, to: :track, allow_nil: true
   delegate :image_url, to: :ytmusic_album, allow_nil: true
 
   scope :video_id, ->(video_id) { find_by(video_id:) }
