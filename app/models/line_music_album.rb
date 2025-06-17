@@ -35,7 +35,7 @@ class LineMusicAlbum < ApplicationRecord
     '4582736131150' => 'mb0000000003ba6b5b', # 少女理論観測所 - showcase ⅳ
     '4582736133420' => 'mb00000000040ff58d', # TAMUSIC - 東方バイオリンロック X-XFD-(TOUHOU VIOLIN ROCK)
     '4582736134533' => 'mb00000000047a98ec', # fractrick - And what's gone？
-    '4582736134540' => 'mb00000000047a98ee'  # askey - 🤞
+    '4582736134762' => 'mb00000000047a98ee'  # askey - 🤞
   }.freeze
 
   def self.fetch_albums
