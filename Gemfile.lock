@@ -155,7 +155,8 @@ GEM
     hashie (5.0.0)
     http-cookie (1.0.7)
       domain_name (~> 0.5)
-    httparty (0.21.0)
+    httparty (0.23.1)
+      csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
     i18n (1.14.7)
@@ -186,10 +187,11 @@ GEM
       net-pop
       net-smtp
     marcel (1.0.4)
-    meilisearch (0.26.0)
-      httparty (>= 0.17.1, < 0.22.0)
-    meilisearch-rails (0.12.0)
-      meilisearch (~> 0.26.0)
+    meilisearch (0.32.0)
+      httparty (~> 0.22)
+    meilisearch-rails (0.16.0)
+      meilisearch (~> 0.32.0)
+      mutex_m (~> 0.2)
     meta-tags (2.22.1)
       actionpack (>= 6.0.0, < 8.1)
     method_source (1.1.0)
@@ -202,9 +204,10 @@ GEM
       protocol (~> 2.0)
     msgpack (1.7.5)
     multi_json (1.15.0)
-    multi_xml (0.7.1)
+    multi_xml (0.7.2)
       bigdecimal (~> 3.1)
     multipart-post (2.3.0)
+    mutex_m (0.3.0)
     net-imap (0.5.8)
       date
       net-protocol
