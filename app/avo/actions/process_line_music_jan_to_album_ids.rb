@@ -16,7 +16,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
     LineMusicAlbum::JAN_TO_ALBUM_IDS.each do |jan_code, line_music_album_id|
       # JANコードでアルバムを検索
       album = Album.find_by(jan_code: jan_code)
-      
+
       if album.nil?
         missing_count += 1
         Rails.logger.warn "JAN: #{jan_code} のアルバムが見つかりません"
@@ -25,7 +25,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
 
       # LINE MUSICアルバムを検索または作成
       line_music_album = LineMusicAlbum.find_by(line_music_id: line_music_album_id)
-      
+
       if line_music_album.nil?
         # LINE MUSICアルバムを新規作成
         begin
@@ -35,7 +35,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
           )
           created_count += 1
           Rails.logger.info "作成: JAN #{jan_code} → LINE MUSIC ID #{line_music_album_id}"
-        rescue => e
+        rescue StandardError => e
           error_count += 1
           Rails.logger.error "エラー: JAN #{jan_code} - #{e.message}"
         end
@@ -45,7 +45,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
           line_music_album.update!(album: album)
           updated_count += 1
           Rails.logger.info "更新: JAN #{jan_code} → LINE MUSIC ID #{line_music_album_id}"
-        rescue => e
+        rescue StandardError => e
           error_count += 1
           Rails.logger.error "エラー: JAN #{jan_code} - #{e.message}"
         end
