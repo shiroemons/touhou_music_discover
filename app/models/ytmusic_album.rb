@@ -63,7 +63,9 @@ class YtmusicAlbum < ApplicationRecord
     '4582736134007' => 'MPREb_qkhRjC18qsZ', # 非可逆リズム - 満月の竹林 (MRM REMIX) feat. モリモリあつし
     '4582736133987' => 'MPREb_twy0YQaTUy6', # 非可逆リズム - 遠野幻想物語 (MRM REMIX) feat. モリモリあつし
     '4582736133970' => 'MPREb_CgG1tmhnQz8', # 非可逆リズム - パリピフラン feat. モリモリあつし
-    '4582736133932' => 'MPREb_8rF6ZB4kmJd'  # 非可逆リズム - LIMIT BURST (GC Mix.) feat. adaptor, モリモリあつし
+    '4582736133932' => 'MPREb_8rF6ZB4kmJd', # 非可逆リズム - LIMIT BURST (GC Mix.) feat. adaptor, モリモリあつし
+    '4582736134557' => 'MPREb_Skha7QKftQu', # fractrick - Eyed(Single)
+    '4582736134755' => 'MPREb_IUioqK8ltkL'  # .new label - -80538738812075974³+80435758145817515³+12602123297335631³
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
@@ -129,7 +131,7 @@ class YtmusicAlbum < ApplicationRecord
   # rubocop:disable Naming/PredicateMethod
   def self.find_and_save(browse_id, album)
     ytmusic_album = YTMusic::Album.find(browse_id)
-    return false if album.total_tracks != ytmusic_album.track_total_count
+    return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
 
     save_album(album.album_id, browse_id, ytmusic_album)
     true
@@ -141,7 +143,7 @@ class YtmusicAlbum < ApplicationRecord
     return false unless similar.average.to_d > BigDecimal('0.80') && similar.jarowinkler_similar.to_d > BigDecimal('0.85')
 
     ytmusic_album = YTMusic::Album.find(ytm_album.browse_id)
-    return false if album.total_tracks != ytmusic_album.track_total_count
+    return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
 
     save_album(album.album_id, ytm_album.browse_id, ytmusic_album)
     true
