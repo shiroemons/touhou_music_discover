@@ -251,6 +251,12 @@ class LineMusicAlbum < ApplicationRecord
     Rails.logger.info "LINE MUSIC アルバムID検索: #{id}"
     with_retry(max_attempts: 3) do
       line_album = LineMusic::Album.find(id)
+
+      if line_album.nil?
+        Rails.logger.warn "LINE MUSIC アルバムが見つかりませんでした: #{id}"
+        return false
+      end
+
       Rails.logger.info "LINE MUSIC アルバム取得成功: #{line_album.album_title}"
 
       # リリース日の差を1日まで許容する
