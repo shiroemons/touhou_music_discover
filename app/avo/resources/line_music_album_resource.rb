@@ -38,4 +38,5 @@ class LineMusicAlbumResource < Avo::BaseResource
 
   action FetchLineMusicAlbum
   action UpdateLineMusicAlbum
+  action ProcessLineMusicJanToAlbumIds
 end
