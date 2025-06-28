@@ -30,12 +30,11 @@ group :development do
 end
 
 gem 'amatch'
-gem 'apple_music'
 gem 'avo'
 gem 'connection_pool'
 gem 'csv'
-gem 'faraday'
-gem 'faraday_middleware'
+gem 'faraday', '~> 2.0'
+gem 'jwt'
 gem 'meilisearch-rails'
 gem 'pagy'
 gem 'parallel'

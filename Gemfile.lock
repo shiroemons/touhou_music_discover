@@ -80,10 +80,6 @@ GEM
     amatch (0.4.1)
       mize
       tins (~> 1.0)
-    apple_music (0.3.1)
-      faraday
-      faraday_middleware
-      jwt (>= 2.2)
     ast (2.4.3)
     avo (2.53.0)
       actionview (>= 6.0)
@@ -125,31 +121,12 @@ GEM
     dry-initializer (3.1.1)
     erb (5.0.1)
     erubi (1.13.1)
-    faraday (1.10.4)
-      faraday-em_http (~> 1.0)
-      faraday-em_synchrony (~> 1.0)
-      faraday-excon (~> 1.1)
-      faraday-httpclient (~> 1.0)
-      faraday-multipart (~> 1.0)
-      faraday-net_http (~> 1.0)
-      faraday-net_http_persistent (~> 1.0)
-      faraday-patron (~> 1.0)
-      faraday-rack (~> 1.0)
-      faraday-retry (~> 1.0)
-      ruby2_keywords (>= 0.0.4)
-    faraday-em_http (1.0.0)
-    faraday-em_synchrony (1.0.0)
-    faraday-excon (1.1.0)
-    faraday-httpclient (1.0.1)
-    faraday-multipart (1.0.4)
-      multipart-post (~> 2)
-    faraday-net_http (1.0.2)
-    faraday-net_http_persistent (1.2.0)
-    faraday-patron (1.0.0)
-    faraday-rack (1.0.0)
-    faraday-retry (1.0.3)
-    faraday_middleware (1.2.1)
-      faraday (~> 1.0)
+    faraday (2.13.1)
+      faraday-net_http (>= 2.0, < 3.5)
+      json
+      logger
+    faraday-net_http (3.4.1)
+      net-http (>= 0.5.0)
     ffi (1.16.3)
     globalid (1.2.1)
       activesupport (>= 6.1)
@@ -208,8 +185,9 @@ GEM
     multi_json (1.15.0)
     multi_xml (0.7.2)
       bigdecimal (~> 3.1)
-    multipart-post (2.3.0)
     mutex_m (0.3.0)
+    net-http (0.6.0)
+      uri
     net-imap (0.5.8)
       date
       net-protocol
@@ -379,7 +357,6 @@ GEM
       rubocop (>= 1.75.0, < 2.0)
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-progressbar (1.13.0)
-    ruby2_keywords (0.0.5)
     ruby_parser (3.19.1)
       sexp_processor (~> 4.16)
     securerandom (0.4.1)
@@ -404,6 +381,7 @@ GEM
       unf_ext
     unf_ext (0.0.9.1)
     unicode-display_width (2.6.0)
+    uri (1.0.3)
     useragent (0.16.11)
     view_component (3.20.0)
       activesupport (>= 5.2.0, < 8.1)
@@ -426,7 +404,6 @@ PLATFORMS
 
 DEPENDENCIES
   amatch
-  apple_music
   avo
   bootsnap (>= 1.4.4)
   byebug
@@ -434,9 +411,9 @@ DEPENDENCIES
   cssbundling-rails
   csv
   dotenv-rails
-  faraday
-  faraday_middleware
+  faraday (~> 2.0)
   jsbundling-rails
+  jwt
   listen (~> 3.8)
   meilisearch-rails
   omniauth-rails_csrf_protection

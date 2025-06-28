@@ -25,6 +25,7 @@ require_relative '../lib/redis_pool'
 require_relative '../lib/line_music'
 require_relative '../lib/ytmusic'
 require_relative '../lib/similar'
+require_relative '../lib/apple_music'
 
 module TouhouMusicDiscover
   class Application < Rails::Application
