@@ -51,3 +51,8 @@ Style/SignalException:
   Enabled: true
   Exclude:
     - app/avo/actions/*.rb
+
+Style/OpenStructUse:
+  Enabled: true
+  Exclude:
+    - lib/apple_music/response.rb

@@ -20,5 +20,4 @@ module AppleMusic
       yield(config)
     end
   end
-
 end
