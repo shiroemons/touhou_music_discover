@@ -1,26 +1,26 @@
 # frozen_string_literal: true
 
-module YTMusic
+module YtMusic
   class Base
     FILTERS = %w[albums artists playlists community_playlists featured_playlists songs videos].freeze
 
     class << self
       def find(id, _type = nil)
-        body = YTMusic.generate_body({ id: })
-        response = YTMusic.send_request('browse', body:)
+        body = YtMusic.generate_body({ id: })
+        response = YtMusic.send_request('browse', body:)
 
         response.body
       end
 
       def search(query, filter)
-        body = YTMusic.generate_body
+        body = YtMusic.generate_body
         body['query'] = query
 
         raise "not support filter: #{filter}" if filter && FILTERS.exclude?(filter)
 
         body['params'] = search_params(filter:)
 
-        response = YTMusic.send_request('search', body:)
+        response = YtMusic.send_request('search', body:)
 
         Response.new(response.body)
       end

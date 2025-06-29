@@ -2,7 +2,7 @@
 
 require_relative 'yt_music/connection'
 
-module YTMusic
+module YtMusic
   autoload :Album,       'yt_music/album'
   autoload :Artist,      'yt_music/artist'
   autoload :Base,        'yt_music/base'

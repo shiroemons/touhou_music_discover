@@ -4,7 +4,7 @@ require 'cgi'
 require 'digest/sha1'
 require 'faraday'
 
-module YTMusic
+module YtMusic
   YTM_VERSION = '1.20241111.01.00'
   YTM_DOMAIN = 'https://music.youtube.com'
   YTM_BASE_API = "#{YTM_DOMAIN}/youtubei/v1/".freeze
