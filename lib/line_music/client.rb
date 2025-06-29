@@ -32,18 +32,4 @@ module LineMusic
     end
   end
 
-  # 既存コードとの互換性のため、モジュールレベルでClientクラスのメソッドに委譲
-  class << self
-    def method_missing(name, *, &)
-      if Client.respond_to?(name)
-        Client.send(name, *, &)
-      else
-        super
-      end
-    end
-
-    def respond_to_missing?(name, include_private = false)
-      Client.respond_to?(name, include_private)
-    end
-  end
 end
