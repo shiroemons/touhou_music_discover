@@ -3,7 +3,7 @@
   "private": "true",
   "dependencies": {
     "@hotwired/stimulus": "3.2.2",
-    "@hotwired/turbo-rails": "8.0.4",
+    "@hotwired/turbo-rails": "8.0.16",
     "@popperjs/core": "2.11.8",
     "bootstrap": "5.3.7",
     "bootstrap-icons": "1.13.1",
