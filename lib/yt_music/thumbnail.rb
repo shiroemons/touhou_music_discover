@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module YTMusic
+module YtMusic
   class Thumbnail < Base
     attr_reader :url, :width, :height
 

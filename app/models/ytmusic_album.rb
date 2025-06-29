@@ -82,7 +82,7 @@ class YtmusicAlbum < ApplicationRecord
   end
 
   def self.search_and_save(query, album)
-    response = YTMusic::Album.search(query)
+    response = YtMusic::Album.search(query)
     return false if response.data[:albums].blank?
 
     ytmusic_albums = response.data[:albums]
@@ -130,7 +130,7 @@ class YtmusicAlbum < ApplicationRecord
 
   # rubocop:disable Naming/PredicateMethod
   def self.find_and_save(browse_id, album)
-    ytmusic_album = YTMusic::Album.find(browse_id)
+    ytmusic_album = YtMusic::Album.find(browse_id)
     return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
 
     save_album(album.album_id, browse_id, ytmusic_album)
@@ -142,7 +142,7 @@ class YtmusicAlbum < ApplicationRecord
   def self.similar_check_and_save(similar, album, ytm_album)
     return false unless similar.average.to_d > BigDecimal('0.80') && similar.jarowinkler_similar.to_d > BigDecimal('0.85')
 
-    ytmusic_album = YTMusic::Album.find(ytm_album.browse_id)
+    ytmusic_album = YtMusic::Album.find(ytm_album.browse_id)
     return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
 
     save_album(album.album_id, ytm_album.browse_id, ytmusic_album)
@@ -234,7 +234,7 @@ class YtmusicAlbum < ApplicationRecord
     ytmusic_album_ids.each_slice(batch_size) do |ids|
       where(id: ids).then do |records|
         Parallel.each(records, in_processes: 7) do |ytmusic_album|
-          album = YTMusic::Album.find(ytmusic_album.browse_id)
+          album = YtMusic::Album.find(ytmusic_album.browse_id)
           url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
           ytmusic_album.update_album(album, url) if album
         end

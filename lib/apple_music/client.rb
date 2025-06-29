@@ -4,7 +4,7 @@ require 'faraday'
 require 'faraday/net_http'
 
 module AppleMusic
-  class Connection
+  class Client
     API_URI = 'https://api.music.apple.com/v1/'
 
     def initialize(config)

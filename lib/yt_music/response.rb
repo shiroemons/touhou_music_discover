@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module YTMusic
+module YtMusic
   class Response
     attr_reader :data
 

@@ -7,7 +7,7 @@ class UpdateYtmusicAlbumTrack < Avo::BaseAction
 
   def handle(_args)
     YtmusicAlbum.find_each do |ytmusic_album|
-      album = YTMusic::Album.find(ytmusic_album.browse_id)
+      album = YtMusic::Album.find(ytmusic_album.browse_id)
       url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
       ytmusic_album.update_album(album, url) if album
 

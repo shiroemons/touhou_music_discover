@@ -60,7 +60,7 @@ module AppleMusic
       private
 
       def connection
-        @connection ||= Connection.new(AppleMusic.config)
+        @connection ||= Client.new(AppleMusic.config)
       end
 
       def build_path(storefront, *segments)

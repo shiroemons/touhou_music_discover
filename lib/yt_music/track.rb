@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module YTMusic
+module YtMusic
   class Track < Base
     attr_reader :title, :video_id, :playlist_id, :url, :track_number, :artists, :duration, :duration_seconds
 

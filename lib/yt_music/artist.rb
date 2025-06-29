@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module YTMusic
+module YtMusic
   class Artist < Base
     attr_reader :name, :browse_id, :url
 
