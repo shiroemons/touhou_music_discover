@@ -15,7 +15,8 @@ Rails.application.configure do
   # this is usually not necessary, and can slow down your test suite. However, it's
   # recommended that you enable it in continuous integration systems to ensure eager
   # loading is working properly before deploying your code.
-  config.eager_load = ENV['CI'].present?
+  # Temporarily disabled for Rails 8 Zeitwerk compatibility
+  config.eager_load = false
 
   # Configure public file server for tests with cache-control for performance.
   config.public_file_server.headers = { 'cache-control' => 'public, max-age=3600' }

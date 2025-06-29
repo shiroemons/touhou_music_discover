@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require 'date'
-require_relative 'apple_music/config'
-require_relative 'apple_music/connection'
-require_relative 'apple_music/response'
-require_relative 'apple_music/album'
-require_relative 'apple_music/artist'
-require_relative 'apple_music/song'
 
 module AppleMusic
+  autoload :Album,    'apple_music/album'
+  autoload :Artist,   'apple_music/artist'
+  autoload :Client,   'apple_music/client'
+  autoload :Config,   'apple_music/config'
+  autoload :Response, 'apple_music/response'
+  autoload :Song,     'apple_music/song'
   class << self
     attr_writer :config
 

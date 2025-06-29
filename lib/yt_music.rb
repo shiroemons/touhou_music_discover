@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require_relative 'yt_music/client'
-
 module YtMusic
   autoload :Album,       'yt_music/album'
   autoload :Artist,      'yt_music/artist'

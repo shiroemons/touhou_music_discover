@@ -2,8 +2,6 @@
 
 require 'date'
 
-require_relative 'line_music/client'
-
 module LineMusic
   autoload :Album,  'line_music/album'
   autoload :Artist, 'line_music/artist'
