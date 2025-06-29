@@ -2,7 +2,6 @@
 
 require 'json'
 require 'faraday'
-require 'faraday_middleware'
 
 module LineMusic
   class ApiError < StandardError; end
@@ -15,7 +14,8 @@ module LineMusic
 
     def client
       @client ||= Faraday.new(API_URI) do |conn|
-        conn.response :json, content_type: /\bjson\z/
+        conn.request :json
+        conn.response :json, content_type: /\bjson$/
       end
     end
 
