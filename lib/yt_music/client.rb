@@ -11,7 +11,8 @@ module YtMusic
   YTM_BASE_API = "#{YTM_DOMAIN}/youtubei/v1/".freeze
   YTM_PARAMS = '?alt=json&key=AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30'
 
-  class << self
+  class Client
+    class << self
     def generate_body(options = {})
       context = initialize_context
 
@@ -107,6 +108,21 @@ module YtMusic
       date = Time.now.strftime('%s%L').to_i
       sha1 = Digest::SHA1.hexdigest("#{date} #{sapisid} #{YTM_DOMAIN}")
       "SAPISIDHASH #{date}_#{sha1}"
+    end
+  end
+
+  # 既存コードとの互換性のため、モジュールレベルでClientクラスのメソッドに委譲
+  class << self
+    def method_missing(name, *, &)
+      if Client.respond_to?(name)
+        Client.send(name, *, &)
+      else
+        super
+      end
+    end
+
+    def respond_to_missing?(name, include_private = false)
+      Client.respond_to?(name, include_private)
     end
   end
 end
