@@ -12,7 +12,7 @@ namespace :line_music do
       s_album = album.spotify_album
       am_album = album.apple_music_album
       if s_album.present?
-        spotify_artist_names = s_album.payload['artists'].map { _1['name'] }.sort
+        spotify_artist_names = s_album.payload['artists'].map { it['name'] }.sort
         query = "#{s_album.name} #{spotify_artist_names}"
         next if LineMusicAlbum.search_and_save(query, s_album)
         next if LineMusicAlbum.search_and_save(s_album.name, s_album)
@@ -111,7 +111,7 @@ namespace :line_music do
     LineMusicAlbum.eager_load(:line_music_tracks).each do |line_music_album|
       lm_tracks = LineMusic::Album.tracks(line_music_album.line_music_id)
       line_music_album.line_music_tracks.each do |line_music_track|
-        lm_track = lm_tracks.find { _1.track_id == line_music_track.line_music_id }
+        lm_track = lm_tracks.find { it.track_id == line_music_track.line_music_id }
         next if lm_track.blank?
 
         line_music_track.update(

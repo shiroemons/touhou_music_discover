@@ -26,18 +26,18 @@ module YtMusic
       @type = subtitle&.shift&.dig('text')
       @year = extract_year_from_subtitle(subtitle)
       strapline_text_one = header.dig('straplineTextOne', 'runs')
-      artist_contents = strapline_text_one&.filter { _1['text'] != ' • ' }&.filter { _1['text'] != '、' }
+      artist_contents = strapline_text_one&.filter { it['text'] != ' • ' }&.filter { it['text'] != '、' }
       return if artist_contents.blank?
 
-      @artists = artist_contents.map { Artist.new _1 }
+      @artists = artist_contents.map { Artist.new it }
 
       @track_total_count = header.dig('secondSubtitle', 'runs', 0, 'text').to_i
       @duration_text = header.dig('secondSubtitle', 'runs', 2, 'text')
       thumbnails = header.dig('thumbnail', 'musicThumbnailRenderer', 'thumbnail', 'thumbnails')
-      @thumbnails = thumbnails.map { Thumbnail.new _1 }
+      @thumbnails = thumbnails.map { Thumbnail.new it }
       @playlist_url = response.dig('microformat', 'microformatDataRenderer', 'urlCanonical')
       track_contents = response.dig('contents', 'twoColumnBrowseResultsRenderer', 'secondaryContents', 'sectionListRenderer', 'contents', 0, 'musicShelfRenderer', 'contents')
-      @tracks = track_contents.map { Track.new _1 }
+      @tracks = track_contents.map { Track.new it }
       @duration_seconds = @tracks.sum(&:duration_seconds)
       super()
     end

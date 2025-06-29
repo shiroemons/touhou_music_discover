@@ -44,7 +44,7 @@ class YtmusicAlbumsToAlgoliaPresenter < Presenter
   end
 
   def track_objects(ytmusic_tracks)
-    ytmusic_tracks&.map { track_object(_1) } || []
+    ytmusic_tracks&.map { track_object(it) } || []
   end
 
   def track_object(ytmusic_track)
@@ -59,7 +59,7 @@ class YtmusicAlbumsToAlgoliaPresenter < Presenter
   end
 
   def original_song_objects(original_songs)
-    original_songs.map { original_song_object(_1) }
+    original_songs.map { original_song_object(it) }
   end
 
   def original_song_object(original_song)

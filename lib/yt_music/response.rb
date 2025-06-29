@@ -20,7 +20,7 @@ module YtMusic
         category = ctx.dig('title', 'runs', 0, 'text')
         case category
         when 'アルバム'
-          result[:albums] = ctx['contents'].map { SimpleAlbum.new _1['musicResponsiveListItemRenderer'] }
+          result[:albums] = ctx['contents'].map { SimpleAlbum.new it['musicResponsiveListItemRenderer'] }
         end
       end
       result

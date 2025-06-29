@@ -13,7 +13,7 @@ class UpdateYtmusicAlbumTrack < Avo::BaseAction
 
       tracks = ytmusic_album.payload['tracks']
       ytmusic_album.ytmusic_tracks.each do |ytm_track|
-        track = tracks.find { _1['track_number'] == ytm_track.track_number }
+        track = tracks.find { it['track_number'] == ytm_track.track_number }
         ytm_track.update_track(track) if track
       end
     end

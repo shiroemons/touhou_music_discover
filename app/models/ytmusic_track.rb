@@ -44,7 +44,7 @@ class YtmusicTrack < ApplicationRecord
 
   def self.process_am_tracks(album, ytm_album, ytm_tracks)
     album.apple_music_album.apple_music_tracks.each do |am_track|
-      ytm_track = ytm_tracks.find { _1['track_number'] == am_track.track_number }
+      ytm_track = ytm_tracks.find { it['track_number'] == am_track.track_number }
       next if ytm_track.nil?
 
       save_track(album.id, am_track.track_id, ytm_album, ytm_track)
@@ -53,7 +53,7 @@ class YtmusicTrack < ApplicationRecord
 
   def self.process_sp_tracks(album, ytm_album, ytm_tracks)
     album.spotify_album.spotify_tracks.each do |s_track|
-      ytm_track = ytm_tracks.find { _1['track_number'] == s_track.track_number }
+      ytm_track = ytm_tracks.find { it['track_number'] == s_track.track_number }
       next if ytm_track.nil?
 
       save_track(album.id, s_track.track_id, ytm_album, ytm_track)
@@ -83,7 +83,7 @@ class YtmusicTrack < ApplicationRecord
   end
 
   def artist_name
-    payload['artists']&.map { _1['name'] }&.join(' / ')
+    payload['artists']&.map { it['name'] }&.join(' / ')
   end
 
   def self.ransackable_attributes(_auth_object = nil)

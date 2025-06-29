@@ -48,9 +48,9 @@ class SpotifyAlbum < ApplicationRecord
 
   def artist_name
     # payload['artists']が1つ以上でその1つの名前がZUNの場合は、ZUNを削除して連結する
-    return payload['artists'].reject { _1['name'] == 'ZUN' }.map { _1['name'] }.join(' / ') if payload['artists'].size > 1 && payload['artists'].any? { _1['name'] == 'ZUN' }
+    return payload['artists'].reject { it['name'] == 'ZUN' }.map { it['name'] }.join(' / ') if payload['artists'].size > 1 && payload['artists'].any? { it['name'] == 'ZUN' }
 
-    payload['artists']&.map { _1['name'] }&.join(' / ')
+    payload['artists']&.map { it['name'] }&.join(' / ')
   end
 
   def image_url

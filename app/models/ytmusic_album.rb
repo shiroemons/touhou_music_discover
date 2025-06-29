@@ -86,7 +86,7 @@ class YtmusicAlbum < ApplicationRecord
     return false if response.data[:albums].blank?
 
     ytmusic_albums = response.data[:albums]
-    ytm_albums = ytmusic_albums.filter { _1.year == album.release_date.year.to_s }
+    ytm_albums = ytmusic_albums.filter { it.year == album.release_date.year.to_s }
     return false if ytm_albums.empty?
 
     if album.is_a?(SpotifyAlbum)
@@ -162,7 +162,7 @@ class YtmusicAlbum < ApplicationRecord
   end
 
   def artist_name
-    payload&.dig('artists')&.map { _1['name'] }&.join(' / ')
+    payload&.dig('artists')&.map { it['name'] }&.join(' / ')
   end
 
   def image_url
@@ -190,7 +190,7 @@ class YtmusicAlbum < ApplicationRecord
     browse_id = JAN_TO_ALBUM_BROWSE_IDS[album.jan_code]
     return if browse_id && find_and_save(browse_id, s_album)
 
-    spotify_artist_names = s_album.payload['artists'].filter { _1['name'] != 'ZUN' }.map { _1['name'] }.join(' ')
+    spotify_artist_names = s_album.payload['artists'].filter { it['name'] != 'ZUN' }.map { it['name'] }.join(' ')
     normalize_and_search_ytmusic(s_album, spotify_artist_names)
   end
 
