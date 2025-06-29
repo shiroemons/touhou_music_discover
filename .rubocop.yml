@@ -56,3 +56,7 @@ Style/OpenStructUse:
   Enabled: true
   Exclude:
     - lib/apple_music/response.rb
+
+Rails/SkipsModelValidations:
+  Exclude:
+    - 'db/migrate/*active_storage*'
