@@ -9,4 +9,15 @@ module YtMusic
   autoload :SimpleAlbum, 'yt_music/simple_album'
   autoload :Thumbnail,   'yt_music/thumbnail'
   autoload :Track,       'yt_music/track'
+
+  # Client メソッドの委譲
+  class << self
+    def generate_body(options = {})
+      Client.generate_body(options)
+    end
+
+    def send_request(endpoint, body: nil, options: {})
+      Client.send_request(endpoint, body: body, options: options)
+    end
+  end
 end
