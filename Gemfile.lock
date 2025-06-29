@@ -226,6 +226,7 @@ GEM
     omniauth-rails_csrf_protection (1.0.2)
       actionpack (>= 4.2)
       omniauth (~> 2.0)
+    ostruct (0.6.2)
     pagy (7.0.11)
     parallel (1.27.0)
     parser (3.3.8.0)
@@ -404,6 +405,7 @@ DEPENDENCIES
   listen (~> 3.8)
   meilisearch-rails
   omniauth-rails_csrf_protection
+  ostruct
   pagy
   parallel
   pg (~> 1.5)
@@ -422,7 +424,7 @@ DEPENDENCIES
   turbo-rails
 
 RUBY VERSION
-   ruby 3.3.6p108
+   ruby 3.4.4p34
 
 BUNDLED WITH
    2.5.7
