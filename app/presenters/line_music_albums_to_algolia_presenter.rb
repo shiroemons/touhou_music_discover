@@ -39,12 +39,12 @@ class LineMusicAlbumsToAlgoliaPresenter < Presenter
       end,
       image_url: album.line_music_album_payload&.dig('image_url').presence || '',
       release_date: album.line_music_album_release_date,
-      tracks: track_objects(album.line_music_tracks.sort_by { [_1.disc_number, _1.track_number] })
+      tracks: track_objects(album.line_music_tracks.sort_by { [it.disc_number, it.track_number] })
     }
   end
 
   def track_objects(line_music_tracks)
-    line_music_tracks&.map { track_object(_1) } || []
+    line_music_tracks&.map { track_object(it) } || []
   end
 
   def track_object(line_music_track)
@@ -60,7 +60,7 @@ class LineMusicAlbumsToAlgoliaPresenter < Presenter
   end
 
   def original_song_objects(original_songs)
-    original_songs.map { original_song_object(_1) }
+    original_songs.map { original_song_object(it) }
   end
 
   def original_song_object(original_song)

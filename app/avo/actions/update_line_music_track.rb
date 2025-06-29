@@ -32,7 +32,7 @@ class UpdateLineMusicTrack < Avo::BaseAction
             track_processed += 1
             Rails.logger.info "トラック処理中 (#{track_processed}/#{track_count}): #{line_music_track.name}"
 
-            lm_track = lm_tracks.find { _1.track_id == line_music_track.line_music_id }
+            lm_track = lm_tracks.find { it.track_id == line_music_track.line_music_id }
 
             if lm_track.blank?
               Rails.logger.warn "LINE MUSIC トラックが見つかりませんでした: #{line_music_track.line_music_id}"

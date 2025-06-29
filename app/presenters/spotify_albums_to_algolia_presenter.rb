@@ -46,12 +46,12 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
       end || [],
       image_url: extract_image_url(album.spotify_album_payload),
       release_date: album.spotify_album_release_date,
-      tracks: track_objects(album.spotify_tracks.sort_by { [_1.disc_number, _1.track_number] })
+      tracks: track_objects(album.spotify_tracks.sort_by { [it.disc_number, it.track_number] })
     }
   end
 
   def track_objects(spotify_tracks)
-    spotify_tracks&.map { track_object(_1) } || []
+    spotify_tracks&.map { track_object(it) } || []
   end
 
   def track_object(spotify_track)
@@ -68,7 +68,7 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
   end
 
   def original_song_objects(original_songs)
-    original_songs.map { original_song_object(_1) }
+    original_songs.map { original_song_object(it) }
   end
 
   def original_song_object(original_song)

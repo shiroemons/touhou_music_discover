@@ -11,8 +11,8 @@ module YtMusic
       contents = item.dig('flexColumns', 1, 'musicResponsiveListItemFlexColumnRenderer', 'text', 'runs')
       @type = contents&.shift&.dig('text')
       @year = extract_year_from_contents(contents)
-      artist_contents = contents&.filter { _1['text'] != ' • ' }&.filter { _1['text'] != '、' }
-      @artists = artist_contents.map { Artist.new _1 }
+      artist_contents = contents&.filter { it['text'] != ' • ' }&.filter { it['text'] != '、' }
+      @artists = artist_contents.map { Artist.new it }
       super()
     end
 

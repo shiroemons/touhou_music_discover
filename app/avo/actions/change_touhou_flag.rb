@@ -9,7 +9,7 @@ class ChangeTouhouFlag < Avo::BaseAction
     # Trackのis_touhouフラグを変更
     Track.includes(:original_songs).find_each do |track|
       original_songs = track.original_songs
-      is_touhou = original_songs.all? { _1.title != 'オリジナル' } && !original_songs.all? { _1.title == 'その他' }
+      is_touhou = original_songs.all? { it.title != 'オリジナル' } && !original_songs.all? { it.title == 'その他' }
       track.update(is_touhou:) if track.is_touhou != is_touhou
     end
 

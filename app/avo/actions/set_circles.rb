@@ -10,7 +10,7 @@ class SetCircles < Avo::BaseAction
       artist_name = album&.spotify_album&.artist_name
       artist_name = artist_name&.delete_prefix('ZUN / ')
       artists = artist_name&.split(' / ')
-      artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[_1].presence || _1 }&.flatten
+      artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[it].presence || it }&.flatten
       artists&.uniq&.each do |artist|
         circle = Circle.find_by(name: artist)
         album.circles.push(circle) if circle.present?

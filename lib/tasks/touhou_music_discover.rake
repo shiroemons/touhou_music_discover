@@ -66,15 +66,15 @@ namespace :touhou_music_discover do
 
           # track_numberでソート
           tracks = album.tracks.sort_by do |track|
-            track.apple_music_tracks&.find { _1.album == album }&.track_number || track.spotify_tracks&.find { _1.album == album }&.track_number
+            track.apple_music_tracks&.find { it.album == album }&.track_number || track.spotify_tracks&.find { it.album == album }&.track_number
           end
 
           tracks.each do |track|
             isrc = track.isrc
-            apple_music_track = track.apple_music_tracks&.find { _1.album == album }
-            line_music_track = track.line_music_tracks&.find { _1.album == album }
-            spotify_track = track.spotify_tracks&.find { _1.album == album }
-            ytmusic_track = track.ytmusic_tracks&.find { _1.album == album }
+            apple_music_track = track.apple_music_tracks&.find { it.album == album }
+            line_music_track = track.line_music_tracks&.find { it.album == album }
+            spotify_track = track.spotify_tracks&.find { it.album == album }
+            ytmusic_track = track.ytmusic_tracks&.find { it.album == album }
 
             track_number = apple_music_track&.track_number || spotify_track&.track_number
 
@@ -117,14 +117,14 @@ namespace :touhou_music_discover do
 
           # track_numberでソート
           tracks = album.tracks.sort_by do |track|
-            track.apple_music_tracks&.find { _1.album == album }&.track_number || track.spotify_tracks&.find { _1.album == album }&.track_number
+            track.apple_music_tracks&.find { it.album == album }&.track_number || track.spotify_tracks&.find { it.album == album }&.track_number
           end
 
           tracks.each do |track|
-            apple_music_track = track.apple_music_tracks&.find { _1.album == album }
-            line_music_track = track.line_music_tracks&.find { _1.album == album }
-            spotify_track = track.spotify_tracks&.find { _1.album == album }
-            ytmusic_track = track.ytmusic_tracks&.find { _1.album == album }
+            apple_music_track = track.apple_music_tracks&.find { it.album == album }
+            line_music_track = track.line_music_tracks&.find { it.album == album }
+            spotify_track = track.spotify_tracks&.find { it.album == album }
+            ytmusic_track = track.ytmusic_tracks&.find { it.album == album }
 
             track_number = apple_music_track&.track_number || spotify_track&.track_number
 
@@ -434,7 +434,7 @@ namespace :touhou_music_discover do
     # Trackのis_touhouフラグを変更
     Track.includes(:original_songs).each do |track|
       original_songs = track.original_songs
-      is_touhou = original_songs.all? { _1.title != 'オリジナル' } && !original_songs.all? { _1.title == 'その他' }
+      is_touhou = original_songs.all? { it.title != 'オリジナル' } && !original_songs.all? { it.title == 'その他' }
       track.update(is_touhou:) if track.is_touhou != is_touhou
     end
 
@@ -452,7 +452,7 @@ namespace :touhou_music_discover do
       artist_name = album&.spotify_album&.artist_name
       artist_name = artist_name&.delete_prefix('ZUN / ')
       artists = artist_name&.split(' / ')
-      artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[_1].presence || _1 }&.flatten
+      artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[it].presence || it }&.flatten
       artists&.uniq&.each do |artist|
         circle = Circle.find_by(name: artist)
         album.circles.push(circle) if circle.present?

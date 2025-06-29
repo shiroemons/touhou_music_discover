@@ -81,7 +81,7 @@ module SpotifyClient
         album_offset += LIMIT
       end
       # labelが "東方同人音楽流通"のみを絞り込む
-      s_albums.select! { _1.label == ::Album::TOUHOU_MUSIC_LABEL }
+      s_albums.select! { it.label == ::Album::TOUHOU_MUSIC_LABEL }
       s_albums
     end
 
@@ -105,7 +105,7 @@ module SpotifyClient
     def self.update_albums(spotify_albums)
       s_albums = RSpotify::Album.find(spotify_albums.map(&:spotify_id))
       s_albums.each do |s_album|
-        spotify_album = spotify_albums.find { _1.spotify_id == s_album.id }
+        spotify_album = spotify_albums.find { it.spotify_id == s_album.id }
         spotify_album&.update(
           album_type: s_album.album_type,
           name: s_album.name,

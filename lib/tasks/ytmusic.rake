@@ -16,7 +16,7 @@ namespace :ytmusic do
         browse_id = YtmusicAlbum::JAN_TO_ALBUM_BROWSE_IDS[album.jan_code]
         next if browse_id && YtmusicAlbum.find_and_save(browse_id, s_album)
 
-        spotify_artist_names = s_album.payload['artists'].filter { _1['name'] != 'ZUN' }&.map { _1['name'] }&.join(' ')
+        spotify_artist_names = s_album.payload['artists'].filter { it['name'] != 'ZUN' }&.map { it['name'] }&.join(' ')
         if s_album.name.unicode_normalize.include?('【睡眠用】東方ピアノ癒やし子守唄')
           s_album_name = s_album.name.unicode_normalize.sub(/\(.*\z/, '').tr('０-９', '0-9').strip
           query = "#{s_album_name} #{spotify_artist_names}"
@@ -64,7 +64,7 @@ namespace :ytmusic do
       s_album = album.spotify_album
       if s_album.present?
         s_album.spotify_tracks.each do |s_track|
-          ytm_track = ytm_tracks.find { _1['track_number'] == s_track.track_number }
+          ytm_track = ytm_tracks.find { it['track_number'] == s_track.track_number }
           next if ytm_track.nil?
 
           YtmusicTrack.save_track(album.id, s_track.track_id, ytm_album, ytm_track)
@@ -76,7 +76,7 @@ namespace :ytmusic do
       next if am_album.blank?
 
       am_album.apple_music_tracks.each do |am_track|
-        ytm_track = ytm_tracks.find { _1['track_number'] == am_track.track_number }
+        ytm_track = ytm_tracks.find { it['track_number'] == am_track.track_number }
         next if ytm_track.nil?
 
         YtmusicTrack.save_track(album.id, am_track.track_id, ytm_album, ytm_track)
@@ -112,7 +112,7 @@ namespace :ytmusic do
 
       tracks = ytmusic_album.payload['tracks']
       ytmusic_album.ytmusic_tracks.each do |ytm_track|
-        track = tracks.find { _1['track_number'] == ytm_track.track_number }
+        track = tracks.find { it['track_number'] == ytm_track.track_number }
         ytm_track.update_track(track) if track
       end
     end

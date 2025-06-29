@@ -43,12 +43,12 @@ class AppleMusicAlbumsToAlgoliaPresenter < Presenter
       ],
       image_url: album.apple_music_album_payload&.dig('attributes', 'artwork', 'url')&.sub('{w}x{h}', '500x500').presence || '',
       release_date: album.apple_music_album_release_date,
-      tracks: track_objects(album.apple_music_tracks.sort_by { [_1.disc_number, _1.track_number] })
+      tracks: track_objects(album.apple_music_tracks.sort_by { [it.disc_number, it.track_number] })
     }
   end
 
   def track_objects(apple_music_tracks)
-    apple_music_tracks&.map { track_object(_1) } || []
+    apple_music_tracks&.map { track_object(it) } || []
   end
 
   def track_object(apple_music_track)
@@ -65,7 +65,7 @@ class AppleMusicAlbumsToAlgoliaPresenter < Presenter
   end
 
   def original_song_objects(original_songs)
-    original_songs.map { original_song_object(_1) }
+    original_songs.map { original_song_object(it) }
   end
 
   def original_song_object(original_song)

@@ -71,7 +71,7 @@ class LineMusicAlbum < ApplicationRecord
 
     # 最も正確な検索クエリから順番に試す
     search_queries = [
-      "#{s_album.name} #{s_album.payload['artists'].map { _1['name'] }.sort.join(' ')}", # アーティスト名を空白区切りで結合
+      "#{s_album.name} #{s_album.payload['artists'].map { it['name'] }.sort.join(' ')}", # アーティスト名を空白区切りで結合
       "#{s_album.name} #{s_album.payload['artists'].first['name']}", # 最初のアーティスト名のみ使用
       s_album.name # アルバム名のみ
     ]
@@ -319,7 +319,7 @@ class LineMusicAlbum < ApplicationRecord
   end
 
   def artist_name
-    payload['artists']&.map { _1['artist_name'] }&.join(' / ')
+    payload['artists']&.map { it['artist_name'] }&.join(' / ')
   end
 
   def image_url
