@@ -17,6 +17,10 @@ Rails.application.configure do
   # Turn on fragment caching in view templates.
   config.action_controller.perform_caching = true
 
+  # Disable serving static files from the `/public` folder by default since
+  # Apache or NGINX already handles this.
+  config.public_file_server.enabled = ENV['RAILS_SERVE_STATIC_FILES'].present?
+  
   # Cache assets for far-future expiry since they are all digest stamped.
   config.public_file_server.headers = { 'cache-control' => "public, max-age=#{1.year.to_i}" }
 
