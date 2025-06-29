@@ -3,6 +3,7 @@
 require 'cgi'
 require 'digest/sha1'
 require 'faraday'
+require 'faraday/retry'
 
 module YtMusic
   YTM_VERSION = '1.20241111.01.00'
