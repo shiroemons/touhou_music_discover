@@ -37,5 +37,15 @@ module TouhouMusicDiscover
     #
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Spotify認証設定
+    RSpotify.authenticate(ENV.fetch('SPOTIFY_CLIENT_ID', nil), ENV.fetch('SPOTIFY_CLIENT_SECRET', nil)) if ENV.fetch('SPOTIFY_CLIENT_ID', nil) && ENV.fetch('SPOTIFY_CLIENT_SECRET', nil)
+
+    # Redis cache store設定 (Rails 8対応)
+    config.cache_store = :redis_cache_store, {
+      url: "#{ENV.fetch('REDIS_URL', nil)}/0",
+      namespace: 'cache',
+      expires_in: 90.minutes
+    }
   end
 end
