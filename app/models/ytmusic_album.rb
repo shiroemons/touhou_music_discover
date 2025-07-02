@@ -86,7 +86,11 @@ class YtmusicAlbum < ApplicationRecord
     return false if response.data[:albums].blank?
 
     ytmusic_albums = response.data[:albums]
-    ytm_albums = ytmusic_albums.filter { it.year == album.release_date.year.to_s }
+    ytm_albums = if album.release_date
+                   ytmusic_albums.filter { it.year == album.release_date.year.to_s }
+                 else
+                   ytmusic_albums
+                 end
     return false if ytm_albums.empty?
 
     if album.is_a?(SpotifyAlbum)
