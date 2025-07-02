@@ -186,6 +186,95 @@ module Spotify
       @processing_time = (completed_at - started_at).to_i
     end
 
+    def original_songs
+      return redirect_to root_url unless session[:user_id]
+
+      redis = RedisPool.get
+      auth_hash = JSON.parse(redis.get(session[:user_id]))
+      @spotify_user = RSpotify::User.new(auth_hash)
+
+      # すべてのユーザープレイリストを取得
+      @playlists ||= []
+      offset = 0
+      retry_count = 0
+      loop do
+        playlists = @spotify_user.playlists(limit: LIMIT, offset:)
+        @playlists.push(*playlists)
+        offset += LIMIT
+        break if playlists.count < LIMIT
+
+        sleep 1
+      rescue RestClient::TooManyRequests
+        retry_count += 1
+        break unless retry_count <= MAX_RETRIES
+
+        wait_time = 2**retry_count
+        sleep wait_time
+        retry
+      end
+
+      # 原曲データ構造を構築
+      data = {}
+
+      # N+1を防ぐため、すべての原曲と曲を一度に取得
+      Original.original_types.each_key do |type|
+        originals = Original.public_send(type)
+                            .includes(:original_songs)
+                            .order(:series_order)
+
+        type_data = originals.filter_map do |original|
+          # メモリ上でフィルタリングして追加のクエリを防ぐ
+          non_duplicated_songs = original.original_songs.reject(&:is_duplicate)
+                                         .sort_by(&:track_number)
+
+          original_songs = non_duplicated_songs.filter_map do |song|
+            # プレイリストを検索
+            playlist = @playlists.find { |p| p.name == song.title }
+            playlist_url = playlist&.external_urls&.dig('spotify')
+
+            # プレイリストURLがある場合のみ含める
+            if playlist_url
+              {
+                name: song.title,
+                playlist_url: playlist_url
+              }
+            end
+          end
+
+          # original_songsが空でない場合のみ含める
+          if original_songs.any?
+            {
+              name: original.title,
+              original_songs: original_songs
+            }
+          end
+        end
+
+        # タイプレベルでも空でない場合のみ含める
+        data[type] = type_data if type_data.any?
+      end
+
+      respond_to do |format|
+        format.json do
+          send_data JSON.pretty_generate(data),
+                    filename: "original_songs_#{Time.current.strftime('%Y%m%d_%H%M%S')}.json",
+                    type: 'application/json',
+                    disposition: 'attachment'
+        end
+        format.html do
+          json_content = JSON.pretty_generate(data)
+          send_data json_content,
+                    filename: "original_songs_#{Time.current.strftime('%Y%m%d_%H%M%S')}.json",
+                    type: 'application/json',
+                    disposition: 'attachment'
+        end
+      end
+    rescue StandardError => e
+      Rails.logger.error("原曲構造JSON出力エラー: #{e.message}")
+      # エラー時はトップページにリダイレクト
+      redirect_to root_path, alert: "エラーが発生しました: #{e.message}"
+    end
+
     private
 
     def format_seconds(seconds)

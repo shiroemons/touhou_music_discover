@@ -47,7 +47,10 @@
           <div class="welcome-content">
             <h2>プレイリスト管理</h2>
             <p>Spotifyで原曲別プレイリストを見る・更新します</p>
-            <%= link_to 'プレイリスト一覧表示', spotify_playlists_path, class: 'btn btn-primary' %>
+            <div class="welcome-actions">
+              <%= link_to 'プレイリスト一覧表示', spotify_playlists_path, class: 'btn btn-primary' %>
+              <%= link_to '原曲構造JSON出力', spotify_playlists_original_songs_path, class: 'btn btn-secondary', data: { turbo: false } %>
+            </div>
           </div>
         </div>
         
@@ -353,6 +356,12 @@
       font-size: 1.1rem;
     }
     
+    .welcome-actions {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
     .update-section {
       margin-bottom: 40px;
     }
@@ -624,6 +633,17 @@
     
     .btn-spotify:hover {
       box-shadow: 0 6px 15px rgba(29, 185, 84, 0.4);
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: linear-gradient(90deg, #5e6ad2, #4a56c5);
+      color: white;
+      box-shadow: 0 4px 10px rgba(94, 106, 210, 0.3);
+    }
+    
+    .btn-secondary:hover {
+      box-shadow: 0 6px 15px rgba(94, 106, 210, 0.4);
       transform: translateY(-2px);
     }
     

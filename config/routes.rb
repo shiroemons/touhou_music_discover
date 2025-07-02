@@ -12,5 +12,6 @@ Rails.application.routes.draw do
     get 'playlists', to: 'playlists#index'
     match 'playlists/create', to: 'playlists#create', via: %i[get post]
     get 'playlists/progress', to: 'playlists#progress'
+    get 'playlists/original_songs', to: 'playlists#original_songs'
   end
 end
