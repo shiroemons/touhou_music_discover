@@ -7,7 +7,12 @@ module LineMusic
         type_class = LineMusic.const_get(type.singularize.capitalize)
         path = "#{type}/#{id}.v1"
         response = LineMusic.get path
+        
+        # レスポンスボディがHashでない場合はnilを返す
+        return nil unless response.body.is_a?(Hash)
+        
         result = response.body.dig('response', 'result')
+        return nil unless result
 
         case result[type]
         when Hash
@@ -21,6 +26,9 @@ module LineMusic
         query = CGI.escape query
         path = "search/#{type}s.v1?query=#{query}&start=#{start}&display=#{display}&sort=#{sort}"
         response = LineMusic.get path
+
+        # レスポンスボディがHashでない場合は空の結果を返す
+        return [] unless response.body.is_a?(Hash)
 
         type_class = LineMusic.const_get(type.singularize.capitalize)
         result = response.body.dig('response', 'result', "#{type}s")&.map { |t| type_class.new t } || []
