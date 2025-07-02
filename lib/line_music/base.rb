@@ -7,10 +7,10 @@ module LineMusic
         type_class = LineMusic.const_get(type.singularize.capitalize)
         path = "#{type}/#{id}.v1"
         response = LineMusic.get path
-        
+
         # レスポンスボディがHashでない場合はnilを返す
         return nil unless response.body.is_a?(Hash)
-        
+
         result = response.body.dig('response', 'result')
         return nil unless result
 
