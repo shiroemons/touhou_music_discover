@@ -6,7 +6,8 @@ namespace :touhou_music_discover do
   namespace :export do
     desc 'Touhou music with original songs file export'
     task touhou_music_with_original_songs: :environment do
-      File.open('tmp/touhou_music_with_original_songs.tsv', 'w') do |f|
+      FileUtils.mkdir_p('tmp/export')
+      File.open('tmp/export/touhou_music_with_original_songs.tsv', 'w') do |f|
         f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs")
         Album.unscoped.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
@@ -41,7 +42,8 @@ namespace :touhou_music_discover do
 
     desc 'Touhou music file export'
     task touhou_music: :environment do
-      File.open('tmp/touhou_music.tsv', 'w') do |f|
+      FileUtils.mkdir_p('tmp/export')
+      File.open('tmp/export/touhou_music.tsv', 'w') do |f|
         f.puts("jan\tisrc\tno\tcircle\tspotify_album_artist_name\tspotify_album_name\tspotify_track_name\tspotify_album_url\tspotify_track_url\tapple_music_album_artist_name\tapple_music_album_name\tapple_music_track_name\tapple_music_album_url\tapple_music_track_url\tyoutube_music_album_artist_name\tyoutube_music_album_name\tyoutube_music_track_name\tyoutube_music_album_url\tyoutube_music_track_url\tline_music_album_artist_name\tline_music_album_name\tline_music_track_name\tline_music_album_url\tline_music_track_url")
         Album.unscoped.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
@@ -98,7 +100,8 @@ namespace :touhou_music_discover do
 
     desc 'Touhou music file slim export'
     task touhou_music_slim: :environment do
-      File.open('tmp/touhou_music_slim.tsv', 'w') do |f|
+      FileUtils.mkdir_p('tmp/export')
+      File.open('tmp/export/touhou_music_slim.tsv', 'w') do |f|
         f.puts("circle\talbum_name\tno\ttrack_name\tapple_music_track_url\tyoutube_music_track_url\tspotify_track_url\tline_music_track_url")
         Album.unscoped.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
           circle = album.circles&.map(&:name)&.join(' / ')
@@ -151,7 +154,8 @@ namespace :touhou_music_discover do
 
     desc 'Touhou music album only file export'
     task touhou_music_album_only: :environment do
-      File.open('tmp/touhou_music_album_only.tsv', 'w') do |f|
+      FileUtils.mkdir_p('tmp/export')
+      File.open('tmp/export/touhou_music_album_only.tsv', 'w') do |f|
         f.puts("jan\tcircle\tspotify_album_name\tspotify_album_url\tapple_music_album_name\tapple_music_album_url\tytmusic_album_name\tytmusic_album_url\tline_music_album_name\tline_music_album_url")
         Album.unscoped.includes(:circles, :apple_music_album, :spotify_album, :line_music_album, :ytmusic_album).order(jan_code: :asc).each do |album|
           jan = album.jan_code
@@ -172,7 +176,8 @@ namespace :touhou_music_discover do
 
     desc 'Spotify touhou music file export'
     task spotify: :environment do
-      File.open('tmp/spotify_touhou_music.tsv', 'w') do |f|
+      FileUtils.mkdir_p('tmp/export')
+      File.open('tmp/export/spotify_touhou_music.tsv', 'w') do |f|
         f.puts("JAN\tISRC\tトラック番号\tアルバム名\t楽曲名\tアルバムURL\t楽曲URL")
         SpotifyAlbum.includes(:album, spotify_tracks: :track).order(:release_date).each do |album|
           jan = album.jan_code
@@ -191,22 +196,23 @@ namespace :touhou_music_discover do
 
     desc 'Output albums and songs as JSON for Algolia'
     task for_algolia: :environment do
-      File.open('tmp/touhou_music_spotify_for_algolia.json', 'w') do |file|
+      FileUtils.mkdir_p('tmp/algolia')
+      File.open('tmp/algolia/touhou_music_spotify_for_algolia.json', 'w') do |file|
         albums = Album.unscoped.eager_load(spotify_tracks: { track: { original_songs: :original } }).where(spotify_tracks: { updated_at: 1.month.ago.. })
         file.puts(JSON.pretty_generate(SpotifyAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
-      File.open('tmp/touhou_music_apple_music_for_algolia.json', 'w') do |file|
+      File.open('tmp/algolia/touhou_music_apple_music_for_algolia.json', 'w') do |file|
         albums = Album.unscoped.eager_load(apple_music_tracks: { track: { original_songs: :original } }).where(apple_music_tracks: { updated_at: 1.month.ago.. })
         file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
-      File.open('tmp/touhou_music_youtube_music_for_algolia.json', 'w') do |file|
+      File.open('tmp/algolia/touhou_music_youtube_music_for_algolia.json', 'w') do |file|
         albums = Album.unscoped.eager_load(ytmusic_tracks: { track: { original_songs: :original } }).where(ytmusic_tracks: { updated_at: 1.month.ago.. })
         file.puts(JSON.pretty_generate(YtmusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
 
-      File.open('tmp/touhou_music_line_music_for_algolia.json', 'w') do |file|
+      File.open('tmp/algolia/touhou_music_line_music_for_algolia.json', 'w') do |file|
         albums = Album.unscoped.eager_load(line_music_tracks: { track: { original_songs: :original } }).where(line_music_tracks: { updated_at: 1.month.ago.. })
         file.puts(JSON.pretty_generate(LineMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
       end
@@ -214,6 +220,8 @@ namespace :touhou_music_discover do
 
     desc 'Output files for random_touhou_music'
     task to_random_touhou_music: :environment do
+      FileUtils.mkdir_p('tmp/random-touhou-music')
+
       apple_music_songs = []
       AppleMusicAlbum.unscoped.includes(apple_music_tracks: :track).is_touhou.order(release_date: :asc, id: :asc).each do |album|
         album.apple_music_tracks.sort_by(&:track_number).each do |track|
@@ -226,7 +234,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/apple_music_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/apple_music_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(apple_music_songs)
       end
 
@@ -243,7 +251,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/apple_music_tsa_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/apple_music_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(apple_music_tsa_songs)
       end
 
@@ -259,7 +267,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/youtube_music_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/youtube_music_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(ytmusic_songs)
       end
 
@@ -276,7 +284,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/youtube_music_tsa_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/youtube_music_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(ytmusic_tsa_songs)
       end
 
@@ -292,7 +300,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/line_music_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/line_music_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(line_music_songs)
       end
 
@@ -309,7 +317,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/line_music_tsa_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/line_music_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(line_music_tsa_songs)
       end
 
@@ -325,7 +333,7 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/spotify_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/spotify_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(spotify_songs)
       end
 
@@ -342,14 +350,15 @@ namespace :touhou_music_discover do
         end
       end
 
-      File.open('tmp/spotify_tsa_songs.json', 'w') do |f|
+      File.open('tmp/random-touhou-music/spotify_tsa_songs.json', 'w') do |f|
         f.puts JSON.pretty_generate(spotify_tsa_songs)
       end
     end
 
     desc 'Export newly added albums missing original songs with prioritized Spotify album names and sorted output including YouTube URL'
     task missing_original_songs_albums: :environment do
-      file_path = 'tmp/missing_original_songs_albums.tsv'
+      FileUtils.mkdir_p('tmp/export')
+      file_path = 'tmp/export/missing_original_songs_albums.tsv'
 
       # TSV ファイルの作成
       File.open(file_path, 'w') do |file|
@@ -387,7 +396,7 @@ namespace :touhou_music_discover do
   namespace :import do
     desc 'Touhou music with original songs file import'
     task touhou_music_with_original_songs: :environment do
-      songs = CSV.table('tmp/touhou_music_with_original_songs.tsv', col_sep: "\t", converters: nil, liberal_parsing: true)
+      songs = CSV.table('tmp/export/touhou_music_with_original_songs.tsv', col_sep: "\t", converters: nil, liberal_parsing: true)
       songs.each do |song|
         jan = song[:jan]
         isrc = song[:isrc]

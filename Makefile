@@ -103,5 +103,13 @@ associate-album-with-circle: ## アルバムにサークルを紐付ける
 export-missing-original-songs-albums: ## 原曲紐づけがないアルバム一覧
 	docker compose run --rm web bin/rails touhou_music_discover:export:missing_original_songs_albums
 
+export-all: ## 全てのエクスポートファイルを tmp/export に一括出力
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music_with_original_songs
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music_slim
+	docker compose run --rm web bin/rails touhou_music_discover:export:touhou_music_album_only
+	docker compose run --rm web bin/rails touhou_music_discover:export:spotify
+	docker compose run --rm web bin/rails touhou_music_discover:export:missing_original_songs_albums
+
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[36m%-25s\033[0m %s\n", $$1, $$2}'
