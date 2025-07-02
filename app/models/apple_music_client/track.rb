@@ -29,8 +29,10 @@ module AppleMusicClient
     def self.fetch_tracks_by_isrc(isrc)
       am_tracks = AppleMusic::Song.get_collection_by_isrc(isrc)
       am_tracks.each do |am_track|
-        am_track.albums.each do |am_album|
-          apple_music_album = AppleMusicClient::Album.fetch(am_album.id)
+        next unless am_track.albums&.dig('data')
+
+        am_track.albums['data'].each do |am_album|
+          apple_music_album = AppleMusicClient::Album.fetch(am_album['id'])
           AppleMusicClient::Track.fetch_album_tracks(apple_music_album) if apple_music_album
         end
       end
