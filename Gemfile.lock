@@ -121,7 +121,7 @@ GEM
     dry-initializer (3.1.1)
     erb (5.0.1)
     erubi (1.13.1)
-    faraday (2.13.1)
+    faraday (2.13.2)
       faraday-net_http (>= 2.0, < 3.5)
       json
       logger
