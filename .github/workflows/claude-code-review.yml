@@ -14,6 +14,7 @@ jobs:
   claude-review:
     # Skip PRs from bot users
     if: |
+      !contains(fromJSON('["dependabot[bot]", "renovate[bot]"]'), github.event.pull_request.user.login) &&
       !contains(fromJSON('["dependabot[bot]", "renovate[bot]"]'), github.actor)
     
     runs-on: ubuntu-latest
