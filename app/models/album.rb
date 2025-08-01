@@ -47,4 +47,8 @@ class Album < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     ['jan_code']
   end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[apple_music_album apple_music_tracks circles circles_albums line_music_album line_music_tracks spotify_album spotify_tracks tracks ytmusic_album ytmusic_tracks]
+  end
 end

@@ -65,4 +65,8 @@ class SpotifyAlbum < ApplicationRecord
   def self.ransackable_attributes(_auth_object = nil)
     %w[album_id album_type label name payload release_date spotify_id total_tracks url]
   end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[album spotify_tracks]
+  end
 end
