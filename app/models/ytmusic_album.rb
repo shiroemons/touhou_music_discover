@@ -177,6 +177,10 @@ class YtmusicAlbum < ApplicationRecord
     %w[album_id browse_id name payload playlist_url release_year total_tracks url]
   end
 
+  def self.ransackable_associations(_auth_object = nil)
+    %w[album ytmusic_tracks]
+  end
+
   def self.fetch_albums
     Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code).find_each do |album|
       sleep(0.2) # API呼び出し等のレート制限に配慮

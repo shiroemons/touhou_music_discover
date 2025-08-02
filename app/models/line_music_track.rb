@@ -16,6 +16,14 @@ class LineMusicTrack < ApplicationRecord
   scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name line_music_id disc_number track_number created_at updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[album line_music_album track]
+  end
+
   def self.fetch_tracks
     Rails.logger.info 'LINE MUSIC トラック取得処理を開始します'
     album_ids = Album.pluck(:id)

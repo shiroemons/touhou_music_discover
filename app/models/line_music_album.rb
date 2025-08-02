@@ -17,6 +17,10 @@ class LineMusicAlbum < ApplicationRecord
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
   scope :missing_album, -> { where.missing(:album) }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name line_music_id release_date created_at updated_at]
+  end
+
   JAN_TO_ALBUM_IDS = {
     '4580547318838' => 'mb000000000229658f', # 幽閉サテライト - 感情ケミストリー(Drum 'n' Bass Remix short ver.)
     '4580547319644' => 'mb00000000022bd013', # Various Artists - Edge
