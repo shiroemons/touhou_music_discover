@@ -42,4 +42,5 @@ class YtmusicAlbumResource < Avo::BaseResource
   action FetchYtmusicAlbum
   action UpdateYtmusicAlbumTrack
   action UpdateYtmusicAlbumPayload
+  action UpdateAllYtmusicAlbumPayloads
 end

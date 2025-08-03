@@ -12,6 +12,10 @@ module YtMusic
       @playlist_id = flex_columns.dig('navigationEndpoint', 'watchEndpoint', 'playlistId')
       @url = "https://music.youtube.com/watch?v=#{@video_id}&list=#{@playlist_id}" if @video_id && @playlist_id
       @track_number = item.dig('index', 'runs', 0, 'text').to_i
+
+      # track_numberが0の場合はエラーを発生させる
+      raise ArgumentError, "Invalid track number: 0 (title: #{@title})" if @track_number.zero?
+
       artist_contents = item.dig('flexColumns', 1, 'musicResponsiveListItemFlexColumnRenderer', 'text', 'runs')&.filter { it['text'] != '、' }
       @artists = artist_contents.map { Artist.new it } if artist_contents.present?
       @duration = item.dig('fixedColumns', 0, 'musicResponsiveListItemFixedColumnRenderer', 'text', 'runs', 0, 'text')

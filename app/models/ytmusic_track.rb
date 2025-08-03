@@ -61,17 +61,40 @@ class YtmusicTrack < ApplicationRecord
   end
 
   def self.save_track(album_id, track_id, ytm_album, ytm_track)
+    # payloadから該当するtrack_numberのトラックを再度確認
+    payload_tracks = ytm_album.payload&.dig('tracks')
+    return if payload_tracks.blank?
+
+    # payloadから同じtrack_numberのトラックを探す
+    track_number = ytm_track['track_number']
+    return if track_number.blank?
+
+    payload_track = payload_tracks.find { |t| t['track_number'] == track_number }
+    return if payload_track.nil?
+
+    # payloadのトラック情報を使用
+    title = payload_track['title']
+    url = payload_track['url']
+    video_id = payload_track['video_id']
+    playlist_id = payload_track['playlist_id']
+
+    # 必須フィールドのチェック
+    return if title.blank? || url.blank? || video_id.blank? || playlist_id.blank?
+
+    # URLにvideo_idとplaylist_idの両方が含まれていない場合はスキップ
+    return unless url.include?(video_id.to_s) && url.include?(playlist_id.to_s)
+
     ytmusic_track = ::YtmusicTrack.find_or_create_by!(
       album_id:,
       track_id:,
       ytmusic_album_id: ytm_album.id,
-      video_id: ytm_track['video_id'],
-      playlist_id: ytm_track['playlist_id'],
-      name: ytm_track['title'],
-      url: ytm_track['url'],
-      track_number: ytm_track['track_number']
+      video_id: video_id,
+      playlist_id: playlist_id,
+      name: title,
+      url: url,
+      track_number: track_number
     )
-    ytmusic_track.update(payload: ytm_track)
+    ytmusic_track.update(payload: payload_track)
   end
 
   def update_track(ytm_track)
