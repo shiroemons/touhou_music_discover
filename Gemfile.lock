@@ -77,7 +77,7 @@ GEM
       uri (>= 0.13.1)
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
-    amatch (0.4.1)
+    amatch (0.4.2)
       mize
       tins (~> 1.0)
     ast (2.4.3)
@@ -182,7 +182,7 @@ GEM
     mime-types-data (3.2023.1205)
     mini_mime (1.1.5)
     minitest (5.25.5)
-    mize (0.4.0)
+    mize (0.4.1)
       protocol (~> 2.0)
     msgpack (1.7.5)
     multi_json (1.15.0)
@@ -242,7 +242,7 @@ GEM
       activesupport (>= 7.0.0)
       rack
       railties (>= 7.0.0)
-    protocol (2.0.0)
+    protocol (2.0.1)
       ruby_parser (~> 3.0)
     psych (5.2.6)
       date
@@ -345,7 +345,7 @@ GEM
       rubocop (>= 1.75.0, < 2.0)
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-progressbar (1.13.0)
-    ruby_parser (3.19.1)
+    ruby_parser (3.19.2)
       sexp_processor (~> 4.16)
     securerandom (0.4.1)
     sexp_processor (4.16.1)
