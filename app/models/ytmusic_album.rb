@@ -65,7 +65,10 @@ class YtmusicAlbum < ApplicationRecord
     '4582736133970' => 'MPREb_CgG1tmhnQz8', # 非可逆リズム - パリピフラン feat. モリモリあつし
     '4582736133932' => 'MPREb_8rF6ZB4kmJd', # 非可逆リズム - LIMIT BURST (GC Mix.) feat. adaptor, モリモリあつし
     '4582736134557' => 'MPREb_Skha7QKftQu', # fractrick - Eyed(Single)
-    '4582736134755' => 'MPREb_IUioqK8ltkL'  # .new label - -80538738812075974³+80435758145817515³+12602123297335631³
+    '4582736134755' => 'MPREb_IUioqK8ltkL', # .new label - -80538738812075974³+80435758145817515³+12602123297335631³
+    '4582736136209' => 'MPREb_4xbd6llVTwu', # 東方LostWord - 欠損Ride on (feat. 藤咲凪 from 最終未来少女 × 豚乙女)
+    '4582736136247' => 'MPREb_YmBDqjVTnpN', # 東方LostWord - 承認欲求☆あんのんがーる (feat. 野田真理愛 × 少女理論観測所)
+    '4582736136254' => 'MPREb_NPWhgfTHuBG'  # 東方LostWord - ドキワク❄︎レボリューション（feat. May’n、豚乙女）
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
