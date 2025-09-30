@@ -52,6 +52,6 @@ puts "  処理後: #{after_count}件"
 puts "  追加: #{[after_count - before_count, 0].max}件"
 puts "  TSVファイルの総件数: #{original_songs_data.size}件"
 
-puts "\n" + '=' * 80
+puts "\n#{'=' * 80}"
 puts '完了'
 puts '=' * 80
