@@ -41,6 +41,9 @@ rollback: ## Run db:rollback
 dbseed: ## Run db:seed
 	docker compose run --rm web bin/rails db:seed
 
+upsert-original-data: ## 原作・原曲データをupsert(追加・更新)
+	docker compose run --rm web bin/rails runner 'load "db/seeds/originals_and_songs.rb"'
+
 minitest: ## Run test
 	docker compose run --rm -e RAILS_ENV=test web bin/rails db:test:prepare
 	docker compose run --rm -e RAILS_ENV=test web bin/rails test
