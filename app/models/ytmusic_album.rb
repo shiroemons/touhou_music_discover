@@ -68,7 +68,9 @@ class YtmusicAlbum < ApplicationRecord
     '4582736134755' => 'MPREb_IUioqK8ltkL', # .new label - -80538738812075974³+80435758145817515³+12602123297335631³
     '4582736136209' => 'MPREb_4xbd6llVTwu', # 東方LostWord - 欠損Ride on (feat. 藤咲凪 from 最終未来少女 × 豚乙女)
     '4582736136247' => 'MPREb_YmBDqjVTnpN', # 東方LostWord - 承認欲求☆あんのんがーる (feat. 野田真理愛 × 少女理論観測所)
-    '4582736136254' => 'MPREb_NPWhgfTHuBG'  # 東方LostWord - ドキワク❄︎レボリューション（feat. May’n、豚乙女）
+    '4582736136254' => 'MPREb_NPWhgfTHuBG', # 東方LostWord - ドキワク❄︎レボリューション（feat. May’n、豚乙女）
+    '4582736136780' => 'MPREb_6CPOXTh82vP', # 発熱巫女〜ず - Knocked on the Door
+    '4582736136810' => 'MPREb_Ofa96OUBxIl'  # 幽閉サテライト - 漢の幽閉サテライトEX
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
