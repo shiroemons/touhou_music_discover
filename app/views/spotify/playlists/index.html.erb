@@ -199,13 +199,13 @@
     document.addEventListener('DOMContentLoaded', function() {
       const copyButton = document.getElementById('copyTableButton');
       const statusElement = document.getElementById('copyStatus');
-      
-      copyButton.addEventListener('click', function() {
+
+      copyButton.addEventListener('click', async function() {
         try {
           const table = document.getElementById('playlistTable');
           const rows = Array.from(table.querySelectorAll('tr'));
           let tableText = '';
-          
+
           rows.forEach(row => {
             const cells = Array.from(row.querySelectorAll('th, td'));
             const rowData = cells.map(cell => {
@@ -214,22 +214,14 @@
             });
             tableText += rowData.join('\t') + '\n';
           });
-          
-          // テキストエリアを作成してコピーする方法（クリップボードAPIが使えない場合の代替手段）
-          const textarea = document.createElement('textarea');
-          textarea.value = tableText;
-          textarea.style.position = 'fixed';
-          textarea.style.opacity = 0;
-          document.body.appendChild(textarea);
-          textarea.select();
-          document.execCommand('copy');
-          document.body.removeChild(textarea);
-          
+
+          await navigator.clipboard.writeText(tableText);
+
           statusElement.textContent = 'テーブルのデータがクリップボードにコピーされました！';
           statusElement.classList.add('success');
           statusElement.classList.remove('error');
           statusElement.style.opacity = 1;
-          
+
           setTimeout(() => {
             statusElement.style.opacity = 0;
           }, 3000);
