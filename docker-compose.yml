@@ -24,6 +24,8 @@ services:
       - rails_cache:/app/tmp/cache
     tmpfs:
       - /tmp
+    env_file:
+      - .env.development.local
     environment:
       BUNDLE_PATH: "/app/vendor/bundle"
       BOOTSNAP_CACHE_DIR: "/app/vendor/bundle"

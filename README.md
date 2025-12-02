@@ -103,6 +103,22 @@ cp .env.development.local.example .env.development.local
 
 `SPOTIFY_CLIENT_ID`と`SPOTIFY_CLIENT_SECRET`を設定する
 
+#### Spotify OAuth認証
+
+Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよび`localhost`を使用したURIを廃止しました（2025年11月27日に完全廃止予定）。
+詳細は[公式ブログ](https://developer.spotify.com/blog/2025-02-12-increasing-the-security-requirements-for-integrating-with-spotify)および[移行ガイド](https://developer.spotify.com/documentation/web-api/tutorials/migration-insecure-redirect-uri)を参照してください。
+
+ただし、ループバックIPアドレス（`127.0.0.1`）は例外として許可されています。
+
+1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)でアプリの設定を開き、Redirect URIに以下を追加
+   ```
+   http://127.0.0.1:3000/auth/spotify/callback
+   ```
+
+2. ブラウザで `http://127.0.0.1:3000` にアクセス
+
+**注意**: `localhost`ではなく`127.0.0.1`を使用してください。
+
 - Spotify label:東方同人音楽流通 のアルバムとトラックを年代ごとに取得
   ```shell
   docker compose run --rm web bin/rails spotify:fetch_touhou_albums
