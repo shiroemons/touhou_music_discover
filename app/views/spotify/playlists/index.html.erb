@@ -3,6 +3,7 @@
     <h1>Spotify原曲プレイリスト一覧</h1>
     <div class="actions">
       <%= link_to 'トップページに戻る', root_path, class: 'btn btn-outline' %>
+      <button id="copyTableButton" class="btn btn-primary">テーブルをコピー</button>
       <button id="downloadTsvButton" class="btn btn-primary">TSVダウンロード</button>
     </div>
   </div>
@@ -206,22 +207,30 @@
       transition: opacity 0.3s ease;
     }
 
-    .download-status.success {
+    .download-status.success,
+    .download-status.copy-success {
       background-color: rgba(29, 185, 84, 0.1);
       color: #1DB954;
+      opacity: 1;
+    }
+
+    .download-status.error {
+      background-color: rgba(255, 59, 48, 0.1);
+      color: #ff3b30;
       opacity: 1;
     }
   </style>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('turbo:load', function() {
+      const copyButton = document.getElementById('copyTableButton');
       const downloadButton = document.getElementById('downloadTsvButton');
       const statusElement = document.getElementById('downloadStatus');
 
-      downloadButton.addEventListener('click', function() {
+      function getTableText() {
         const table = document.getElementById('playlistTable');
         const rows = Array.from(table.querySelectorAll('tr'));
-        let tsvText = '';
+        let text = '';
 
         rows.forEach(row => {
           const cells = Array.from(row.querySelectorAll('th, td'));
@@ -229,27 +238,56 @@
             const link = cell.querySelector('a.spotify-link');
             return link ? link.href : cell.textContent.trim();
           });
-          tsvText += rowData.join('\t') + '\n';
+          text += rowData.join('\t') + '\n';
         });
 
-        const blob = new Blob([tsvText], { type: 'text/tab-separated-values' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'spotify_playlists.tsv';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        return text;
+      }
 
-        statusElement.textContent = 'TSVファイルをダウンロードしました！';
-        statusElement.classList.add('success');
+      function showStatus(message, isSuccess) {
+        statusElement.textContent = message;
+        statusElement.classList.remove('success', 'copy-success', 'error');
+        statusElement.classList.add(isSuccess ? 'copy-success' : 'error');
         statusElement.style.opacity = 1;
 
         setTimeout(() => {
           statusElement.style.opacity = 0;
         }, 3000);
-      });
+      }
+
+      // テーブルをコピー
+      if (copyButton) {
+        copyButton.addEventListener('click', async function() {
+          const tableText = getTableText();
+
+          try {
+            await navigator.clipboard.writeText(tableText);
+            showStatus('テーブルのデータがクリップボードにコピーされました！', true);
+          } catch (err) {
+            console.error('コピーエラー:', err);
+            showStatus('コピーに失敗しました。TSVダウンロードをお試しください。', false);
+          }
+        });
+      }
+
+      // TSVダウンロード
+      if (downloadButton) {
+        downloadButton.addEventListener('click', function() {
+          const tsvText = getTableText();
+
+          const blob = new Blob([tsvText], { type: 'text/tab-separated-values' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'spotify_playlists.tsv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          showStatus('TSVファイルをダウンロードしました！', true);
+        });
+      }
     });
   </script>
 </div> 
