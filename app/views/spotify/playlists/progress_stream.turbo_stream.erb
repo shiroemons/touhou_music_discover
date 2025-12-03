@@ -1,0 +1,64 @@
+<% if @completed %>
+  <%# 完了時：進捗コンテナ全体を完了カードに置換 %>
+  <%= turbo_stream.replace "progress-container" do %>
+    <div id="progress-container" class="progress-container">
+      <%= render 'completed_card' %>
+    </div>
+  <% end %>
+<% elsif @error %>
+  <%# エラー時：エラーメッセージを表示 %>
+  <%= turbo_stream.replace "progress-container" do %>
+    <div id="progress-container" class="progress-container">
+      <div class="message-card">
+        <div class="error-icon pulse">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <h2 class="card-title">エラーが発生しました</h2>
+        <p class="card-description"><%= @update_info['error_message'] %></p>
+        <p><%= link_to 'トップページに戻る', root_path, class: 'btn btn-primary' %></p>
+      </div>
+    </div>
+  <% end %>
+<% elsif @update_info.present? %>
+  <%# 処理中：各要素を個別に更新 %>
+  <%= turbo_stream.update "current-original" do %>
+    <%= @update_info['current_original'].presence || '準備中...' %>
+  <% end %>
+
+  <%= turbo_stream.update "songs-in-original" do %>
+    <%= @update_info['songs_in_original'] || 0 %>
+  <% end %>
+
+  <%= turbo_stream.update "current-song" do %>
+    <%= @update_info['current_song'].presence || '準備中...' %>
+  <% end %>
+
+  <%= turbo_stream.update "arrangement-count" do %>
+    <%= @update_info['arrangement_count'] || 0 %>
+  <% end %>
+
+  <%= turbo_stream.update "current-count" do %>
+    <%= @update_info['current'] %>
+  <% end %>
+
+  <%= turbo_stream.update "total-count" do %>
+    <%= @update_info['total'] %>
+  <% end %>
+
+  <% progress_percent = @update_info['total'].to_i > 0 ? (@update_info['current'].to_i.to_f / @update_info['total'].to_i * 100).round : 0 %>
+
+  <%= turbo_stream.update "progress-percentage" do %>
+    <%= progress_percent %>%
+  <% end %>
+
+  <%# 進捗バーはスタイル属性を変更するためreplace使用 %>
+  <%= turbo_stream.replace "progress-bar" do %>
+    <div id="progress-bar" class="progress-bar" style="width: <%= progress_percent %>%;">
+      <div class="progress-glow"></div>
+    </div>
+  <% end %>
+<% end %>

@@ -180,36 +180,15 @@ module Spotify
     end
 
     def progress
-      redis = RedisPool.get
-      progress_key = "playlist_update:#{session[:user_id]}"
+      load_progress_info
+    end
 
-      @update_info = redis.get(progress_key).present? ? JSON.parse(redis.get(progress_key)) : {}
-      @completed = @update_info['status'] == 'completed'
+    def progress_stream
+      load_progress_info
 
-      # 更新が完了していればメッセージを表示
-      return unless @completed
-
-      @message = case @update_info['update_type']
-                 when 'windows'
-                   'Windowsシリーズの原曲別プレイリストの更新が完了しました'
-                 when 'pc98'
-                   'PC-98シリーズの原曲別プレイリストの更新が完了しました'
-                 when 'zuns_music_collection'
-                   "ZUN's Music Collectionの原曲別プレイリストの更新が完了しました"
-                 when 'akyus_untouched_score'
-                   '幺樂団の歴史の原曲別プレイリストの更新が完了しました'
-                 when 'commercial_books'
-                   '商業書籍の原曲別プレイリストの更新が完了しました'
-                 else
-                   'プレイリストの更新が完了しました'
-                 end
-
-      # 処理時間を計算
-      return unless @update_info['started_at'].present? && @update_info['completed_at'].present?
-
-      started_at = Time.zone.parse(@update_info['started_at'])
-      completed_at = Time.zone.parse(@update_info['completed_at'])
-      @processing_time = (completed_at - started_at).to_i
+      respond_to do |format|
+        format.turbo_stream
+      end
     end
 
     def original_songs
@@ -302,6 +281,40 @@ module Spotify
     end
 
     private
+
+    def load_progress_info
+      redis = RedisPool.get
+      progress_key = "playlist_update:#{session[:user_id]}"
+
+      @update_info = redis.get(progress_key).present? ? JSON.parse(redis.get(progress_key)) : {}
+      @completed = @update_info['status'] == 'completed'
+      @error = @update_info['status'] == 'error'
+
+      # 更新が完了していればメッセージを表示
+      return unless @completed
+
+      @message = case @update_info['update_type']
+                 when 'windows'
+                   'Windowsシリーズの原曲別プレイリストの更新が完了しました'
+                 when 'pc98'
+                   'PC-98シリーズの原曲別プレイリストの更新が完了しました'
+                 when 'zuns_music_collection'
+                   "ZUN's Music Collectionの原曲別プレイリストの更新が完了しました"
+                 when 'akyus_untouched_score'
+                   '幺樂団の歴史の原曲別プレイリストの更新が完了しました'
+                 when 'commercial_books'
+                   '商業書籍の原曲別プレイリストの更新が完了しました'
+                 else
+                   'プレイリストの更新が完了しました'
+                 end
+
+      # 処理時間を計算
+      return unless @update_info['started_at'].present? && @update_info['completed_at'].present?
+
+      started_at = Time.zone.parse(@update_info['started_at'])
+      completed_at = Time.zone.parse(@update_info['completed_at'])
+      @processing_time = (completed_at - started_at).to_i
+    end
 
     def format_seconds(seconds)
       hours = seconds / 3600

@@ -1,0 +1,84 @@
+<% progress_percent = @update_info['total'].to_i > 0 ? (@update_info['current'].to_i.to_f / @update_info['total'].to_i * 100).round : 0 %>
+
+<div class="progress-card">
+  <div class="progress-header">
+    <h2 class="card-title">プレイリスト更新中</h2>
+
+    <% case @update_info['update_type'] %>
+    <% when 'windows' %>
+      <h3 class="card-subtitle">Windowsシリーズの原曲別プレイリスト更新</h3>
+    <% when 'pc98' %>
+      <h3 class="card-subtitle">PC-98シリーズの原曲別プレイリスト更新</h3>
+    <% when 'zuns_music_collection' %>
+      <h3 class="card-subtitle">ZUN's Music Collectionの原曲別プレイリスト更新</h3>
+    <% when 'akyus_untouched_score' %>
+      <h3 class="card-subtitle">幺樂団の歴史の原曲別プレイリスト更新</h3>
+    <% when 'commercial_books' %>
+      <h3 class="card-subtitle">商業書籍の原曲別プレイリスト更新</h3>
+    <% end %>
+  </div>
+
+  <div class="cards-container">
+    <div class="info-card original-info">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff6b1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"></path>
+        </svg>
+      </div>
+      <div class="card-content">
+        <h4>現在処理中の原作</h4>
+        <div id="current-original" class="current-original"><%= @update_info['current_original'].presence || '準備中...' %></div>
+        <p class="info-detail">原作に含まれる曲数: <span id="songs-in-original" class="songs-count"><%= @update_info['songs_in_original'] || 0 %></span></p>
+      </div>
+    </div>
+
+    <div class="info-card song-info">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="5.5" cy="17.5" r="2.5"></circle>
+          <circle cx="18.5" cy="17.5" r="2.5"></circle>
+          <path d="M20 17.5v-8a2 2 0 0 0-2-2h-5l-5-3v9.5"></path>
+          <path d="M8 14.5v3"></path>
+        </svg>
+      </div>
+      <div class="card-content">
+        <h4>現在処理中の原曲</h4>
+        <div id="current-song" class="current-song"><%= @update_info['current_song'].presence || '準備中...' %></div>
+        <p class="info-detail">アレンジ曲数: <span id="arrangement-count" class="arrangement-count"><%= @update_info['arrangement_count'] || 0 %></span></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="progress-section">
+    <div class="progress-stats">
+      <div class="progress-fraction">
+        <span id="current-count" class="current-count"><%= @update_info['current'] %></span>
+        <span id="total-count" class="total-count"><%= @update_info['total'] %></span>
+        <span class="completion-text">曲完了</span>
+      </div>
+      <div class="progress-percentage">
+        <span id="progress-percentage"><%= progress_percent %>%</span>
+      </div>
+    </div>
+
+    <div class="progress-bar-container">
+      <div id="progress-bar" class="progress-bar" style="width: <%= progress_percent %>%;">
+        <div class="progress-glow"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <div class="action-icon pulse">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+    </div>
+    <div class="action-content">
+      <p>更新中はこのページを開いたままにしてください</p>
+      <p>この処理には時間がかかる場合があります</p>
+    </div>
+  </div>
+</div>
