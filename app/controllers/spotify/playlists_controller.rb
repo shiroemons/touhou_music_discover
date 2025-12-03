@@ -4,6 +4,7 @@ module Spotify
   class PlaylistsController < ApplicationController
     LIMIT = 50
     MAX_RETRIES = 3
+    CACHE_TTL = 3.hours.to_i
 
     def index
       redirect_to root_url unless session[:user_id]
@@ -11,6 +12,18 @@ module Spotify
       redis = RedisPool.get
       auth_hash = JSON.parse(redis.get(session[:user_id]))
       @spotify_user = RSpotify::User.new(auth_hash)
+
+      cache_key = "spotify_playlists:#{session[:user_id]}"
+      @from_cache = false
+
+      # キャッシュを確認
+      cached_data = redis.get(cache_key)
+      if cached_data.present?
+        @playlists = JSON.parse(cached_data, symbolize_names: true)
+        @from_cache = true
+        @error = nil
+        return
+      end
 
       @playlists = []
       @error = nil
@@ -97,10 +110,23 @@ module Spotify
         # 原曲名と一致するプレイリストのみ抽出するための処理
         original_song_titles = OriginalSong.distinct.pluck(:title)
         @playlists = @playlists.select { |p| p[:name].in?(original_song_titles) }
+
+        # 取得成功後、Redisにキャッシュを保存
+        redis.setex(cache_key, CACHE_TTL, @playlists.to_json) if @error.nil? && @playlists.present?
       rescue StandardError => e
         Rails.logger.error("予期せぬエラー: #{e.message}")
         @error = "プレイリスト情報の取得中に予期せぬエラーが発生しました: #{e.message}"
       end
+    end
+
+    def clear_cache
+      redirect_to root_url unless session[:user_id]
+
+      redis = RedisPool.get
+      cache_key = "spotify_playlists:#{session[:user_id]}"
+      redis.del(cache_key)
+
+      redirect_to spotify_playlists_path
     end
 
     def create

@@ -3,9 +3,16 @@
     <h1>Spotify原曲プレイリスト一覧</h1>
     <div class="actions">
       <%= link_to 'トップページに戻る', root_path, class: 'btn btn-outline' %>
-      <button id="copyTableButton" class="btn btn-primary">テーブルをコピー</button>
+      <button id="downloadTsvButton" class="btn btn-primary">TSVダウンロード</button>
     </div>
   </div>
+
+  <% if @from_cache %>
+    <div class="cache-notice">
+      <span>キャッシュから取得</span>
+      <%= link_to '最新情報を取得', spotify_clear_playlists_cache_path, method: :delete, class: 'btn btn-small btn-outline' %>
+    </div>
+  <% end %>
 
   <% if @error.present? %>
     <div class="error-message">
@@ -35,7 +42,7 @@
           <% @playlists.each do |playlist| %>
             <tr>
               <td><%= playlist[:name] %></td>
-              <td><%= link_to 'Spotifyで開く', playlist[:external_urls]["spotify"], target: "_blank", class: 'spotify-link' %></td>
+              <td><%= link_to 'Spotifyで開く', playlist[:external_urls][:spotify] || playlist[:external_urls]["spotify"], target: "_blank", class: 'spotify-link' %></td>
               <td><%= playlist[:total] %></td>
               <td><%= playlist[:followers] %></td>
             </tr>
@@ -43,7 +50,7 @@
         </tbody>
       </table>
     </div>
-    <div id="copyStatus" class="copy-status"></div>
+    <div id="downloadStatus" class="download-status"></div>
   <% else %>
     <div class="empty-message">
       <p>表示できる原曲別プレイリストがありません。</p>
@@ -104,7 +111,24 @@
     .btn-primary:hover {
       background-color: #1ed760;
     }
-    
+
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 14px;
+    }
+
+    .cache-notice {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 10px 15px;
+      background-color: rgba(29, 185, 84, 0.1);
+      border-radius: 4px;
+      margin-bottom: 20px;
+      color: #1DB954;
+      font-weight: 500;
+    }
+
     .error-message {
       background-color: rgba(255, 59, 48, 0.1);
       border-left: 4px solid #ff3b30;
@@ -172,7 +196,7 @@
       color: #666;
     }
     
-    .copy-status {
+    .download-status {
       margin-top: 15px;
       padding: 10px;
       border-radius: 4px;
@@ -181,57 +205,50 @@
       opacity: 0;
       transition: opacity 0.3s ease;
     }
-    
-    .copy-status.success {
+
+    .download-status.success {
       background-color: rgba(29, 185, 84, 0.1);
       color: #1DB954;
-      opacity: 1;
-    }
-    
-    .copy-status.error {
-      background-color: rgba(255, 59, 48, 0.1);
-      color: #ff3b30;
       opacity: 1;
     }
   </style>
 
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      const copyButton = document.getElementById('copyTableButton');
-      const statusElement = document.getElementById('copyStatus');
+      const downloadButton = document.getElementById('downloadTsvButton');
+      const statusElement = document.getElementById('downloadStatus');
 
-      copyButton.addEventListener('click', async function() {
-        try {
-          const table = document.getElementById('playlistTable');
-          const rows = Array.from(table.querySelectorAll('tr'));
-          let tableText = '';
+      downloadButton.addEventListener('click', function() {
+        const table = document.getElementById('playlistTable');
+        const rows = Array.from(table.querySelectorAll('tr'));
+        let tsvText = '';
 
-          rows.forEach(row => {
-            const cells = Array.from(row.querySelectorAll('th, td'));
-            const rowData = cells.map(cell => {
-              const link = cell.querySelector('a.spotify-link');
-              return link ? link.href : cell.textContent.trim();
-            });
-            tableText += rowData.join('\t') + '\n';
+        rows.forEach(row => {
+          const cells = Array.from(row.querySelectorAll('th, td'));
+          const rowData = cells.map(cell => {
+            const link = cell.querySelector('a.spotify-link');
+            return link ? link.href : cell.textContent.trim();
           });
+          tsvText += rowData.join('\t') + '\n';
+        });
 
-          await navigator.clipboard.writeText(tableText);
+        const blob = new Blob([tsvText], { type: 'text/tab-separated-values' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'spotify_playlists.tsv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
 
-          statusElement.textContent = 'テーブルのデータがクリップボードにコピーされました！';
-          statusElement.classList.add('success');
-          statusElement.classList.remove('error');
-          statusElement.style.opacity = 1;
+        statusElement.textContent = 'TSVファイルをダウンロードしました！';
+        statusElement.classList.add('success');
+        statusElement.style.opacity = 1;
 
-          setTimeout(() => {
-            statusElement.style.opacity = 0;
-          }, 3000);
-        } catch (err) {
-          console.error('コピーエラー:', err);
-          statusElement.textContent = 'コピーに失敗しました。手動でテーブルを選択してコピーしてください。';
-          statusElement.classList.add('error');
-          statusElement.classList.remove('success');
-          statusElement.style.opacity = 1;
-        }
+        setTimeout(() => {
+          statusElement.style.opacity = 0;
+        }, 3000);
       });
     });
   </script>
