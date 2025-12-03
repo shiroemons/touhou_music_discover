@@ -1,0 +1,53 @@
+<div class="message-card success-card">
+  <div class="completion-icon bounce">
+    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+      <polyline points="22 4 12 14.01 9 11.01"></polyline>
+    </svg>
+  </div>
+  <h2 class="card-title"><%= @message %></h2>
+  <div class="time-details">
+    <div class="time-row">
+      <div class="time-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <p class="time-info">
+        <span class="time-label">開始時刻:</span>
+        <%= Time.parse(@update_info['started_at']).in_time_zone('Tokyo').strftime('%Y年%m月%d日 %H:%M:%S') rescue '不明' %>
+      </p>
+    </div>
+    <div class="time-row">
+      <div class="time-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <p class="time-info">
+        <span class="time-label">完了時刻:</span>
+        <%= Time.parse(@update_info['completed_at']).in_time_zone('Tokyo').strftime('%Y年%m月%d日 %H:%M:%S') rescue '不明' %>
+      </p>
+    </div>
+    <% if @processing_time %>
+      <div class="time-row">
+        <div class="time-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <p class="time-info">
+          <span class="time-label">処理時間:</span>
+          <% hours = @processing_time / 3600 %>
+          <% minutes = (@processing_time % 3600) / 60 %>
+          <% seconds = @processing_time % 60 %>
+          <span class="processing-time"><%= "#{hours}時間" if hours > 0 %> <%= "#{minutes}分" if minutes > 0 || hours > 0 %> <%= "#{seconds}秒" %></span>
+        </p>
+      </div>
+    <% end %>
+  </div>
+  <p><%= link_to 'トップページに戻る', root_path, class: 'btn btn-primary' %></p>
+</div>

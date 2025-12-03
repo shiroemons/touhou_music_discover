@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     get 'playlists', to: 'playlists#index'
     match 'playlists/create', to: 'playlists#create', via: %i[get post]
     get 'playlists/progress', to: 'playlists#progress'
+    get 'playlists/progress_stream', to: 'playlists#progress_stream'
     get 'playlists/original_songs', to: 'playlists#original_songs'
     delete 'playlists/cache', to: 'playlists#clear_cache', as: :clear_playlists_cache
   end
