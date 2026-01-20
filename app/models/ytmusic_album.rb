@@ -70,7 +70,16 @@ class YtmusicAlbum < ApplicationRecord
     '4582736136247' => 'MPREb_YmBDqjVTnpN', # 東方LostWord - 承認欲求☆あんのんがーる (feat. 野田真理愛 × 少女理論観測所)
     '4582736136254' => 'MPREb_NPWhgfTHuBG', # 東方LostWord - ドキワク❄︎レボリューション（feat. May’n、豚乙女）
     '4582736136780' => 'MPREb_6CPOXTh82vP', # 発熱巫女〜ず - Knocked on the Door
-    '4582736136810' => 'MPREb_Ofa96OUBxIl'  # 幽閉サテライト - 漢の幽閉サテライトEX
+    '4582736136810' => 'MPREb_Ofa96OUBxIl', # 幽閉サテライト - 漢の幽閉サテライトEX
+    '4582736136957' => 'MPREb_GzesQoATD9B', # Amateras Records - Stray Star (Overhead Champion Remix) 
+    '4582736136964' => 'MPREb_2gsuF3PU4Km', # Bullet IX - Soul Igniter
+    '4582736137107' => 'MPREb_XVnaMc5BujE', # Further Ahead Of Warp - Looking For The Me No One Knows
+    '4582736137114' => 'MPREb_aOsC78GNNNj', # KALANCHOE RECORDS - Oblivion Feast
+    '4582736137206' => 'MPREb_ISpVdCDrQq1', # .new label - ?¿!?!¿!!?¿?¿!!!!
+    '4582736137305' => 'MPREb_oTEG5HlOnxU', # イノライ - 地上の兎は星になる
+    '4582736137329' => 'MPREb_u4U3MWe3cD8', # イノライ - STARDUST
+    # '4582736137428' => '', # 激戦魂 -Gekisen Soul- - GEKISTAR
+    '4582736137503' => 'MPREb_7rkSN3YNR4U' # 染色硝子ノ欠片 - 絶対零度の六花
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
