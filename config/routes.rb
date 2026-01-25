@@ -15,5 +15,6 @@ Rails.application.routes.draw do
     get 'playlists/progress_stream', to: 'playlists#progress_stream'
     get 'playlists/original_songs', to: 'playlists#original_songs'
     delete 'playlists/cache', to: 'playlists#clear_cache', as: :clear_playlists_cache
+    post 'playlists/:id/sync', to: 'playlists#sync_single', as: :playlist_sync
   end
 end

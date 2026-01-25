@@ -37,6 +37,7 @@
             <th>URL</th>
             <th>曲数</th>
             <th>いいね数</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -46,6 +47,9 @@
               <td><%= link_to 'Spotifyで開く', playlist[:external_urls][:spotify] || playlist[:external_urls]["spotify"], target: "_blank", class: 'spotify-link' %></td>
               <td><%= playlist[:total] %></td>
               <td><%= playlist[:followers] %></td>
+              <td>
+                <%= button_to '同期', spotify_playlist_sync_path(id: playlist[:id], name: playlist[:name]), method: :post, class: 'btn btn-small btn-primary', data: { turbo_confirm: "#{playlist[:name]}を同期しますか？" } %>
+              </td>
             </tr>
           <% end %>
         </tbody>

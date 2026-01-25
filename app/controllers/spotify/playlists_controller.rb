@@ -129,6 +129,64 @@ module Spotify
       redirect_to spotify_playlists_path
     end
 
+    def sync_single
+      redirect_to root_url unless session[:user_id]
+
+      redis = RedisPool.get
+      auth_hash = JSON.parse(redis.get(session[:user_id]))
+      spotify_user = RSpotify::User.new(auth_hash)
+
+      playlist_id = params[:id]
+      playlist_name = params[:name]
+
+      # ユーザーのプレイリストから対象を検索（認証コンテキストを保持するため）
+      playlist = find_user_playlist(spotify_user, playlist_id)
+      if playlist.nil?
+        redirect_to spotify_playlists_path, alert: "プレイリストが見つかりません: #{playlist_name}"
+        return
+      end
+
+      # 原曲を名前で検索
+      original_song = OriginalSong.find_by(title: playlist_name, is_duplicate: false)
+
+      if original_song.nil?
+        redirect_to spotify_playlists_path, alert: "原曲が見つかりません: #{playlist_name}"
+        return
+      end
+
+      # through関連の複雑さを避けるため直接SQL
+      spotify_tracks = SpotifyTrack.find_by_sql([<<~SQL, original_song.code])
+        SELECT spotify_tracks.*
+        FROM spotify_tracks
+        INNER JOIN tracks ON tracks.id = spotify_tracks.track_id
+        INNER JOIN tracks_original_songs ON tracks_original_songs.track_id = tracks.id
+        WHERE tracks_original_songs.original_song_code = ?
+      SQL
+      if spotify_tracks.empty?
+        redirect_to spotify_playlists_path, alert: 'Spotifyトラックが見つかりません'
+        return
+      end
+
+      # クリアしてトラックを追加
+      loop do
+        tracks = playlist.tracks
+        break if tracks.empty?
+
+        playlist.remove_tracks!(tracks)
+      end
+
+      spotify_track_ids = spotify_tracks.map(&:spotify_id)
+      spotify_track_ids.each_slice(50) do |ids|
+        tracks = RSpotify::Track.find(ids)
+        playlist.add_tracks!(tracks) if tracks.any?
+      end
+
+      redirect_to spotify_playlists_path, notice: "#{playlist_name}を同期しました（#{spotify_tracks.size}曲）"
+    rescue StandardError => e
+      Rails.logger.error "sync_single error: #{e.class} - #{e.message}"
+      redirect_to spotify_playlists_path, alert: "同期エラー: #{e.message}"
+    end
+
     def create
       redirect_to root_url unless session[:user_id]
 
@@ -287,6 +345,23 @@ module Spotify
     end
 
     private
+
+    def find_user_playlist(spotify_user, playlist_id)
+      offset = 0
+      loop do
+        playlists = spotify_user.playlists(limit: LIMIT, offset: offset)
+        break if playlists.empty?
+
+        found = playlists.find { |p| p.id == playlist_id }
+        return found if found
+
+        offset += LIMIT
+        break if playlists.count < LIMIT
+
+        sleep 0.5
+      end
+      nil
+    end
 
     def load_progress_info
       redis = RedisPool.get
