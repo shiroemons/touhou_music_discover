@@ -1,0 +1,7 @@
+# frozen_string_literal: true
+
+ja:
+  spotify:
+    playlists:
+      alerts:
+        tracks_not_found: "Spotifyトラックが見つかりません"

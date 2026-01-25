@@ -92,7 +92,7 @@ module Spotify
         WHERE tracks_original_songs.original_song_code = ?
       SQL
       if spotify_tracks.empty?
-        redirect_to spotify_playlists_path, alert: 'Spotifyトラックが見つかりません'
+        redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.tracks_not_found')
         return
       end
 
