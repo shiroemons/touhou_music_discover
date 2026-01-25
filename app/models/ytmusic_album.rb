@@ -71,7 +71,7 @@ class YtmusicAlbum < ApplicationRecord
     '4582736136254' => 'MPREb_NPWhgfTHuBG', # 東方LostWord - ドキワク❄︎レボリューション（feat. May’n、豚乙女）
     '4582736136780' => 'MPREb_6CPOXTh82vP', # 発熱巫女〜ず - Knocked on the Door
     '4582736136810' => 'MPREb_Ofa96OUBxIl', # 幽閉サテライト - 漢の幽閉サテライトEX
-    '4582736136957' => 'MPREb_GzesQoATD9B', # Amateras Records - Stray Star (Overhead Champion Remix) 
+    '4582736136957' => 'MPREb_GzesQoATD9B', # Amateras Records - Stray Star (Overhead Champion Remix)
     '4582736136964' => 'MPREb_2gsuF3PU4Km', # Bullet IX - Soul Igniter
     '4582736137107' => 'MPREb_XVnaMc5BujE', # Further Ahead Of Warp - Looking For The Me No One Knows
     '4582736137114' => 'MPREb_aOsC78GNNNj', # KALANCHOE RECORDS - Oblivion Feast

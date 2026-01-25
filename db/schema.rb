@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_06_29_024534) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_25_084131) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -165,6 +165,23 @@ ActiveRecord::Schema[8.0].define(version: 2025_06_29_024534) do
     t.jsonb "payload"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+  end
+
+  create_table "spotify_playlists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "spotify_id", null: false
+    t.string "spotify_user_id", null: false
+    t.string "name", null: false
+    t.integer "total", default: 0
+    t.integer "followers", default: 0
+    t.string "spotify_url"
+    t.string "original_song_code"
+    t.datetime "synced_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.integer "position", default: 0
+    t.index ["original_song_code"], name: "index_spotify_playlists_on_original_song_code"
+    t.index ["spotify_id"], name: "index_spotify_playlists_on_spotify_id", unique: true
+    t.index ["spotify_user_id"], name: "index_spotify_playlists_on_spotify_user_id"
   end
 
   create_table "spotify_track_audio_features", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|

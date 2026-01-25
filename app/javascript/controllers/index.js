@@ -5,7 +5,9 @@
 import { application } from "./application"
 
 import HelloController from "./hello_controller"
+import PlaylistRefreshPollingController from "./playlist_refresh_polling_controller"
 import ProgressPollingController from "./progress_polling_controller"
 
 application.register("hello", HelloController)
+application.register("playlist-refresh-polling", PlaylistRefreshPollingController)
 application.register("progress-polling", ProgressPollingController)

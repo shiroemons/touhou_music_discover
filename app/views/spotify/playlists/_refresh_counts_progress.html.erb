@@ -1,0 +1,238 @@
+<div id="refresh-counts-container"
+     class="refresh-counts-progress"
+     data-controller="playlist-refresh-polling"
+     data-playlist-refresh-polling-url-value="<%= spotify_playlists_refresh_counts_stream_path %>"
+     data-playlist-refresh-polling-interval-value="1000">
+  <div class="progress-card">
+    <div class="progress-header">
+      <h3 class="card-title">プレイリスト曲数を更新中...</h3>
+      <p id="refresh-counts-current-playlist" class="current-playlist">準備中...</p>
+    </div>
+    <div class="progress-section">
+      <div class="progress-stats">
+        <div class="progress-fraction">
+          <span id="refresh-counts-current" class="current-count">0</span>
+          <span id="refresh-counts-total" class="total-count">0</span>
+          <span class="completion-text">プレイリスト</span>
+        </div>
+      </div>
+      <div class="progress-bar-container">
+        <div id="refresh-counts-progress-bar" class="progress-bar" style="width: 0%;">
+          <div class="progress-glow"></div>
+        </div>
+      </div>
+    </div>
+    <div class="actions">
+      <div class="action-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+      <div class="action-content">
+        <p>Spotify APIからプレイリスト情報を取得しています。</p>
+        <p>この処理には数分かかる場合があります。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .refresh-counts-progress {
+    --primary-color: #1DB954;
+    --primary-hover: #1ed760;
+    --text-color: #333333;
+    --text-muted: #666666;
+    --card-bg: #ffffff;
+    --border-color: #e0e0e0;
+    --shadow-md: 0 5px 20px rgba(0, 0, 0, 0.08);
+    --border-radius-md: 12px;
+    --border-radius-lg: 16px;
+  }
+
+  .refresh-counts-progress .progress-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-md);
+    padding: 30px;
+    max-width: 500px;
+    margin: 20px auto;
+  }
+
+  .refresh-counts-progress .card-title {
+    color: var(--text-color);
+    margin: 0 0 15px 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+  }
+
+  .refresh-counts-progress .current-playlist {
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .refresh-counts-progress .progress-section {
+    margin: 25px 0;
+  }
+
+  .refresh-counts-progress .progress-stats {
+    margin-bottom: 12px;
+  }
+
+  .refresh-counts-progress .progress-fraction {
+    display: flex;
+    align-items: baseline;
+    font-weight: 600;
+  }
+
+  .refresh-counts-progress .current-count {
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-right: 4px;
+  }
+
+  .refresh-counts-progress .current-count::after {
+    content: '/';
+    color: var(--text-muted);
+    margin: 0 4px;
+    font-size: 1.2rem;
+  }
+
+  .refresh-counts-progress .total-count {
+    color: var(--text-muted);
+    font-size: 1.1rem;
+  }
+
+  .refresh-counts-progress .completion-text {
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    margin-left: 8px;
+  }
+
+  .refresh-counts-progress .progress-bar-container {
+    height: 12px;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .refresh-counts-progress .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+    border-radius: 20px;
+    transition: width 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+    min-width: 2%;
+    position: relative;
+  }
+
+  .refresh-counts-progress .progress-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      rgba(255, 255, 255, 0) 100%);
+    animation: shimmer 1.5s infinite;
+  }
+
+  .refresh-counts-progress .actions {
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.02);
+    padding: 15px;
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+  }
+
+  .refresh-counts-progress .action-icon {
+    margin-right: 15px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .refresh-counts-progress .action-content p {
+    margin: 5px 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* 完了時のスタイル */
+  .refresh-counts-completed {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background: linear-gradient(145deg, #f6fff8, #e3f9ea);
+    border-radius: var(--border-radius-md);
+    border: 1px solid rgba(29, 185, 84, 0.2);
+    margin: 20px 0;
+  }
+
+  .refresh-counts-completed .completed-icon {
+    flex-shrink: 0;
+  }
+
+  .refresh-counts-completed span {
+    color: var(--text-color);
+    font-weight: 500;
+  }
+
+  .refresh-counts-completed .processing-time {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  .refresh-counts-completed .btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    background: linear-gradient(to right, #1DB954, #1ed760);
+    color: white;
+    box-shadow: 0 2px 6px rgba(29, 185, 84, 0.3);
+    margin-left: auto;
+    margin-top: 0;
+  }
+
+  .refresh-counts-completed .btn:hover {
+    box-shadow: 0 4px 10px rgba(29, 185, 84, 0.4);
+    transform: translateY(-1px);
+  }
+
+  /* エラー時のスタイル */
+  .refresh-counts-error {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 20px;
+    background-color: rgba(255, 59, 48, 0.1);
+    border-radius: var(--border-radius-md);
+    border-left: 4px solid #ff3b30;
+    margin: 20px 0;
+  }
+
+  .refresh-counts-error .error-icon {
+    flex-shrink: 0;
+  }
+
+  .refresh-counts-error span {
+    color: var(--text-color);
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+</style>

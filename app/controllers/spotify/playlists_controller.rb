@@ -13,118 +13,47 @@ module Spotify
       auth_hash = JSON.parse(redis.get(session[:user_id]))
       @spotify_user = RSpotify::User.new(auth_hash)
 
-      cache_key = "spotify_playlists:#{session[:user_id]}"
       @from_cache = false
+      @error = nil
 
-      # キャッシュを確認
-      cached_data = redis.get(cache_key)
-      if cached_data.present?
-        @playlists = JSON.parse(cached_data, symbolize_names: true)
+      # DBキャッシュを確認
+      db_playlists = SpotifyPlaylist.for_user(@spotify_user.id)
+      if db_playlists.exists?
+        @playlists = db_playlists.order(position: :desc).map do |playlist|
+          {
+            id: playlist.spotify_id,
+            name: playlist.name,
+            external_urls: { spotify: playlist.spotify_url },
+            followers: playlist.followers,
+            total: playlist.total,
+            synced_at: playlist.synced_at
+          }
+        end
         @from_cache = true
-        @error = nil
         return
       end
 
-      @playlists = []
-      @error = nil
+      # DBにデータがない場合はSpotify APIから取得
+      @playlists = fetch_playlists_from_spotify(@spotify_user)
+      return if @error.present?
 
-      begin
-        # 通常のプレイリスト表示処理
-        offset = 0
-        retry_count = 0
+      # 原曲名と一致するプレイリストのみ抽出するための処理
+      original_song_titles = OriginalSong.distinct.pluck(:title)
+      @playlists = @playlists.select { |p| p[:name].in?(original_song_titles) }
 
-        loop do
-          playlists = @spotify_user.playlists(limit: LIMIT, offset:)
-
-          # 事前にフォロワー情報とトラック数を安全に取得して保存
-          playlists.each do |playlist|
-            # フォロワー数とトラック数を事前に安全に取得
-            followers = begin
-              playlist.followers['total']
-            rescue StandardError
-              0
-            end
-            total_tracks = begin
-              playlist.total
-            rescue StandardError
-              0
-            end
-
-            # 必要な情報を含むハッシュを作成
-            safe_playlist = {
-              id: playlist.id,
-              name: playlist.name,
-              external_urls: playlist.external_urls,
-              followers:,
-              total: total_tracks
-            }
-
-            @playlists << safe_playlist
-          rescue StandardError => e
-            Rails.logger.error("プレイリスト情報取得エラー: #{e.message}")
-            # エラーが発生しても処理を継続
-            next
-          end
-
-          offset += LIMIT
-          break if playlists.count < LIMIT
-
-          # API制限に引っかからないよう、リクエスト間に少し待機
-          sleep 1
-        rescue RestClient::TooManyRequests => e
-          retry_count += 1
-
-          # 429エラーの詳細情報をログに出力
-          Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{e.http_code}, ヘッダー=#{e.http_headers.inspect}")
-          Rails.logger.error("レスポンス本文: #{e.http_body}") if e.respond_to?(:http_body)
-
-          # Retry-Afterヘッダーの確認
-          retry_after = e.respond_to?(:http_headers) && e.http_headers[:retry_after].to_i
-          if retry_after && retry_after > 60
-            Rails.logger.error("APIレート制限の待機時間が長すぎます: #{retry_after}秒")
-            formatted_time = format_seconds(retry_after)
-            @error = "Spotify APIのレート制限に達しました。サーバーが #{formatted_time} の待機を要求しています。"
-            break
-          end
-
-          if retry_count <= MAX_RETRIES
-            # 429エラーの場合は待機時間を増やしてリトライ
-            wait_time = 2**retry_count # エクスポネンシャルバックオフ
-            Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします (#{retry_count}/#{MAX_RETRIES})")
-            sleep wait_time
-            retry
-          else
-            # 最大リトライ回数を超えた場合
-            Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
-            @error = 'Spotify APIのレート制限に達しました。しばらく時間をおいて再度お試しください。'
-            break
-          end
-        rescue StandardError => e
-          Rails.logger.error("プレイリスト取得エラー: #{e.message}")
-          @error = "プレイリスト情報の取得中にエラーが発生しました: #{e.message}"
-          break
-        end
-
-        @playlists.reverse!
-
-        # 原曲名と一致するプレイリストのみ抽出するための処理
-        original_song_titles = OriginalSong.distinct.pluck(:title)
-        @playlists = @playlists.select { |p| p[:name].in?(original_song_titles) }
-
-        # 取得成功後、Redisにキャッシュを保存
-        redis.setex(cache_key, CACHE_TTL, @playlists.to_json) if @error.nil? && @playlists.present?
-      rescue StandardError => e
-        Rails.logger.error("予期せぬエラー: #{e.message}")
-        @error = "プレイリスト情報の取得中に予期せぬエラーが発生しました: #{e.message}"
-      end
+      # DBに保存
+      save_playlists_to_db(@spotify_user.id, @playlists) if @playlists.present?
     end
 
     def clear_cache
       redirect_to root_url unless session[:user_id]
 
       redis = RedisPool.get
-      cache_key = "spotify_playlists:#{session[:user_id]}"
-      redis.del(cache_key)
+      auth_hash = JSON.parse(redis.get(session[:user_id]))
+      spotify_user = RSpotify::User.new(auth_hash)
+
+      # DBキャッシュをクリア
+      SpotifyPlaylist.for_user(spotify_user.id).delete_all
 
       redirect_to spotify_playlists_path
     end
@@ -155,7 +84,7 @@ module Spotify
       end
 
       # through関連の複雑さを避けるため直接SQL
-      spotify_tracks = SpotifyTrack.find_by_sql([<<~SQL, original_song.code])
+      spotify_tracks = SpotifyTrack.find_by_sql([<<~SQL.squish, original_song.code])
         SELECT spotify_tracks.*
         FROM spotify_tracks
         INNER JOIN tracks ON tracks.id = spotify_tracks.track_id
@@ -163,7 +92,7 @@ module Spotify
         WHERE tracks_original_songs.original_song_code = ?
       SQL
       if spotify_tracks.empty?
-        redirect_to spotify_playlists_path, alert: 'Spotifyトラックが見つかりません'
+        redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.tracks_not_found')
         return
       end
 
@@ -180,6 +109,10 @@ module Spotify
         tracks = RSpotify::Track.find(ids)
         playlist.add_tracks!(tracks) if tracks.any?
       end
+
+      # SpotifyPlaylistレコードを更新
+      spotify_playlist = SpotifyPlaylist.find_by(spotify_id: playlist_id)
+      spotify_playlist&.update(total: spotify_tracks.size, synced_at: Time.current)
 
       redirect_to spotify_playlists_path, notice: "#{playlist_name}を同期しました（#{spotify_tracks.size}曲）"
     rescue StandardError => e
@@ -249,6 +182,120 @@ module Spotify
 
     def progress_stream
       load_progress_info
+
+      respond_to do |format|
+        format.turbo_stream
+      end
+    end
+
+    def refresh_counts
+      redirect_to root_url unless session[:user_id]
+
+      redis = RedisPool.get
+      auth_hash = JSON.parse(redis.get(session[:user_id]))
+      spotify_user = RSpotify::User.new(auth_hash)
+
+      # 進捗状況をRedisに保存するためのキー
+      progress_key = "refresh_counts:#{session[:user_id]}"
+
+      # 更新処理開始前にRedisを初期化
+      update_info = {
+        total: 0,
+        current: 0,
+        current_playlist: '',
+        status: 'processing',
+        started_at: Time.current.to_s,
+        completed_at: nil
+      }
+      redis.set(progress_key, update_info.to_json)
+
+      # 非同期処理を開始
+      spotify_user_id = spotify_user.id
+      Thread.new do
+        redis_conn = RedisPool.get
+        begin
+          # Spotify APIから全プレイリストを取得
+          playlists = []
+          offset = 0
+          retry_count = 0
+
+          loop do
+            fetched = spotify_user.playlists(limit: LIMIT, offset: offset)
+            break if fetched.empty?
+
+            playlists.concat(fetched)
+            offset += LIMIT
+            break if fetched.count < LIMIT
+
+            sleep 0.5
+          rescue RestClient::TooManyRequests
+            retry_count += 1
+            break unless retry_count <= MAX_RETRIES
+
+            wait_time = 2**retry_count
+            sleep wait_time
+            retry
+          end
+
+          # 原曲名と一致するプレイリストのみ抽出
+          original_song_titles = OriginalSong.distinct.pluck(:title)
+          filtered_playlists = playlists.select { |p| p.name.in?(original_song_titles) }
+
+          total = filtered_playlists.size
+          update_info = JSON.parse(redis_conn.get(progress_key))
+          update_info['total'] = total
+          redis_conn.set(progress_key, update_info.to_json)
+
+          # 各プレイリストのトラック数を更新
+          filtered_playlists.each_with_index do |playlist, index|
+            update_info = JSON.parse(redis_conn.get(progress_key))
+            update_info['current'] = index + 1
+            update_info['current_playlist'] = playlist.name
+            redis_conn.set(progress_key, update_info.to_json)
+
+            # DBレコードを更新（存在しなければ作成）
+            spotify_playlist = SpotifyPlaylist.find_or_initialize_by(spotify_id: playlist.id)
+            spotify_playlist.update(
+              spotify_user_id: spotify_user_id,
+              name: playlist.name,
+              total: playlist.total,
+              followers: playlist.followers['total'] || 0,
+              spotify_url: playlist.external_urls['spotify'],
+              original_song_code: find_original_song_code(playlist.name),
+              position: index
+            )
+
+            sleep 0.2
+          end
+
+          # 完了
+          update_info = JSON.parse(redis_conn.get(progress_key))
+          update_info['status'] = 'completed'
+          update_info['completed_at'] = Time.current.to_s
+          redis_conn.set(progress_key, update_info.to_json)
+        rescue StandardError => e
+          Rails.logger.error("refresh_counts error: #{e.message}")
+          Rails.logger.error(e.backtrace.join("\n"))
+          update_info = JSON.parse(redis_conn.get(progress_key))
+          update_info['status'] = 'error'
+          update_info['error_message'] = e.message
+          redis_conn.set(progress_key, update_info.to_json)
+        ensure
+          ActiveRecord::Base.connection_pool.release_connection
+        end
+      end
+
+      respond_to do |format|
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace('refresh-counts-container',
+                                                    partial: 'refresh_counts_progress')
+        end
+        format.html { redirect_to spotify_playlists_path }
+      end
+    end
+
+    def refresh_counts_stream
+      load_refresh_counts_info
 
       respond_to do |format|
         format.turbo_stream
@@ -409,6 +456,118 @@ module Spotify
       else
         "#{seconds}秒"
       end
+    end
+
+    def fetch_playlists_from_spotify(spotify_user)
+      playlists = []
+      offset = 0
+      retry_count = 0
+
+      loop do
+        fetched = spotify_user.playlists(limit: LIMIT, offset: offset)
+
+        fetched.each do |playlist|
+          followers = begin
+            playlist.followers['total']
+          rescue StandardError
+            0
+          end
+          total_tracks = begin
+            playlist.total
+          rescue StandardError
+            0
+          end
+
+          safe_playlist = {
+            id: playlist.id,
+            name: playlist.name,
+            external_urls: playlist.external_urls,
+            followers: followers,
+            total: total_tracks,
+            synced_at: nil
+          }
+
+          playlists << safe_playlist
+        rescue StandardError => e
+          Rails.logger.error("プレイリスト情報取得エラー: #{e.message}")
+          next
+        end
+
+        offset += LIMIT
+        break if fetched.count < LIMIT
+
+        sleep 1
+      rescue RestClient::TooManyRequests => e
+        retry_count += 1
+
+        Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{e.http_code}, ヘッダー=#{e.http_headers.inspect}")
+        Rails.logger.error("レスポンス本文: #{e.http_body}") if e.respond_to?(:http_body)
+
+        retry_after = e.respond_to?(:http_headers) && e.http_headers[:retry_after].to_i
+        if retry_after && retry_after > 60
+          Rails.logger.error("APIレート制限の待機時間が長すぎます: #{retry_after}秒")
+          formatted_time = format_seconds(retry_after)
+          @error = "Spotify APIのレート制限に達しました。サーバーが #{formatted_time} の待機を要求しています。"
+          break
+        end
+
+        if retry_count <= MAX_RETRIES
+          wait_time = 2**retry_count
+          Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします (#{retry_count}/#{MAX_RETRIES})")
+          sleep wait_time
+          retry
+        else
+          Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
+          @error = 'Spotify APIのレート制限に達しました。しばらく時間をおいて再度お試しください。'
+          break
+        end
+      rescue StandardError => e
+        Rails.logger.error("プレイリスト取得エラー: #{e.message}")
+        @error = "プレイリスト情報の取得中にエラーが発生しました: #{e.message}"
+        break
+      end
+
+      playlists.reverse!
+      playlists
+    end
+
+    def save_playlists_to_db(spotify_user_id, playlists)
+      playlists.each_with_index do |playlist, index|
+        SpotifyPlaylist.find_or_create_by(spotify_id: playlist[:id]) do |p|
+          p.spotify_user_id = spotify_user_id
+          p.name = playlist[:name]
+          p.total = playlist[:total]
+          p.followers = playlist[:followers]
+          p.spotify_url = playlist[:external_urls][:spotify] || playlist[:external_urls]['spotify']
+          p.original_song_code = find_original_song_code(playlist[:name])
+          p.position = index
+        end
+      end
+    end
+
+    def find_original_song_code(playlist_name)
+      # プレイリスト名から原曲コードを検索
+      original_song = OriginalSong.find_by(title: playlist_name, is_duplicate: false)
+      original_song&.code
+    end
+
+    def load_refresh_counts_info
+      redis = RedisPool.get
+      progress_key = "refresh_counts:#{session[:user_id]}"
+
+      @update_info = redis.get(progress_key).present? ? JSON.parse(redis.get(progress_key)) : {}
+      @completed = @update_info['status'] == 'completed'
+      @error = @update_info['status'] == 'error'
+
+      return unless @completed
+
+      @message = 'プレイリスト曲数の更新が完了しました'
+
+      return unless @update_info['started_at'].present? && @update_info['completed_at'].present?
+
+      started_at = Time.zone.parse(@update_info['started_at'])
+      completed_at = Time.zone.parse(@update_info['completed_at'])
+      @processing_time = (completed_at - started_at).to_i
     end
   end
 end
