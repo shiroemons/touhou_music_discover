@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class CreateSpotifyPlaylists < ActiveRecord::Migration[8.0]
   def change
     create_table :spotify_playlists, id: :uuid do |t|
