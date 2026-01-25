@@ -16,5 +16,7 @@ Rails.application.routes.draw do
     get 'playlists/original_songs', to: 'playlists#original_songs'
     delete 'playlists/cache', to: 'playlists#clear_cache', as: :clear_playlists_cache
     post 'playlists/:id/sync', to: 'playlists#sync_single', as: :playlist_sync
+    post 'playlists/refresh_counts', to: 'playlists#refresh_counts'
+    get 'playlists/refresh_counts_stream', to: 'playlists#refresh_counts_stream'
   end
 end

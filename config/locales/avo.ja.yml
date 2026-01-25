@@ -98,6 +98,7 @@ ja:
       line_music_track: 'LINE MUSIC楽曲'
       ytmusic_album: 'YouTube Musicアルバム'
       ytmusic_track: 'YouTube Music楽曲'
+      spotify_playlist: 'Spotifyプレイリスト'
     reset_filters: 'Reset filters'
     not_authorized: 'You are not authorized to perform this action.'
     search:

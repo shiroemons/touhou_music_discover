@@ -1,0 +1,54 @@
+<% if @completed %>
+  <%# 完了時：進捗コンテナ全体を完了メッセージに置換 %>
+  <%= turbo_stream.replace "refresh-counts-container" do %>
+    <div id="refresh-counts-container" class="refresh-counts-completed">
+      <div class="completed-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1DB954" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+      <span><%= @message %></span>
+      <% if @processing_time %>
+        <span class="processing-time">（処理時間: <%= @processing_time %>秒）</span>
+      <% end %>
+      <%= link_to '再読み込み', spotify_playlists_path, class: 'btn btn-small btn-primary', data: { turbo: false } %>
+    </div>
+  <% end %>
+<% elsif @error %>
+  <%# エラー時：エラーメッセージを表示 %>
+  <%= turbo_stream.replace "refresh-counts-container" do %>
+    <div id="refresh-counts-container" class="refresh-counts-error">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ff3b30" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+      <span>エラーが発生しました: <%= @update_info['error_message'] %></span>
+    </div>
+  <% end %>
+<% elsif @update_info.present? %>
+  <%# 処理中：各要素を個別に更新 %>
+  <%= turbo_stream.update "refresh-counts-current-playlist" do %>
+    <%= @update_info['current_playlist'].presence || '準備中...' %>
+  <% end %>
+
+  <%= turbo_stream.update "refresh-counts-current" do %>
+    <%= @update_info['current'] %>
+  <% end %>
+
+  <%= turbo_stream.update "refresh-counts-total" do %>
+    <%= @update_info['total'] %>
+  <% end %>
+
+  <% progress_percent = @update_info['total'].to_i > 0 ? (@update_info['current'].to_i.to_f / @update_info['total'].to_i * 100).round : 0 %>
+
+  <%# 進捗バーはスタイル属性を変更するためreplace使用 %>
+  <%= turbo_stream.replace "refresh-counts-progress-bar" do %>
+    <div id="refresh-counts-progress-bar" class="progress-bar" style="width: <%= progress_percent %>%;">
+      <div class="progress-glow"></div>
+    </div>
+  <% end %>
+<% end %>

@@ -3,6 +3,7 @@
     <h1>Spotify原曲プレイリスト一覧</h1>
     <div class="actions">
       <%= link_to 'トップページに戻る', root_path, class: 'btn btn-outline' %>
+      <%= button_to '曲数を更新', spotify_playlists_refresh_counts_path, method: :post, class: 'btn btn-primary', data: { turbo_stream: true } %>
       <button id="copyTableButton" class="btn btn-primary">テーブルをコピー</button>
       <button id="downloadTsvButton" class="btn btn-primary">TSVダウンロード</button>
     </div>
@@ -28,33 +29,39 @@
     </div>
   <% end %>
 
+  <div id="refresh-counts-container"></div>
+
   <% if @playlists.present? %>
-    <div class="playlist-list">
-      <table class="playlist-table" id="playlistTable">
-        <thead>
-          <tr>
-            <th>プレイリスト名</th>
-            <th>URL</th>
-            <th>曲数</th>
-            <th>いいね数</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% @playlists.each do |playlist| %>
+    <%= turbo_frame_tag "playlists-table" do %>
+      <div class="playlist-list">
+        <table class="playlist-table" id="playlistTable">
+          <thead>
             <tr>
-              <td><%= playlist[:name] %></td>
-              <td><%= link_to 'Spotifyで開く', playlist[:external_urls][:spotify] || playlist[:external_urls]["spotify"], target: "_blank", class: 'spotify-link' %></td>
-              <td><%= playlist[:total] %></td>
-              <td><%= playlist[:followers] %></td>
-              <td>
-                <%= button_to '同期', spotify_playlist_sync_path(id: playlist[:id], name: playlist[:name]), method: :post, class: 'btn btn-small btn-primary', data: { turbo_confirm: "#{playlist[:name]}を同期しますか？" } %>
-              </td>
+              <th>プレイリスト名</th>
+              <th>URL</th>
+              <th>曲数</th>
+              <th>いいね数</th>
+              <th>最終同期</th>
+              <th>操作</th>
             </tr>
-          <% end %>
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            <% @playlists.each do |playlist| %>
+              <tr>
+                <td><%= playlist[:name] %></td>
+                <td><%= link_to 'Spotifyで開く', playlist[:external_urls][:spotify] || playlist[:external_urls]["spotify"], target: "_blank", class: 'spotify-link' %></td>
+                <td><%= playlist[:total] %></td>
+                <td><%= playlist[:followers] %></td>
+                <td class="synced-at"><%= playlist[:synced_at].present? ? time_ago_in_words(playlist[:synced_at]) + "前" : "未同期" %></td>
+                <td>
+                  <%= button_to '同期', spotify_playlist_sync_path(id: playlist[:id], name: playlist[:name]), method: :post, class: 'btn btn-small btn-primary', data: { turbo_confirm: "#{playlist[:name]}を同期しますか？" } %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    <% end %>
     <div id="downloadStatus" class="download-status"></div>
   <% else %>
     <div class="empty-message">
@@ -222,6 +229,118 @@
       background-color: rgba(255, 59, 48, 0.1);
       color: #ff3b30;
       opacity: 1;
+    }
+
+    .synced-at {
+      color: #666;
+      font-size: 14px;
+    }
+
+    /* 曲数更新進捗スタイル */
+    .refresh-counts-progress {
+      background-color: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-left: 4px solid #1DB954;
+    }
+
+    .refresh-counts-progress .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .refresh-counts-progress .progress-header h3 {
+      margin: 0;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .refresh-counts-progress .current-playlist {
+      color: #1DB954;
+      font-weight: 500;
+    }
+
+    .refresh-counts-progress .progress-bar-container {
+      height: 8px;
+      background-color: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    .refresh-counts-progress .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #1DB954, #1ed760);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      position: relative;
+    }
+
+    .refresh-counts-progress .progress-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.4) 50%,
+        rgba(255, 255, 255, 0) 100%);
+      animation: shimmer 1.5s infinite;
+    }
+
+    .refresh-counts-progress .progress-stats {
+      text-align: center;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .refresh-counts-completed {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 20px;
+      background-color: rgba(29, 185, 84, 0.1);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      color: #1DB954;
+    }
+
+    .refresh-counts-completed .completed-icon {
+      flex-shrink: 0;
+    }
+
+    .refresh-counts-completed .processing-time {
+      color: #666;
+      font-size: 14px;
+    }
+
+    .refresh-counts-error {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 15px 20px;
+      background-color: rgba(255, 59, 48, 0.1);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      color: #ff3b30;
+    }
+
+    .refresh-counts-error .error-icon {
+      flex-shrink: 0;
+    }
+
+    @keyframes shimmer {
+      0% {
+        transform: translateX(-100%);
+      }
+      100% {
+        transform: translateX(100%);
+      }
     }
   </style>
 
