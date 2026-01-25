@@ -19,7 +19,7 @@ module Spotify
       # DBキャッシュを確認
       db_playlists = SpotifyPlaylist.for_user(@spotify_user.id)
       if db_playlists.exists?
-        @playlists = db_playlists.order(:position).map do |playlist|
+        @playlists = db_playlists.order(position: :desc).map do |playlist|
           {
             id: playlist.spotify_id,
             name: playlist.name,
