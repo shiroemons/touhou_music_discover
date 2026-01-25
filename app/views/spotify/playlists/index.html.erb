@@ -354,13 +354,17 @@
         const table = document.getElementById('playlistTable');
         const rows = Array.from(table.querySelectorAll('tr'));
         let text = '';
+        // 除外する列のインデックス（最終同期: 4, 操作: 5）
+        const excludeColumns = [4, 5];
 
         rows.forEach(row => {
           const cells = Array.from(row.querySelectorAll('th, td'));
-          const rowData = cells.map(cell => {
-            const link = cell.querySelector('a.spotify-link');
-            return link ? link.href : cell.textContent.trim();
-          });
+          const rowData = cells
+            .filter((_, index) => !excludeColumns.includes(index))
+            .map(cell => {
+              const link = cell.querySelector('a.spotify-link');
+              return link ? link.href : cell.textContent.trim();
+            });
           text += rowData.join('\t') + '\n';
         });
 
