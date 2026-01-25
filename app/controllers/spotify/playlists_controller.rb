@@ -19,7 +19,7 @@ module Spotify
       # DBキャッシュを確認
       db_playlists = SpotifyPlaylist.for_user(@spotify_user.id)
       if db_playlists.exists?
-        @playlists = db_playlists.order(:name).map do |playlist|
+        @playlists = db_playlists.order(:position).map do |playlist|
           {
             id: playlist.spotify_id,
             name: playlist.name,
@@ -261,7 +261,8 @@ module Spotify
               total: playlist.total,
               followers: playlist.followers['total'] || 0,
               spotify_url: playlist.external_urls['spotify'],
-              original_song_code: find_original_song_code(playlist.name)
+              original_song_code: find_original_song_code(playlist.name),
+              position: index
             )
 
             sleep 0.2
@@ -531,7 +532,7 @@ module Spotify
     end
 
     def save_playlists_to_db(spotify_user_id, playlists)
-      playlists.each do |playlist|
+      playlists.each_with_index do |playlist, index|
         SpotifyPlaylist.find_or_create_by(spotify_id: playlist[:id]) do |p|
           p.spotify_user_id = spotify_user_id
           p.name = playlist[:name]
@@ -539,6 +540,7 @@ module Spotify
           p.followers = playlist[:followers]
           p.spotify_url = playlist[:external_urls][:spotify] || playlist[:external_urls]['spotify']
           p.original_song_code = find_original_song_code(playlist[:name])
+          p.position = index
         end
       end
     end

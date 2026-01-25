@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_01_25_041353) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_25_084131) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -178,6 +178,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_25_041353) do
     t.datetime "synced_at"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "position", default: 0
     t.index ["original_song_code"], name: "index_spotify_playlists_on_original_song_code"
     t.index ["spotify_id"], name: "index_spotify_playlists_on_spotify_id", unique: true
     t.index ["spotify_user_id"], name: "index_spotify_playlists_on_spotify_user_id"
