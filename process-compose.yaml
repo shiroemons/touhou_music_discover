@@ -9,7 +9,7 @@ processes:
       postgresql:
         condition: process_healthy
       redis:
-        condition: process_healthy
+        condition: process_started
     readiness_probe:
       http_get:
         host: localhost
