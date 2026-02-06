@@ -32,11 +32,11 @@
       "if ! command -v bundle &> /dev/null; then gem install bundler; fi"
     ],
     "scripts": {
-      "setup":           "bundle install --jobs=4 && yarn install",
+      "setup":           "bundle config unset bin && bundle install --jobs=4 && yarn install",
       "server":          "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0",
       "console":         "bin/rails console",
       "console:sandbox": "bin/rails console --sandbox",
-      "bundle":          "bundle config set clean true && bundle install --jobs=4",
+      "bundle":          "bundle config unset bin && bundle config set clean true && bundle install --jobs=4",
       "db:init":         "bin/rails db:drop db:setup",
       "db:console":      "bin/rails dbconsole",
       "db:migrate":      "bin/rails db:migrate",
