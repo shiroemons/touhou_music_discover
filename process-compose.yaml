@@ -1,5 +1,7 @@
 version: "0.5"
 
+# Note: postgresql and redis processes are auto-managed by devbox plugins.
+# See: devbox.json packages and devbox.d/redis/redis.conf
 processes:
   rails:
     command: rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0
