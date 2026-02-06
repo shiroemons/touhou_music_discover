@@ -1,16 +1,6 @@
 version: "0.5"
 
 processes:
-  redis:
-    command: redis-server --daemonize no --port 6379
-    availability:
-      restart: on_failure
-    readiness_probe:
-      exec:
-        command: redis-cli ping
-      initial_delay_seconds: 1
-      period_seconds: 2
-      failure_threshold: 3
   rails:
     command: rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0
     availability:

@@ -47,3 +47,5 @@ yarn-debug.log*
 
 # devbox
 .devbox/
+dump.rdb
+bun.lock
