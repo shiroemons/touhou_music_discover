@@ -239,7 +239,7 @@ docker-export-all: ## [Docker] 全エクスポート一括出力
 
 help: ## ヘルプを表示
 	@echo "=== devbox環境コマンド ==="
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -v 'Docker' | sort | awk -F':.*?## ' '{printf "\033[36m%-45s\033[0m %s\n", $$1, $$2}'
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | grep -v '\[Docker\]' | sort | awk -F':.*?## ' '{printf "\033[36m%-45s\033[0m %s\n", $$1, $$2}'
 	@echo ""
 	@echo "=== Docker環境コマンド ==="
 	@grep -E '^[a-zA-Z_-]+:.*?## \[Docker\].*$$' $(MAKEFILE_LIST) | sort | awk -F':.*?## ' '{printf "\033[33m%-45s\033[0m %s\n", $$1, $$2}'
