@@ -22,24 +22,29 @@ Uses Avo framework at `/avo` for data management with custom actions for:
 
 ## Common Development Commands
 
-### Setup & Development
+### Setup & Development (devbox)
 ```bash
-make init          # Initial setup with Docker
-make server        # Start Rails server (http://localhost:3000)
-make console       # Rails console
-make bash          # Enter Docker container
+make setup         # 依存パッケージのインストール（bundle + yarn）
+make tui           # 全サービスをTUIモードで起動（PostgreSQL + Redis + Rails + JS/CSS）
+make up            # 全サービスをバックグラウンドで起動
+make down          # 全サービスを停止
+make server        # Railsサーバーのみ起動
+make console       # Railsコンソール
+make shell         # devboxシェルに入る
 ```
 
 ### Database Operations
 ```bash
-make migrate       # Run migrations
-make dbseed        # Seed master data (originals, circles, artists)
+make migrate       # マイグレーション実行
+make dbseed        # マスターデータ投入（originals, circles, artists）
+make db-dump       # データベースバックアップ
+make db-restore    # データベースリストア
 ```
 
 ### Testing & Code Quality
 ```bash
-make minitest      # Run tests
-make rubocop       # Run linter
+make minitest      # テスト実行
+make rubocop       # Linter実行
 ```
 
 ### Platform Data Collection
@@ -49,7 +54,15 @@ Each platform has specific rake tasks for data fetching:
 - `ytmusic:search_albums_and_save` - Search and save albums
 - `line_music:search_albums_and_save` - Search and save albums
 
-Run tasks with: `docker compose run --rm web bin/rails [task_name]`
+Run tasks with: `devbox run -- bin/rails [task_name]`
+
+### Docker Environment (Legacy)
+Docker commands are available with `docker-` prefix:
+```bash
+make docker-server    # Dockerでサーバー起動
+make docker-console   # DockerでRailsコンソール
+make docker-migrate   # Dockerでマイグレーション
+```
 
 ## API Integration Notes
 
