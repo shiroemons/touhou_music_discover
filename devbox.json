@@ -1,0 +1,68 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
+  "packages": {
+    "ruby":          "3.4.4",
+    "postgresql_16": "16.11",
+    "redis":         "8.2.3",
+    "nodejs":        "20",
+    "yarn":          "1.22",
+    "libyaml":       "0.2.5",
+    "openssl":       "3.6.0",
+    "zlib":          "1.3.1",
+    "readline":      "8.3p3",
+    "libffi":        "40",
+    "libpq":         "18.1"
+  },
+  "env": {
+    "BUNDLE_PATH":        ".devbox/virtenv/bundle",
+    "GEM_HOME":           ".devbox/virtenv/gems",
+    "BOOTSNAP_CACHE_DIR": ".devbox/virtenv/bootsnap",
+    "PGHOST":             "/tmp",
+    "PGPORT":             "5432",
+    "PGUSER":             "postgres",
+    "PGPASSWORD":         "postgres",
+    "REDIS_URL":          "redis://localhost:6379",
+    "RAILS_ENV":          "development"
+  },
+  "shell": {
+    "init_hook": [
+      "echo '東方同人音楽流通 - devbox環境'",
+      "mkdir -p .devbox/virtenv/bundle .devbox/virtenv/gems .devbox/virtenv/bootsnap",
+      "export PATH=\"$GEM_HOME/bin:$PATH\"",
+      "if ! command -v bundle &> /dev/null; then gem install bundler; fi"
+    ],
+    "scripts": {
+      "setup":           "bundle config unset bin && bundle install --jobs=4 && yarn install",
+      "server":          "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0",
+      "console":         "bin/rails console",
+      "console:sandbox": "bin/rails console --sandbox",
+      "bundle":          "bundle config unset bin && bundle config set clean true && bundle install --jobs=4",
+      "db:init":         "bin/rails db:drop db:setup",
+      "db:console":      "bin/rails dbconsole",
+      "db:migrate":      "bin/rails db:migrate",
+      "db:migrate:redo": "bin/rails db:migrate:redo",
+      "db:rollback":     "bin/rails db:rollback",
+      "db:seed":         "bin/rails db:seed",
+      "db:backup":       "mkdir -p tmp/data && pg_dump -Fc --no-owner -d touhou_music_discover_development -f tmp/data/dev.bak",
+      "db:restore":      "pg_restore --no-privileges --no-owner --clean -d touhou_music_discover_development ./tmp/data/dev.bak",
+      "test":            "RAILS_ENV=test bin/rails db:test:prepare && RAILS_ENV=test bin/rails test",
+      "rubocop":         "bundle exec rubocop",
+      "rubocop:fix":     "bundle exec rubocop --autocorrect",
+      "rubocop:fix:all": "bundle exec rubocop --autocorrect-all",
+      "upsert:originals":                       "bin/rails runner 'load \"db/seeds/originals_and_songs.rb\"'",
+      "import:fetch_touhou_music":               "bin/rails touhou_music_discover:import:fetch_touhou_music_with_original_songs",
+      "export:touhou_music_with_original_songs": "bin/rails touhou_music_discover:export:touhou_music_with_original_songs",
+      "import:touhou_music_with_original_songs": "bin/rails touhou_music_discover:import:touhou_music_with_original_songs",
+      "export:touhou_music":                     "bin/rails touhou_music_discover:export:touhou_music",
+      "export:touhou_music_slim":                "bin/rails touhou_music_discover:export:touhou_music_slim",
+      "export:touhou_music_album_only":          "bin/rails touhou_music_discover:export:touhou_music_album_only",
+      "export:for_algolia":                      "bin/rails touhou_music_discover:export:for_algolia",
+      "export:to_random_touhou_music":           "bin/rails touhou_music_discover:export:to_random_touhou_music",
+      "change:is_touhou_flag":                   "bin/rails touhou_music_discover:change_is_touhou_flag",
+      "associate:album_with_circle":             "bin/rails touhou_music_discover:associate_album_with_circle",
+      "export:missing_original_songs_albums":    "bin/rails touhou_music_discover:export:missing_original_songs_albums",
+      "export:spotify":                          "bin/rails touhou_music_discover:export:spotify",
+      "export:all":                              "bin/rails touhou_music_discover:export:touhou_music_with_original_songs && bin/rails touhou_music_discover:export:touhou_music && bin/rails touhou_music_discover:export:touhou_music_slim && bin/rails touhou_music_discover:export:touhou_music_album_only && bin/rails touhou_music_discover:export:spotify && bin/rails touhou_music_discover:export:missing_original_songs_albums"
+    }
+  }
+}

@@ -44,3 +44,8 @@ yarn-debug.log*
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# devbox
+.devbox/
+dump.rdb
+bun.lock

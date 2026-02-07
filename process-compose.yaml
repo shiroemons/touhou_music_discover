@@ -1,0 +1,33 @@
+version: "0.5"
+
+# Note: postgresql and redis processes are auto-managed by devbox plugins.
+# See: devbox.json packages and devbox.d/redis/redis.conf
+processes:
+  rails:
+    command: rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0
+    availability:
+      restart: on_failure
+    depends_on:
+      postgresql:
+        condition: process_healthy
+      redis:
+        condition: process_started
+    readiness_probe:
+      http_get:
+        host: localhost
+        scheme: http
+        path: "/up"
+        port: 3000
+      initial_delay_seconds: 5
+      period_seconds: 10
+      timeout_seconds: 5
+      success_threshold: 1
+      failure_threshold: 3
+  js:
+    command: yarn build --watch=forever
+    availability:
+      restart: on_failure
+  css:
+    command: yarn build:css --watch
+    availability:
+      restart: on_failure
