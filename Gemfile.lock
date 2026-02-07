@@ -384,6 +384,7 @@ GEM
 PLATFORMS
   aarch64-linux
   arm64-darwin-24
+  arm64-darwin-25
   x86_64-darwin-20
   x86_64-darwin-21
   x86_64-darwin-22
@@ -424,7 +425,7 @@ DEPENDENCIES
   turbo-rails
 
 RUBY VERSION
-   ruby 3.4.4p34
+   ruby 3.4.8p72
 
 BUNDLED WITH
    2.5.7
