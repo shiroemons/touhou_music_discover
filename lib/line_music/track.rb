@@ -21,7 +21,7 @@ module LineMusic
       @track_number = props['trackNumber']
       @artist_total_count = props['artistTotalCount']
       @listened_count = props['listenedCount']
-      @artists = (props['artists']&.map { |a| Artist.new a })
+      @artists = props['artists']&.map { |a| Artist.new a }
       @album = (Album.new props['album'] if props['album'])
       @has_lyric = props['hasLyric']
       @is_streaming = props['isStreaming']

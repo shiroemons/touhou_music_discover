@@ -42,7 +42,7 @@ module LineMusic
       @is_download = props['isDownload']
       @like_count = props['likeCount']
       @user_action = { is_purchased: props.dig('userAction', 'isPurchased') }
-      @artists = (props['artists']&.map { |a| Artist.new a })
+      @artists = props['artists']&.map { |a| Artist.new a }
 
       super()
     end
