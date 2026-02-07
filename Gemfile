@@ -7,18 +7,18 @@ ruby file: '.ruby-version'
 
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'pg', '~> 1.6'
-gem 'puma', '~> 6.3'
+gem 'puma', '~> 7.0'
 gem 'rails', '~> 8.0.0'
 
 gem 'cssbundling-rails'
 gem 'jsbundling-rails'
-gem 'omniauth-rails_csrf_protection'
+gem 'omniauth-rails_csrf_protection', '~> 2.0'
 gem 'propshaft'
 gem 'stimulus-rails'
 gem 'turbo-rails'
 
 group :development, :test do
-  gem 'byebug', platforms: %i[mri mingw x64_mingw]
+  gem 'debug'
   gem 'dotenv-rails'
 end
 
