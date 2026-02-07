@@ -1,9 +1,9 @@
 services:
-  postgres-16:
-    image: postgres:16-alpine
+  postgres-18:
+    image: postgres:18-alpine
     platform: linux/arm64
     volumes:
-      - postgres-16:/var/lib/postgresql/data
+      - postgres-18:/var/lib/postgresql/data
       - ./tmp:/tmp/data
     environment:
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -32,11 +32,11 @@ services:
       WD_INSTALL_DIR: "/usr/local/bin"
       HISTFILE: "/app/log/.bash_history"
       EDITOR: "vi"
-      DATABASE_URL: "postgres://postgres:postgres@postgres-16:5432"
+      DATABASE_URL: "postgres://postgres:postgres@postgres-18:5432"
       REDIS_URL: "redis://redis:6379/"
       RAILS_MASTER_KEY:
     depends_on:
-      - postgres-16
+      - postgres-18
       - redis
     command: bash -c "bundle install --jobs=4 && rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0"
     expose: ["3000"]
@@ -45,7 +45,7 @@ services:
     working_dir: /app
 
 volumes:
-  postgres-16:
+  postgres-18:
   redis:
   bundle:
   rails_cache:
