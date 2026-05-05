@@ -1,9 +1,15 @@
-<div class="d-flex align-items-center justify-content-between mb-4">
-  <div>
-    <h1 class="h3 mb-1"><%= t('admin.titles.edit', resource: @resource_config.label) %></h1>
-    <p class="text-body-secondary mb-0"><%= @record.to_param %></p>
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= @resource_config.label %></span>
+    <h1><%= t('admin.titles.edit', resource: @resource_config.label) %></h1>
+    <p><%= @record.to_param %></p>
   </div>
-  <%= link_to t('admin.actions.back_to_show'), admin_resource_path(@resource_config.key, @record), class: 'btn admin-btn' %>
+  <div class="admin-page-actions">
+    <%= link_to admin_resource_path(@resource_config.key, @record), class: 'btn admin-btn' do %>
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      <span><%= t('admin.actions.back_to_show') %></span>
+    <% end %>
+  </div>
 </div>
 
 <%= render 'form', record: @record, resource_config: @resource_config, url: admin_resource_path(@resource_config.key, @record), method: :patch %>

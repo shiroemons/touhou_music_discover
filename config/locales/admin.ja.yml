@@ -2,7 +2,24 @@ ja:
   admin:
     dashboard:
       title: "管理画面"
-      description: "Avoに依存しないRails標準の管理画面です。"
+      description: "データ状況と主要アクションをすぐ確認できるRails標準の管理画面です。"
+      total_records: "総レコード数"
+      resource_count: "管理リソース"
+      action_count: "実行可能アクション"
+      latest_update: "最新更新"
+      no_updates: "更新情報なし"
+      overview: "全体状況"
+      top_resources: "件数の多いリソース"
+      recent_resources: "最近更新されたリソース"
+      all_resources: "リソース一覧"
+      count_suffix: "件"
+      actions_suffix: "アクション"
+      updated_at: "最終更新"
+    navigation:
+      groups:
+        master: "マスタ"
+        catalog: "カタログ"
+        streaming: "配信データ"
     titles:
       show: "%{resource} 詳細"
       new: "%{resource} 新規作成"
@@ -106,6 +123,7 @@ ja:
         position: "表示順"
     actions:
       heading: "アクション"
+      primary: "主要操作"
       default_description: "既存のAvoアクションを管理画面から実行します。"
       completed: "完了しました。"
       confirmation: "このアクションはデータ更新や外部API通信を行う可能性があります。内容を確認してから実行してください。"

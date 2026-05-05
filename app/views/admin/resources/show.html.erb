@@ -1,31 +1,41 @@
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-  <div>
-    <h1 class="h3 mb-1"><%= t('admin.titles.show', resource: @resource_config.label) %></h1>
-    <p class="text-body-secondary mb-0"><%= @resource_config.model_class.model_name.human %> / <%= @record.to_param %></p>
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= @resource_config.model_class.model_name.human %></span>
+    <h1><%= t('admin.titles.show', resource: @resource_config.label) %></h1>
+    <p><%= @record.to_param %></p>
   </div>
-  <div class="d-flex gap-2">
-    <%= link_to t('admin.actions.back_to_index'), admin_resources_path(@resource_config.key), class: 'btn admin-btn' %>
-    <%= link_to t('admin.actions.edit'), admin_edit_resource_path(@resource_config.key, @record), class: 'btn admin-btn' %>
+  <div class="admin-page-actions">
+    <%= link_to admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      <span><%= t('admin.actions.back_to_index') %></span>
+    <% end %>
+    <%= link_to admin_edit_resource_path(@resource_config.key, @record), class: 'btn admin-btn-primary' do %>
+      <i class="bi bi-pencil" aria-hidden="true"></i>
+      <span><%= t('admin.actions.edit') %></span>
+    <% end %>
   </div>
 </div>
 
 <% member_actions = admin_resource_actions(@resource_config, record: @record) %>
 <% if member_actions.any? %>
-  <div class="admin-action-bar d-flex flex-wrap align-items-center gap-2 mb-3">
-    <span class="text-body-secondary small"><%= t('admin.actions.heading') %></span>
+  <div class="admin-action-bar">
+    <span><%= t('admin.actions.primary') %></span>
     <% member_actions.each do |action| %>
-      <%= link_to action.label, admin_member_resource_action_path(@resource_config.key, @record, action.key), class: 'btn btn-sm admin-btn' %>
+      <%= link_to admin_member_resource_action_path(@resource_config.key, @record, action.key), class: 'btn btn-sm admin-btn' do %>
+        <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+        <span><%= action.label %></span>
+      <% end %>
     <% end %>
   </div>
 <% end %>
 
-<div class="card">
+<div class="admin-panel admin-table-panel">
   <div class="table-responsive">
-    <table class="table mb-0">
+    <table class="table admin-detail-table mb-0">
       <tbody>
         <% @resource_config.model_class.columns.each do |column| %>
           <tr>
-            <th class="bg-light" style="width: 240px;"><%= @resource_config.attribute_label(column.name) %></th>
+            <th><%= @resource_config.attribute_label(column.name) %></th>
             <td><%= admin_display_value(@resource_config, @record, column.name) %></td>
           </tr>
         <% end %>
@@ -34,39 +44,45 @@
   </div>
 </div>
 
-<div class="mt-3">
-  <%= button_to t('admin.actions.destroy'), admin_resource_path(@resource_config.key, @record), method: :delete, class: 'btn admin-btn-danger', form: { data: { turbo_confirm: t('admin.confirm.destroy') } } %>
+<div class="admin-danger-zone">
+  <%= button_to admin_resource_path(@resource_config.key, @record), method: :delete, class: 'btn admin-btn-danger', form: { data: { turbo_confirm: t('admin.confirm.destroy') } } do %>
+    <i class="bi bi-trash" aria-hidden="true"></i>
+    <span><%= t('admin.actions.destroy') %></span>
+  <% end %>
 </div>
 
-<h2 class="h4 mt-5 mb-3"><%= t('admin.relations.heading') %></h2>
-<div class="row g-3">
+<div class="admin-section-heading">
+  <h2><%= t('admin.relations.heading') %></h2>
+</div>
+<div class="admin-relation-grid">
   <% admin_relation_sections(@resource_config, @record).each do |section| %>
-    <div class="col-12 col-xl-6">
-      <div class="card h-100">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div class="admin-panel admin-relation-card">
+        <div class="admin-relation-header">
           <span class="fw-semibold"><%= section.label %></span>
-          <span class="badge text-bg-secondary"><%= number_with_delimiter(section.count) %></span>
+          <span class="admin-count-pill"><%= number_with_delimiter(section.count) %></span>
         </div>
-        <div class="card-body">
+        <div class="admin-relation-body">
           <% if section.empty? %>
-            <p class="text-body-secondary mb-0"><%= t('admin.relations.empty') %></p>
+            <p class="admin-empty"><%= t('admin.relations.empty') %></p>
           <% else %>
-            <div class="list-group list-group-flush">
+            <div class="admin-list-stack">
               <% section.records.each do |related_record| %>
-                <div class="list-group-item px-0 d-flex justify-content-between gap-3">
+                <div class="admin-resource-row">
                   <span class="text-truncate"><%= admin_record_label(related_record) %></span>
                   <% if section.associated_resource.present? %>
-                    <%= link_to t('admin.actions.show'), admin_resource_path(section.associated_resource.key, related_record), class: 'btn btn-sm admin-btn' %>
+                    <%= link_to admin_resource_path(section.associated_resource.key, related_record), class: 'btn btn-sm admin-btn' do %>
+                      <i class="bi bi-eye" aria-hidden="true"></i>
+                      <span><%= t('admin.actions.show') %></span>
+                    <% end %>
                   <% end %>
                 </div>
               <% end %>
             </div>
             <% if section.more? %>
-              <p class="small text-body-secondary mb-0 mt-2"><%= t('admin.relations.preview_limit', count: Admin::RelationSection::PREVIEW_LIMIT) %></p>
+              <p class="admin-hint"><%= t('admin.relations.preview_limit', count: Admin::RelationSection::PREVIEW_LIMIT) %></p>
             <% end %>
           <% end %>
         </div>
-      </div>
     </div>
   <% end %>
 </div>

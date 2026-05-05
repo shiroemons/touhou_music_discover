@@ -9,7 +9,9 @@ module Admin
 
       assert_response :success
       assert_select 'h1', '管理画面'
-      assert_select 'a[href=?]', '/avo', text: 'Avo'
+      assert_select 'a[href=?]', '/avo', count: 0
+      assert_select '.admin-stat-card', minimum: 4
+      assert_select 'h2', 'リソース一覧'
       assert_select 'a[href=?]', admin_resources_path('albums'), text: 'アルバム'
       assert_select 'a[href=?]', admin_new_resource_path('albums'), text: '新規作成'
     end

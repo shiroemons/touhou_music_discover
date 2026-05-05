@@ -9,25 +9,44 @@
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 </head>
 
-<body class="bg-light admin-shell">
-  <div class="container-fluid">
-    <div class="row min-vh-100">
-      <aside class="col-12 col-lg-2 bg-dark text-white p-3">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-          <%= link_to 'Admin', admin_root_path, class: 'navbar-brand text-white fw-bold' %>
-          <%= link_to 'Avo', '/avo', class: 'btn btn-sm admin-btn-inverse' %>
-        </div>
-        <nav class="nav nav-pills flex-column gap-1">
-          <% admin_resources.each do |resource| %>
-            <%= link_to resource.label, admin_resources_path(resource.key), class: "nav-link #{'active' if params[:resource] == resource.key}" %>
-          <% end %>
-        </nav>
-      </aside>
+<body class="admin-shell">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="admin-brand">
+        <%= link_to admin_root_path, class: 'admin-brand-link' do %>
+          <span class="admin-brand-mark">T</span>
+          <span>
+            <span class="admin-brand-title">Touhou Music</span>
+            <span class="admin-brand-subtitle">Admin Console</span>
+          </span>
+        <% end %>
+      </div>
 
-      <main class="col-12 col-lg-10 p-4">
+      <nav class="admin-nav" aria-label="Admin navigation">
+        <%= link_to admin_root_path, class: "admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
+          <i class="bi bi-speedometer2" aria-hidden="true"></i>
+          <span><%= t('admin.dashboard.title') %></span>
+        <% end %>
+
+        <% admin_resource_groups.each do |group_key, resources| %>
+          <div class="admin-nav-group">
+            <div class="admin-nav-heading"><%= t("admin.navigation.groups.#{group_key}") %></div>
+            <% resources.each do |resource| %>
+              <%= link_to admin_resources_path(resource.key), class: "admin-nav-link #{'active' if params[:resource] == resource.key}" do %>
+                <i class="bi bi-collection" aria-hidden="true"></i>
+                <span><%= resource.label %></span>
+              <% end %>
+            <% end %>
+          </div>
+        <% end %>
+      </nav>
+    </aside>
+
+    <div class="admin-main">
+      <main class="admin-content">
         <% flash.each do |type, message| %>
           <% alert_class = type == 'notice' ? 'alert-success' : 'alert-danger' %>
-          <div class="alert <%= alert_class %>" role="alert"><%= message %></div>
+          <div class="alert <%= alert_class %> admin-flash" role="alert"><%= message %></div>
         <% end %>
         <%= yield %>
       </main>

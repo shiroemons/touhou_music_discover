@@ -1,38 +1,52 @@
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-  <div>
-    <h1 class="h3 mb-1"><%= @resource_config.label %></h1>
-    <p class="text-body-secondary mb-0"><%= @resource_config.description %></p>
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= t('admin.dashboard.all_resources') %></span>
+    <h1><%= @resource_config.label %></h1>
+    <p><%= @resource_config.description %></p>
   </div>
-  <%= link_to t('admin.actions.new_record'), admin_new_resource_path(@resource_config.key), class: 'btn admin-btn' %>
+  <div class="admin-page-actions">
+    <%= link_to admin_new_resource_path(@resource_config.key), class: 'btn admin-btn-primary' do %>
+      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      <span><%= t('admin.actions.new_record') %></span>
+    <% end %>
+  </div>
 </div>
 
 <% collection_actions = admin_resource_actions(@resource_config) %>
 <% if collection_actions.any? %>
-  <div class="admin-action-bar d-flex flex-wrap align-items-center gap-2 mb-3">
-    <span class="text-body-secondary small"><%= t('admin.actions.heading') %></span>
+  <div class="admin-action-bar">
+    <span><%= t('admin.actions.primary') %></span>
     <% collection_actions.each do |action| %>
-      <%= link_to action.label, admin_resource_action_path(@resource_config.key, action.key), class: 'btn btn-sm admin-btn' %>
+      <%= link_to admin_resource_action_path(@resource_config.key, action.key), class: 'btn btn-sm admin-btn' do %>
+        <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+        <span><%= action.label %></span>
+      <% end %>
     <% end %>
   </div>
 <% end %>
 
-<%= form_with url: admin_resources_path(@resource_config.key), method: :get, class: 'row g-2 align-items-center mb-3' do |form| %>
-  <div class="col-12 col-md-6 col-xl-4">
+<%= form_with url: admin_resources_path(@resource_config.key), method: :get, class: 'admin-search-form' do |form| %>
+  <div class="admin-search-input">
+    <i class="bi bi-search" aria-hidden="true"></i>
     <%= form.search_field :q, value: params[:q], placeholder: t('admin.search.placeholder'), class: 'form-control' %>
   </div>
-  <div class="col-auto">
-    <%= form.submit t('admin.search.submit'), class: 'btn admin-btn' %>
+  <div class="admin-search-actions">
+    <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <span><%= t('admin.search.submit') %></span>
+    <% end %>
+    <% if params[:q].present? %>
+      <%= link_to admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+        <i class="bi bi-x-lg" aria-hidden="true"></i>
+        <span><%= t('admin.search.clear') %></span>
+      <% end %>
+    <% end %>
   </div>
-  <% if params[:q].present? %>
-    <div class="col-auto">
-      <%= link_to t('admin.search.clear'), admin_resources_path(@resource_config.key), class: 'btn admin-btn' %>
-    </div>
-  <% end %>
 <% end %>
 
-<div class="card">
+<div class="admin-panel admin-table-panel">
   <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
+    <table class="table table-hover align-middle admin-table mb-0">
       <thead>
         <tr>
           <% @resource_config.index_attributes.each do |attribute| %>
@@ -47,9 +61,17 @@
             <% @resource_config.index_attributes.each do |attribute| %>
               <td><%= admin_display_value(@resource_config, record, attribute) %></td>
             <% end %>
-            <td class="text-end text-nowrap">
-              <%= link_to t('admin.actions.show'), admin_resource_path(@resource_config.key, record), class: 'btn btn-sm admin-btn' %>
-              <%= link_to t('admin.actions.edit'), admin_edit_resource_path(@resource_config.key, record), class: 'btn btn-sm admin-btn' %>
+            <td>
+              <div class="admin-row-actions">
+                <%= link_to admin_resource_path(@resource_config.key, record), class: 'btn btn-sm admin-btn', title: t('admin.actions.show') do %>
+                  <i class="bi bi-eye" aria-hidden="true"></i>
+                  <span><%= t('admin.actions.show') %></span>
+                <% end %>
+                <%= link_to admin_edit_resource_path(@resource_config.key, record), class: 'btn btn-sm admin-btn', title: t('admin.actions.edit') do %>
+                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                  <span><%= t('admin.actions.edit') %></span>
+                <% end %>
+              </div>
             </td>
           </tr>
         <% end %>

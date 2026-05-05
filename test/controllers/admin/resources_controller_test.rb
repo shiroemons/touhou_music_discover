@@ -23,7 +23,7 @@ module Admin
 
       assert_response :success
       assert_select 'h2', '関連'
-      assert_select '.card-header', /楽曲/
+      assert_select '.admin-relation-header', /楽曲/
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
     end
 
@@ -78,7 +78,7 @@ module Admin
       assert_response :success
       assert_select 'h1', '東方フラグを変更'
       assert_select '.alert-warning', /外部API通信/
-      assert_select 'input[type=submit][value=?]', '実行'
+      assert_select 'button[type=submit]', text: '実行'
     end
   end
 end

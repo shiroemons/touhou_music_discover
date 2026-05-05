@@ -2,7 +2,24 @@ en:
   admin:
     dashboard:
       title: "Admin"
-      description: "A Rails-native admin interface that does not depend on Avo."
+      description: "A Rails-native admin interface for checking data status and key actions quickly."
+      total_records: "Total records"
+      resource_count: "Resources"
+      action_count: "Available actions"
+      latest_update: "Latest update"
+      no_updates: "No updates"
+      overview: "Overview"
+      top_resources: "Largest resources"
+      recent_resources: "Recently updated resources"
+      all_resources: "All resources"
+      count_suffix: "records"
+      actions_suffix: "actions"
+      updated_at: "Last updated"
+    navigation:
+      groups:
+        master: "Master"
+        catalog: "Catalog"
+        streaming: "Streaming data"
     titles:
       show: "%{resource} Details"
       new: "New %{resource}"
@@ -106,6 +123,7 @@ en:
         position: "Position"
     actions:
       heading: "Actions"
+      primary: "Primary actions"
       default_description: "Run an existing Avo action from this admin interface."
       completed: "Completed."
       confirmation: "This action may update data or call external APIs. Review the details before running it."

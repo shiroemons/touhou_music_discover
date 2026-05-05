@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 ja:
+  time:
+    formats:
+      short: "%m/%d %H:%M"
   errors:
     messages:
       taken: "はすでに存在します"

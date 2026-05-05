@@ -7,7 +7,7 @@ module Admin
       value = record.public_send(attribute) if record.respond_to?(attribute)
       field_id = "#{resource_config.key}_#{attribute}"
 
-      content_tag(:div, class: 'mb-3') do
+      content_tag(:div, class: 'admin-field') do
         safe_join(
           [
             form.label(attribute, resource_config.attribute_label(attribute), class: 'form-label', for: field_id),

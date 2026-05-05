@@ -9,16 +9,22 @@
   </div>
 <% end %>
 
-<div class="card">
-  <div class="card-body">
+<div class="admin-panel admin-form-panel">
+  <div class="admin-form-body">
     <%= form_with scope: :record, url:, method: do |form| %>
       <% resource_config.attributes_for_form.each do |attribute| %>
         <%= admin_form_field(form, resource_config, record, attribute) %>
       <% end %>
 
-      <div class="d-flex gap-2 pt-2">
-        <%= form.submit t('admin.actions.save'), class: 'btn admin-btn' %>
-        <%= link_to t('admin.actions.cancel'), record.persisted? ? admin_resource_path(resource_config.key, record) : admin_resources_path(resource_config.key), class: 'btn admin-btn' %>
+      <div class="admin-form-actions">
+        <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+          <i class="bi bi-check-lg" aria-hidden="true"></i>
+          <span><%= t('admin.actions.save') %></span>
+        <% end %>
+        <%= link_to record.persisted? ? admin_resource_path(resource_config.key, record) : admin_resources_path(resource_config.key), class: 'btn admin-btn' do %>
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+          <span><%= t('admin.actions.cancel') %></span>
+        <% end %>
       </div>
     <% end %>
   </div>

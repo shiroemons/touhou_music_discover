@@ -1,20 +1,27 @@
-<div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-  <div>
-    <h1 class="h3 mb-1"><%= @action.label %></h1>
-    <p class="text-body-secondary mb-0"><%= @action.description %></p>
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= @resource_config.label %></span>
+    <h1><%= @action.label %></h1>
+    <p><%= @action.description %></p>
   </div>
-  <%= link_to t('admin.actions.cancel'), @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' %>
+  <div class="admin-page-actions">
+    <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+      <span><%= t('admin.actions.cancel') %></span>
+    <% end %>
+  </div>
 </div>
 
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning admin-action-warning" role="alert">
+  <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
   <%= t('admin.actions.confirmation') %>
 </div>
 
-<div class="card">
-  <div class="card-body">
+<div class="admin-panel admin-form-panel">
+  <div class="admin-form-body">
     <%= form_with scope: :fields, url: @record.present? ? admin_member_resource_action_path(@resource_config.key, @record, @action.key) : admin_resource_action_path(@resource_config.key, @action.key), method: :post, multipart: true do |form| %>
       <% @action.fields.each do |field| %>
-        <div class="mb-3">
+        <div class="admin-field">
           <%= form.label field.name, field.name.to_s.humanize, class: 'form-label' %>
           <% if field.type == :file %>
             <%= form.file_field field.name, class: 'form-control', required: field.required %>
@@ -27,9 +34,15 @@
         </div>
       <% end %>
 
-      <div class="d-flex gap-2">
-        <%= form.submit t('admin.actions.run'), class: 'btn admin-btn-danger', data: { turbo_confirm: t('admin.actions.confirmation') } %>
-        <%= link_to t('admin.actions.cancel'), @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' %>
+      <div class="admin-form-actions">
+        <%= form.button type: :submit, class: 'btn admin-btn-danger', data: { turbo_confirm: t('admin.actions.confirmation') } do %>
+          <i class="bi bi-play-fill" aria-hidden="true"></i>
+          <span><%= t('admin.actions.run') %></span>
+        <% end %>
+        <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+          <span><%= t('admin.actions.cancel') %></span>
+        <% end %>
       </div>
     <% end %>
   </div>
