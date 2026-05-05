@@ -40,6 +40,7 @@ class YtmusicAlbumResource < Avo::BaseResource
   field :ytmusic_tracks, as: :has_many, searchable: true
 
   action FetchYtmusicAlbum
+  action ProcessYtmusicJanToAlbumBrowseIds
   action UpdateYtmusicAlbumTrack
   action UpdateYtmusicAlbumPayload
   action UpdateAllYtmusicAlbumPayloads
