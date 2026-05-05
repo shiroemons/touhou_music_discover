@@ -570,6 +570,50 @@
   margin-bottom: 0.28rem;
 }
 
+.admin-view-mode-bar {
+  align-items: center;
+  display: flex;
+  gap: 0.7rem;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.admin-view-mode-label {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.admin-view-mode-options {
+  align-items: center;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+}
+
+.admin-view-mode-link {
+  align-items: center;
+  border-radius: 6px;
+  color: var(--admin-muted);
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 800;
+  gap: 0.35rem;
+  min-height: 2.05rem;
+  padding: 0.35rem 0.7rem;
+  text-decoration: none;
+}
+
+.admin-view-mode-link:hover,
+.admin-view-mode-link:focus,
+.admin-view-mode-link.is-active {
+  background: var(--admin-primary);
+  color: #fff;
+}
+
 .admin-shell .form-control:focus,
 .admin-shell .form-select:focus {
   border-color: var(--admin-primary);
@@ -950,6 +994,25 @@
   opacity: 0.62;
 }
 
+.admin-infinite-scroll-footer {
+  align-items: center;
+  display: grid;
+  justify-items: center;
+  min-height: 4rem;
+  padding: 1rem 0;
+}
+
+.admin-infinite-scroll-status {
+  color: var(--admin-muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.admin-infinite-scroll-sentinel {
+  height: 1px;
+  width: 100%;
+}
+
 @media (max-width: 1199.98px) {
   .admin-layout {
     grid-template-columns: 14.5rem minmax(0, 1fr);
@@ -1003,6 +1066,7 @@
   .admin-page-header,
   .admin-search-form,
   .admin-filter-bar,
+  .admin-view-mode-bar,
   .admin-pagination,
   .admin-resource-item {
     align-items: stretch;
@@ -1036,6 +1100,15 @@
 
   .admin-row-actions {
     justify-content: flex-start;
+  }
+
+  .admin-view-mode-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .admin-view-mode-link {
+    justify-content: center;
   }
 
   .admin-pagination-controls {

@@ -26,6 +26,7 @@
 <% end %>
 
 <%= form_with url: admin_resources_path(@resource_config.key), method: :get, class: 'admin-search-form' do |form| %>
+  <%= form.hidden_field :scroll, value: 'infinite' if admin_infinite_scroll? %>
   <% if @filters.any? %>
     <div class="admin-filter-bar">
       <span class="admin-filter-heading"><%= t('admin.filters.heading') %></span>
@@ -52,7 +53,7 @@
       <span><%= t('admin.search.submit') %></span>
     <% end %>
     <% if admin_active_filters?(@resource_config, @active_filters) %>
-      <%= link_to admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+      <%= link_to admin_clear_filters_path(@resource_config), class: 'btn admin-btn' do %>
         <i class="bi bi-x-lg" aria-hidden="true"></i>
         <span><%= t('admin.search.clear') %></span>
       <% end %>
@@ -60,8 +61,25 @@
   </div>
 <% end %>
 
-<div class="admin-panel admin-table-panel">
-  <div class="table-responsive">
+<div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
+  <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
+  <div class="admin-view-mode-options">
+    <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'true' } do %>
+      <i class="bi bi-list-ol" aria-hidden="true"></i>
+      <span><%= t('admin.scroll_mode.pagination') %></span>
+    <% end %>
+    <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'true' : nil } do %>
+      <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
+      <span><%= t('admin.scroll_mode.infinite') %></span>
+    <% end %>
+  </div>
+</div>
+
+<div class="admin-panel admin-table-panel"
+     data-controller="<%= 'admin-infinite-scroll' if admin_infinite_scroll? %>"
+     data-admin-infinite-scroll-enabled-value="<%= admin_infinite_scroll? %>"
+     data-admin-infinite-scroll-next-url-value="<%= admin_infinite_scroll_next_url(@pagy) %>">
+  <div class="table-responsive" data-admin-infinite-scroll-target="container">
     <table class="table table-hover align-middle admin-table mb-0">
       <thead>
         <tr>
@@ -71,7 +89,7 @@
           <th class="text-end"><%= t('admin.table.actions') %></th>
         </tr>
       </thead>
-      <tbody>
+      <tbody data-admin-infinite-scroll-target="rows">
         <% @records.each do |record| %>
           <tr>
             <% @resource_config.index_attributes.each do |attribute| %>
@@ -98,7 +116,24 @@
         <% end %>
       </tbody>
     </table>
+    <% if admin_infinite_scroll? && @pagy.next.present? %>
+      <div class="admin-infinite-scroll-sentinel" data-admin-infinite-scroll-target="sentinel" aria-hidden="true"></div>
+    <% end %>
   </div>
+  <% if admin_infinite_scroll? %>
+    <div class="admin-infinite-scroll-footer">
+      <div class="admin-infinite-scroll-status"
+           data-admin-infinite-scroll-target="status"
+           data-loading-text="<%= t('admin.scroll_mode.loading') %>"
+           data-ready-text="<%= t('admin.scroll_mode.ready') %>"
+           data-complete-text="<%= t('admin.scroll_mode.complete') %>"
+           data-error-text="<%= t('admin.scroll_mode.error') %>">
+        <%= @pagy.next.present? ? t('admin.scroll_mode.ready') : t('admin.scroll_mode.complete') %>
+      </div>
+    </div>
+  <% end %>
 </div>
 
-<%= admin_pagination(@pagy) %>
+<% unless admin_infinite_scroll? %>
+  <%= admin_pagination(@pagy) %>
+<% end %>

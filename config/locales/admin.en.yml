@@ -38,6 +38,14 @@ en:
       next: "Next"
       last: "Last"
       go_to: "Go to page %{page}"
+    scroll_mode:
+      label: "Display mode"
+      pagination: "Pagination"
+      infinite: "Infinite scroll"
+      ready: "Scroll down to load more."
+      loading: "Loading..."
+      complete: "All records loaded."
+      error: "Could not load more records."
     filters:
       heading: "Filters"
       all: "All"

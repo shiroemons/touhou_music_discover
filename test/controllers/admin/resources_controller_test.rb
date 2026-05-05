@@ -473,10 +473,31 @@ module Admin
       get admin_resources_url('circles')
 
       assert_response :success
+      assert_select '.admin-view-mode-label', text: '表示方式'
+      assert_select 'a.admin-view-mode-link.is-active', text: 'ページ送り'
+      assert_select 'a[href*=?].admin-view-mode-link', 'scroll=infinite', text: '無限スクロール'
       assert_select 'nav.admin-pagination[aria-label=?]', 'ページ送り'
       assert_select '.admin-pagination-summary', /件中/
       assert_select '.admin-pagination-link.is-current', text: '1'
       assert_select 'a.admin-pagination-link[aria-label=?]', '2ページへ移動'
+    end
+
+    test 'supports infinite scroll mode on admin index' do
+      (Admin::Resource::DEFAULT_ITEMS + 1).times do |index|
+        Circle.create!(name: "Infinite Scroll Circle #{index}")
+      end
+
+      get admin_resources_url('circles'), params: { scroll: 'infinite' }
+
+      assert_response :success
+      assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'
+      assert_select 'a.admin-view-mode-link.is-active', text: '無限スクロール'
+      assert_select '.admin-table-panel[data-controller=?]', 'admin-infinite-scroll'
+      assert_select '.admin-table-panel[data-admin-infinite-scroll-next-url-value*=?]', 'scroll=infinite'
+      assert_select '.admin-table-panel[data-admin-infinite-scroll-next-url-value*=?]', 'page=2'
+      assert_select '.admin-infinite-scroll-status', text: '下までスクロールすると追加で読み込みます。'
+      assert_select '.admin-infinite-scroll-sentinel'
+      assert_select 'nav.admin-pagination', 0
     end
 
     test 'filters streaming tracks by touhou flag' do

@@ -125,6 +125,29 @@ module Admin
       params[:q].present? || resource_config.non_default_filters?(active_filters)
     end
 
+    def admin_infinite_scroll?
+      params[:scroll].to_s == 'infinite'
+    end
+
+    def admin_scroll_mode_path(mode)
+      query = request.query_parameters.merge(page: nil)
+      query[:scroll] = mode.to_s == 'infinite' ? 'infinite' : nil
+
+      url_for(query.compact)
+    end
+
+    def admin_clear_filters_path(resource_config)
+      query = admin_infinite_scroll? ? { scroll: 'infinite' } : {}
+
+      admin_resources_path(resource_config.key, query)
+    end
+
+    def admin_infinite_scroll_next_url(pagy)
+      return if pagy.next.blank?
+
+      url_for(request.query_parameters.merge(page: pagy.next, scroll: 'infinite'))
+    end
+
     def admin_pagination(pagy)
       return if pagy.pages <= 1
 
