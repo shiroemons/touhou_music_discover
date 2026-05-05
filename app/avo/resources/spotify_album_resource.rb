@@ -5,6 +5,9 @@ class SpotifyAlbumResource < Avo::BaseResource
   self.translation_key = 'avo.resource_translations.spotify_album'
   self.includes = [:spotify_tracks, { album: :circles }]
   self.record_selector = false
+  self.resolve_query_scope = lambda { |model_class:|
+    model_class.active
+  }
   self.search_query = lambda {
     scope.ransack(name_cont: params[:q], album_circles_name_cont: params[:q], m: 'or').result(distinct: false)
   }
@@ -28,6 +31,7 @@ class SpotifyAlbumResource < Avo::BaseResource
   field :label, as: :text, hide_on: [:index], readonly: true
   field :release_date, as: :date, format: 'yyyy-LL-dd', sortable: true, readonly: true
   field :total_tracks, as: :number, sortable: true, readonly: true
+  field :active, as: :boolean, sortable: true
   field :spotify_id, as: :text, required: true
   field :url, as: :text, format_using: -> { link_to(value, value, target: '_blank', rel: 'noopener') if value.present? }, hide_on: [:forms]
   field :payload, as: :code, language: 'javascript', only_on: :edit, readonly: true
@@ -39,4 +43,6 @@ class SpotifyAlbumResource < Avo::BaseResource
 
   action FetchSpotifyAlbum
   action UpdateSpotifyAlbum
+
+  filter SpotifyAlbumDisplayFilter
 end
