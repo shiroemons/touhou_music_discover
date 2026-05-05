@@ -35,22 +35,33 @@ module Admin
       private
 
       def build_resources
+        album_preview_includes = %i[circles spotify_album apple_music_album ytmusic_album line_music_album]
+        track_preview_includes = [
+          { album: album_preview_includes },
+          :original_songs,
+          { spotify_tracks: :spotify_album },
+          { apple_music_tracks: :apple_music_album },
+          { ytmusic_tracks: :ytmusic_album },
+          { line_music_tracks: :line_music_album }
+        ]
+
         [
           new(
             key: 'albums',
             model_class_name: 'Album',
-            index_attributes: %i[jan_code is_touhou circle_name spotify_album_name apple_music_album_name],
+            index_attributes: %i[spotify_album_name apple_music_album_name circle_name jan_code is_touhou],
             form_attributes: %i[jan_code is_touhou],
             search_attributes: %i[jan_code],
-            includes: %i[circles spotify_album apple_music_album],
+            includes: album_preview_includes,
             action_class_names: %w[BulkRetrieval ChangeTouhouFlag SetCircles]
           ),
           new(
             key: 'tracks',
             model_class_name: 'Track',
-            index_attributes: %i[jan_code isrc is_touhou album_name original_songs_count],
+            index_attributes: %i[name album_name circle_name jan_code isrc is_touhou original_songs_count],
             form_attributes: %i[jan_code isrc is_touhou],
             search_attributes: %i[jan_code isrc],
+            includes: track_preview_includes,
             action_class_names: %w[ExportMissingOriginalSongsTracks ImportTracksWithOriginalSongs ChangeTouhouFlag]
           ),
           new(
@@ -84,26 +95,32 @@ module Admin
           new(
             key: 'spotify_albums',
             model_class_name: 'SpotifyAlbum',
-            index_attributes: %i[name spotify_id album_id active release_date total_tracks],
+            index_attributes: %i[name circle_name album_id active release_date total_tracks spotify_id],
             form_attributes: %i[album_id spotify_id album_type name label url release_date total_tracks active payload],
             search_attributes: %i[name spotify_id label],
-            includes: %i[album],
+            includes: [{ album: album_preview_includes }],
             action_class_names: %w[FetchSpotifyAlbum FetchMissingSpotifyAlbumByAppleMusicJan UpdateSpotifyAlbum]
           ),
           new(
             key: 'spotify_tracks',
             model_class_name: 'SpotifyTrack',
-            index_attributes: %i[name spotify_id album_id track_id spotify_album_id disc_number track_number],
+            index_attributes: %i[name circle_name album_id track_id spotify_album_id disc_number track_number spotify_id],
             form_attributes: %i[album_id track_id spotify_album_id spotify_id name label url release_date disc_number track_number duration_ms payload],
             search_attributes: %i[name spotify_id label],
+            includes: [
+              { album: album_preview_includes },
+              :spotify_album,
+              { track: track_preview_includes }
+            ],
             action_class_names: %w[UpdateSpotifyTrack]
           ),
           new(
             key: 'apple_music_albums',
             model_class_name: 'AppleMusicAlbum',
-            index_attributes: %i[name apple_music_id album_id release_date total_tracks],
+            index_attributes: %i[name circle_name album_id release_date total_tracks apple_music_id],
             form_attributes: %i[album_id apple_music_id name label url release_date total_tracks payload],
             search_attributes: %i[name apple_music_id label],
+            includes: [{ album: album_preview_includes }],
             action_class_names: %w[
               FetchAppleMusicAlbum
               FetchAppleMusicVariousArtistsAlbum
@@ -114,33 +131,45 @@ module Admin
           new(
             key: 'apple_music_tracks',
             model_class_name: 'AppleMusicTrack',
-            index_attributes: %i[name apple_music_id album_id track_id apple_music_album_id disc_number track_number],
+            index_attributes: %i[name artist_name composer_name circle_name album_id track_id apple_music_album_id disc_number track_number apple_music_id],
             form_attributes: %i[album_id track_id apple_music_album_id apple_music_id name label artist_name composer_name url release_date disc_number track_number duration_ms payload],
             search_attributes: %i[name apple_music_id artist_name composer_name label],
+            includes: [
+              { album: album_preview_includes },
+              :apple_music_album,
+              { track: track_preview_includes }
+            ],
             action_class_names: %w[FetchAppleMusicTrack FetchAppleMusicTrackByIsrc UpdateAppleMusicTrack]
           ),
           new(
             key: 'line_music_albums',
             model_class_name: 'LineMusicAlbum',
-            index_attributes: %i[name line_music_id album_id release_date total_tracks],
+            index_attributes: %i[name circle_name album_id release_date total_tracks line_music_id],
             form_attributes: %i[album_id line_music_id name url release_date total_tracks payload],
             search_attributes: %i[name line_music_id],
+            includes: [{ album: album_preview_includes }],
             action_class_names: %w[FetchLineMusicAlbum UpdateLineMusicAlbum ProcessLineMusicJanToAlbumIds]
           ),
           new(
             key: 'line_music_tracks',
             model_class_name: 'LineMusicTrack',
-            index_attributes: %i[name line_music_id album_id track_id line_music_album_id disc_number track_number],
+            index_attributes: %i[name circle_name album_id track_id line_music_album_id disc_number track_number line_music_id],
             form_attributes: %i[album_id track_id line_music_album_id line_music_id name url disc_number track_number payload],
             search_attributes: %i[name line_music_id],
+            includes: [
+              { album: album_preview_includes },
+              :line_music_album,
+              { track: track_preview_includes }
+            ],
             action_class_names: %w[FetchLineMusicTrack UpdateLineMusicTrack]
           ),
           new(
             key: 'ytmusic_albums',
             model_class_name: 'YtmusicAlbum',
-            index_attributes: %i[name browse_id album_id release_year total_tracks],
+            index_attributes: %i[name circle_name album_id release_year total_tracks browse_id],
             form_attributes: %i[album_id browse_id name url playlist_url release_year total_tracks payload],
             search_attributes: %i[name browse_id],
+            includes: [{ album: album_preview_includes }],
             action_class_names: %w[
               FetchYtmusicAlbum
               ProcessYtmusicJanToAlbumBrowseIds
@@ -152,9 +181,14 @@ module Admin
           new(
             key: 'ytmusic_tracks',
             model_class_name: 'YtmusicTrack',
-            index_attributes: %i[name video_id playlist_id album_id track_id ytmusic_album_id track_number],
+            index_attributes: %i[name circle_name album_id track_id ytmusic_album_id track_number video_id playlist_id],
             form_attributes: %i[album_id track_id ytmusic_album_id video_id playlist_id name url track_number payload],
             search_attributes: %i[name video_id playlist_id],
+            includes: [
+              { album: album_preview_includes },
+              :ytmusic_album,
+              { track: track_preview_includes }
+            ],
             action_class_names: %w[FetchYtmusicTrack]
           ),
           new(

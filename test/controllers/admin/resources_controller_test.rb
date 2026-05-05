@@ -11,6 +11,10 @@ module Admin
       assert_select 'h1', 'アルバム'
       assert_select 'th', 'JANコード'
       assert_select 'th', '東方'
+      assert_equal(
+        ['Spotifyアルバム名', 'Apple Musicアルバム名', 'サークル', 'JANコード', '東方', '操作'],
+        css_select('thead th').map { it.text.squish }
+      )
       assert_select 'a[href=?]', admin_resource_action_path('albums', 'change_touhou_flag'), text: '東方フラグを変更'
       assert_select 'table'
     end
@@ -25,6 +29,48 @@ module Admin
       assert_select 'h2', '関連'
       assert_select '.admin-relation-header', /楽曲/
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
+    end
+
+    test 'shows artwork and readable association labels instead of raw foreign keys' do
+      circle = Circle.create!(name: 'Admin Circle')
+      album = Album.create!(jan_code: '9888888888888')
+      album.circles << circle
+      track = Track.create!(album:, isrc: 'JPABC260004')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'spotify-admin-artwork',
+        album_type: 'album',
+        name: 'Admin Artwork Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: { 'images' => [{ 'url' => 'https://example.test/cover.jpg' }] }
+      )
+      SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id: 'spotify-admin-track',
+        name: 'Admin Track',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        payload: {}
+      )
+
+      get admin_resources_url('spotify_tracks')
+
+      assert_response :success
+      assert_equal(
+        ['名前', 'サークル', 'アルバムID', '楽曲ID', 'SpotifyアルバムID', 'ディスク番号', 'トラック番号', 'Spotify ID', '操作'],
+        css_select('thead th').map { it.text.squish }
+      )
+      assert_select '.admin-value-with-thumb img[src=?][alt=?]', 'https://example.test/cover.jpg', 'Admin Track'
+      assert_select '.admin-reference-card img', 0
+      assert_select 'td', text: 'Admin Circle'
+      assert_select 'a[href=?].admin-reference-card .admin-reference-label', admin_resource_path('albums', album), text: album.jan_code
+      assert_select 'a[href=?].admin-reference-card .admin-reference-label', admin_resource_path('tracks', track), text: 'Admin Track'
+      assert_select 'a[href=?].admin-reference-card .admin-reference-meta', admin_resource_path('tracks', track), text: /#{track.isrc}/
+      assert_select 'a[href=?].admin-reference-card .admin-reference-label', admin_resource_path('spotify_albums', spotify_album), text: spotify_album.name
     end
 
     test 'creates updates and destroys a circle' do

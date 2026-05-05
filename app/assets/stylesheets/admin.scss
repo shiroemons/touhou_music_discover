@@ -574,6 +574,60 @@
   min-width: 10rem;
 }
 
+.admin-reference-card,
+.admin-value-with-thumb {
+  align-items: center;
+  color: var(--admin-text);
+  display: inline-flex;
+  gap: 0.6rem;
+  max-width: 24rem;
+  min-width: 0;
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+.admin-reference-card {
+  max-width: 18rem;
+}
+
+.admin-reference-card:hover,
+.admin-reference-card:focus {
+  color: var(--admin-primary);
+}
+
+.admin-record-thumb {
+  aspect-ratio: 1;
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  flex: 0 0 2.25rem;
+  height: 2.25rem;
+  object-fit: cover;
+  width: 2.25rem;
+}
+
+.admin-reference-copy,
+.admin-value-label {
+  display: grid;
+  min-width: 0;
+}
+
+.admin-reference-label,
+.admin-value-label {
+  font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-reference-meta {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .admin-detail-table th {
   background: var(--admin-surface-muted);
   color: var(--admin-muted);

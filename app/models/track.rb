@@ -28,6 +28,10 @@ class Track < ApplicationRecord
     album.spotify_album&.name || album.apple_music_album&.name
   end
 
+  def image_url
+    spotify_tracks.first&.image_url || apple_music_tracks.first&.image_url || ytmusic_tracks.first&.image_url || line_music_tracks.first&.image_url || album.image_url
+  end
+
   def name
     spotify_tracks.first&.name || apple_music_tracks.first&.name
   end

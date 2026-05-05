@@ -45,6 +45,10 @@ class Album < ApplicationRecord
     circles&.map(&:name)&.join(' / ')
   end
 
+  def image_url
+    spotify_album&.image_url || apple_music_album&.image_url || ytmusic_album&.image_url || line_music_album&.image_url
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
     ['jan_code']
   end

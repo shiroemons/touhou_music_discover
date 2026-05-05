@@ -19,8 +19,8 @@ module Admin
 
     def admin_display_value(resource_config, record, attribute)
       value = resource_config.value_for(record, attribute)
-      linked_value = admin_linked_record_value(attribute, value)
-      return linked_value if linked_value
+      reference_record = admin_reference_record(record, attribute, value)
+      return admin_reference_value(reference_record) if reference_record
 
       case value
       when TrueClass
@@ -34,7 +34,7 @@ module Admin
       when Date
         value.iso8601
       else
-        admin_scalar_value(attribute, value)
+        admin_scalar_value(record, attribute, value)
       end
     end
 
@@ -60,16 +60,70 @@ module Admin
 
     private
 
-    def admin_linked_record_value(attribute, value)
-      return if value.blank?
+    def admin_reference_record(record, attribute, value)
+      return if value.blank? || !attribute.to_s.end_with?('_id')
 
       association = attribute.to_s.delete_suffix('_id')
-      associated_resource = Admin::Resource.all.find do |resource|
-        resource.model_class.name.underscore == association
-      end
-      return if associated_resource.blank?
+      reflection = record.class.reflect_on_association(association.to_sym)
+      return unless reflection&.belongs_to? && record.respond_to?(association)
 
-      link_to(value, admin_resource_path(associated_resource.key, value))
+      associated_record = record.public_send(association)
+      return associated_record if associated_record.present?
+
+      reflection.klass.find_by(id: value)
+    end
+
+    def admin_reference_value(record)
+      resource = Admin::Resource.find_by_model_class(record.class)
+      content = admin_reference_content(record)
+
+      return tag.span(content, class: 'admin-reference-card') if resource.blank?
+
+      link_to(content, admin_resource_path(resource.key, record), class: 'admin-reference-card')
+    end
+
+    def admin_reference_content(record)
+      label = admin_record_label(record)
+
+      tag.span(class: 'admin-reference-copy') do
+        safe_join(
+          [
+            tag.span(label, class: 'admin-reference-label'),
+            tag.span(admin_reference_meta(record, label), class: 'admin-reference-meta')
+          ].compact
+        )
+      end
+    end
+
+    def admin_record_thumbnail(record, label: admin_record_label(record))
+      image_url = admin_record_image_url(record)
+      return if image_url.blank?
+
+      image_tag(image_url, alt: label, class: 'admin-record-thumb', loading: 'lazy')
+    end
+
+    def admin_record_image_url(record)
+      return unless record.respond_to?(:image_url)
+
+      record.image_url.presence
+    rescue StandardError
+      nil
+    end
+
+    def admin_reference_meta(record, label)
+      values = %i[jan_code isrc spotify_id apple_music_id line_music_id browse_id video_id code]
+               .filter_map { |attribute| admin_record_meta_value(record, attribute) }
+               .reject { |value| value == label }
+               .first(2)
+      return if values.empty?
+
+      values.join(' / ')
+    end
+
+    def admin_record_meta_value(record, attribute)
+      return unless record.respond_to?(attribute)
+
+      record.public_send(attribute).presence&.to_s
     end
 
     def admin_input_for(form, column, attribute, value, field_id)
@@ -99,11 +153,27 @@ module Admin
       end
     end
 
-    def admin_scalar_value(attribute, value)
+    def admin_scalar_value(record, attribute, value)
       return tag.span(t('admin.shared.blank'), class: 'text-body-secondary') if value.blank?
       return link_to(value, value, target: '_blank', rel: 'noopener') if attribute.to_s.end_with?('url') && value.to_s.start_with?('http')
+      return admin_value_with_thumbnail(record, value) if admin_thumbnail_attribute?(attribute) && admin_record_image_url(record).present?
 
       value.to_s
+    end
+
+    def admin_thumbnail_attribute?(attribute)
+      attribute.to_s.in?(%w[name title album_name spotify_album_name apple_music_album_name])
+    end
+
+    def admin_value_with_thumbnail(record, value)
+      tag.span(class: 'admin-value-with-thumb') do
+        safe_join(
+          [
+            admin_record_thumbnail(record, label: value.to_s),
+            tag.span(value.to_s, class: 'admin-value-label')
+          ]
+        )
+      end
     end
   end
 end
