@@ -42,6 +42,7 @@ class SpotifyAlbumResource < Avo::BaseResource
   field :spotify_tracks, as: :has_many, searchable: true
 
   action FetchSpotifyAlbum
+  action FetchMissingSpotifyAlbumByAppleMusicJan
   action UpdateSpotifyAlbum
 
   filter SpotifyAlbumDisplayFilter

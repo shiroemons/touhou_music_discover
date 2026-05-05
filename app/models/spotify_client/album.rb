@@ -3,6 +3,9 @@
 module SpotifyClient
   class Album
     LIMIT = 50
+    JAN_SEARCH_LIMIT = 10
+    DEFAULT_JAN_SEARCH_SLEEP = 1
+    DEFAULT_RATE_LIMIT_MAX_WAIT = 60
     KEYWORD = 'label:東方同人音楽流通'
 
     def self.fetch_touhou_albums
@@ -70,6 +73,55 @@ module SpotifyClient
       end
     end
 
+    def self.fetch_missing_albums_by_apple_music_jan(
+      max_retry_after: DEFAULT_RATE_LIMIT_MAX_WAIT,
+      sleep_interval: DEFAULT_JAN_SEARCH_SLEEP,
+      logger: Rails.logger,
+      progress_callback: nil
+    )
+      result = {
+        total: missing_spotify_albums_with_apple_music.count,
+        processed: 0,
+        created: 0,
+        skipped: 0,
+        missing: 0,
+        errors: 0,
+        rate_limited: false,
+        retry_after: nil
+      }
+
+      missing_spotify_albums_with_apple_music.find_each do |album|
+        if SpotifyAlbum.unscoped.exists?(album_id: album.id)
+          result[:skipped] += 1
+          record_jan_search_progress(result, album, progress_callback)
+          next
+        end
+
+        begin
+          status = with_spotify_retry(max_retry_after:) do
+            search_and_save_album_by_jan(album, logger:)
+          end
+
+          result[status] += 1
+        rescue RestClient::TooManyRequests => e
+          retry_after = retry_after_seconds(e)
+          result[:rate_limited] = true
+          result[:retry_after] = retry_after
+          logger.warn "Spotify API rate limited while searching JAN #{album.jan_code}. Retry-After: #{retry_after || 'unknown'} seconds"
+          break
+        rescue StandardError => e
+          result[:errors] += 1
+          logger.error "Spotify JAN search failed for JAN #{album.jan_code}: #{e.class}: #{e.message}"
+        ensure
+          record_jan_search_progress(result, album, progress_callback)
+        end
+
+        sleep sleep_interval if sleep_interval.to_f.positive?
+      end
+
+      result
+    end
+
     def self.fetch_albums(s_artist)
       s_albums = []
       album_offset = 0
@@ -115,5 +167,69 @@ module SpotifyClient
         )
       end
     end
+
+    def self.missing_spotify_albums_with_apple_music
+      ::Album.joins(:apple_music_album)
+             .where.missing(:spotify_albums)
+             .includes(:apple_music_album)
+    end
+    private_class_method :missing_spotify_albums_with_apple_music
+
+    def self.search_and_save_album_by_jan(album, logger:)
+      s_album = RSpotify::Album.search("upc:#{album.jan_code}", limit: JAN_SEARCH_LIMIT, market: 'JP')
+                               .find { |candidate| candidate.external_ids&.fetch('upc', nil) == album.jan_code }
+      return :missing if s_album.blank?
+
+      if s_album.label != ::Album::TOUHOU_MUSIC_LABEL
+        logger.info "Spotify album skipped because label is not #{::Album::TOUHOU_MUSIC_LABEL}: JAN #{album.jan_code}, Spotify ID #{s_album.id}, label #{s_album.label}"
+        return :missing
+      end
+
+      existing_spotify_album = SpotifyAlbum.unscoped.find_by(spotify_id: s_album.id)
+      if existing_spotify_album.present?
+        return :skipped if existing_spotify_album.album_id == album.id
+
+        logger.warn "Spotify album ID #{s_album.id} is already linked to another album: JAN #{album.jan_code}, existing album_id #{existing_spotify_album.album_id}"
+        return :errors
+      end
+
+      process_album(s_album)
+      spotify_album = SpotifyAlbum.unscoped.find_by(spotify_id: s_album.id)
+      return :created if spotify_album&.album_id == album.id
+
+      logger.warn "Spotify album was not saved for JAN #{album.jan_code}: Spotify ID #{s_album.id}"
+      :errors
+    end
+    private_class_method :search_and_save_album_by_jan
+
+    def self.with_spotify_retry(max_retry_after:, max_attempts: 3)
+      attempts = 0
+
+      begin
+        yield
+      rescue RestClient::TooManyRequests => e
+        attempts += 1
+        retry_after = retry_after_seconds(e)
+        raise if retry_after.blank? || retry_after > max_retry_after || attempts >= max_attempts
+
+        sleep retry_after
+        retry
+      end
+    end
+    private_class_method :with_spotify_retry
+
+    def self.retry_after_seconds(error)
+      retry_after = error.http_headers[:retry_after] || error.http_headers['retry-after'] if error.respond_to?(:http_headers)
+      retry_after ||= error.response&.headers&.dig(:retry_after)
+      retry_after ||= error.response&.headers&.dig('retry-after')
+      retry_after&.to_i
+    end
+    private_class_method :retry_after_seconds
+
+    def self.record_jan_search_progress(result, album, progress_callback)
+      result[:processed] += 1
+      progress_callback&.call(result, album)
+    end
+    private_class_method :record_jan_search_progress
   end
 end
