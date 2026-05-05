@@ -9,9 +9,7 @@ namespace :spotify do
     verbose = ENV.fetch('VERBOSE', '0') == '1'
     safe_only = ENV.fetch('SAFE_ONLY', mode == 'same_jan' ? '1' : '0') == '1'
 
-    unless %w[same_spotify_id same_jan].include?(mode)
-      abort 'MODE must be same_spotify_id or same_jan'
-    end
+    abort 'MODE must be same_spotify_id or same_jan' unless %w[same_spotify_id same_jan].include?(mode)
 
     group_key =
       case mode
@@ -45,7 +43,7 @@ namespace :spotify do
 
       track_counts = spotify_albums.map { |spotify_album| spotify_album.spotify_tracks.size }
       isrc_sets = spotify_albums.map do |spotify_album|
-        spotify_album.spotify_tracks.map(&:track).map(&:isrc).compact.sort
+        spotify_album.spotify_tracks.filter_map { |spotify_track| spotify_track.track&.isrc }.sort
       end
 
       if mode == 'same_jan' && safe_only && (!track_counts.uniq.one? || !isrc_sets.uniq.one?)

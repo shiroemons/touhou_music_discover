@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin - TouhouMusicDiscover</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <%= csrf_meta_tags %>
+  <%= csp_meta_tag %>
+  <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
+  <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+</head>
+
+<body class="bg-light admin-shell">
+  <div class="container-fluid">
+    <div class="row min-vh-100">
+      <aside class="col-12 col-lg-2 bg-dark text-white p-3">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <%= link_to 'Admin', admin_root_path, class: 'navbar-brand text-white fw-bold' %>
+          <%= link_to 'Avo', '/avo', class: 'btn btn-sm admin-btn-inverse' %>
+        </div>
+        <nav class="nav nav-pills flex-column gap-1">
+          <% admin_resources.each do |resource| %>
+            <%= link_to resource.label, admin_resources_path(resource.key), class: "nav-link #{'active' if params[:resource] == resource.key}" %>
+          <% end %>
+        </nav>
+      </aside>
+
+      <main class="col-12 col-lg-10 p-4">
+        <% flash.each do |type, message| %>
+          <% alert_class = type == 'notice' ? 'alert-success' : 'alert-danger' %>
+          <div class="alert <%= alert_class %>" role="alert"><%= message %></div>
+        <% end %>
+        <%= yield %>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

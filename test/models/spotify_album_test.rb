@@ -11,7 +11,7 @@ class SpotifyAlbumTest < ActiveSupport::TestCase
     duplicate = build_spotify_album(album:, spotify_id: 'spotify-active-new', active: true)
 
     assert_not duplicate.valid?
-    assert_includes duplicate.errors[:album_id], 'has already been taken'
+    assert(duplicate.errors.details[:album_id].any? { |error| error[:error] == :taken })
   end
 
   test 'album spotify_album returns active spotify album' do

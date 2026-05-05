@@ -1,0 +1,28 @@
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h1 class="h3 mb-1"><%= t('admin.dashboard.title') %></h1>
+    <p class="text-body-secondary mb-0"><%= t('admin.dashboard.description') %></p>
+  </div>
+</div>
+
+<div class="row g-3">
+  <% @resources.each do |resource| %>
+    <div class="col-12 col-md-6 col-xl-4">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-start justify-content-between gap-3">
+            <div>
+              <h2 class="h5 mb-1"><%= resource.label %></h2>
+              <p class="text-body-secondary small mb-0"><%= resource.description %></p>
+            </div>
+            <span class="badge text-bg-primary"><%= number_with_delimiter(resource.count) %></span>
+          </div>
+        </div>
+        <div class="card-footer bg-white">
+          <%= link_to t('admin.actions.index'), admin_resources_path(resource.key), class: 'btn btn-sm admin-btn' %>
+          <%= link_to t('admin.actions.new_record'), admin_new_resource_path(resource.key), class: 'btn btn-sm admin-btn' %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

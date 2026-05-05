@@ -14,7 +14,7 @@ class Album < ApplicationRecord
   has_many :ytmusic_tracks, -> { order(Arel.sql('ytmusic_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
 
   has_one :apple_music_album, dependent: :destroy
-  has_one :spotify_album, -> { where(active: true) }, inverse_of: :album
+  has_one :spotify_album, -> { where(active: true) }, inverse_of: :album, dependent: nil
   has_one :line_music_album, dependent: :destroy
   has_one :ytmusic_album, dependent: :destroy
 

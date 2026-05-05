@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 ja:
+  errors:
+    messages:
+      taken: "はすでに存在します"
+      blank: "を入力してください"
+      invalid: "は不正な値です"
   spotify:
     playlists:
       alerts:

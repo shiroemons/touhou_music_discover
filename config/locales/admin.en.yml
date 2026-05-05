@@ -1,0 +1,178 @@
+en:
+  admin:
+    dashboard:
+      title: "Admin"
+      description: "A Rails-native admin interface that does not depend on Avo."
+    titles:
+      show: "%{resource} Details"
+      new: "New %{resource}"
+      edit: "Edit %{resource}"
+    shared:
+      blank: "Not set"
+    search:
+      placeholder: "Search"
+      submit: "Search"
+      clear: "Clear"
+    table:
+      actions: "Actions"
+      empty: "No records found."
+    form:
+      save_failed: "Could not save the record."
+    confirm:
+      destroy: "Delete this record?"
+    relations:
+      heading: "Relations"
+      empty: "No related records."
+      preview_limit: "Showing the first %{count} records only."
+      labels:
+        album: "Album"
+        albums: "Albums"
+        circles: "Circles"
+        circles_albums: "Circle albums"
+        tracks: "Tracks"
+        original: "Original"
+        original_songs: "Original songs"
+        tracks_original_songs: "Track original songs"
+        apple_music_album: "Apple Music album"
+        apple_music_albums: "Apple Music albums"
+        apple_music_tracks: "Apple Music tracks"
+        line_music_album: "LINE MUSIC album"
+        line_music_albums: "LINE MUSIC albums"
+        line_music_tracks: "LINE MUSIC tracks"
+        spotify_album: "Spotify album"
+        spotify_albums: "Spotify albums"
+        spotify_tracks: "Spotify tracks"
+        spotify_track_audio_features: "Spotify audio features"
+        ytmusic_album: "YouTube Music album"
+        ytmusic_albums: "YouTube Music albums"
+        ytmusic_tracks: "YouTube Music tracks"
+    attributes:
+      common:
+        id: "ID"
+        created_at: "Created at"
+        updated_at: "Updated at"
+        name: "Name"
+        title: "Title"
+        short_title: "Short title"
+        code: "Code"
+        key: "Key"
+        url: "URL"
+        payload: "Payload"
+        jan_code: "JAN code"
+        isrc: "ISRC"
+        is_touhou: "Touhou"
+        circle_name: "Circle"
+        album_name: "Album name"
+        albums_count: "Albums count"
+        original_songs_count: "Original songs count"
+        original_code: "Original code"
+        composer: "Composer"
+        track_number: "Track number"
+        disc_number: "Disc number"
+        is_duplicate: "Duplicate"
+        original_type: "Type"
+        series_order: "Series order"
+        streaming_type: "Streaming type"
+        spotify_id: "Spotify ID"
+        apple_music_id: "Apple Music ID"
+        line_music_id: "LINE MUSIC ID"
+        browse_id: "Browse ID"
+        video_id: "Video ID"
+        playlist_id: "Playlist ID"
+        spotify_user_id: "Spotify user ID"
+        original_song_code: "Original song code"
+        album_id: "Album ID"
+        track_id: "Track ID"
+        spotify_album_id: "Spotify album ID"
+        apple_music_album_id: "Apple Music album ID"
+        line_music_album_id: "LINE MUSIC album ID"
+        ytmusic_album_id: "YouTube Music album ID"
+        spotify_album_name: "Spotify album name"
+        apple_music_album_name: "Apple Music album name"
+        album_type: "Album type"
+        label: "Label"
+        release_date: "Release date"
+        release_year: "Release year"
+        total_tracks: "Total tracks"
+        active: "Active"
+        artist_name: "Artist name"
+        composer_name: "Composer name"
+        duration_ms: "Duration (ms)"
+        playlist_url: "Playlist URL"
+        total: "Total"
+        followers: "Followers"
+        spotify_url: "Spotify URL"
+        synced_at: "Synced at"
+        position: "Position"
+    actions:
+      heading: "Actions"
+      default_description: "Run an existing Avo action from this admin interface."
+      completed: "Completed."
+      confirmation: "This action may update data or call external APIs. Review the details before running it."
+      index: "Index"
+      show: "Show"
+      edit: "Edit"
+      save: "Save"
+      cancel: "Cancel"
+      destroy: "Delete"
+      run: "Run"
+      new_record: "New"
+      back_to_index: "Back to index"
+      back_to_show: "Back to details"
+      change_touhou_flag:
+        label: "Update Touhou flags"
+        description: "Recalculates Touhou flags only for tracks with original-song links. Unlinked tracks are not changed."
+      set_circles:
+        label: "Assign circles"
+      bulk_retrieval:
+        label: "Bulk retrieval"
+      fetch_apple_music_album_by_id:
+        label: "Fetch by Apple Music album ID"
+      import_tracks_with_original_songs:
+        label: "Import original-song links TSV"
+    resources:
+      albums:
+        label: "Albums"
+        description: "Manage JAN codes and Touhou flags."
+      tracks:
+        label: "Tracks"
+        description: "Manage JAN codes, ISRCs, and Touhou flags."
+      circles:
+        label: "Circles"
+        description: "Manage circle names."
+      originals:
+        label: "Originals"
+        description: "Manage original work master data."
+      original_songs:
+        label: "Original songs"
+        description: "Manage original-song master data."
+      master_artists:
+        label: "Artists"
+        description: "Manage artist master data."
+      spotify_albums:
+        label: "Spotify albums"
+        description: "Manage fetched Spotify album data and active state."
+      spotify_tracks:
+        label: "Spotify tracks"
+        description: "Manage Spotify track data."
+      apple_music_albums:
+        label: "Apple Music albums"
+        description: "Manage Apple Music album data."
+      apple_music_tracks:
+        label: "Apple Music tracks"
+        description: "Manage Apple Music track data."
+      line_music_albums:
+        label: "LINE MUSIC albums"
+        description: "Manage LINE MUSIC album data."
+      line_music_tracks:
+        label: "LINE MUSIC tracks"
+        description: "Manage LINE MUSIC track data."
+      ytmusic_albums:
+        label: "YouTube Music albums"
+        description: "Manage YouTube Music album data."
+      ytmusic_tracks:
+        label: "YouTube Music tracks"
+        description: "Manage YouTube Music track data."
+      spotify_playlists:
+        label: "Spotify playlists"
+        description: "Manage Spotify playlist sync data."

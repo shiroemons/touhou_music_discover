@@ -1,0 +1,9 @@
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h1 class="h3 mb-1"><%= t('admin.titles.edit', resource: @resource_config.label) %></h1>
+    <p class="text-body-secondary mb-0"><%= @record.to_param %></p>
+  </div>
+  <%= link_to t('admin.actions.back_to_show'), admin_resource_path(@resource_config.key, @record), class: 'btn admin-btn' %>
+</div>
+
+<%= render 'form', record: @record, resource_config: @resource_config, url: admin_resource_path(@resource_config.key, @record), method: :patch %>

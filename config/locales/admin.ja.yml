@@ -1,0 +1,178 @@
+ja:
+  admin:
+    dashboard:
+      title: "管理画面"
+      description: "Avoに依存しないRails標準の管理画面です。"
+    titles:
+      show: "%{resource} 詳細"
+      new: "%{resource} 新規作成"
+      edit: "%{resource} 編集"
+    shared:
+      blank: "未設定"
+    search:
+      placeholder: "検索"
+      submit: "検索"
+      clear: "解除"
+    table:
+      actions: "操作"
+      empty: "レコードがありません。"
+    form:
+      save_failed: "保存できませんでした。"
+    confirm:
+      destroy: "削除しますか？"
+    relations:
+      heading: "関連"
+      empty: "関連レコードはありません。"
+      preview_limit: "先頭%{count}件のみ表示しています。"
+      labels:
+        album: "アルバム"
+        albums: "アルバム"
+        circles: "サークル"
+        circles_albums: "サークル・アルバム"
+        tracks: "楽曲"
+        original: "原作"
+        original_songs: "原曲"
+        tracks_original_songs: "楽曲・原曲"
+        apple_music_album: "Apple Musicアルバム"
+        apple_music_albums: "Apple Musicアルバム"
+        apple_music_tracks: "Apple Music楽曲"
+        line_music_album: "LINE MUSICアルバム"
+        line_music_albums: "LINE MUSICアルバム"
+        line_music_tracks: "LINE MUSIC楽曲"
+        spotify_album: "Spotifyアルバム"
+        spotify_albums: "Spotifyアルバム"
+        spotify_tracks: "Spotify楽曲"
+        spotify_track_audio_features: "Spotify音響特徴"
+        ytmusic_album: "YouTube Musicアルバム"
+        ytmusic_albums: "YouTube Musicアルバム"
+        ytmusic_tracks: "YouTube Music楽曲"
+    attributes:
+      common:
+        id: "ID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+        name: "名前"
+        title: "タイトル"
+        short_title: "略称"
+        code: "コード"
+        key: "キー"
+        url: "URL"
+        payload: "ペイロード"
+        jan_code: "JANコード"
+        isrc: "ISRC"
+        is_touhou: "東方"
+        circle_name: "サークル"
+        album_name: "アルバム名"
+        albums_count: "アルバム数"
+        original_songs_count: "原曲数"
+        original_code: "原作コード"
+        composer: "作曲者"
+        track_number: "トラック番号"
+        disc_number: "ディスク番号"
+        is_duplicate: "重複"
+        original_type: "種別"
+        series_order: "シリーズ順"
+        streaming_type: "配信種別"
+        spotify_id: "Spotify ID"
+        apple_music_id: "Apple Music ID"
+        line_music_id: "LINE MUSIC ID"
+        browse_id: "Browse ID"
+        video_id: "動画ID"
+        playlist_id: "プレイリストID"
+        spotify_user_id: "SpotifyユーザーID"
+        original_song_code: "原曲コード"
+        album_id: "アルバムID"
+        track_id: "楽曲ID"
+        spotify_album_id: "SpotifyアルバムID"
+        apple_music_album_id: "Apple MusicアルバムID"
+        line_music_album_id: "LINE MUSICアルバムID"
+        ytmusic_album_id: "YouTube MusicアルバムID"
+        spotify_album_name: "Spotifyアルバム名"
+        apple_music_album_name: "Apple Musicアルバム名"
+        album_type: "アルバム種別"
+        label: "レーベル"
+        release_date: "リリース日"
+        release_year: "リリース年"
+        total_tracks: "総トラック数"
+        active: "有効"
+        artist_name: "アーティスト名"
+        composer_name: "作曲者名"
+        duration_ms: "再生時間(ms)"
+        playlist_url: "プレイリストURL"
+        total: "総数"
+        followers: "フォロワー数"
+        spotify_url: "Spotify URL"
+        synced_at: "同期日時"
+        position: "表示順"
+    actions:
+      heading: "アクション"
+      default_description: "既存のAvoアクションを管理画面から実行します。"
+      completed: "完了しました。"
+      confirmation: "このアクションはデータ更新や外部API通信を行う可能性があります。内容を確認してから実行してください。"
+      index: "一覧"
+      show: "詳細"
+      edit: "編集"
+      save: "保存"
+      cancel: "キャンセル"
+      destroy: "削除"
+      run: "実行"
+      new_record: "新規作成"
+      back_to_index: "一覧へ戻る"
+      back_to_show: "詳細へ戻る"
+      change_touhou_flag:
+        label: "東方フラグを変更"
+        description: "原曲紐づけ済みの楽曲だけを対象に東方フラグを再判定します。未紐づけの楽曲は変更しません。"
+      set_circles:
+        label: "サークルを設定"
+      bulk_retrieval:
+        label: "一括取得"
+      fetch_apple_music_album_by_id:
+        label: "Apple MusicアルバムIDから取得"
+      import_tracks_with_original_songs:
+        label: "原曲紐づけTSVをインポート"
+    resources:
+      albums:
+        label: "アルバム"
+        description: "JANコードと東方フラグを管理します。"
+      tracks:
+        label: "楽曲"
+        description: "JANコード、ISRC、東方フラグを管理します。"
+      circles:
+        label: "サークル"
+        description: "サークル名を管理します。"
+      originals:
+        label: "原作"
+        description: "原作マスタを管理します。"
+      original_songs:
+        label: "原曲"
+        description: "原曲マスタを管理します。"
+      master_artists:
+        label: "アーティスト"
+        description: "アーティストマスタを管理します。"
+      spotify_albums:
+        label: "Spotifyアルバム"
+        description: "Spotifyアルバムの取得済みデータと有効状態を管理します。"
+      spotify_tracks:
+        label: "Spotify楽曲"
+        description: "Spotify楽曲データを管理します。"
+      apple_music_albums:
+        label: "Apple Musicアルバム"
+        description: "Apple Musicアルバムデータを管理します。"
+      apple_music_tracks:
+        label: "Apple Music楽曲"
+        description: "Apple Music楽曲データを管理します。"
+      line_music_albums:
+        label: "LINE MUSICアルバム"
+        description: "LINE MUSICアルバムデータを管理します。"
+      line_music_tracks:
+        label: "LINE MUSIC楽曲"
+        description: "LINE MUSIC楽曲データを管理します。"
+      ytmusic_albums:
+        label: "YouTube Musicアルバム"
+        description: "YouTube Musicアルバムデータを管理します。"
+      ytmusic_tracks:
+        label: "YouTube Music楽曲"
+        description: "YouTube Music楽曲データを管理します。"
+      spotify_playlists:
+        label: "Spotifyプレイリスト"
+        description: "Spotifyプレイリストの同期情報を管理します。"

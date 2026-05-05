@@ -1,0 +1,110 @@
+.admin-shell {
+  --admin-border: #d0d5dd;
+  --admin-text: #111827;
+  --admin-muted: #667085;
+}
+
+.admin-shell .btn.admin-btn,
+.admin-shell .btn.admin-btn:visited {
+  background: #fff;
+  border-color: var(--admin-border);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--admin-text);
+  font-weight: 600;
+  min-width: auto;
+  padding: 0.35rem 0.65rem;
+}
+
+.admin-shell .btn.admin-btn:hover,
+.admin-shell .btn.admin-btn:focus {
+  background: #f9fafb;
+  border-color: #98a2b3;
+  color: var(--admin-text);
+}
+
+.admin-shell .btn.admin-btn-danger,
+.admin-shell .btn.admin-btn-danger:visited {
+  background: #fff;
+  border-color: #f04438;
+  border-radius: 4px;
+  box-shadow: none;
+  color: #b42318;
+  font-weight: 600;
+  min-width: auto;
+  padding: 0.35rem 0.65rem;
+}
+
+.admin-shell .btn.admin-btn-danger:hover,
+.admin-shell .btn.admin-btn-danger:focus {
+  background: #fff5f5;
+  border-color: #d92d20;
+  color: #912018;
+}
+
+.admin-shell .btn.admin-btn-inverse {
+  background: #fff;
+  border-color: #fff;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--admin-text);
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+}
+
+.admin-shell aside .nav-link {
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.admin-shell aside .nav-link.active {
+  background: #fff;
+  border-radius: 4px;
+  color: var(--admin-text);
+}
+
+.admin-action-bar {
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.75rem;
+}
+
+.admin-shell main {
+  min-width: 0;
+}
+
+.admin-shell .table-responsive {
+  border-radius: 8px;
+}
+
+.admin-shell .table {
+  font-size: 0.92rem;
+}
+
+.admin-shell .table thead th {
+  background: #f9fafb;
+  color: #344054;
+  font-weight: 700;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.admin-shell .table td,
+.admin-shell .table th {
+  vertical-align: middle;
+}
+
+.admin-shell .table td:last-child,
+.admin-shell .table th:last-child {
+  background: #fff;
+  position: sticky;
+  right: 0;
+  z-index: 2;
+}
+
+.admin-shell .card {
+  border-color: var(--admin-border);
+  border-radius: 8px;
+  box-shadow: none;
+}

@@ -26,9 +26,7 @@ class SpotifyAlbum < ApplicationRecord
 
     album = ::Album.find_or_create_by!(jan_code: s_album.external_ids['upc'])
     existing_spotify_album = album.spotify_album
-    if existing_spotify_album.present? && existing_spotify_album.spotify_id != s_album.id
-      return existing_spotify_album
-    end
+    return existing_spotify_album if existing_spotify_album.present? && existing_spotify_album.spotify_id != s_album.id
 
     spotify_album = ::SpotifyAlbum.find_or_initialize_by(spotify_id: s_album.id)
     spotify_album.assign_attributes(
