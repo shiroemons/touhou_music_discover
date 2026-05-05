@@ -28,7 +28,7 @@ module Admin
       when FalseClass
         tag.span('false', class: 'badge text-bg-secondary')
       when Hash, Array
-        tag.pre(JSON.pretty_generate(value), class: 'mb-0 small text-wrap')
+        tag.pre(admin_pretty_json(value), class: 'admin-json-block')
       when Time, DateTime
         value.in_time_zone('Asia/Tokyo').strftime('%Y-%m-%d %H:%M:%S')
       when Date
@@ -36,6 +36,14 @@ module Admin
       else
         admin_scalar_value(record, attribute, value)
       end
+    end
+
+    def admin_index_display_value(resource_config, record, attribute)
+      value = resource_config.value_for(record, attribute)
+      content = admin_display_value(resource_config, record, attribute)
+      return content unless admin_linkable_index_attribute?(resource_config, attribute, value)
+
+      link_to(content, admin_resource_path(resource_config.key, record), class: 'admin-index-record-link')
     end
 
     def admin_resource_actions(resource_config, record: nil)
@@ -50,6 +58,17 @@ module Admin
       end
     end
 
+    def admin_relation_record_summary(record)
+      tag.span(class: 'admin-relation-record-copy') do
+        safe_join(
+          [
+            tag.span(admin_record_label(record), class: 'admin-relation-record-label'),
+            tag.span(admin_relation_record_meta(record), class: 'admin-relation-record-meta')
+          ].compact
+        )
+      end
+    end
+
     def admin_record_label(record)
       %i[name title jan_code code spotify_id apple_music_id line_music_id browse_id video_id isrc id].each do |attribute|
         return record.public_send(attribute).to_s if record.respond_to?(attribute) && record.public_send(attribute).present?
@@ -58,7 +77,41 @@ module Admin
       record.to_param
     end
 
+    def admin_active_filters?(resource_config, active_filters)
+      params[:q].present? || resource_config.non_default_filters?(active_filters)
+    end
+
     private
+
+    def admin_linkable_index_attribute?(resource_config, attribute, value)
+      return false if value.blank?
+      return false unless Admin::Resource.find_by_model_class(resource_config.model_class)
+
+      attribute.to_s.in?(%w[name title short_title album_name spotify_album_name apple_music_album_name])
+    end
+
+    def admin_pretty_json(value)
+      JSON.pretty_generate(value)
+    rescue JSON::GeneratorError
+      value.to_s
+    end
+
+    def admin_relation_record_meta(record)
+      values = []
+      values << admin_track_position(record)
+      values << t('admin.relations.meta.total_tracks', count: record.total_tracks) if record.respond_to?(:total_tracks) && record.total_tracks.present?
+      values.compact.join(' / ').presence
+    end
+
+    def admin_track_position(record)
+      return unless record.respond_to?(:track_number) && record.track_number.present?
+
+      if record.respond_to?(:disc_number) && record.disc_number.present?
+        t('admin.relations.meta.disc_track', disc: record.disc_number, track: record.track_number)
+      else
+        t('admin.relations.meta.track', track: record.track_number)
+      end
+    end
 
     def admin_reference_record(record, attribute, value)
       return if value.blank? || !attribute.to_s.end_with?('_id')

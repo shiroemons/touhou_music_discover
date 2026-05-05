@@ -402,6 +402,24 @@
   font-size: 0.92rem;
 }
 
+.admin-relation-record-copy {
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-relation-record-label {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.admin-relation-record-meta {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  margin-top: 0.12rem;
+}
+
 .admin-resource-row small,
 .admin-resource-item small {
   color: var(--admin-muted);
@@ -471,6 +489,7 @@
 .admin-search-form {
   align-items: stretch;
   display: flex;
+  flex-wrap: wrap;
   gap: 0.65rem;
   margin-bottom: 1rem;
 }
@@ -518,6 +537,37 @@
 
 .admin-search-input .form-control {
   padding-left: 2.25rem;
+}
+
+.admin-filter-bar {
+  align-items: end;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: flex;
+  flex: 1 0 100%;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+
+.admin-filter-heading {
+  color: var(--admin-muted);
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding-bottom: 0.62rem;
+}
+
+.admin-filter-field {
+  flex: 0 1 15rem;
+  min-width: 10rem;
+}
+
+.admin-filter-field .form-label {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  margin-bottom: 0.28rem;
 }
 
 .admin-shell .form-control:focus,
@@ -591,8 +641,24 @@
 }
 
 .admin-reference-card:hover,
-.admin-reference-card:focus {
+.admin-reference-card:focus,
+.admin-index-record-link:hover,
+.admin-index-record-link:focus {
   color: var(--admin-primary);
+}
+
+.admin-index-record-link {
+  color: var(--admin-text);
+  display: inline-flex;
+  max-width: 24rem;
+  text-decoration: none;
+  vertical-align: middle;
+}
+
+.admin-index-record-link:hover .admin-value-label,
+.admin-index-record-link:focus .admin-value-label {
+  text-decoration: underline;
+  text-underline-offset: 0.18rem;
 }
 
 .admin-record-thumb {
@@ -628,6 +694,20 @@
   white-space: nowrap;
 }
 
+.admin-json-block {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  margin: 0;
+  max-height: 34rem;
+  overflow: auto;
+  padding: 0.9rem 1rem;
+  white-space: pre;
+}
+
 .admin-detail-table th {
   background: var(--admin-surface-muted);
   color: var(--admin-muted);
@@ -639,6 +719,19 @@
 .admin-detail-table td {
   color: var(--admin-text);
   word-break: break-word;
+}
+
+.admin-detail-table .admin-reference-card,
+.admin-detail-table .admin-value-with-thumb {
+  max-width: none;
+}
+
+.admin-detail-table .admin-reference-label,
+.admin-detail-table .admin-value-label,
+.admin-detail-table .admin-reference-meta {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
 }
 
 .admin-form-panel {
@@ -812,6 +905,7 @@
 @media (max-width: 767.98px) {
   .admin-page-header,
   .admin-search-form,
+  .admin-filter-bar,
   .admin-resource-item {
     align-items: stretch;
     flex-direction: column;

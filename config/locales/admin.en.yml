@@ -30,6 +30,16 @@ en:
       placeholder: "Search"
       submit: "Search"
       clear: "Clear"
+    filters:
+      heading: "Filters"
+      all: "All"
+      not_delivered:
+        label: "Not delivered"
+      spotify_album_display:
+        label: "Display"
+      boolean:
+        true: "Yes"
+        false: "No"
     table:
       actions: "Actions"
       empty: "No records found."
@@ -41,6 +51,10 @@ en:
       heading: "Relations"
       empty: "No related records."
       preview_limit: "Showing the first %{count} records only."
+      meta:
+        disc_track: "Disc %{disc} / Track %{track}"
+        track: "Track %{track}"
+        total_tracks: "%{count} tracks"
       labels:
         album: "Album"
         albums: "Albums"
@@ -100,10 +114,15 @@ en:
         original_song_code: "Original song code"
         album_id: "Album ID"
         track_id: "Track ID"
+        track_reference: "Track"
         spotify_album_id: "Spotify album ID"
+        spotify_album_reference: "Spotify album"
         apple_music_album_id: "Apple Music album ID"
+        apple_music_album_reference: "Apple Music album"
         line_music_album_id: "LINE MUSIC album ID"
+        line_music_album_reference: "LINE MUSIC album"
         ytmusic_album_id: "YouTube Music album ID"
+        ytmusic_album_reference: "YouTube Music album"
         spotify_album_name: "Spotify album name"
         apple_music_album_name: "Apple Music album name"
         album_type: "Album type"

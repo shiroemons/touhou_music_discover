@@ -30,6 +30,16 @@ ja:
       placeholder: "検索"
       submit: "検索"
       clear: "解除"
+    filters:
+      heading: "フィルター"
+      all: "すべて"
+      not_delivered:
+        label: "未配信"
+      spotify_album_display:
+        label: "表示"
+      boolean:
+        true: "はい"
+        false: "いいえ"
     table:
       actions: "操作"
       empty: "レコードがありません。"
@@ -41,6 +51,10 @@ ja:
       heading: "関連"
       empty: "関連レコードはありません。"
       preview_limit: "先頭%{count}件のみ表示しています。"
+      meta:
+        disc_track: "ディスク %{disc} / トラック %{track}"
+        track: "トラック %{track}"
+        total_tracks: "総トラック数 %{count}"
       labels:
         album: "アルバム"
         albums: "アルバム"
@@ -100,10 +114,15 @@ ja:
         original_song_code: "原曲コード"
         album_id: "アルバムID"
         track_id: "楽曲ID"
+        track_reference: "楽曲"
         spotify_album_id: "SpotifyアルバムID"
+        spotify_album_reference: "Spotifyアルバム"
         apple_music_album_id: "Apple MusicアルバムID"
+        apple_music_album_reference: "Apple Musicアルバム"
         line_music_album_id: "LINE MUSICアルバムID"
+        line_music_album_reference: "LINE MUSICアルバム"
         ytmusic_album_id: "YouTube MusicアルバムID"
+        ytmusic_album_reference: "YouTube Musicアルバム"
         spotify_album_name: "Spotifyアルバム名"
         apple_music_album_name: "Apple Musicアルバム名"
         album_type: "アルバム種別"

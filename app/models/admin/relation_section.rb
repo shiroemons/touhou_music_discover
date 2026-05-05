@@ -2,8 +2,6 @@
 
 module Admin
   class RelationSection
-    PREVIEW_LIMIT = 10
-
     attr_reader :resource_config, :record, :reflection
 
     delegate :name, :macro, to: :reflection
@@ -31,7 +29,7 @@ module Admin
     def records
       return Array(record.public_send(name)).compact unless collection?
 
-      record.public_send(name).limit(PREVIEW_LIMIT)
+      record.public_send(name)
     end
 
     def count
@@ -44,7 +42,7 @@ module Admin
     end
 
     def more?
-      collection? && count > PREVIEW_LIMIT
+      false
     end
   end
 end

@@ -26,6 +26,22 @@
 <% end %>
 
 <%= form_with url: admin_resources_path(@resource_config.key), method: :get, class: 'admin-search-form' do |form| %>
+  <% if @filters.any? %>
+    <div class="admin-filter-bar">
+      <span class="admin-filter-heading"><%= t('admin.filters.heading') %></span>
+      <% @filters.each do |filter| %>
+        <div class="admin-filter-field">
+          <%= form.label "filters_#{filter[:attribute]}", filter[:label], class: 'form-label' %>
+          <%= form.select "filters[#{filter[:attribute]}]",
+                          options_for_select((filter[:include_blank] ? [[t('admin.filters.all'), '']] : []) + filter[:options].map { |value, label| [label, value] }, @active_filters[filter[:attribute]]),
+                          {},
+                          class: 'form-select',
+                          id: "filters_#{filter[:attribute]}",
+                          onchange: 'this.form.requestSubmit()' %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
   <div class="admin-search-input">
     <i class="bi bi-search" aria-hidden="true"></i>
     <%= form.search_field :q, value: params[:q], placeholder: t('admin.search.placeholder'), class: 'form-control' %>
@@ -35,7 +51,7 @@
       <i class="bi bi-search" aria-hidden="true"></i>
       <span><%= t('admin.search.submit') %></span>
     <% end %>
-    <% if params[:q].present? %>
+    <% if admin_active_filters?(@resource_config, @active_filters) %>
       <%= link_to admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
         <i class="bi bi-x-lg" aria-hidden="true"></i>
         <span><%= t('admin.search.clear') %></span>
@@ -50,7 +66,7 @@
       <thead>
         <tr>
           <% @resource_config.index_attributes.each do |attribute| %>
-            <th><%= @resource_config.attribute_label(attribute) %></th>
+            <th><%= @resource_config.index_attribute_label(attribute) %></th>
           <% end %>
           <th class="text-end"><%= t('admin.table.actions') %></th>
         </tr>
@@ -59,7 +75,7 @@
         <% @records.each do |record| %>
           <tr>
             <% @resource_config.index_attributes.each do |attribute| %>
-              <td><%= admin_display_value(@resource_config, record, attribute) %></td>
+              <td><%= admin_index_display_value(@resource_config, record, attribute) %></td>
             <% end %>
             <td>
               <div class="admin-row-actions">

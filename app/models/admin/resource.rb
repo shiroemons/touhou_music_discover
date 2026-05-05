@@ -5,9 +5,17 @@ module Admin
     include ActiveModel::Model
 
     DEFAULT_ITEMS = 50
+    INDEX_ATTRIBUTE_LABEL_OVERRIDES = {
+      'album_id' => :jan_code,
+      'track_id' => :track_reference,
+      'spotify_album_id' => :spotify_album_reference,
+      'apple_music_album_id' => :apple_music_album_reference,
+      'line_music_album_id' => :line_music_album_reference,
+      'ytmusic_album_id' => :ytmusic_album_reference
+    }.freeze
 
     attr_accessor :key, :model_class_name, :index_attributes, :form_attributes,
-                  :search_attributes, :includes, :action_class_names
+                  :search_attributes, :filter_definitions, :includes, :action_class_names
 
     delegate :count, :primary_key, to: :model_class
 
@@ -52,6 +60,33 @@ module Admin
             index_attributes: %i[spotify_album_name apple_music_album_name circle_name jan_code is_touhou],
             form_attributes: %i[jan_code is_touhou],
             search_attributes: %i[jan_code],
+            filter_definitions: [
+              {
+                key: 'not_delivered',
+                label_key: 'admin.filters.not_delivered.label',
+                include_blank: true,
+                options: [
+                  ['apple_music', 'Apple Music未配信'],
+                  ['spotify', 'Spotify未配信'],
+                  ['line_music', 'LINE MUSIC未配信'],
+                  ['ytmusic', 'YouTube Music未配信']
+                ],
+                apply: lambda { |scope, value|
+                  case value
+                  when 'apple_music'
+                    scope.missing_apple_music_album
+                  when 'spotify'
+                    scope.missing_spotify_album
+                  when 'line_music'
+                    scope.missing_line_music_album
+                  when 'ytmusic'
+                    scope.missing_ytmusic_album
+                  else
+                    scope
+                  end
+                }
+              }
+            ],
             includes: album_preview_includes,
             action_class_names: %w[BulkRetrieval ChangeTouhouFlag SetCircles]
           ),
@@ -98,6 +133,39 @@ module Admin
             index_attributes: %i[name circle_name album_id active release_date total_tracks spotify_id],
             form_attributes: %i[album_id spotify_id album_type name label url release_date total_tracks active payload],
             search_attributes: %i[name spotify_id label],
+            filter_definitions: [
+              {
+                key: 'display',
+                label_key: 'admin.filters.spotify_album_display.label',
+                default: 'active',
+                options: [
+                  ['active', 'アクティブのみ'],
+                  ['duplicated_active', '重複あり（アクティブ）'],
+                  ['duplicated_all', '重複あり（全履歴）'],
+                  ['inactive', '非アクティブ'],
+                  ['all', 'すべて']
+                ],
+                apply: lambda { |scope, value|
+                  duplicate_album_ids = SpotifyAlbum.unscoped
+                                                    .select(:album_id)
+                                                    .group(:album_id)
+                                                    .having('COUNT(*) > 1')
+
+                  case value
+                  when 'duplicated_active'
+                    scope.active.where(album_id: duplicate_album_ids)
+                  when 'duplicated_all'
+                    scope.where(album_id: duplicate_album_ids)
+                  when 'inactive'
+                    scope.inactive
+                  when 'all'
+                    scope
+                  else
+                    scope.active
+                  end
+                }
+              }
+            ],
             includes: [{ album: album_preview_includes }],
             action_class_names: %w[FetchSpotifyAlbum FetchMissingSpotifyAlbumByAppleMusicJan UpdateSpotifyAlbum]
           ),
@@ -238,8 +306,52 @@ module Admin
       scope.where(search_where_clause, conditions)
     end
 
+    def filter(scope, params)
+      normalize_filters(params).reduce(scope) do |filtered_scope, (key, value)|
+        filter_definition_for(key).fetch(:apply).call(filtered_scope, value)
+      end
+    end
+
+    def normalize_filters(params)
+      values = params.respond_to?(:to_unsafe_h) ? params.to_unsafe_h : params.to_h
+
+      filters.to_h do |filter|
+        value = values.fetch(filter[:attribute], filter[:default]).to_s.strip
+        [filter[:attribute], value]
+      end.select { |_attribute, value| value.present? }
+    end
+
+    def filters
+      Array(filter_definitions).map do |definition|
+        {
+          attribute: definition.fetch(:key).to_s,
+          label: I18n.t(definition.fetch(:label_key)),
+          options: definition.fetch(:options),
+          include_blank: definition.fetch(:include_blank, false),
+          default: definition[:default].to_s
+        }
+      end
+    end
+
+    def non_default_filters?(params)
+      normalize_filters(params).any? do |key, value|
+        value != filter_definition_for(key)[:default].to_s
+      end
+    end
+
     def attributes_for_form
       form_attributes.map(&:to_s)
+    end
+
+    def index_attribute_label(attribute)
+      override = INDEX_ATTRIBUTE_LABEL_OVERRIDES[attribute.to_s]
+      return attribute_label(override) if override
+
+      attribute_label(attribute)
+    end
+
+    def detail_attribute_label(attribute)
+      index_attribute_label(attribute)
     end
 
     def attribute_label(attribute)
@@ -264,6 +376,10 @@ module Admin
     end
 
     private
+
+    def filter_definition_for(key)
+      Array(filter_definitions).find { |definition| definition.fetch(:key).to_s == key.to_s } || raise(ArgumentError, "Unknown filter: #{key}")
+    end
 
     def search_where_clause
       search_attributes

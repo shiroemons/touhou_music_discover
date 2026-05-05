@@ -35,7 +35,7 @@
       <tbody>
         <% @resource_config.model_class.columns.each do |column| %>
           <tr>
-            <th><%= @resource_config.attribute_label(column.name) %></th>
+            <th><%= @resource_config.detail_attribute_label(column.name) %></th>
             <td><%= admin_display_value(@resource_config, @record, column.name) %></td>
           </tr>
         <% end %>
@@ -68,7 +68,7 @@
             <div class="admin-list-stack">
               <% section.records.each do |related_record| %>
                 <div class="admin-resource-row">
-                  <span class="text-truncate"><%= admin_record_label(related_record) %></span>
+                  <%= admin_relation_record_summary(related_record) %>
                   <% if section.associated_resource.present? %>
                     <%= link_to admin_resource_path(section.associated_resource.key, related_record), class: 'btn btn-sm admin-btn' do %>
                       <i class="bi bi-eye" aria-hidden="true"></i>
@@ -78,9 +78,6 @@
                 </div>
               <% end %>
             </div>
-            <% if section.more? %>
-              <p class="admin-hint"><%= t('admin.relations.preview_limit', count: Admin::RelationSection::PREVIEW_LIMIT) %></p>
-            <% end %>
           <% end %>
         </div>
     </div>
