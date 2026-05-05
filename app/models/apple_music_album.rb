@@ -52,7 +52,7 @@ class AppleMusicAlbum < ApplicationRecord
   end
 
   def artist_name
-    payload.dig('attributes', 'artist_name')
+    payload&.dig('attributes', 'artistName') || payload&.dig('attributes', 'artist_name')
   end
 
   def image_url

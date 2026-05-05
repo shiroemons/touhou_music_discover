@@ -20,6 +20,7 @@ gem 'turbo-rails'
 group :development, :test do
   gem 'debug'
   gem 'dotenv-rails'
+  gem 'minitest', '~> 5.25'
 end
 
 group :development do
