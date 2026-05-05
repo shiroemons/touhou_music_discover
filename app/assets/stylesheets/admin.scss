@@ -624,6 +624,26 @@
   min-width: 10rem;
 }
 
+.admin-track-status {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  min-width: 9rem;
+}
+
+.admin-track-status-count {
+  color: var(--admin-text);
+  font-weight: 850;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.admin-track-status-action {
+  min-height: 2rem;
+  padding-inline: 0.55rem;
+}
+
 .admin-reference-card,
 .admin-value-with-thumb {
   align-items: center;
@@ -681,17 +701,15 @@
 .admin-reference-label,
 .admin-value-label {
   font-weight: 750;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .admin-reference-meta {
   color: var(--admin-muted);
   font-size: 0.78rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .admin-json-block {
@@ -853,6 +871,69 @@
   border-color: var(--admin-primary);
 }
 
+.admin-pagination {
+  align-items: center;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.admin-pagination-summary {
+  color: var(--admin-muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.admin-pagination-controls,
+.admin-pagination-pages {
+  align-items: center;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.admin-pagination-link,
+.admin-pagination-gap {
+  align-items: center;
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: inline-flex;
+  font-size: 0.9rem;
+  font-weight: 800;
+  height: 2.35rem;
+  justify-content: center;
+  min-width: 2.35rem;
+  padding-inline: 0.72rem;
+  text-decoration: none;
+}
+
+.admin-pagination-link {
+  background: var(--admin-surface);
+  color: var(--admin-primary);
+}
+
+.admin-pagination-link:hover,
+.admin-pagination-link:focus {
+  background: var(--admin-surface-muted);
+  color: var(--admin-primary);
+}
+
+.admin-pagination-link.is-current {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: #fff;
+}
+
+.admin-pagination-link.is-disabled,
+.admin-pagination-gap {
+  background: var(--admin-surface-muted);
+  color: var(--admin-muted);
+}
+
+.admin-pagination-link.is-disabled {
+  opacity: 0.62;
+}
+
 @media (max-width: 1199.98px) {
   .admin-layout {
     grid-template-columns: 14.5rem minmax(0, 1fr);
@@ -906,6 +987,7 @@
   .admin-page-header,
   .admin-search-form,
   .admin-filter-bar,
+  .admin-pagination,
   .admin-resource-item {
     align-items: stretch;
     flex-direction: column;
@@ -938,6 +1020,15 @@
 
   .admin-row-actions {
     justify-content: flex-start;
+  }
+
+  .admin-pagination-controls {
+    justify-content: space-between;
+  }
+
+  .admin-pagination-pages {
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .admin-detail-table th,

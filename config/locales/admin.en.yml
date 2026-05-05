@@ -30,6 +30,14 @@ en:
       placeholder: "Search"
       submit: "Search"
       clear: "Clear"
+    pagination:
+      aria_label: "Pagination"
+      summary: "Showing %{from}-%{to} of %{count}"
+      first: "First"
+      prev: "Previous"
+      next: "Next"
+      last: "Last"
+      go_to: "Go to page %{page}"
     filters:
       heading: "Filters"
       all: "All"
@@ -37,12 +45,22 @@ en:
         label: "Not delivered"
       spotify_album_display:
         label: "Display"
+      track_status:
+        label: "Track retrieval"
+      touhou:
+        label: "Touhou"
       boolean:
         true: "Yes"
         false: "No"
     table:
       actions: "Actions"
       empty: "No records found."
+    track_status:
+      missing: "No tracks"
+      incomplete: "Incomplete"
+      complete: "Complete"
+      present: "Has tracks"
+      action: "Fetch"
     form:
       save_failed: "Could not save the record."
     confirm:
@@ -125,10 +143,13 @@ en:
         ytmusic_album_reference: "YouTube Music album"
         spotify_album_name: "Spotify album name"
         apple_music_album_name: "Apple Music album name"
+        ytmusic_album_name: "YouTube Music album name"
+        line_music_album_name: "LINE MUSIC album name"
         album_type: "Album type"
         label: "Label"
         release_date: "Release date"
         release_year: "Release year"
+        tracks_status: "Track retrieval"
         total_tracks: "Total tracks"
         active: "Active"
         artist_name: "Artist name"

@@ -40,10 +40,79 @@ module Admin
         all.find { |resource| resource.model_class == model_class }
       end
 
+      def streaming_album_track_status_scope(scope, association_name, value)
+        return scope if value.blank?
+
+        model_class = scope.klass
+        reflection = model_class.reflect_on_association(association_name)
+        return scope if reflection.blank?
+
+        album_table = model_class.quoted_table_name
+        track_table = reflection.klass.quoted_table_name
+        album_primary_key = "#{album_table}.#{model_class.connection.quote_column_name(model_class.primary_key)}"
+        track_primary_key = "#{track_table}.#{reflection.klass.connection.quote_column_name(reflection.klass.primary_key)}"
+        total_tracks = "#{album_table}.#{model_class.connection.quote_column_name(:total_tracks)}"
+        track_count = "COUNT(#{track_primary_key})"
+
+        matching_ids = model_class
+                       .unscoped
+                       .left_joins(association_name)
+                       .group(album_primary_key)
+
+        matching_ids = case value
+                       when 'missing'
+                         matching_ids.having("#{track_count} = 0")
+                       when 'incomplete'
+                         matching_ids.having("#{total_tracks} > 0 AND #{track_count} > 0 AND #{track_count} < #{total_tracks}")
+                       when 'complete'
+                         matching_ids.having("#{total_tracks} > 0 AND #{track_count} >= #{total_tracks}")
+                       else
+                         return scope
+                       end
+
+        scope.where(model_class.primary_key => matching_ids.select(model_class.primary_key))
+      end
+
       private
 
       def build_resources
         album_preview_includes = %i[circles spotify_album apple_music_album ytmusic_album line_music_album]
+        touhou_filter = lambda {
+          {
+            key: 'touhou',
+            label_key: 'admin.filters.touhou.label',
+            include_blank: true,
+            options: [
+              ['true', '東方のみ'],
+              ['false', '東方以外']
+            ],
+            apply: lambda { |scope, value|
+              case value
+              when 'true'
+                scope.is_touhou
+              when 'false'
+                scope.non_touhou
+              else
+                scope
+              end
+            }
+          }
+        }
+        track_status_filter = lambda { |association_name|
+          {
+            key: 'track_status',
+            label_key: 'admin.filters.track_status.label',
+            include_blank: true,
+            options: [
+              ['missing', '楽曲なし'],
+              ['incomplete', '不足あり'],
+              ['complete', '取得済み']
+            ],
+            apply: lambda { |scope, value|
+              Admin::Resource.streaming_album_track_status_scope(scope, association_name, value)
+            }
+          }
+        }
         track_preview_includes = [
           { album: album_preview_includes },
           :original_songs,
@@ -57,7 +126,7 @@ module Admin
           new(
             key: 'albums',
             model_class_name: 'Album',
-            index_attributes: %i[spotify_album_name apple_music_album_name circle_name jan_code is_touhou],
+            index_attributes: %i[jan_code circle_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name is_touhou],
             form_attributes: %i[jan_code is_touhou],
             search_attributes: %i[jan_code],
             filter_definitions: [
@@ -130,7 +199,7 @@ module Admin
           new(
             key: 'spotify_albums',
             model_class_name: 'SpotifyAlbum',
-            index_attributes: %i[name circle_name album_id active release_date total_tracks spotify_id],
+            index_attributes: %i[name circle_name album_id active release_date tracks_status total_tracks spotify_id],
             form_attributes: %i[album_id spotify_id album_type name label url release_date total_tracks active payload],
             search_attributes: %i[name spotify_id label],
             filter_definitions: [
@@ -164,9 +233,11 @@ module Admin
                     scope.active
                   end
                 }
-              }
+              },
+              track_status_filter.call(:spotify_tracks),
+              touhou_filter.call
             ],
-            includes: [{ album: album_preview_includes }],
+            includes: [:spotify_tracks, { album: album_preview_includes }],
             action_class_names: %w[FetchSpotifyAlbum FetchMissingSpotifyAlbumByAppleMusicJan UpdateSpotifyAlbum]
           ),
           new(
@@ -175,6 +246,7 @@ module Admin
             index_attributes: %i[name circle_name album_id track_id spotify_album_id disc_number track_number spotify_id],
             form_attributes: %i[album_id track_id spotify_album_id spotify_id name label url release_date disc_number track_number duration_ms payload],
             search_attributes: %i[name spotify_id label],
+            filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
               :spotify_album,
@@ -185,10 +257,11 @@ module Admin
           new(
             key: 'apple_music_albums',
             model_class_name: 'AppleMusicAlbum',
-            index_attributes: %i[name circle_name album_id release_date total_tracks apple_music_id],
+            index_attributes: %i[name circle_name album_id release_date tracks_status total_tracks apple_music_id],
             form_attributes: %i[album_id apple_music_id name label url release_date total_tracks payload],
             search_attributes: %i[name apple_music_id label],
-            includes: [{ album: album_preview_includes }],
+            filter_definitions: [track_status_filter.call(:apple_music_tracks), touhou_filter.call],
+            includes: [:apple_music_tracks, { album: album_preview_includes }],
             action_class_names: %w[
               FetchAppleMusicAlbum
               FetchAppleMusicVariousArtistsAlbum
@@ -202,6 +275,7 @@ module Admin
             index_attributes: %i[name artist_name composer_name circle_name album_id track_id apple_music_album_id disc_number track_number apple_music_id],
             form_attributes: %i[album_id track_id apple_music_album_id apple_music_id name label artist_name composer_name url release_date disc_number track_number duration_ms payload],
             search_attributes: %i[name apple_music_id artist_name composer_name label],
+            filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
               :apple_music_album,
@@ -212,10 +286,11 @@ module Admin
           new(
             key: 'line_music_albums',
             model_class_name: 'LineMusicAlbum',
-            index_attributes: %i[name circle_name album_id release_date total_tracks line_music_id],
+            index_attributes: %i[name circle_name album_id release_date tracks_status total_tracks line_music_id],
             form_attributes: %i[album_id line_music_id name url release_date total_tracks payload],
             search_attributes: %i[name line_music_id],
-            includes: [{ album: album_preview_includes }],
+            filter_definitions: [track_status_filter.call(:line_music_tracks), touhou_filter.call],
+            includes: [:line_music_tracks, { album: album_preview_includes }],
             action_class_names: %w[FetchLineMusicAlbum UpdateLineMusicAlbum ProcessLineMusicJanToAlbumIds]
           ),
           new(
@@ -224,6 +299,7 @@ module Admin
             index_attributes: %i[name circle_name album_id track_id line_music_album_id disc_number track_number line_music_id],
             form_attributes: %i[album_id track_id line_music_album_id line_music_id name url disc_number track_number payload],
             search_attributes: %i[name line_music_id],
+            filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
               :line_music_album,
@@ -234,10 +310,11 @@ module Admin
           new(
             key: 'ytmusic_albums',
             model_class_name: 'YtmusicAlbum',
-            index_attributes: %i[name circle_name album_id release_year total_tracks browse_id],
+            index_attributes: %i[name circle_name album_id release_year tracks_status total_tracks browse_id],
             form_attributes: %i[album_id browse_id name url playlist_url release_year total_tracks payload],
             search_attributes: %i[name browse_id],
-            includes: [{ album: album_preview_includes }],
+            filter_definitions: [track_status_filter.call(:ytmusic_tracks), touhou_filter.call],
+            includes: [:ytmusic_tracks, { album: album_preview_includes }],
             action_class_names: %w[
               FetchYtmusicAlbum
               ProcessYtmusicJanToAlbumBrowseIds
@@ -252,6 +329,7 @@ module Admin
             index_attributes: %i[name circle_name album_id track_id ytmusic_album_id track_number video_id playlist_id],
             form_attributes: %i[album_id track_id ytmusic_album_id video_id playlist_id name url track_number payload],
             search_attributes: %i[name video_id playlist_id],
+            filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
               :ytmusic_album,

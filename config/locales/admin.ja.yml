@@ -30,6 +30,14 @@ ja:
       placeholder: "検索"
       submit: "検索"
       clear: "解除"
+    pagination:
+      aria_label: "ページ送り"
+      summary: "%{count}件中 %{from}-%{to}件を表示"
+      first: "最初"
+      prev: "前へ"
+      next: "次へ"
+      last: "最後"
+      go_to: "%{page}ページへ移動"
     filters:
       heading: "フィルター"
       all: "すべて"
@@ -37,12 +45,22 @@ ja:
         label: "未配信"
       spotify_album_display:
         label: "表示"
+      track_status:
+        label: "楽曲取得"
+      touhou:
+        label: "東方"
       boolean:
         true: "はい"
         false: "いいえ"
     table:
       actions: "操作"
       empty: "レコードがありません。"
+    track_status:
+      missing: "楽曲なし"
+      incomplete: "不足"
+      complete: "取得済み"
+      present: "取得あり"
+      action: "取得へ"
     form:
       save_failed: "保存できませんでした。"
     confirm:
@@ -125,10 +143,13 @@ ja:
         ytmusic_album_reference: "YouTube Musicアルバム"
         spotify_album_name: "Spotifyアルバム名"
         apple_music_album_name: "Apple Musicアルバム名"
+        ytmusic_album_name: "YouTube Musicアルバム名"
+        line_music_album_name: "LINE MUSICアルバム名"
         album_type: "アルバム種別"
         label: "レーベル"
         release_date: "リリース日"
         release_year: "リリース年"
+        tracks_status: "楽曲取得"
         total_tracks: "総トラック数"
         active: "有効"
         artist_name: "アーティスト名"

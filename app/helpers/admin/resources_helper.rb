@@ -2,6 +2,29 @@
 
 module Admin
   module ResourcesHelper
+    STREAMING_TRACK_STATUS_ACTIONS = {
+      'SpotifyAlbum' => {
+        association: :spotify_tracks,
+        resource_key: 'spotify_albums',
+        action_key: 'fetch_spotify_album'
+      },
+      'AppleMusicAlbum' => {
+        association: :apple_music_tracks,
+        resource_key: 'apple_music_tracks',
+        action_key: 'fetch_apple_music_track'
+      },
+      'LineMusicAlbum' => {
+        association: :line_music_tracks,
+        resource_key: 'line_music_tracks',
+        action_key: 'fetch_line_music_track'
+      },
+      'YtmusicAlbum' => {
+        association: :ytmusic_tracks,
+        resource_key: 'ytmusic_tracks',
+        action_key: 'fetch_ytmusic_track'
+      }
+    }.freeze
+
     def admin_form_field(form, resource_config, record, attribute)
       column = resource_config.column_for(attribute)
       value = record.public_send(attribute) if record.respond_to?(attribute)
@@ -18,6 +41,8 @@ module Admin
     end
 
     def admin_display_value(resource_config, record, attribute)
+      return admin_tracks_status_value(record) if attribute.to_s == 'tracks_status'
+
       value = resource_config.value_for(record, attribute)
       reference_record = admin_reference_record(record, attribute, value)
       return admin_reference_value(reference_record) if reference_record
@@ -81,19 +106,141 @@ module Admin
       params[:q].present? || resource_config.non_default_filters?(active_filters)
     end
 
+    def admin_pagination(pagy)
+      return if pagy.pages <= 1
+
+      tag.nav(class: 'admin-pagination', aria: { label: t('admin.pagination.aria_label') }) do
+        safe_join(
+          [
+            tag.div(
+              t('admin.pagination.summary', from: pagy.from, to: pagy.to, count: pagy.count),
+              class: 'admin-pagination-summary'
+            ),
+            tag.div(class: 'admin-pagination-controls') do
+              safe_join(
+                [
+                  admin_pagination_link(1, t('admin.pagination.first'), disabled: pagy.page == 1, icon: 'bi-chevron-double-left'),
+                  admin_pagination_link(pagy.prev || 1, t('admin.pagination.prev'), disabled: pagy.prev.blank?, icon: 'bi-chevron-left'),
+                  tag.div(class: 'admin-pagination-pages') do
+                    safe_join(admin_pagination_series(pagy).map { |item| admin_pagination_item(item, pagy.page) })
+                  end,
+                  admin_pagination_link(pagy.next || pagy.pages, t('admin.pagination.next'), disabled: pagy.next.blank?, icon: 'bi-chevron-right'),
+                  admin_pagination_link(pagy.pages, t('admin.pagination.last'), disabled: pagy.page == pagy.pages, icon: 'bi-chevron-double-right')
+                ]
+              )
+            end
+          ]
+        )
+      end
+    end
+
     private
 
     def admin_linkable_index_attribute?(resource_config, attribute, value)
       return false if value.blank?
       return false unless Admin::Resource.find_by_model_class(resource_config.model_class)
 
-      attribute.to_s.in?(%w[name title short_title album_name spotify_album_name apple_music_album_name])
+      attribute.to_s.in?(%w[name title short_title album_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name])
     end
 
     def admin_pretty_json(value)
       JSON.pretty_generate(value)
     rescue JSON::GeneratorError
       value.to_s
+    end
+
+    def admin_pagination_series(pagy)
+      pages = ([1, pagy.pages] + ((pagy.page - 2)..(pagy.page + 2)).to_a)
+              .select { |page| page.between?(1, pagy.pages) }
+              .uniq
+              .sort
+
+      pages.each_cons(2).with_object([pages.first]) do |(previous_page, next_page), series|
+        series << :gap if next_page - previous_page > 1
+        series << next_page
+      end
+    end
+
+    def admin_pagination_item(item, current_page)
+      return tag.span('...', class: 'admin-pagination-gap', aria: { hidden: true }) if item == :gap
+
+      admin_pagination_link(item, item.to_s, current: item == current_page)
+    end
+
+    def admin_pagination_link(page, label, disabled: false, current: false, icon: nil)
+      classes = ['admin-pagination-link']
+      classes << 'is-current' if current
+      classes << 'is-disabled' if disabled
+
+      content = if icon
+                  safe_join(
+                    [
+                      tag.i(class: "bi #{icon}", aria: { hidden: true }),
+                      tag.span(label, class: 'visually-hidden')
+                    ]
+                  )
+                else
+                  label
+                end
+
+      return tag.span(content, class: classes, aria: { current: current ? 'page' : nil }) if disabled || current
+
+      link_to content, admin_pagination_url(page), class: classes, aria: { label: t('admin.pagination.go_to', page:) }
+    end
+
+    def admin_pagination_url(page)
+      url_for(request.query_parameters.merge(page:))
+    end
+
+    def admin_tracks_status_value(record)
+      action_config = STREAMING_TRACK_STATUS_ACTIONS[record.class.name]
+      return tag.span(t('admin.shared.blank'), class: 'text-body-secondary') if action_config.blank?
+
+      track_count = record.public_send(action_config.fetch(:association)).size
+      total_tracks = record.respond_to?(:total_tracks) ? record.total_tracks.to_i : 0
+      status_key = admin_tracks_status_key(track_count, total_tracks)
+      count_label = total_tracks.positive? ? "#{track_count} / #{total_tracks}" : track_count.to_s
+
+      tag.div(class: 'admin-track-status') do
+        safe_join(
+          [
+            tag.span(count_label, class: 'admin-track-status-count'),
+            tag.span(t("admin.track_status.#{status_key}"), class: "badge #{admin_tracks_status_badge_class(status_key)}"),
+            admin_tracks_status_action_link(action_config, status_key)
+          ].compact
+        )
+      end
+    end
+
+    def admin_tracks_status_key(track_count, total_tracks)
+      return :missing if track_count.zero?
+      return :incomplete if total_tracks.positive? && track_count < total_tracks
+      return :complete if total_tracks.positive? && track_count >= total_tracks
+
+      :present
+    end
+
+    def admin_tracks_status_badge_class(status_key)
+      {
+        missing: 'text-bg-danger',
+        incomplete: 'text-bg-warning',
+        complete: 'text-bg-success',
+        present: 'text-bg-secondary'
+      }.fetch(status_key)
+    end
+
+    def admin_tracks_status_action_link(action_config, status_key)
+      return unless status_key.in?(%i[missing incomplete])
+
+      link_to admin_resource_action_path(action_config.fetch(:resource_key), action_config.fetch(:action_key)),
+              class: 'btn btn-sm admin-btn admin-track-status-action' do
+        safe_join(
+          [
+            tag.i(class: 'bi bi-lightning-charge', aria: { hidden: true }),
+            tag.span(t('admin.track_status.action'))
+          ]
+        )
+      end
     end
 
     def admin_relation_record_meta(record)
@@ -215,7 +362,7 @@ module Admin
     end
 
     def admin_thumbnail_attribute?(attribute)
-      attribute.to_s.in?(%w[name title album_name spotify_album_name apple_music_album_name])
+      attribute.to_s.in?(%w[name title album_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name])
     end
 
     def admin_value_with_thumbnail(record, value)
