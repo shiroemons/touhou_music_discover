@@ -33,10 +33,10 @@
   <div class="table-responsive">
     <table class="table admin-detail-table mb-0">
       <tbody>
-        <% @resource_config.model_class.columns.each do |column| %>
+        <% @resource_config.attributes_for_detail.each do |attribute| %>
           <tr>
-            <th><%= @resource_config.detail_attribute_label(column.name) %></th>
-            <td><%= admin_display_value(@resource_config, @record, column.name) %></td>
+            <th><%= @resource_config.detail_attribute_label(attribute) %></th>
+            <td><%= admin_display_value(@resource_config, @record, attribute) %></td>
           </tr>
         <% end %>
       </tbody>

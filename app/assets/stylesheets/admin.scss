@@ -644,6 +644,22 @@
   padding-inline: 0.55rem;
 }
 
+.admin-streaming-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 12rem;
+}
+
+.admin-streaming-status-badge {
+  text-decoration: none;
+}
+
+.admin-streaming-status-badge:hover,
+.admin-streaming-status-badge:focus {
+  filter: brightness(0.95);
+}
+
 .admin-reference-card,
 .admin-value-with-thumb {
   align-items: center;

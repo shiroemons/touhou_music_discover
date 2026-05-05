@@ -35,10 +35,7 @@ class Album < ApplicationRecord
 
   # Albumに紐づくTrackのうち、original_songsが紐づいていないものが1つでも存在するAlbumを絞り込みます
   scope :tracks_missing_original_songs, lambda {
-    joins(:tracks)
-      .left_joins(tracks: :original_songs)
-      .group('albums.id')
-      .having('COUNT(original_songs.code) = 0')
+    where(jan_code: Track.missing_original_songs.select(:jan_code))
   }
 
   def circle_name

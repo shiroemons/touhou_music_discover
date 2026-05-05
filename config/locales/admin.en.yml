@@ -43,6 +43,12 @@ en:
       all: "All"
       not_delivered:
         label: "Not delivered"
+      missing_streaming_track:
+        label: "Missing"
+      original_songs_count:
+        label: "Original songs"
+      tracks_original_songs:
+        label: "Original songs"
       spotify_album_display:
         label: "Display"
       track_status:
@@ -61,6 +67,9 @@ en:
       complete: "Complete"
       present: "Has tracks"
       action: "Fetch"
+    streaming_status:
+      complete: "Complete"
+      missing: "%{service} missing"
     form:
       save_failed: "Could not save the record."
     confirm:
@@ -114,6 +123,7 @@ en:
         album_name: "Album name"
         albums_count: "Albums count"
         original_songs_count: "Original songs count"
+        streaming_tracks_status: "Streaming retrieval"
         original_code: "Original code"
         composer: "Composer"
         track_number: "Track number"

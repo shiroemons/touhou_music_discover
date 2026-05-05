@@ -24,6 +24,24 @@ module Admin
         action_key: 'fetch_ytmusic_track'
       }
     }.freeze
+    TRACK_STREAMING_SERVICES = {
+      spotify: {
+        label: 'Spotify',
+        association: :spotify_tracks
+      },
+      apple_music: {
+        label: 'Apple Music',
+        association: :apple_music_tracks
+      },
+      line_music: {
+        label: 'LINE MUSIC',
+        association: :line_music_tracks
+      },
+      ytmusic: {
+        label: 'YouTube Music',
+        association: :ytmusic_tracks
+      }
+    }.freeze
 
     def admin_form_field(form, resource_config, record, attribute)
       column = resource_config.column_for(attribute)
@@ -42,6 +60,7 @@ module Admin
 
     def admin_display_value(resource_config, record, attribute)
       return admin_tracks_status_value(record) if attribute.to_s == 'tracks_status'
+      return admin_streaming_tracks_status_value(record) if attribute.to_s == 'streaming_tracks_status'
 
       value = resource_config.value_for(record, attribute)
       reference_record = admin_reference_record(record, attribute, value)
@@ -239,6 +258,26 @@ module Admin
             tag.i(class: 'bi bi-lightning-charge', aria: { hidden: true }),
             tag.span(t('admin.track_status.action'))
           ]
+        )
+      end
+    end
+
+    def admin_streaming_tracks_status_value(record)
+      missing_services = TRACK_STREAMING_SERVICES.filter do |_key, service|
+        record.respond_to?(service.fetch(:association)) && record.public_send(service.fetch(:association)).empty?
+      end
+
+      return tag.span(t('admin.streaming_status.complete'), class: 'badge text-bg-success') if missing_services.empty?
+
+      tag.div(class: 'admin-streaming-status') do
+        safe_join(
+          missing_services.map do |key, service|
+            link_to(
+              t('admin.streaming_status.missing', service: service.fetch(:label)),
+              admin_resources_path('tracks', filters: { missing_streaming_track: key }),
+              class: 'badge text-bg-warning admin-streaming-status-badge'
+            )
+          end
         )
       end
     end

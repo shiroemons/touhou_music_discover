@@ -16,8 +16,11 @@ module Admin
         css_select('thead th').map { it.text.squish }
       )
       assert_select '.admin-filter-field label', text: '未配信'
+      assert_select '.admin-filter-field label', text: '原曲'
       assert_select 'select[name=?][onchange=?]', 'filters[not_delivered]', 'this.form.requestSubmit()'
+      assert_select 'select[name=?][onchange=?]', 'filters[tracks_original_songs]', 'this.form.requestSubmit()'
       assert_select 'select[name=?] option', 'filters[not_delivered]', text: 'Apple Music未配信'
+      assert_select 'select[name=?] option', 'filters[tracks_original_songs]', text: '未設定の楽曲あり'
       assert_select 'a[href=?]', admin_resource_action_path('albums', 'change_touhou_flag'), text: '東方フラグを変更'
       assert_select 'table'
     end
@@ -46,6 +49,35 @@ module Admin
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
 
+    test 'filters albums with tracks missing original songs' do
+      missing_album = Album.create!(jan_code: '9777777777931')
+      linked_album = Album.create!(jan_code: '9777777777932')
+      Track.create!(album: missing_album, isrc: 'JPABC260531')
+      linked_track = Track.create!(album: linked_album, isrc: 'JPABC260532')
+      original = Original.create!(
+        code: 'ADMIN-ALBUM-ORIGINAL',
+        title: 'Admin Album Original',
+        short_title: 'Album Admin',
+        original_type: 'other',
+        series_order: 1.0
+      )
+      original_song = OriginalSong.create!(
+        code: 'ADMIN-ALBUM-ORIGINAL-001',
+        original:,
+        title: 'Admin Album Original Song',
+        composer: 'ZUN',
+        track_number: 1
+      )
+      TracksOriginalSong.create!(track: linked_track, original_song:)
+
+      get admin_resources_url('albums'), params: { q: '977777777793', filters: { tracks_original_songs: 'missing' } }
+
+      assert_response :success
+      assert_select 'select[name=?] option[selected]', 'filters[tracks_original_songs]', text: '未設定の楽曲あり'
+      assert_select 'td', text: missing_album.jan_code
+      assert_select 'td', { text: linked_album.jan_code, count: 0 }
+    end
+
     test 'shows relations on detail page' do
       album = Album.create!(jan_code: '9777777777777')
       Track.create!(album:, isrc: 'JPABC260003')
@@ -56,6 +88,110 @@ module Admin
       assert_select 'h2', '関連'
       assert_select '.admin-relation-header', /楽曲/
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
+    end
+
+    test 'lists tracks by jan code and shows album name on detail' do
+      older_album = Album.create!(jan_code: '9777777777901')
+      newer_album = Album.create!(jan_code: '9777777777902')
+      older_track = Track.create!(album: older_album, isrc: 'JPABC260501')
+      newer_track = Track.create!(album: newer_album, isrc: 'JPABC260502')
+      SpotifyAlbum.create!(
+        album: newer_album,
+        spotify_id: 'spotify-admin-track-detail-album',
+        album_type: 'album',
+        name: 'Admin Track Detail Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+
+      get admin_resources_url('tracks'), params: { q: '977777777790' }
+
+      assert_response :success
+      assert_select '.admin-filter-field label', text: '未取得'
+      assert_select '.admin-filter-field label', text: '原曲数'
+      assert_select 'select[name=?][onchange=?]', 'filters[missing_streaming_track]', 'this.form.requestSubmit()'
+      assert_select 'select[name=?][onchange=?]', 'filters[original_songs_count]', 'this.form.requestSubmit()'
+      assert_select 'select[name=?] option', 'filters[original_songs_count]', text: '0曲'
+      assert_select 'th', text: '配信取得'
+      row_jan_codes = css_select('tbody tr').map { |row| row.css('td')[3].text.squish }
+      assert_equal [newer_track.jan_code, older_track.jan_code], row_jan_codes
+      assert_select 'a.admin-streaming-status-badge', text: 'Spotify未取得'
+      assert_select 'a[href=?].admin-streaming-status-badge', admin_resources_path('tracks', filters: { missing_streaming_track: :apple_music }), text: 'Apple Music未取得'
+
+      get admin_resource_url('tracks', newer_track)
+
+      assert_response :success
+      assert_select '.admin-detail-table th', text: 'アルバム名'
+      assert_select '.admin-detail-table th', text: '配信取得'
+      assert_select '.admin-detail-table td', text: 'Admin Track Detail Album'
+    end
+
+    test 'filters tracks by missing streaming service' do
+      missing_album = Album.create!(jan_code: '9777777777911')
+      delivered_album = Album.create!(jan_code: '9777777777912')
+      missing_track = Track.create!(album: missing_album, isrc: 'JPABC260511')
+      delivered_track = Track.create!(album: delivered_album, isrc: 'JPABC260512')
+      delivered_spotify_album = SpotifyAlbum.create!(
+        album: delivered_album,
+        spotify_id: 'spotify-admin-track-filter-delivered-album',
+        album_type: 'album',
+        name: 'Delivered Track Filter Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      SpotifyTrack.create!(
+        album: delivered_album,
+        track: delivered_track,
+        spotify_album: delivered_spotify_album,
+        spotify_id: 'spotify-admin-track-filter-delivered',
+        name: 'Delivered Track Filter Song',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        payload: {}
+      )
+
+      get admin_resources_url('tracks'), params: { q: '977777777791', filters: { missing_streaming_track: 'spotify' } }
+
+      assert_response :success
+      assert_select 'td', text: missing_track.isrc
+      assert_select 'td', { text: delivered_track.isrc, count: 0 }
+    end
+
+    test 'filters tracks by original songs count' do
+      missing_album = Album.create!(jan_code: '9777777777921')
+      linked_album = Album.create!(jan_code: '9777777777922')
+      missing_track = Track.create!(album: missing_album, isrc: 'JPABC260521')
+      linked_track = Track.create!(album: linked_album, isrc: 'JPABC260522')
+      original = Original.create!(
+        code: 'ADMIN-ORIGINAL',
+        title: 'Admin Original',
+        short_title: 'Admin',
+        original_type: 'other',
+        series_order: 1.0
+      )
+      original_song = OriginalSong.create!(
+        code: 'ADMIN-ORIGINAL-001',
+        original:,
+        title: 'Admin Original Song',
+        composer: 'ZUN',
+        track_number: 1
+      )
+      TracksOriginalSong.create!(track: linked_track, original_song:)
+
+      get admin_resources_url('tracks'), params: { q: '977777777792', filters: { original_songs_count: 'none' } }
+
+      assert_response :success
+      assert_select 'select[name=?] option[selected]', 'filters[original_songs_count]', text: '0曲'
+      assert_select 'td', text: missing_track.isrc
+      assert_select 'td', { text: linked_track.isrc, count: 0 }
+
+      get admin_resources_url('tracks'), params: { q: '977777777792', filters: { original_songs_count: 'present' } }
+
+      assert_response :success
+      assert_select 'td', text: linked_track.isrc
+      assert_select 'td', { text: missing_track.isrc, count: 0 }
     end
 
     test 'shows all related records with track numbers' do

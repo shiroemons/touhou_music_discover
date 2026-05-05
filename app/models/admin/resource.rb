@@ -14,8 +14,8 @@ module Admin
       'ytmusic_album_id' => :ytmusic_album_reference
     }.freeze
 
-    attr_accessor :key, :model_class_name, :index_attributes, :form_attributes,
-                  :search_attributes, :filter_definitions, :includes, :action_class_names
+    attr_accessor :key, :model_class_name, :index_attributes, :detail_attributes, :form_attributes,
+                  :search_attributes, :filter_definitions, :includes, :default_order, :action_class_names
 
     delegate :count, :primary_key, to: :model_class
 
@@ -73,6 +73,34 @@ module Admin
         scope.where(model_class.primary_key => matching_ids.select(model_class.primary_key))
       end
 
+      def track_original_songs_count_scope(scope, value)
+        return scope if value.blank?
+
+        tracks_table = Track.quoted_table_name
+        original_songs_table = OriginalSong.quoted_table_name
+        track_primary_key = "#{tracks_table}.#{Track.connection.quote_column_name(Track.primary_key)}"
+        original_song_primary_key = "#{original_songs_table}.#{OriginalSong.connection.quote_column_name(OriginalSong.primary_key)}"
+        original_songs_count = "COUNT(#{original_song_primary_key})"
+
+        matching_ids = Track
+                       .unscoped
+                       .left_joins(:original_songs)
+                       .group(track_primary_key)
+
+        matching_ids = case value
+                       when 'none'
+                         matching_ids.having("#{original_songs_count} = 0")
+                       when 'present'
+                         matching_ids.having("#{original_songs_count} > 0")
+                       when 'multiple'
+                         matching_ids.having("#{original_songs_count} > 1")
+                       else
+                         return scope
+                       end
+
+        scope.where(Track.primary_key => matching_ids.select(Track.primary_key))
+      end
+
       private
 
       def build_resources
@@ -111,6 +139,60 @@ module Admin
             apply: lambda { |scope, value|
               Admin::Resource.streaming_album_track_status_scope(scope, association_name, value)
             }
+          }
+        }
+        missing_streaming_track_filter = {
+          key: 'missing_streaming_track',
+          label_key: 'admin.filters.missing_streaming_track.label',
+          include_blank: true,
+          options: [
+            ['spotify', 'Spotify未取得'],
+            ['apple_music', 'Apple Music未取得'],
+            ['line_music', 'LINE MUSIC未取得'],
+            ['ytmusic', 'YouTube Music未取得']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'spotify'
+              scope.missing_spotify_tracks
+            when 'apple_music'
+              scope.missing_apple_music_tracks
+            when 'line_music'
+              scope.missing_line_music_tracks
+            when 'ytmusic'
+              scope.missing_ytmusic_tracks
+            else
+              scope
+            end
+          }
+        }
+        original_songs_count_filter = {
+          key: 'original_songs_count',
+          label_key: 'admin.filters.original_songs_count.label',
+          include_blank: true,
+          options: [
+            ['none', '0曲'],
+            ['present', '1曲以上'],
+            ['multiple', '2曲以上']
+          ],
+          apply: lambda { |scope, value|
+            Admin::Resource.track_original_songs_count_scope(scope, value)
+          }
+        }
+        album_original_songs_filter = {
+          key: 'tracks_original_songs',
+          label_key: 'admin.filters.tracks_original_songs.label',
+          include_blank: true,
+          options: [
+            ['missing', '未設定の楽曲あり']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'missing'
+              scope.tracks_missing_original_songs
+            else
+              scope
+            end
           }
         }
         track_preview_includes = [
@@ -154,7 +236,8 @@ module Admin
                     scope
                   end
                 }
-              }
+              },
+              album_original_songs_filter
             ],
             includes: album_preview_includes,
             action_class_names: %w[BulkRetrieval ChangeTouhouFlag SetCircles]
@@ -162,10 +245,13 @@ module Admin
           new(
             key: 'tracks',
             model_class_name: 'Track',
-            index_attributes: %i[name album_name circle_name jan_code isrc is_touhou original_songs_count],
+            index_attributes: %i[name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count],
+            detail_attributes: %i[id name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count created_at updated_at],
             form_attributes: %i[jan_code isrc is_touhou],
             search_attributes: %i[jan_code isrc],
+            filter_definitions: [missing_streaming_track_filter, original_songs_count_filter],
             includes: track_preview_includes,
+            default_order: ->(scope) { scope.order(jan_code: :desc, id: :asc) },
             action_class_names: %w[ExportMissingOriginalSongsTracks ImportTracksWithOriginalSongs ChangeTouhouFlag]
           ),
           new(
@@ -373,7 +459,8 @@ module Admin
     end
 
     def apply_to(scope)
-      includes.present? ? scope.includes(*includes) : scope
+      scoped = includes.present? ? scope.includes(*includes) : scope
+      default_order.present? ? default_order.call(scoped) : scoped
     end
 
     def search(scope, query)
@@ -419,6 +506,10 @@ module Admin
 
     def attributes_for_form
       form_attributes.map(&:to_s)
+    end
+
+    def attributes_for_detail
+      Array(detail_attributes.presence || model_class.columns.map(&:name)).map(&:to_s)
     end
 
     def index_attribute_label(attribute)

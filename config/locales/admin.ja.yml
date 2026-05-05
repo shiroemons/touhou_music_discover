@@ -43,6 +43,12 @@ ja:
       all: "すべて"
       not_delivered:
         label: "未配信"
+      missing_streaming_track:
+        label: "未取得"
+      original_songs_count:
+        label: "原曲数"
+      tracks_original_songs:
+        label: "原曲"
       spotify_album_display:
         label: "表示"
       track_status:
@@ -61,6 +67,9 @@ ja:
       complete: "取得済み"
       present: "取得あり"
       action: "取得へ"
+    streaming_status:
+      complete: "取得済み"
+      missing: "%{service}未取得"
     form:
       save_failed: "保存できませんでした。"
     confirm:
@@ -114,6 +123,7 @@ ja:
         album_name: "アルバム名"
         albums_count: "アルバム数"
         original_songs_count: "原曲数"
+        streaming_tracks_status: "配信取得"
         original_code: "原作コード"
         composer: "作曲者"
         track_number: "トラック番号"
