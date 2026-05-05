@@ -26,28 +26,35 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
       # LINE MUSICアルバムを検索または作成
       line_music_album = LineMusicAlbum.find_by(line_music_id: line_music_album_id)
 
-      if line_music_album.nil?
-        # LINE MUSICアルバムを新規作成
+      if line_music_album.nil? || line_music_album.album_id != album.id
         begin
-          line_music_album = LineMusicAlbum.create!(
-            line_music_id: line_music_album_id,
-            album: album
-          )
-          created_count += 1
-          Rails.logger.info "作成: JAN #{jan_code} → LINE MUSIC ID #{line_music_album_id}"
+          lm_album = LineMusicAlbum.with_retry(max_attempts: 3) do
+            LineMusic::Album.find(line_music_album_id)
+          end
+
+          if lm_album.blank?
+            error_count += 1
+            Rails.logger.warn "エラー: JAN #{jan_code} - LINE MUSIC アルバムが見つかりません: #{line_music_album_id}"
+            next
+          end
+
+          saved_line_music_album = LineMusicAlbum.save_album(album.id, lm_album)
+          if saved_line_music_album.blank?
+            error_count += 1
+            Rails.logger.warn "エラー: JAN #{jan_code} - LINE MUSIC アルバム情報が不完全なため保存をスキップしました: #{line_music_album_id}"
+            next
+          end
+
+          if line_music_album.nil?
+            created_count += 1
+            Rails.logger.info "作成: JAN #{jan_code} → LINE MUSIC ID #{line_music_album_id}"
+          else
+            updated_count += 1
+            Rails.logger.info "更新: JAN #{jan_code} → LINE MUSIC ID #{line_music_album_id}"
+          end
         rescue StandardError => e
           error_count += 1
-          Rails.logger.error "エラー: JAN #{jan_code} - #{e.message}"
-        end
-      elsif line_music_album.album_id != album.id
-        # 既存のLINE MUSICアルバムを更新
-        begin
-          line_music_album.update!(album: album)
-          updated_count += 1
-          Rails.logger.info "更新: JAN #{jan_code} → LINE MUSIC ID #{line_music_album_id}"
-        rescue StandardError => e
-          error_count += 1
-          Rails.logger.error "エラー: JAN #{jan_code} - #{e.message}"
+          Rails.logger.error "エラー: JAN #{jan_code} - #{e.class}: #{e.message}"
         end
       else
         skipped_count += 1
