@@ -2,7 +2,7 @@
 
 module Admin
   class ActionProgress
-    PROGRESS_PATTERN = %r{(?<current>\d+)\s*/\s*(?<total>\d+)}.freeze
+    PROGRESS_PATTERN = %r{(?<current>\d+)\s*/\s*(?<total>\d+)}
     PERCENT_PATTERN = /Progress:\s*(?<percent>\d+(?:\.\d+)?)%/i
 
     class << self

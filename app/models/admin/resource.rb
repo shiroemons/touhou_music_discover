@@ -141,8 +141,8 @@ module Admin
             label_key: 'admin.filters.touhou.label',
             include_blank: true,
             options: [
-              ['true', '東方のみ'],
-              ['false', '東方以外']
+              %w[true 東方のみ],
+              %w[false 東方以外]
             ],
             apply: lambda { |scope, value|
               case value
@@ -162,9 +162,9 @@ module Admin
             label_key: 'admin.filters.track_status.label',
             include_blank: true,
             options: [
-              ['missing', '楽曲なし'],
-              ['incomplete', '不足あり'],
-              ['complete', '取得済み']
+              %w[missing 楽曲なし],
+              %w[incomplete 不足あり],
+              %w[complete 取得済み]
             ],
             apply: lambda { |scope, value|
               Admin::Resource.streaming_album_track_status_scope(scope, association_name, value)
@@ -201,9 +201,9 @@ module Admin
           label_key: 'admin.filters.original_songs_count.label',
           include_blank: true,
           options: [
-            ['none', '0曲'],
-            ['present', '1曲以上'],
-            ['multiple', '2曲以上']
+            %w[none 0曲],
+            %w[present 1曲以上],
+            %w[multiple 2曲以上]
           ],
           apply: lambda { |scope, value|
             Admin::Resource.track_original_songs_count_scope(scope, value)
@@ -214,15 +214,15 @@ module Admin
           label_key: 'admin.filters.audio_feature_profile.label',
           include_blank: true,
           options: [
-            ['high_energy', '高エネルギー'],
-            ['low_energy', '低エネルギー'],
-            ['danceable', '踊りやすい'],
-            ['positive', '明るい'],
-            ['melancholic', '暗め'],
-            ['acoustic', 'アコースティック'],
-            ['instrumental', 'インスト寄り'],
-            ['live', 'ライブ感あり'],
-            ['speechy', '語り多め']
+            %w[high_energy 高エネルギー],
+            %w[low_energy 低エネルギー],
+            %w[danceable 踊りやすい],
+            %w[positive 明るい],
+            %w[melancholic 暗め],
+            %w[acoustic アコースティック],
+            %w[instrumental インスト寄り],
+            %w[live ライブ感あり],
+            %w[speechy 語り多め]
           ],
           apply: lambda { |scope, value|
             case value
@@ -276,8 +276,8 @@ module Admin
           label_key: 'admin.filters.audio_mode.label',
           include_blank: true,
           options: [
-            ['major', 'メジャー'],
-            ['minor', 'マイナー']
+            %w[major メジャー],
+            %w[minor マイナー]
           ],
           apply: lambda { |scope, value|
             case value
@@ -361,8 +361,8 @@ module Admin
           label_key: 'admin.filters.audio_data_quality.label',
           include_blank: true,
           options: [
-            ['missing_analysis_url', '解析URLなし'],
-            ['missing_payload', 'ペイロードなし']
+            %w[missing_analysis_url 解析URLなし],
+            %w[missing_payload ペイロードなし]
           ],
           apply: lambda { |scope, value|
             case value
@@ -380,7 +380,7 @@ module Admin
           label_key: 'admin.filters.tracks_original_songs.label',
           include_blank: true,
           options: [
-            ['missing', '未設定の楽曲あり']
+            %w[missing 未設定の楽曲あり]
           ],
           apply: lambda { |scope, value|
             case value
@@ -498,9 +498,9 @@ module Admin
                 ],
                 apply: lambda { |scope, value|
                   duplicate_album_ids = SpotifyAlbum.unscoped
-                                                    .select(:album_id)
-                                                    .group(:album_id)
-                                                    .having('COUNT(*) > 1')
+                                        .select(:album_id)
+                                        .group(:album_id)
+                                        .having('COUNT(*) > 1')
 
                   case value
                   when 'duplicated_active'
@@ -703,10 +703,11 @@ module Admin
     def normalize_filters(params)
       values = params.respond_to?(:to_unsafe_h) ? params.to_unsafe_h : params.to_h
 
-      filters.to_h do |filter|
+      normalized_filters = filters.to_h do |filter|
         value = values.fetch(filter[:attribute], filter[:default]).to_s.strip
         [filter[:attribute], value]
-      end.select { |_attribute, value| value.present? }
+      end
+      normalized_filters.compact_blank
     end
 
     def filters

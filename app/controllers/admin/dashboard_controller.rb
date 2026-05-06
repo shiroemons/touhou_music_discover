@@ -13,8 +13,7 @@ module Admin
       @recent_resources = @resource_summaries
                           .select { |summary| summary[:latest_updated_at].present? }
                           .sort_by { |summary| summary[:latest_updated_at] }
-                          .reverse
-                          .first(6)
+                          .last(6).reverse
       @summary_by_key = @resource_summaries.index_by { |summary| summary[:resource].key }
       @resource_groups = admin_resource_groups
     end

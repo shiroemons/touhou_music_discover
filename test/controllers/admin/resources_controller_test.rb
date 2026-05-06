@@ -777,7 +777,7 @@ module Admin
 
       assert_response :success
       assert_select 'pre.admin-json-block', /"images": \[/
-      assert_select 'pre.admin-json-block', /"url": "https:\/\/example.test\/json-cover.jpg"/
+      assert_select 'pre.admin-json-block', %r{"url": "https://example.test/json-cover.jpg"}
     end
 
     test 'keeps avo mounted' do
@@ -805,26 +805,16 @@ module Admin
       jan_code:,
       isrc:,
       spotify_id:,
-      spotify_album_name: 'Admin Audio Feature Album',
-      spotify_track_name: 'Admin Audio Feature Track',
-      disc_number: 1,
-      track_number: 1,
-      duration_ms: 180_000,
-      tempo: 128.0,
-      energy: 0.5,
-      mode: 1,
-      loudness: -5.0,
-      time_signature: 4,
-      analysis_url: '',
-      payload: {}
+      **overrides
     )
+      attributes = spotify_track_audio_feature_attributes(overrides)
       album = Album.find_or_create_by!(jan_code:)
       track = Track.create!(album:, isrc:)
       spotify_album = SpotifyAlbum.find_by(album:) || SpotifyAlbum.create!(
         album:,
         spotify_id: "spotify-admin-audio-feature-album-#{jan_code}",
         album_type: 'album',
-        name: spotify_album_name,
+        name: attributes.fetch(:spotify_album_name),
         label: Album::TOUHOU_MUSIC_LABEL,
         payload: {}
       )
@@ -833,11 +823,11 @@ module Admin
         track:,
         spotify_album:,
         spotify_id:,
-        name: spotify_track_name,
+        name: attributes.fetch(:spotify_track_name),
         label: Album::TOUHOU_MUSIC_LABEL,
-        disc_number:,
-        track_number:,
-        duration_ms:,
+        disc_number: attributes.fetch(:disc_number),
+        track_number: attributes.fetch(:track_number),
+        duration_ms: attributes.fetch(:duration_ms),
         payload: {}
       )
       SpotifyTrackAudioFeature.create!(
@@ -846,20 +836,37 @@ module Admin
         spotify_id:,
         acousticness: 0.1,
         danceability: 0.6,
-        duration_ms:,
-        energy:,
+        duration_ms: attributes.fetch(:duration_ms),
+        energy: attributes.fetch(:energy),
         instrumentalness: 0.1,
         key: 1,
         liveness: 0.1,
-        loudness:,
-        mode:,
+        loudness: attributes.fetch(:loudness),
+        mode: attributes.fetch(:mode),
         speechiness: 0.1,
-        tempo:,
-        time_signature:,
+        tempo: attributes.fetch(:tempo),
+        time_signature: attributes.fetch(:time_signature),
         valence: 0.5,
-        analysis_url:,
-        payload:
+        analysis_url: attributes.fetch(:analysis_url),
+        payload: attributes.fetch(:payload)
       )
+    end
+
+    def spotify_track_audio_feature_attributes(overrides)
+      {
+        spotify_album_name: 'Admin Audio Feature Album',
+        spotify_track_name: 'Admin Audio Feature Track',
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        tempo: 128.0,
+        energy: 0.5,
+        mode: 1,
+        loudness: -5.0,
+        time_signature: 4,
+        analysis_url: '',
+        payload: {}
+      }.merge(overrides)
     end
   end
 end

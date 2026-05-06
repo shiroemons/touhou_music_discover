@@ -14,7 +14,7 @@ class SpotifyAlbumsToAlgoliaPresenterTest < ActiveSupport::TestCase
     json = SpotifyAlbumsToAlgoliaPresenter.new([album.reload]).as_json
 
     assert_equal 1, json.size
-    assert_equal ['presenter-active-spotify-track'], json.first.fetch(:tracks).map { it.fetch(:name) }
+    assert_equal(['presenter-active-spotify-track'], json.first.fetch(:tracks).map { it.fetch(:name) })
   end
 
   private

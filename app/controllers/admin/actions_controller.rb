@@ -10,11 +10,11 @@ module Admin
     before_action :set_action
     helper_method :action_run_progress_path
 
-    def new; end
-
     def show
       load_action_run
     end
+
+    def new; end
 
     def create
       run_id = SecureRandom.uuid
