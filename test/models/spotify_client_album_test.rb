@@ -84,8 +84,14 @@ module SpotifyClient
         end
       end
 
-      assert_equal [SpotifyClient::Album::SEARCH_LIMIT, SpotifyClient::Album::SEARCH_LIMIT], calls.map { it.fetch(:limit) }
-      assert_equal [0, SpotifyClient::Album::SEARCH_LIMIT], calls.map { it.fetch(:offset) }
+      assert_equal(
+        [SpotifyClient::Album::SEARCH_LIMIT, SpotifyClient::Album::SEARCH_LIMIT],
+        calls.map { |call| call.fetch(:limit) }
+      )
+      assert_equal(
+        [0, SpotifyClient::Album::SEARCH_LIMIT],
+        calls.map { |call| call.fetch(:offset) }
+      )
       assert_equal first_page.concat(second_page).map(&:id), processed_ids
     end
 
