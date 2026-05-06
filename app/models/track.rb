@@ -49,7 +49,8 @@ class Track < ApplicationRecord
   end
 
   def spotify_track(album)
-    spotify_tracks.find { it.album == album }
+    active_spotify_album = album.spotify_album
+    spotify_tracks.find { it.album == album && it.spotify_album_id == active_spotify_album&.id }
   end
 
   def ytmusic_track(album)
