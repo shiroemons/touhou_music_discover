@@ -16,7 +16,7 @@ module Admin
     }.freeze
 
     attr_accessor :key, :model_class_name, :index_attributes, :detail_attributes, :form_attributes,
-                  :search_attributes, :filter_definitions, :includes, :default_order, :action_class_names
+                  :search_attributes, :search_scope, :filter_definitions, :includes, :default_order, :action_class_names
 
     delegate :count, :primary_key, to: :model_class
 
@@ -102,6 +102,35 @@ module Admin
         scope.where(Track.primary_key => matching_ids.select(Track.primary_key))
       end
 
+      def spotify_track_audio_feature_order(scope)
+        scope
+          .left_joins(:track, :spotify_track)
+          .reorder(
+            Arel.sql("#{Track.quoted_table_name}.#{Track.connection.quote_column_name(:jan_code)} DESC"),
+            Arel.sql("#{SpotifyTrack.quoted_table_name}.#{SpotifyTrack.connection.quote_column_name(:disc_number)} ASC NULLS LAST"),
+            Arel.sql("#{SpotifyTrack.quoted_table_name}.#{SpotifyTrack.connection.quote_column_name(:track_number)} ASC NULLS LAST"),
+            Arel.sql("#{SpotifyTrackAudioFeature.quoted_table_name}.#{SpotifyTrackAudioFeature.connection.quote_column_name(:spotify_id)} ASC")
+          )
+      end
+
+      def spotify_track_audio_feature_search(scope, query)
+        pattern = "%#{SpotifyTrackAudioFeature.sanitize_sql_like(query)}%"
+
+        scope
+          .left_joins(:track, spotify_track: :spotify_album)
+          .where(
+            <<~SQL.squish,
+              #{SpotifyTrackAudioFeature.quoted_table_name}.#{SpotifyTrackAudioFeature.connection.quote_column_name(:spotify_id)} ILIKE :query OR
+              #{SpotifyTrackAudioFeature.quoted_table_name}.#{SpotifyTrackAudioFeature.connection.quote_column_name(:analysis_url)} ILIKE :query OR
+              #{Track.quoted_table_name}.#{Track.connection.quote_column_name(:isrc)} ILIKE :query OR
+              #{Track.quoted_table_name}.#{Track.connection.quote_column_name(:jan_code)} ILIKE :query OR
+              #{SpotifyTrack.quoted_table_name}.#{SpotifyTrack.connection.quote_column_name(:name)} ILIKE :query OR
+              #{SpotifyAlbum.quoted_table_name}.#{SpotifyAlbum.connection.quote_column_name(:name)} ILIKE :query
+            SQL
+            query: pattern
+          )
+      end
+
       private
 
       def build_resources
@@ -178,6 +207,172 @@ module Admin
           ],
           apply: lambda { |scope, value|
             Admin::Resource.track_original_songs_count_scope(scope, value)
+          }
+        }
+        audio_feature_profile_filter = {
+          key: 'audio_feature_profile',
+          label_key: 'admin.filters.audio_feature_profile.label',
+          include_blank: true,
+          options: [
+            ['high_energy', '高エネルギー'],
+            ['low_energy', '低エネルギー'],
+            ['danceable', '踊りやすい'],
+            ['positive', '明るい'],
+            ['melancholic', '暗め'],
+            ['acoustic', 'アコースティック'],
+            ['instrumental', 'インスト寄り'],
+            ['live', 'ライブ感あり'],
+            ['speechy', '語り多め']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'high_energy'
+              scope.where(energy: 0.7..)
+            when 'low_energy'
+              scope.where(energy: ..0.3)
+            when 'danceable'
+              scope.where(danceability: 0.7..)
+            when 'positive'
+              scope.where(valence: 0.7..)
+            when 'melancholic'
+              scope.where(valence: ..0.3)
+            when 'acoustic'
+              scope.where(acousticness: 0.7..)
+            when 'instrumental'
+              scope.where(instrumentalness: 0.5..)
+            when 'live'
+              scope.where(liveness: 0.8..)
+            when 'speechy'
+              scope.where(speechiness: 0.33..)
+            else
+              scope
+            end
+          }
+        }
+        audio_tempo_filter = {
+          key: 'audio_tempo',
+          label_key: 'admin.filters.audio_tempo.label',
+          include_blank: true,
+          options: [
+            ['slow', 'ゆったり（90 BPM未満）'],
+            ['medium', '標準（90-139 BPM）'],
+            ['fast', '速い（140 BPM以上）']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'slow'
+              scope.where(tempo: ...90)
+            when 'medium'
+              scope.where(tempo: 90...140)
+            when 'fast'
+              scope.where(tempo: 140..)
+            else
+              scope
+            end
+          }
+        }
+        audio_mode_filter = {
+          key: 'audio_mode',
+          label_key: 'admin.filters.audio_mode.label',
+          include_blank: true,
+          options: [
+            ['major', 'メジャー'],
+            ['minor', 'マイナー']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'major'
+              scope.where(mode: 1)
+            when 'minor'
+              scope.where(mode: 0)
+            else
+              scope
+            end
+          }
+        }
+        audio_loudness_filter = {
+          key: 'audio_loudness',
+          label_key: 'admin.filters.audio_loudness.label',
+          include_blank: true,
+          options: [
+            ['quiet', '静かめ（-20 dB未満）'],
+            ['standard', '標準（-20〜-8 dB）'],
+            ['loud', '大きめ（-8 dB以上）']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'quiet'
+              scope.where(loudness: ...-20)
+            when 'standard'
+              scope.where(loudness: -20...-8)
+            when 'loud'
+              scope.where(loudness: -8..)
+            else
+              scope
+            end
+          }
+        }
+        audio_duration_filter = {
+          key: 'audio_duration',
+          label_key: 'admin.filters.audio_duration.label',
+          include_blank: true,
+          options: [
+            ['short', '短い（2分未満）'],
+            ['standard', '標準（2〜6分）'],
+            ['long', '長い（6分以上）']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'short'
+              scope.where(duration_ms: ...120_000)
+            when 'standard'
+              scope.where(duration_ms: 120_000...360_000)
+            when 'long'
+              scope.where(duration_ms: 360_000..)
+            else
+              scope
+            end
+          }
+        }
+        audio_time_signature_filter = {
+          key: 'audio_time_signature',
+          label_key: 'admin.filters.audio_time_signature.label',
+          include_blank: true,
+          options: [
+            ['triple', '3拍子'],
+            ['common', '4拍子'],
+            ['irregular', '変拍子（5拍子以上）']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'triple'
+              scope.where(time_signature: 3)
+            when 'common'
+              scope.where(time_signature: 4)
+            when 'irregular'
+              scope.where(time_signature: 5..)
+            else
+              scope
+            end
+          }
+        }
+        audio_data_quality_filter = {
+          key: 'audio_data_quality',
+          label_key: 'admin.filters.audio_data_quality.label',
+          include_blank: true,
+          options: [
+            ['missing_analysis_url', '解析URLなし'],
+            ['missing_payload', 'ペイロードなし']
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'missing_analysis_url'
+              scope.where(analysis_url: [nil, ''])
+            when 'missing_payload'
+              scope.where(payload: nil)
+            else
+              scope
+            end
           }
         }
         album_original_songs_filter = {
@@ -349,11 +544,21 @@ module Admin
               track_id spotify_track_id spotify_id acousticness analysis_url danceability duration_ms energy instrumentalness
               key liveness loudness mode speechiness tempo time_signature valence payload
             ],
-            search_attributes: %i[spotify_id analysis_url],
+            search_scope: ->(scope, query) { Admin::Resource.spotify_track_audio_feature_search(scope, query) },
+            filter_definitions: [
+              audio_feature_profile_filter,
+              audio_tempo_filter,
+              audio_mode_filter,
+              audio_loudness_filter,
+              audio_duration_filter,
+              audio_time_signature_filter,
+              audio_data_quality_filter
+            ],
             includes: [
               { track: track_preview_includes },
               { spotify_track: [{ album: album_preview_includes }, :spotify_album, { track: track_preview_includes }] }
             ],
+            default_order: ->(scope) { Admin::Resource.spotify_track_audio_feature_order(scope) },
             action_class_names: %w[FetchSpotifyAudioFeatures]
           ),
           new(
@@ -480,7 +685,9 @@ module Admin
     end
 
     def search(scope, query)
-      return scope if query.blank? || search_attributes.blank?
+      return scope if query.blank?
+      return search_scope.call(scope, query) if search_scope.present?
+      return scope if search_attributes.blank?
 
       pattern = "%#{model_class.sanitize_sql_like(query)}%"
       conditions = search_attributes.index_with { pattern }

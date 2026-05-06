@@ -77,6 +77,20 @@ ja:
         label: "楽曲取得"
       touhou:
         label: "東方"
+      audio_feature_profile:
+        label: "特徴"
+      audio_tempo:
+        label: "テンポ"
+      audio_mode:
+        label: "調性"
+      audio_loudness:
+        label: "音量"
+      audio_duration:
+        label: "長さ"
+      audio_time_signature:
+        label: "拍子"
+      audio_data_quality:
+        label: "データ品質"
       boolean:
         true: "はい"
         false: "いいえ"

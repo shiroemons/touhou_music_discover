@@ -335,6 +335,125 @@ module Admin
       assert_select 'a[href=?]', admin_resource_action_path('spotify_track_audio_features', 'fetch_spotify_audio_features'), text: 'Spotify オーディオ特性を取得'
     end
 
+    test 'orders spotify track audio features like spotify tracks' do
+      older_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777951',
+        isrc: 'JPABC260551',
+        spotify_id: 'spotify-admin-audio-feature-order-older'
+      )
+      newer_second_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777952',
+        isrc: 'JPABC260552',
+        spotify_id: 'spotify-admin-audio-feature-order-newer-second',
+        track_number: 2
+      )
+      newer_first_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777952',
+        isrc: 'JPABC260553',
+        spotify_id: 'spotify-admin-audio-feature-order-newer-first',
+        track_number: 1
+      )
+
+      get admin_resources_url('spotify_track_audio_features'), params: { q: '977777777795' }
+
+      assert_response :success
+      row_spotify_ids = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+      assert_equal(
+        [newer_first_feature.spotify_id, newer_second_feature.spotify_id, older_feature.spotify_id],
+        row_spotify_ids
+      )
+    end
+
+    test 'searches and filters spotify track audio features by related fields and musical characteristics' do
+      matching_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777961',
+        isrc: 'JPABC260561',
+        spotify_id: 'spotify-admin-audio-feature-filter-match',
+        spotify_album_name: 'Searchable Audio Feature Album',
+        spotify_track_name: 'Searchable Audio Feature Track',
+        tempo: 150.0,
+        energy: 0.8,
+        mode: 1
+      )
+      other_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777962',
+        isrc: 'JPABC260562',
+        spotify_id: 'spotify-admin-audio-feature-filter-other',
+        spotify_album_name: 'Other Audio Feature Album',
+        spotify_track_name: 'Other Audio Feature Track',
+        tempo: 80.0,
+        energy: 0.2,
+        mode: 0
+      )
+
+      get admin_resources_url('spotify_track_audio_features'), params: {
+        q: 'Searchable Audio Feature Track',
+        filters: {
+          audio_feature_profile: 'high_energy',
+          audio_tempo: 'fast',
+          audio_mode: 'major'
+        }
+      }
+
+      assert_response :success
+      assert_select '.admin-filter-field label', text: '特徴'
+      assert_select '.admin-filter-field label', text: 'テンポ'
+      assert_select '.admin-filter-field label', text: '調性'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_feature_profile]', text: '高エネルギー'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_tempo]', text: '速い（140 BPM以上）'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_mode]', text: 'メジャー'
+      assert_select 'td', text: matching_feature.spotify_id
+      assert_select 'td', { text: other_feature.spotify_id, count: 0 }
+
+      get admin_resources_url('spotify_track_audio_features'), params: { q: matching_feature.track.isrc }
+
+      assert_response :success
+      assert_select 'td', text: matching_feature.spotify_id
+      assert_select 'td', { text: other_feature.spotify_id, count: 0 }
+    end
+
+    test 'filters spotify track audio features by loudness duration time signature and data quality' do
+      matching_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777971',
+        isrc: 'JPABC260571',
+        spotify_id: 'spotify-admin-audio-feature-advanced-filter-match',
+        duration_ms: 420_000,
+        loudness: -5.0,
+        time_signature: 5,
+        analysis_url: ''
+      )
+      other_feature = create_spotify_track_audio_feature(
+        jan_code: '9777777777972',
+        isrc: 'JPABC260572',
+        spotify_id: 'spotify-admin-audio-feature-advanced-filter-other',
+        duration_ms: 90_000,
+        loudness: -25.0,
+        time_signature: 4,
+        analysis_url: 'https://api.spotify.com/v1/audio-analysis/other'
+      )
+
+      get admin_resources_url('spotify_track_audio_features'), params: {
+        filters: {
+          audio_loudness: 'loud',
+          audio_duration: 'long',
+          audio_time_signature: 'irregular',
+          audio_data_quality: 'missing_analysis_url'
+        }
+      }
+
+      assert_response :success
+      assert_select '.admin-filter-field label', text: '音量'
+      assert_select '.admin-filter-field label', text: '長さ'
+      assert_select '.admin-filter-field label', text: '拍子'
+      assert_select '.admin-filter-field label', text: 'データ品質'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_loudness]', text: '大きめ（-8 dB以上）'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_duration]', text: '長い（6分以上）'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_time_signature]', text: '変拍子（5拍子以上）'
+      assert_select 'select[name=?] option[selected]', 'filters[audio_data_quality]', text: '解析URLなし'
+      assert_select 'td', text: matching_feature.spotify_id
+      assert_select 'td', { text: other_feature.spotify_id, count: 0 }
+    end
+
     test 'filters records separately from keyword search' do
       missing_album = Album.create!(jan_code: '9777777777781')
       delivered_album = Album.create!(jan_code: '9777777777782')
@@ -678,6 +797,69 @@ module Admin
       assert_select 'h1', '東方フラグを変更'
       assert_select '.alert-warning', /外部API通信/
       assert_select 'button[type=submit]', text: '実行'
+    end
+
+    private
+
+    def create_spotify_track_audio_feature(
+      jan_code:,
+      isrc:,
+      spotify_id:,
+      spotify_album_name: 'Admin Audio Feature Album',
+      spotify_track_name: 'Admin Audio Feature Track',
+      disc_number: 1,
+      track_number: 1,
+      duration_ms: 180_000,
+      tempo: 128.0,
+      energy: 0.5,
+      mode: 1,
+      loudness: -5.0,
+      time_signature: 4,
+      analysis_url: '',
+      payload: {}
+    )
+      album = Album.find_or_create_by!(jan_code:)
+      track = Track.create!(album:, isrc:)
+      spotify_album = SpotifyAlbum.find_by(album:) || SpotifyAlbum.create!(
+        album:,
+        spotify_id: "spotify-admin-audio-feature-album-#{jan_code}",
+        album_type: 'album',
+        name: spotify_album_name,
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      spotify_track = SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id:,
+        name: spotify_track_name,
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number:,
+        track_number:,
+        duration_ms:,
+        payload: {}
+      )
+      SpotifyTrackAudioFeature.create!(
+        track:,
+        spotify_track:,
+        spotify_id:,
+        acousticness: 0.1,
+        danceability: 0.6,
+        duration_ms:,
+        energy:,
+        instrumentalness: 0.1,
+        key: 1,
+        liveness: 0.1,
+        loudness:,
+        mode:,
+        speechiness: 0.1,
+        tempo:,
+        time_signature:,
+        valence: 0.5,
+        analysis_url:,
+        payload:
+      )
     end
   end
 end

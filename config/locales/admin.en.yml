@@ -77,6 +77,20 @@ en:
         label: "Track retrieval"
       touhou:
         label: "Touhou"
+      audio_feature_profile:
+        label: "Feature"
+      audio_tempo:
+        label: "Tempo"
+      audio_mode:
+        label: "Mode"
+      audio_loudness:
+        label: "Loudness"
+      audio_duration:
+        label: "Duration"
+      audio_time_signature:
+        label: "Time signature"
+      audio_data_quality:
+        label: "Data quality"
       boolean:
         true: "Yes"
         false: "No"
