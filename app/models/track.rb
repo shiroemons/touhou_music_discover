@@ -41,19 +41,19 @@ class Track < ApplicationRecord
   end
 
   def apple_music_track(album)
-    apple_music_tracks.find { it.album == album }
+    apple_music_tracks.find { it.album_id == album.id }
   end
 
   def line_music_track(album)
-    line_music_tracks.find { it.album == album }
+    line_music_tracks.find { it.album_id == album.id }
   end
 
   def spotify_track(album)
     active_spotify_album = album.spotify_album
-    spotify_tracks.find { it.album == album && it.spotify_album_id == active_spotify_album&.id }
+    spotify_tracks.find { it.album_id == album.id && it.spotify_album_id == active_spotify_album&.id }
   end
 
   def ytmusic_track(album)
-    ytmusic_tracks.find { it.album == album }
+    ytmusic_tracks.find { it.album_id == album.id }
   end
 end

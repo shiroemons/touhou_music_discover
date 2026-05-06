@@ -9,7 +9,7 @@ namespace :touhou_music_discover do
       FileUtils.mkdir_p('tmp/export')
       File.open('tmp/export/touhou_music_with_original_songs.tsv', 'w') do |f|
         f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs")
-        Album.unscoped.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks]).order(jan_code: :asc).each do |album|
+        Album.unscoped.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks original_songs]).order(jan_code: :asc).each do |album|
           jan = album.jan_code
           # 特定のアルバムのみ出力する場合、コメントをオフにする
           # next if jan != ''
