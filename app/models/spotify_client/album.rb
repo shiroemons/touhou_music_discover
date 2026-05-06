@@ -16,7 +16,8 @@ module SpotifyClient
         begin
           search_and_save_albums(keyword, year)
         rescue RestClient::TooManyRequests => e
-          retry_after = e.response.headers[:retry_after]&.to_i || 30
+          retry_after = retry_after_seconds(e) || 30
+          SpotifyRateLimit.record!(retry_after:, source: 'SpotifyClient::Album.fetch_touhou_albums')
           puts "Rate limit exceeded for year:#{year}. Waiting for #{retry_after} seconds..."
           sleep retry_after
           retry
@@ -105,6 +106,7 @@ module SpotifyClient
           result[status] += 1
         rescue RestClient::TooManyRequests => e
           retry_after = retry_after_seconds(e)
+          SpotifyRateLimit.record!(retry_after:, source: 'SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan')
           result[:rate_limited] = true
           result[:retry_after] = retry_after
           logger.warn "Spotify API rate limited while searching JAN #{album.jan_code}. Retry-After: #{retry_after || 'unknown'} seconds"
@@ -166,6 +168,9 @@ module SpotifyClient
           payload: s_album.as_json
         )
       end
+    rescue RestClient::TooManyRequests => e
+      SpotifyRateLimit.record_from_error!(e, source: 'SpotifyClient::Album.update_albums')
+      raise
     end
 
     def self.missing_spotify_albums_with_apple_music
@@ -210,6 +215,7 @@ module SpotifyClient
       rescue RestClient::TooManyRequests => e
         attempts += 1
         retry_after = retry_after_seconds(e)
+        SpotifyRateLimit.record!(retry_after:, source: 'SpotifyClient::Album.with_spotify_retry')
         raise if retry_after.blank? || retry_after > max_retry_after || attempts >= max_attempts
 
         sleep retry_after
@@ -219,10 +225,7 @@ module SpotifyClient
     private_class_method :with_spotify_retry
 
     def self.retry_after_seconds(error)
-      retry_after = error.http_headers[:retry_after] || error.http_headers['retry-after'] if error.respond_to?(:http_headers)
-      retry_after ||= error.response&.headers&.dig(:retry_after)
-      retry_after ||= error.response&.headers&.dig('retry-after')
-      retry_after&.to_i
+      SpotifyRateLimit.retry_after_seconds(error)
     end
     private_class_method :retry_after_seconds
 

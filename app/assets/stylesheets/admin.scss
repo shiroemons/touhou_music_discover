@@ -150,6 +150,71 @@
   box-shadow: var(--admin-shadow);
 }
 
+.admin-rate-limit-banner {
+  align-items: center;
+  background: var(--admin-warning-soft);
+  border: 1px solid var(--admin-warning-border);
+  border-radius: 8px;
+  box-shadow: var(--admin-shadow);
+  color: #59410a;
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+}
+
+.admin-rate-limit-banner.is-expired {
+  background: var(--admin-primary-soft);
+  border-color: var(--admin-border-strong);
+  color: var(--admin-text);
+}
+
+.admin-rate-limit-icon {
+  align-items: center;
+  background: #1db954;
+  border-radius: 8px;
+  color: #fff;
+  display: inline-flex;
+  height: 2.3rem;
+  justify-content: center;
+  width: 2.3rem;
+}
+
+.admin-rate-limit-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  min-width: 0;
+}
+
+.admin-rate-limit-body strong {
+  color: var(--admin-text);
+}
+
+.admin-rate-limit-schedule {
+  color: var(--admin-text);
+  font-weight: 750;
+}
+
+.admin-rate-limit-kicker {
+  color: var(--admin-danger);
+  font-weight: 850;
+}
+
+.admin-rate-limit-clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.admin-rate-limit-meta {
+  color: var(--admin-muted);
+  display: grid;
+  font-size: 0.82rem;
+  gap: 0.15rem;
+  justify-items: end;
+  white-space: nowrap;
+}
+
 .admin-page-header {
   align-items: flex-start;
   display: flex;
@@ -1060,6 +1125,15 @@
   .admin-relation-grid {
     grid-template-columns: 1fr;
   }
+
+  .admin-rate-limit-banner {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .admin-rate-limit-meta {
+    grid-column: 2;
+    justify-items: start;
+  }
 }
 
 @media (max-width: 767.98px) {
@@ -1091,6 +1165,15 @@
   .admin-stat-grid,
   .admin-resource-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-rate-limit-banner {
+    align-items: flex-start;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-rate-limit-meta {
+    grid-column: auto;
   }
 
   .admin-table td:last-child,

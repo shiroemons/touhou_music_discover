@@ -10,6 +10,9 @@ module SpotifyClient
 
         SpotifyTrackAudioFeature.save_audio_features(spotify_track, track_af)
       end
+    rescue RestClient::TooManyRequests => e
+      SpotifyRateLimit.record_from_error!(e, source: 'SpotifyClient::AudioFeatures.fetch_by_spotify_tracks')
+      raise
     end
   end
 end

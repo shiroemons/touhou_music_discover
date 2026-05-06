@@ -48,6 +48,32 @@
           <% alert_class = type == 'notice' ? 'alert-success' : 'alert-danger' %>
           <div class="alert <%= alert_class %> admin-flash" role="alert"><%= message %></div>
         <% end %>
+        <% if @spotify_rate_limit_status.present? %>
+          <div
+            class="admin-rate-limit-banner"
+            role="status"
+            data-controller="countdown"
+            data-countdown-expires-at-value="<%= @spotify_rate_limit_status.expires_at.to_i %>"
+            data-countdown-expired-text-value="<%= t('admin.spotify_rate_limit.expired') %>"
+          >
+            <div class="admin-rate-limit-icon">
+              <i class="bi bi-spotify" aria-hidden="true"></i>
+            </div>
+            <div class="admin-rate-limit-body">
+              <span class="admin-rate-limit-kicker"><%= t('admin.spotify_rate_limit.kicker') %></span>
+              <strong><%= t('admin.spotify_rate_limit.title') %></strong>
+              <span class="admin-rate-limit-schedule"><%= t('admin.spotify_rate_limit.available_at', time: l(@spotify_rate_limit_status.expires_at_jst, format: :short)) %></span>
+              <span>
+                <%= t('admin.spotify_rate_limit.remaining') %>
+                <span data-countdown-target="seconds"><%= t('admin.spotify_rate_limit.remaining_value', duration: SpotifyRateLimit.format_duration(@spotify_rate_limit_status.remaining_seconds)) %></span>
+                <span class="admin-rate-limit-clock" data-countdown-target="clock"></span>
+              </span>
+            </div>
+            <div class="admin-rate-limit-meta">
+              <span><%= t('admin.spotify_rate_limit.observed_at', time: l(@spotify_rate_limit_status.observed_at_jst, format: :short)) %></span>
+            </div>
+          </div>
+        <% end %>
         <%= yield %>
       </main>
     </div>

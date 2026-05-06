@@ -26,6 +26,20 @@ en:
       edit: "Edit %{resource}"
     shared:
       blank: "Not set"
+    spotify_rate_limit:
+      kicker: "Spotify API 429"
+      title: "Spotify API rate limited"
+      retry_after: "Retry-After: %{seconds}s (%{duration})"
+      remaining: "Remaining"
+      remaining_value: "%{duration}"
+      available_at: "Available at: %{time} (Japan time)"
+      observed_at: "Detected: %{time} (Japan time)"
+      expires_at: "Available after: %{time}"
+      expired: "Wait time has ended"
+      duration:
+        hours: "%{hours}h"
+        minutes: "%{minutes}m"
+        seconds: "%{seconds}s"
     search:
       placeholder: "Search"
       submit: "Search"

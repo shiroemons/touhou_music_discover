@@ -16,6 +16,9 @@ module SpotifyClient
           payload: s_track.as_json
         )
       end
+    rescue RestClient::TooManyRequests => e
+      SpotifyRateLimit.record_from_error!(e, source: 'SpotifyClient::Track.update_tracks')
+      raise
     end
   end
 end

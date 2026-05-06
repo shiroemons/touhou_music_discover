@@ -58,6 +58,10 @@ module Admin
       end
 
       Admin::ActionResult.from_response(action.response)
+    rescue RestClient::TooManyRequests => e
+      SpotifyRateLimit.record_from_error!(e, source: action_class_name)
+      Rails.logger.error("[Admin::Action] #{action_class_name} was rate limited: #{e.class} - #{e.message}")
+      Admin::ActionResult.new(status: :error, message: e.message)
     rescue StandardError => e
       Rails.logger.error("[Admin::Action] #{action_class_name} failed: #{e.class} - #{e.message}")
       Admin::ActionResult.new(status: :error, message: e.message)

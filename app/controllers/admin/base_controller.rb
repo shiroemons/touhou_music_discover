@@ -5,11 +5,16 @@ module Admin
     include Pagy::Backend
 
     layout 'admin'
+    before_action :set_spotify_rate_limit_status
     around_action :switch_admin_locale
 
     helper_method :admin_resources, :admin_resource_groups
 
     private
+
+    def set_spotify_rate_limit_status
+      @spotify_rate_limit_status = SpotifyRateLimit.current
+    end
 
     def switch_admin_locale(&)
       I18n.with_locale(:ja, &)

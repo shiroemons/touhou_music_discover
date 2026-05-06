@@ -26,6 +26,20 @@ ja:
       edit: "%{resource} 編集"
     shared:
       blank: "未設定"
+    spotify_rate_limit:
+      kicker: "Spotify API 429"
+      title: "Spotify APIのレート制限中"
+      retry_after: "Retry-After: %{seconds}秒（%{duration}）"
+      remaining: "残り"
+      remaining_value: "%{duration}"
+      available_at: "再開予定: %{time}（日本時間）"
+      observed_at: "検出: %{time}（日本時間）"
+      expires_at: "解除予定: %{time}"
+      expired: "待機時間が終了しました"
+      duration:
+        hours: "%{hours}時間"
+        minutes: "%{minutes}分"
+        seconds: "%{seconds}秒"
     search:
       placeholder: "検索"
       submit: "検索"
