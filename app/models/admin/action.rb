@@ -24,7 +24,9 @@ module Admin
     end
 
     def action_class
-      action_class_name.constantize
+      require_dependency 'admin/actions'
+
+      Admin::Actions.const_get(action_class_name, false)
     end
 
     def label
@@ -71,7 +73,9 @@ module Admin
     private
 
     def default_label
-      action_class.name
+      return action_class.action_name if action_class.respond_to?(:action_name) && action_class.action_name.present?
+
+      action_class.name.demodulize.underscore.humanize
     rescue StandardError
       action_class_name.underscore.humanize
     end

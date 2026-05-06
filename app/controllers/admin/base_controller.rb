@@ -29,7 +29,7 @@ module Admin
         master: %w[originals original_songs master_artists circles],
         catalog: %w[albums tracks spotify_playlists],
         streaming: %w[
-          spotify_albums spotify_tracks apple_music_albums apple_music_tracks
+          spotify_albums spotify_tracks spotify_track_audio_features apple_music_albums apple_music_tracks
           line_music_albums line_music_tracks ytmusic_albums ytmusic_tracks
         ]
       }

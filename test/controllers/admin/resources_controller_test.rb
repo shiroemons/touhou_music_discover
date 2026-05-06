@@ -282,6 +282,59 @@ module Admin
       assert_select '.admin-detail-table th', { text: 'SpotifyアルバムID', count: 0 }
     end
 
+    test 'lists spotify track audio features resource with fetch action' do
+      album = Album.create!(jan_code: '9777777777941')
+      track = Track.create!(album:, isrc: 'JPABC260541')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'spotify-admin-audio-feature-album',
+        album_type: 'album',
+        name: 'Audio Feature Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      spotify_track = SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id: 'spotify-admin-audio-feature-track',
+        name: 'Audio Feature Track',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        payload: {}
+      )
+      SpotifyTrackAudioFeature.create!(
+        track:,
+        spotify_track:,
+        spotify_id: spotify_track.spotify_id,
+        acousticness: 0.1,
+        danceability: 0.2,
+        duration_ms: 180_000,
+        energy: 0.3,
+        instrumentalness: 0.4,
+        key: 1,
+        liveness: 0.5,
+        loudness: -5.0,
+        mode: 1,
+        speechiness: 0.6,
+        tempo: 128.0,
+        time_signature: 4,
+        valence: 0.7,
+        payload: {}
+      )
+
+      get admin_resources_url('spotify_track_audio_features')
+
+      assert_response :success
+      assert_select 'h1', 'Spotify音響特徴'
+      assert_select 'th', text: 'Spotify楽曲'
+      assert_select 'th', text: 'テンポ'
+      assert_select 'td', text: spotify_track.spotify_id
+      assert_select 'a[href=?]', admin_resource_action_path('spotify_track_audio_features', 'fetch_spotify_audio_features'), text: 'Spotify オーディオ特性を取得'
+    end
+
     test 'filters records separately from keyword search' do
       missing_album = Album.create!(jan_code: '9777777777781')
       delivered_album = Album.create!(jan_code: '9777777777782')

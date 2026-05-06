@@ -8,6 +8,7 @@ module Admin
     INDEX_ATTRIBUTE_LABEL_OVERRIDES = {
       'album_id' => :jan_code,
       'track_id' => :track_reference,
+      'spotify_track_id' => :spotify_track_reference,
       'spotify_album_id' => :spotify_album_reference,
       'apple_music_album_id' => :apple_music_album_reference,
       'line_music_album_id' => :line_music_album_reference,
@@ -339,6 +340,21 @@ module Admin
               { track: track_preview_includes }
             ],
             action_class_names: %w[UpdateSpotifyTrack]
+          ),
+          new(
+            key: 'spotify_track_audio_features',
+            model_class_name: 'SpotifyTrackAudioFeature',
+            index_attributes: %i[spotify_id track_id spotify_track_id tempo loudness energy danceability valence],
+            form_attributes: %i[
+              track_id spotify_track_id spotify_id acousticness analysis_url danceability duration_ms energy instrumentalness
+              key liveness loudness mode speechiness tempo time_signature valence payload
+            ],
+            search_attributes: %i[spotify_id analysis_url],
+            includes: [
+              { track: track_preview_includes },
+              { spotify_track: [{ album: album_preview_includes }, :spotify_album, { track: track_preview_includes }] }
+            ],
+            action_class_names: %w[FetchSpotifyAudioFeatures]
           ),
           new(
             key: 'apple_music_albums',
