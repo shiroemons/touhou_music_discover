@@ -49,6 +49,7 @@ module Admin
 
     def run(fields: {}, record: nil)
       action = action_class.new
+      attach_progress_recorder(action)
       payload = { fields: fields_for_action(fields, record) }
 
       if action.class.instance_method(:handle).parameters.any? { |type, _name| type == :keyrest }
@@ -76,9 +77,23 @@ module Admin
     end
 
     def fields_for_action(fields, record)
-      action_fields = fields.symbolize_keys
+      action_fields = fields.with_indifferent_access
       action_fields[:avo_resource_ids] = [record.id] if record.present?
       action_fields
+    end
+
+    def attach_progress_recorder(action)
+      return if Admin::ActionProgress.current.blank?
+
+      %i[inform succeed warn error].each do |method_name|
+        next unless action.respond_to?(method_name)
+
+        original_method = action.method(method_name)
+        action.define_singleton_method(method_name) do |message = nil, *args, **kwargs, &block|
+          Admin::ActionProgress.current&.record_message(message)
+          original_method.call(message, *args, **kwargs, &block)
+        end
+      end
     end
   end
 end

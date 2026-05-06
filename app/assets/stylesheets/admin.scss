@@ -929,6 +929,82 @@
   gap: 0.6rem;
 }
 
+.admin-action-progress-card {
+  max-width: 860px;
+}
+
+.admin-action-progress-percent {
+  color: var(--admin-primary);
+  font-size: 1.15rem;
+  font-weight: 850;
+}
+
+.admin-action-progress-body {
+  display: grid;
+  gap: 1rem;
+  padding: 1.15rem;
+}
+
+.admin-action-progress-meter {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  height: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.admin-action-progress-bar {
+  background: var(--admin-primary);
+  border-radius: inherit;
+  height: 100%;
+  min-width: 0;
+  transition: width 180ms ease;
+}
+
+.admin-action-progress-meter.is-indeterminate .admin-action-progress-bar {
+  animation: admin-action-progress-indeterminate 1.15s ease-in-out infinite;
+  min-width: 35%;
+  position: absolute;
+  width: 35%;
+}
+
+.admin-action-progress-meta {
+  color: var(--admin-muted);
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-action-progress-result {
+  align-items: center;
+  border-radius: 8px;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.8rem 0.9rem;
+}
+
+.admin-action-progress-result.is-success {
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary);
+}
+
+.admin-action-progress-result.is-error {
+  background: var(--admin-danger-soft);
+  color: var(--admin-danger);
+}
+
+@keyframes admin-action-progress-indeterminate {
+  0% {
+    left: -35%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
+
 .admin-danger-zone {
   display: flex;
   justify-content: flex-end;

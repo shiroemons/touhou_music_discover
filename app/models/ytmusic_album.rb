@@ -210,6 +210,7 @@ class YtmusicAlbum < ApplicationRecord
 
   def self.process_jan_to_album_browse_ids
     result = { created: 0, skipped: 0, errors: 0, missing: 0 }
+    Admin::ActionProgress.start(total: JAN_TO_ALBUM_BROWSE_IDS.size, message: 'JAN_TO_ALBUM_BROWSE_IDS を処理しています')
 
     JAN_TO_ALBUM_BROWSE_IDS.each do |jan_code, browse_id|
       album = Album.find_by(jan_code:)
@@ -217,11 +218,13 @@ class YtmusicAlbum < ApplicationRecord
       if album.nil?
         result[:missing] += 1
         Rails.logger.warn "JAN: #{jan_code} のアルバムが見つかりません"
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
         next
       end
 
       if album.ytmusic_album.present? || YtmusicAlbum.exists?(browse_id:)
         result[:skipped] += 1
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
         next
       end
 
@@ -240,6 +243,8 @@ class YtmusicAlbum < ApplicationRecord
       rescue StandardError => e
         result[:errors] += 1
         Rails.logger.error "エラー: JAN #{jan_code} - #{e.class}: #{e.message}"
+      ensure
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}") if album.present?
       end
     end
 

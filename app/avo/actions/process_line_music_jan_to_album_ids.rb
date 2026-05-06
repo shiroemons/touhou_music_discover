@@ -13,6 +13,11 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
     missing_count = 0
 
     # JAN_TO_ALBUM_IDS の各エントリを処理
+    Admin::ActionProgress.start(
+      total: LineMusicAlbum::JAN_TO_ALBUM_IDS.size,
+      message: 'JAN_TO_ALBUM_IDS を処理しています'
+    )
+
     LineMusicAlbum::JAN_TO_ALBUM_IDS.each do |jan_code, line_music_album_id|
       # JANコードでアルバムを検索
       album = Album.find_by(jan_code: jan_code)
@@ -20,6 +25,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
       if album.nil?
         missing_count += 1
         Rails.logger.warn "JAN: #{jan_code} のアルバムが見つかりません"
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
         next
       end
 
@@ -35,6 +41,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
           if lm_album.blank?
             error_count += 1
             Rails.logger.warn "エラー: JAN #{jan_code} - LINE MUSIC アルバムが見つかりません: #{line_music_album_id}"
+            Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
             next
           end
 
@@ -42,6 +49,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
           if saved_line_music_album.blank?
             error_count += 1
             Rails.logger.warn "エラー: JAN #{jan_code} - LINE MUSIC アルバム情報が不完全なため保存をスキップしました: #{line_music_album_id}"
+            Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
             next
           end
 
@@ -59,6 +67,7 @@ class ProcessLineMusicJanToAlbumIds < Avo::BaseAction
       else
         skipped_count += 1
       end
+      Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
     end
 
     # 簡潔な結果サマリーのみを返す

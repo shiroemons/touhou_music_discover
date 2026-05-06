@@ -8,6 +8,8 @@ class UpdateLineMusicAlbum < Avo::BaseAction
   def handle(_args)
     updated_count = 0
     error_count = 0
+    total_count = LineMusicAlbum.count
+    Admin::ActionProgress.start(total: total_count, message: 'LINE MUSICアルバムを更新しています')
 
     LineMusicAlbum.find_each do |line_music_album|
       Rails.logger.info "Fetching LINE MUSIC album: #{line_music_album.line_music_id}"
@@ -30,6 +32,8 @@ class UpdateLineMusicAlbum < Avo::BaseAction
     rescue StandardError => e
       Rails.logger.error "Error updating album #{line_music_album.line_music_id}: #{e.class} - #{e.message}"
       error_count += 1
+    ensure
+      Admin::ActionProgress.advance(message: "アルバムを処理しています: #{line_music_album.name}")
     end
 
     if error_count.positive?

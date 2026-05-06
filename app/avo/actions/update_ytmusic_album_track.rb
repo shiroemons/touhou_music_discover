@@ -6,6 +6,9 @@ class UpdateYtmusicAlbumTrack < Avo::BaseAction
   self.visible = -> { view == :index }
 
   def handle(_args)
+    total_count = YtmusicAlbum.count
+    Admin::ActionProgress.start(total: total_count, message: 'YouTube Musicアルバム・トラックを更新しています')
+
     YtmusicAlbum.find_each do |ytmusic_album|
       album = YtMusic::Album.find(ytmusic_album.browse_id)
       url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
@@ -16,6 +19,7 @@ class UpdateYtmusicAlbumTrack < Avo::BaseAction
         track = tracks.find { it['track_number'] == ytm_track.track_number }
         ytm_track.update_track(track) if track
       end
+      Admin::ActionProgress.advance(message: "アルバムを処理しています: #{ytmusic_album.name}")
     end
 
     succeed 'Done!'

@@ -209,6 +209,15 @@ en:
       new_record: "New"
       back_to_index: "Back to index"
       back_to_show: "Back to details"
+      progress:
+        description: "The action is running in the background. Progress updates automatically."
+        started: "Action started."
+        count: "%{current} / %{total}"
+        return: "Return"
+        statuses:
+          processing: "Running"
+          completed: "Completed"
+          error: "Error"
       change_touhou_flag:
         label: "Update Touhou flags"
         description: "Recalculates Touhou flags only for tracks with original-song links. Unlinked tracks are not changed."

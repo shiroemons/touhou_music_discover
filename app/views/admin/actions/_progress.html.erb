@@ -1,0 +1,43 @@
+<% status = action_run.fetch('status', 'processing') %>
+<% total = action_run.fetch('total', 0).to_i %>
+<% current = action_run.fetch('current', 0).to_i %>
+<% percent = total.positive? ? [(current.to_f / total * 100).round, 100].min : (status == 'completed' ? 100 : 0) %>
+
+<div id="admin-action-progress" class="admin-panel admin-action-progress-card" data-status="<%= status %>">
+  <div class="admin-panel-header">
+    <h2><%= t("admin.actions.progress.statuses.#{status}", default: status.humanize) %></h2>
+    <span class="admin-action-progress-percent"><%= percent %>%</span>
+  </div>
+  <div class="admin-action-progress-body">
+    <div
+      class="admin-action-progress-meter <%= 'is-indeterminate' if total.zero? && status == 'processing' %>"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="<%= percent %>"
+    >
+      <div class="admin-action-progress-bar" style="width: <%= percent %>%;"></div>
+    </div>
+
+    <div class="admin-action-progress-meta">
+      <span><%= t('admin.actions.progress.count', current:, total:) %></span>
+      <% if action_run['message'].present? %>
+        <span><%= action_run['message'] %></span>
+      <% end %>
+    </div>
+
+    <% if status != 'processing' %>
+      <div class="admin-action-progress-result <%= status == 'completed' ? 'is-success' : 'is-error' %>">
+        <i class="bi <%= status == 'completed' ? 'bi-check-circle' : 'bi-exclamation-circle' %>" aria-hidden="true"></i>
+        <span><%= action_run['result_message'].presence || action_run['message'] %></span>
+      </div>
+
+      <div class="admin-form-actions">
+        <%= link_to action_run.fetch('redirect_path'), class: 'btn admin-btn-primary' do %>
+          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+          <span><%= t('admin.actions.progress.return') %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

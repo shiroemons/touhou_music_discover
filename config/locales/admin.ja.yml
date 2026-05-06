@@ -209,6 +209,15 @@ ja:
       new_record: "新規作成"
       back_to_index: "一覧へ戻る"
       back_to_show: "詳細へ戻る"
+      progress:
+        description: "アクションをバックグラウンドで実行しています。進捗は自動更新されます。"
+        started: "アクションを開始しました。"
+        count: "%{current} / %{total}"
+        return: "戻る"
+        statuses:
+          processing: "実行中"
+          completed: "完了"
+          error: "エラー"
       change_touhou_flag:
         label: "東方フラグを変更"
         description: "原曲紐づけ済みの楽曲だけを対象に東方フラグを再判定します。未紐づけの楽曲は変更しません。"
