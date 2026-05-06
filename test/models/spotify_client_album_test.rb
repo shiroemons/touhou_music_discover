@@ -65,6 +65,30 @@ module SpotifyClient
       assert_equal 0, @result[:errors]
     end
 
+    test 'searches albums with Spotify search limit and paginates by returned size' do
+      calls = []
+      processed_ids = []
+      first_page = Array.new(SpotifyClient::Album::SEARCH_LIMIT) { |index| spotify_api_album(jan_code: "search-page-1-#{index}") }
+      second_page = [spotify_api_album(jan_code: 'search-page-2-0')]
+
+      spotify_album_client = Class.new do
+        define_singleton_method(:search) do |_query, **options|
+          calls << options
+          options.fetch(:offset).zero? ? first_page : second_page
+        end
+      end
+
+      with_spotify_album_processor(->(album) { processed_ids << album.id }) do
+        stub_const(RSpotify, :Album, spotify_album_client) do
+          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
+        end
+      end
+
+      assert_equal [SpotifyClient::Album::SEARCH_LIMIT, SpotifyClient::Album::SEARCH_LIMIT], calls.map { it.fetch(:limit) }
+      assert_equal [0, SpotifyClient::Album::SEARCH_LIMIT], calls.map { it.fetch(:offset) }
+      assert_equal first_page.concat(second_page).map(&:id), processed_ids
+    end
+
     test 'does not search albums that already have inactive Spotify albums' do
       jan_code = "spotify-jan-skip-#{SecureRandom.hex(4)}"
       album = create_album_with_apple_music(jan_code:)
@@ -123,6 +147,16 @@ module SpotifyClient
     ensure
       singleton_class.define_method(:missing_spotify_albums_with_apple_music, original_method)
       singleton_class.send(:private, :missing_spotify_albums_with_apple_music)
+    end
+
+    def with_spotify_album_processor(processor)
+      singleton_class = SpotifyClient::Album.singleton_class
+      original_method = SpotifyClient::Album.method(:process_album)
+
+      singleton_class.define_method(:process_album) { |album| processor.call(album) }
+      yield
+    ensure
+      singleton_class.define_method(:process_album, original_method)
     end
   end
 end

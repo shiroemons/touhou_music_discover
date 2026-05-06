@@ -3,6 +3,7 @@
 module SpotifyClient
   class Album
     LIMIT = 50
+    SEARCH_LIMIT = 10
     JAN_SEARCH_LIMIT = 10
     DEFAULT_JAN_SEARCH_SLEEP = 1
     DEFAULT_RATE_LIMIT_MAX_WAIT = 60
@@ -39,12 +40,12 @@ module SpotifyClient
     def self.search_and_save_albums(keyword, year)
       offset = 0
       loop do
-        s_albums = RSpotify::Album.search(keyword, limit: LIMIT, offset:, market: 'JP')
+        s_albums = RSpotify::Album.search(keyword, limit: SEARCH_LIMIT, offset:, market: 'JP')
         s_albums.each do |s_album|
           process_album(s_album)
         end
         offset += s_albums.size
-        break if s_albums.size < LIMIT
+        break if s_albums.size < SEARCH_LIMIT
 
         puts "year:#{year}\toffset: #{offset}"
         # リクエスト間に短いディレイを追加
