@@ -10,6 +10,7 @@ class UpdateLineMusicTrack < Avo::BaseAction
 
     album_count = LineMusicAlbum.count
     Rails.logger.info "処理対象アルバム数: #{album_count}件"
+    Admin::ActionProgress.start(total: album_count, message: 'LINE MUSICトラックを更新しています')
 
     processed_count = 0
     updated_count = 0
@@ -55,6 +56,11 @@ class UpdateLineMusicTrack < Avo::BaseAction
       end
 
       Rails.logger.info "#{processed_count}件のアルバムを処理しました (更新済みトラック: #{updated_count}件)" if (processed_count % 10).zero?
+      Admin::ActionProgress.update(
+        current: processed_count,
+        total: album_count,
+        message: "アルバムを処理しています: #{processed_count}/#{album_count} #{line_music_album.name}"
+      )
     end
 
     Rails.logger.info "LINE MUSIC トラック更新処理が完了しました: 合計 #{processed_count}件のアルバム、#{updated_count}件のトラックを処理しました"

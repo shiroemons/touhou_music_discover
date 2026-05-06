@@ -28,6 +28,10 @@ class Track < ApplicationRecord
     album.spotify_album&.name || album.apple_music_album&.name
   end
 
+  def image_url
+    spotify_tracks.first&.image_url || apple_music_tracks.first&.image_url || ytmusic_tracks.first&.image_url || line_music_tracks.first&.image_url || album.image_url
+  end
+
   def name
     spotify_tracks.first&.name || apple_music_tracks.first&.name
   end
@@ -37,18 +41,19 @@ class Track < ApplicationRecord
   end
 
   def apple_music_track(album)
-    apple_music_tracks.find { it.album == album }
+    apple_music_tracks.find { it.album_id == album.id }
   end
 
   def line_music_track(album)
-    line_music_tracks.find { it.album == album }
+    line_music_tracks.find { it.album_id == album.id }
   end
 
   def spotify_track(album)
-    spotify_tracks.find { it.album == album }
+    active_spotify_album = album.spotify_album
+    spotify_tracks.find { it.album_id == album.id && it.spotify_album_id == active_spotify_album&.id }
   end
 
   def ytmusic_track(album)
-    ytmusic_tracks.find { it.album == album }
+    ytmusic_tracks.find { it.album_id == album.id }
   end
 end

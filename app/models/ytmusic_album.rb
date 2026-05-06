@@ -79,7 +79,10 @@ class YtmusicAlbum < ApplicationRecord
     '4582736137305' => 'MPREb_oTEG5HlOnxU', # イノライ - 地上の兎は星になる
     '4582736137329' => 'MPREb_u4U3MWe3cD8', # イノライ - STARDUST
     # '4582736137428' => '', # 激戦魂 -Gekisen Soul- - GEKISTAR
-    '4582736137503' => 'MPREb_7rkSN3YNR4U' # 染色硝子ノ欠片 - 絶対零度の六花
+    '4582736137503' => 'MPREb_7rkSN3YNR4U', # 染色硝子ノ欠片 - 絶対零度の六花
+    '4582736137800' => 'MPREb_bPACsUquwVB', # イノライ - Valentine Mode♡
+    '4582736137589' => 'MPREb_Db20SEqtUq8', # Amateras Records - Endless Journey
+    '4582736137572' => 'MPREb_oW3jQYYowoE'  # Amateras Records - 恋トラ -KOIIRO MASTER TRANCE 04-
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
@@ -203,6 +206,49 @@ class YtmusicAlbum < ApplicationRecord
     end
 
     update_ytmusic_album_urls
+  end
+
+  def self.process_jan_to_album_browse_ids
+    result = { created: 0, skipped: 0, errors: 0, missing: 0 }
+    Admin::ActionProgress.start(total: JAN_TO_ALBUM_BROWSE_IDS.size, message: 'JAN_TO_ALBUM_BROWSE_IDS を処理しています')
+
+    JAN_TO_ALBUM_BROWSE_IDS.each do |jan_code, browse_id|
+      album = Album.find_by(jan_code:)
+
+      if album.nil?
+        result[:missing] += 1
+        Rails.logger.warn "JAN: #{jan_code} のアルバムが見つかりません"
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
+        next
+      end
+
+      if album.ytmusic_album.present? || YtmusicAlbum.exists?(browse_id:)
+        result[:skipped] += 1
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}")
+        next
+      end
+
+      begin
+        ytmusic_album = YtMusic::Album.find(browse_id)
+
+        if ytmusic_album.blank?
+          result[:errors] += 1
+          Rails.logger.warn "エラー: JAN #{jan_code} - YouTube Music アルバムが見つかりません: #{browse_id}"
+          next
+        end
+
+        save_album(album.id, browse_id, ytmusic_album)
+        result[:created] += 1
+        Rails.logger.info "作成: JAN #{jan_code} → YouTube Music browse ID #{browse_id}"
+      rescue StandardError => e
+        result[:errors] += 1
+        Rails.logger.error "エラー: JAN #{jan_code} - #{e.class}: #{e.message}"
+      ensure
+        Admin::ActionProgress.advance(message: "JANを処理しています: #{jan_code}") if album.present?
+      end
+    end
+
+    result
   end
 
   def self.process_album_with_spotify(album)

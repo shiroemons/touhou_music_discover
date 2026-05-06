@@ -1,5 +1,14 @@
 all: help
 
+.PHONY: setup shell versions up tui logs down restart status ps server console console-sandbox bundle \
+	dbinit dbconsole migrate migrate-redo rollback dbseed upsert-original-data \
+	minitest rubocop rubocop-autocorrect rubocop-autocorrect-all db-dump db-restore \
+	fetch-touhou-music-with-original-songs export-touhou-music-with-original-songs \
+	import-touhou-music-with-original-songs export-touhou-music export-touhou-music-slim \
+	export-touhou-music-album-only export-for-algolia export-to-random-touhou-music \
+	change-is-touhou-flag associate-album-with-circle export-missing-original-songs-albums \
+	export-spotify export-all help
+
 # ============================================================
 # devbox環境コマンド (デフォルト)
 # ============================================================
@@ -10,8 +19,26 @@ setup: ## devbox環境の初期化（bundle + yarn）
 shell: ## devboxシェルに入る
 	devbox shell
 
-up: ## 全サービスをバックグラウンドで起動
-	devbox services up -b
+versions: ## 開発ツールのバージョンを表示
+	@echo "=== 開発ツールのバージョン ==="
+	@devbox run -- sh -c 'ruby -v && psql --version && redis-server --version && node --version && yarn --version' 2>/dev/null \
+		| grep -v "東方同人音楽流通" \
+		| sed 's/^ruby \([^ ]*\).*/  Ruby:       \1/' \
+		| sed 's/^psql (PostgreSQL) /  PostgreSQL: /' \
+		| sed 's/^Redis server v=\([^ ]*\).*/  Redis:      \1/' \
+		| sed 's/^v\([0-9]\)/  Node.js:    v\1/' \
+		| sed '/^[0-9]/s/^/  Yarn:       /'
+
+up: ## 全サービスをバックグラウンドで起動（起動済みの場合はステータスを表示）
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		echo "サービスは既に起動しています"; \
+	else \
+		devbox services up -b; \
+	fi
+	@echo ""
+	@$(MAKE) --no-print-directory versions
+	@echo ""
+	@$(MAKE) --no-print-directory status
 
 tui: ## 全サービスをTUIモードで起動
 	devbox services up
@@ -20,10 +47,24 @@ logs: ## Railsサーバーのログを表示
 	tail -f log/development.log
 
 down: ## devboxサービスを停止
-	devbox services stop || true
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services stop 2>/dev/null; \
+		echo "サービスを停止しました"; \
+	else \
+		echo "サービスは起動していません"; \
+	fi
+
+restart: ## devboxサービスを再起動
+	devbox services restart
 
 status: ## devboxサービスの状態を表示
-	devbox services ls
+	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services ls; \
+	else \
+		echo "サービスは起動していません。make up で起動できます。"; \
+	fi
+
+ps: status ## devboxサービスの状態を表示（statusのエイリアス）
 
 server: ## Railsサーバーを起動
 	devbox run server

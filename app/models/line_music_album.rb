@@ -39,7 +39,11 @@ class LineMusicAlbum < ApplicationRecord
     '4582736131150' => 'mb0000000003ba6b5b', # 少女理論観測所 - showcase ⅳ
     '4582736133420' => 'mb00000000040ff58d', # TAMUSIC - 東方バイオリンロック X-XFD-(TOUHOU VIOLIN ROCK)
     '4582736134533' => 'mb00000000047a98ec', # fractrick - And what's gone？
-    '4582736134762' => 'mb00000000047a98ee'  # askey - 🤞
+    '4582736134762' => 'mb00000000047a98ee', # askey - 🤞
+    '4582736137985' => 'mb000000000527116a', # 机上の空想理論 - ちぇあ’s 東方アレンジ せれくしょん。
+    '4582736137800' => 'mb000000000526fa39', # イノライ - Valentine Mode♡ (feat. 小春六花 & 夢ノ結唱 POPY(SynthesizerV))
+    '4582736137787' => 'mb000000000526fa77', # イノライ - 綺麗事だけの歌が嫌いだった
+    '4582736137688' => 'mb000000000526fa66'  # POLTANEST - リジッドパラダイス ~ Reanimate
   }.freeze
 
   def self.fetch_albums
@@ -153,19 +157,29 @@ class LineMusicAlbum < ApplicationRecord
 
   # LineMusicのアルバム情報を保存する
   def self.save_album(album_id, lm_album)
-    url = "https://music.line.me/webapp/album/#{lm_album.album_id}"
-    Rails.logger.info "LINE MUSIC アルバム情報保存: #{lm_album.album_title} (ID: #{lm_album.album_id})"
+    return nil if lm_album.blank?
 
-    line_music_album = ::LineMusicAlbum.find_or_create_by!(
+    album_title = lm_album.album_title.presence
+    if album_title.blank?
+      Rails.logger.warn "LINE MUSIC アルバム名が空のため保存をスキップしました: #{lm_album.album_id}"
+      return nil
+    end
+
+    url = "https://music.line.me/webapp/album/#{lm_album.album_id}"
+    Rails.logger.info "LINE MUSIC アルバム情報保存: #{album_title} (ID: #{lm_album.album_id})"
+
+    line_music_album = ::LineMusicAlbum.find_or_initialize_by(line_music_id: lm_album.album_id)
+    line_music_album.assign_attributes(
       album_id:,
-      line_music_id: lm_album.album_id,
-      name: lm_album.album_title,
+      name: album_title,
       url:,
       release_date: lm_album.release_date,
-      total_tracks: lm_album.track_total_count
+      total_tracks: lm_album.track_total_count,
+      payload: lm_album.as_json
     )
-    line_music_album.update(payload: lm_album.as_json)
-    Rails.logger.info "LINE MUSIC アルバム情報を保存しました: #{lm_album.album_title}"
+    line_music_album.save!
+    Rails.logger.info "LINE MUSIC アルバム情報を保存しました: #{album_title}"
+    line_music_album
   end
 
   # rubocop:disable Naming/PredicateMethod

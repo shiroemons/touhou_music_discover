@@ -1,0 +1,49 @@
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= @resource_config.label %></span>
+    <h1><%= @action.label %></h1>
+    <p><%= @action.description %></p>
+  </div>
+  <div class="admin-page-actions">
+    <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+      <i class="bi bi-x-lg" aria-hidden="true"></i>
+      <span><%= t('admin.actions.cancel') %></span>
+    <% end %>
+  </div>
+</div>
+
+<div class="alert alert-warning admin-action-warning" role="alert">
+  <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+  <%= t('admin.actions.confirmation') %>
+</div>
+
+<div class="admin-panel admin-form-panel">
+  <div class="admin-form-body">
+    <%= form_with scope: :fields, url: @record.present? ? admin_member_resource_action_path(@resource_config.key, @record, @action.key) : admin_resource_action_path(@resource_config.key, @action.key), method: :post, multipart: true do |form| %>
+      <% @action.fields.each do |field| %>
+        <div class="admin-field">
+          <%= form.label field.name, field.name.to_s.humanize, class: 'form-label' %>
+          <% if field.type == :file %>
+            <%= form.file_field field.name, class: 'form-control', required: field.required %>
+          <% else %>
+            <%= form.text_field field.name, class: 'form-control', required: field.required %>
+          <% end %>
+          <% if field.help.present? %>
+            <div class="form-text"><%= field.help %></div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <div class="admin-form-actions">
+        <%= form.button type: :submit, class: 'btn admin-btn-danger', data: { turbo_confirm: t('admin.actions.confirmation') } do %>
+          <i class="bi bi-play-fill" aria-hidden="true"></i>
+          <span><%= t('admin.actions.run') %></span>
+        <% end %>
+        <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
+          <i class="bi bi-x-lg" aria-hidden="true"></i>
+          <span><%= t('admin.actions.cancel') %></span>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

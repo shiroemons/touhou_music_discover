@@ -6,35 +6,30 @@ class BulkRetrieval < Avo::BaseAction
   self.visible = -> { view == :index }
 
   def handle(**_args)
+    Admin::ActionProgress.start(total: 7, message: 'Spotify アルバムを取得しています')
+
     # Spotify
     SpotifyClient::Album.fetch_touhou_albums
+    Admin::ActionProgress.advance(message: 'Apple Music アルバムとトラックを取得しています')
 
     # Apple Music
     AppleMusicTrack.fetch_tracks_and_albums
+    Admin::ActionProgress.advance(message: 'YouTube Music アルバムを取得しています')
 
     # YouTube Music
     YtmusicAlbum.fetch_albums
+    Admin::ActionProgress.advance(message: 'YouTube Music トラックを取得しています')
     YtmusicTrack.fetch_tracks
+    Admin::ActionProgress.advance(message: 'LINE MUSIC アルバムを取得しています')
 
     # LINE MUSIC
     LineMusicAlbum.fetch_albums
+    Admin::ActionProgress.advance(message: 'LINE MUSIC トラックを取得しています')
     LineMusicTrack.fetch_tracks
+    Admin::ActionProgress.advance(message: 'サークルを設定しています')
 
     # Set Circle
-    Album.missing_circles.eager_load(:spotify_album).each do |album|
-      artist_name = album&.spotify_album&.artist_name
-      artist_name = artist_name&.delete_prefix('ZUN / ')
-      artists = artist_name&.split(' / ')
-      artists = artists&.map { Circle::SPOTIFY_ARTIST_TO_CIRCLE[it].presence || it }&.flatten
-      artists&.uniq&.each do |artist|
-        circle = Circle.find_by(name: artist)
-        album.circles.push(circle) if circle.present?
-      end
-      next unless album.circles.empty?
-
-      artist = Circle::JAN_TO_CIRCLE[album.jan_code]
-      circle = Circle.find_by(name: artist)
-      album.circles.push(circle) if circle.present?
-    end
+    CircleAssignmentService.new.assign_missing
+    Admin::ActionProgress.advance(message: '一括取得が完了しました')
   end
 end

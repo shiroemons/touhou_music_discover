@@ -15,11 +15,13 @@ class UpdateAllYtmusicAlbumPayloads < Avo::BaseAction
     errors = []
     mutex = Mutex.new
 
+    Admin::ActionProgress.start(total: total_count, message: 'YouTube Musicアルバムのペイロードを更新しています')
     inform "#{total_count}件のアルバムのペイロード更新を開始します...(3並列で実行)"
 
     # バッチサイズを設定して、メモリ効率を改善
     batch_size = 100
     processed = 0
+    progress = Admin::ActionProgress.current
 
     YtmusicAlbum.find_in_batches(batch_size: batch_size) do |batch|
       # 3並列で実行
@@ -60,6 +62,12 @@ class UpdateAllYtmusicAlbumPayloads < Avo::BaseAction
           errors << "#{ytmusic_album.name}: #{e.message}"
         end
         Rails.logger.error "ペイロード更新エラー: #{e.class} - #{e.message}"
+      ensure
+        progress&.update(
+          current: current_index,
+          total: total_count,
+          message: "YouTube Music アルバムを処理しています: #{current_index}/#{total_count} #{ytmusic_album.name}"
+        )
       end
     end
 

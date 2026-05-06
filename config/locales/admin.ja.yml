@@ -1,0 +1,307 @@
+ja:
+  admin:
+    dashboard:
+      title: "管理画面"
+      description: "データ状況と主要アクションをすぐ確認できるRails標準の管理画面です。"
+      total_records: "総レコード数"
+      resource_count: "管理リソース"
+      action_count: "実行可能アクション"
+      latest_update: "最新更新"
+      no_updates: "更新情報なし"
+      overview: "全体状況"
+      top_resources: "件数の多いリソース"
+      recent_resources: "最近更新されたリソース"
+      all_resources: "リソース一覧"
+      count_suffix: "件"
+      actions_suffix: "アクション"
+      updated_at: "最終更新"
+    navigation:
+      groups:
+        master: "マスタ"
+        catalog: "カタログ"
+        streaming: "配信データ"
+    titles:
+      show: "%{resource} 詳細"
+      new: "%{resource} 新規作成"
+      edit: "%{resource} 編集"
+    shared:
+      blank: "未設定"
+    spotify_rate_limit:
+      kicker: "Spotify API 429"
+      title: "Spotify APIのレート制限中"
+      retry_after: "Retry-After: %{seconds}秒（%{duration}）"
+      remaining: "残り"
+      remaining_value: "%{duration}"
+      available_at: "再開予定: %{time}（日本時間）"
+      observed_at: "検出: %{time}（日本時間）"
+      expires_at: "解除予定: %{time}"
+      expired: "待機時間が終了しました"
+      duration:
+        hours: "%{hours}時間"
+        minutes: "%{minutes}分"
+        seconds: "%{seconds}秒"
+    search:
+      placeholder: "検索"
+      submit: "検索"
+      clear: "解除"
+    pagination:
+      aria_label: "ページ送り"
+      summary: "%{count}件中 %{from}-%{to}件を表示"
+      first: "最初"
+      prev: "前へ"
+      next: "次へ"
+      last: "最後"
+      go_to: "%{page}ページへ移動"
+    scroll_mode:
+      label: "表示方式"
+      pagination: "ページ送り"
+      infinite: "無限スクロール"
+      ready: "下までスクロールすると追加で読み込みます。"
+      loading: "読み込み中..."
+      complete: "すべて読み込みました。"
+      error: "読み込みに失敗しました。"
+    filters:
+      heading: "フィルター"
+      all: "すべて"
+      not_delivered:
+        label: "未配信"
+      missing_streaming_track:
+        label: "未取得"
+      original_songs_count:
+        label: "原曲数"
+      tracks_original_songs:
+        label: "原曲"
+      spotify_album_display:
+        label: "表示"
+      track_status:
+        label: "楽曲取得"
+      touhou:
+        label: "東方"
+      audio_feature_profile:
+        label: "特徴"
+      audio_tempo:
+        label: "テンポ"
+      audio_mode:
+        label: "調性"
+      audio_loudness:
+        label: "音量"
+      audio_duration:
+        label: "長さ"
+      audio_time_signature:
+        label: "拍子"
+      audio_data_quality:
+        label: "データ品質"
+      boolean:
+        true: "はい"
+        false: "いいえ"
+    table:
+      actions: "操作"
+      empty: "レコードがありません。"
+    track_status:
+      missing: "楽曲なし"
+      incomplete: "不足"
+      complete: "取得済み"
+      present: "取得あり"
+      action: "取得へ"
+    streaming_status:
+      complete: "取得済み"
+      missing: "%{service}未取得"
+    form:
+      save_failed: "保存できませんでした。"
+    confirm:
+      destroy: "削除しますか？"
+    relations:
+      heading: "関連"
+      empty: "関連レコードはありません。"
+      preview_limit: "先頭%{count}件のみ表示しています。"
+      meta:
+        disc_track: "ディスク %{disc} / トラック %{track}"
+        track: "トラック %{track}"
+        total_tracks: "総トラック数 %{count}"
+      labels:
+        album: "アルバム"
+        albums: "アルバム"
+        circles: "サークル"
+        circles_albums: "サークル・アルバム"
+        tracks: "楽曲"
+        original: "原作"
+        original_songs: "原曲"
+        tracks_original_songs: "楽曲・原曲"
+        apple_music_album: "Apple Musicアルバム"
+        apple_music_albums: "Apple Musicアルバム"
+        apple_music_tracks: "Apple Music楽曲"
+        line_music_album: "LINE MUSICアルバム"
+        line_music_albums: "LINE MUSICアルバム"
+        line_music_tracks: "LINE MUSIC楽曲"
+        spotify_album: "Spotifyアルバム"
+        spotify_albums: "Spotifyアルバム"
+        spotify_tracks: "Spotify楽曲"
+        spotify_track_audio_features: "Spotify音響特徴"
+        ytmusic_album: "YouTube Musicアルバム"
+        ytmusic_albums: "YouTube Musicアルバム"
+        ytmusic_tracks: "YouTube Music楽曲"
+    attributes:
+      common:
+        id: "ID"
+        created_at: "作成日時"
+        updated_at: "更新日時"
+        name: "名前"
+        title: "タイトル"
+        short_title: "略称"
+        code: "コード"
+        key: "キー"
+        url: "URL"
+        payload: "ペイロード"
+        jan_code: "JANコード"
+        isrc: "ISRC"
+        is_touhou: "東方"
+        circle_name: "サークル"
+        album_name: "アルバム名"
+        albums_count: "アルバム数"
+        original_songs_count: "原曲数"
+        streaming_tracks_status: "配信取得"
+        original_code: "原作コード"
+        composer: "作曲者"
+        track_number: "トラック番号"
+        disc_number: "ディスク番号"
+        is_duplicate: "重複"
+        original_type: "種別"
+        series_order: "シリーズ順"
+        streaming_type: "配信種別"
+        spotify_id: "Spotify ID"
+        apple_music_id: "Apple Music ID"
+        line_music_id: "LINE MUSIC ID"
+        browse_id: "Browse ID"
+        video_id: "動画ID"
+        playlist_id: "プレイリストID"
+        spotify_user_id: "SpotifyユーザーID"
+        original_song_code: "原曲コード"
+        album_id: "アルバムID"
+        track_id: "楽曲ID"
+        track_reference: "楽曲"
+        spotify_track_id: "Spotify楽曲ID"
+        spotify_track_reference: "Spotify楽曲"
+        spotify_album_id: "SpotifyアルバムID"
+        spotify_album_reference: "Spotifyアルバム"
+        apple_music_album_id: "Apple MusicアルバムID"
+        apple_music_album_reference: "Apple Musicアルバム"
+        line_music_album_id: "LINE MUSICアルバムID"
+        line_music_album_reference: "LINE MUSICアルバム"
+        ytmusic_album_id: "YouTube MusicアルバムID"
+        ytmusic_album_reference: "YouTube Musicアルバム"
+        spotify_album_name: "Spotifyアルバム名"
+        apple_music_album_name: "Apple Musicアルバム名"
+        ytmusic_album_name: "YouTube Musicアルバム名"
+        line_music_album_name: "LINE MUSICアルバム名"
+        album_type: "アルバム種別"
+        label: "レーベル"
+        release_date: "リリース日"
+        release_year: "リリース年"
+        tracks_status: "楽曲取得"
+        total_tracks: "総トラック数"
+        active: "有効"
+        artist_name: "アーティスト名"
+        composer_name: "作曲者名"
+        duration_ms: "再生時間(ms)"
+        playlist_url: "プレイリストURL"
+        total: "総数"
+        followers: "フォロワー数"
+        spotify_url: "Spotify URL"
+        synced_at: "同期日時"
+        position: "表示順"
+        acousticness: "アコースティック度"
+        analysis_url: "解析URL"
+        danceability: "ダンス度"
+        energy: "エネルギー"
+        instrumentalness: "インスト度"
+        loudness: "音量"
+        mode: "モード"
+        speechiness: "スピーチ度"
+        tempo: "テンポ"
+        time_signature: "拍子"
+        valence: "ポジティブ度"
+    actions:
+      heading: "アクション"
+      primary: "主要操作"
+      default_description: "管理画面のアクションをバックグラウンドで実行します。"
+      completed: "完了しました。"
+      confirmation: "このアクションはデータ更新や外部API通信を行う可能性があります。内容を確認してから実行してください。"
+      index: "一覧"
+      show: "詳細"
+      edit: "編集"
+      save: "保存"
+      cancel: "キャンセル"
+      destroy: "削除"
+      run: "実行"
+      new_record: "新規作成"
+      back_to_index: "一覧へ戻る"
+      back_to_show: "詳細へ戻る"
+      progress:
+        description: "アクションをバックグラウンドで実行しています。進捗は自動更新されます。"
+        started: "アクションを開始しました。"
+        count: "%{current} / %{total}"
+        return: "戻る"
+        statuses:
+          processing: "実行中"
+          completed: "完了"
+          error: "エラー"
+      change_touhou_flag:
+        label: "東方フラグを変更"
+        description: "原曲紐づけ済みの楽曲だけを対象に東方フラグを再判定します。未紐づけの楽曲は変更しません。"
+      set_circles:
+        label: "サークルを設定"
+      bulk_retrieval:
+        label: "一括取得"
+      fetch_apple_music_album_by_id:
+        label: "Apple MusicアルバムIDから取得"
+      import_tracks_with_original_songs:
+        label: "原曲紐づけTSVをインポート"
+    resources:
+      albums:
+        label: "アルバム"
+        description: "JANコードと東方フラグを管理します。"
+      tracks:
+        label: "楽曲"
+        description: "JANコード、ISRC、東方フラグを管理します。"
+      circles:
+        label: "サークル"
+        description: "サークル名を管理します。"
+      originals:
+        label: "原作"
+        description: "原作マスタを管理します。"
+      original_songs:
+        label: "原曲"
+        description: "原曲マスタを管理します。"
+      master_artists:
+        label: "アーティスト"
+        description: "アーティストマスタを管理します。"
+      spotify_albums:
+        label: "Spotifyアルバム"
+        description: "Spotifyアルバムの取得済みデータと有効状態を管理します。"
+      spotify_tracks:
+        label: "Spotify楽曲"
+        description: "Spotify楽曲データを管理します。"
+      spotify_track_audio_features:
+        label: "Spotify音響特徴"
+        description: "Spotify楽曲の音響特徴データを管理します。"
+      apple_music_albums:
+        label: "Apple Musicアルバム"
+        description: "Apple Musicアルバムデータを管理します。"
+      apple_music_tracks:
+        label: "Apple Music楽曲"
+        description: "Apple Music楽曲データを管理します。"
+      line_music_albums:
+        label: "LINE MUSICアルバム"
+        description: "LINE MUSICアルバムデータを管理します。"
+      line_music_tracks:
+        label: "LINE MUSIC楽曲"
+        description: "LINE MUSIC楽曲データを管理します。"
+      ytmusic_albums:
+        label: "YouTube Musicアルバム"
+        description: "YouTube Musicアルバムデータを管理します。"
+      ytmusic_tracks:
+        label: "YouTube Music楽曲"
+        description: "YouTube Music楽曲データを管理します。"
+      spotify_playlists:
+        label: "Spotifyプレイリスト"
+        description: "Spotifyプレイリストの同期情報を管理します。"

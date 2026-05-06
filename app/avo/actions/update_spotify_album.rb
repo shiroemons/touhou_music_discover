@@ -15,11 +15,19 @@ class UpdateSpotifyAlbum < Avo::BaseAction
         SpotifyClient::Album.update_albums(spotify_albums)
       end
       count += spotify_albums.size
-      inform "Spotify アルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+      inform "Spotify アルバム: #{count}/#{max_count} Progress: #{progress_percent(count, max_count)}%"
       sleep 0.5
     end
 
     succeed 'Done!'
     reload
+  end
+
+  private
+
+  def progress_percent(count, total)
+    return 100 if total.zero?
+
+    (count * 100.0 / total).round(1)
   end
 end

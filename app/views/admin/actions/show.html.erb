@@ -1,0 +1,21 @@
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= @resource_config.label %></span>
+    <h1><%= @action.label %></h1>
+    <p><%= t('admin.actions.progress.description') %></p>
+  </div>
+  <div class="admin-page-actions">
+    <%= link_to @action_run.fetch('redirect_path'), class: 'btn admin-btn' do %>
+      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      <span><%= @record.present? ? t('admin.actions.back_to_show') : t('admin.actions.back_to_index') %></span>
+    <% end %>
+  </div>
+</div>
+
+<div
+  data-controller="admin-action-progress"
+  data-admin-action-progress-url-value="<%= action_run_progress_path(@action_run.fetch('id')) %>"
+  data-admin-action-progress-interval-value="1000"
+>
+  <%= render 'progress', action_run: @action_run %>
+</div>

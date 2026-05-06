@@ -46,8 +46,14 @@ class SpotifyAlbumsToAlgoliaPresenter < Presenter
       end || [],
       image_url: extract_image_url(album.spotify_album_payload),
       release_date: album.spotify_album_release_date,
-      tracks: track_objects(album.spotify_tracks.sort_by { [it.disc_number, it.track_number] })
+      tracks: track_objects(active_spotify_tracks(album))
     }
+  end
+
+  def active_spotify_tracks(album)
+    album.spotify_tracks
+         .select { it.spotify_album_id == album.spotify_album.id }
+         .sort_by { [it.disc_number, it.track_number] }
   end
 
   def track_objects(spotify_tracks)

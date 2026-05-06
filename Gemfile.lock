@@ -123,6 +123,8 @@ GEM
     dry-initializer (3.1.1)
     erb (5.0.1)
     erubi (1.13.1)
+    excon (1.4.2)
+      logger
     faraday (2.14.0)
       faraday-net_http (>= 2.0, < 3.5)
       json
@@ -184,8 +186,7 @@ GEM
       mime-types-data (~> 3.2015)
     mime-types-data (3.2023.1205)
     mini_mime (1.1.5)
-    minitest (6.0.1)
-      prism (~> 1.5)
+    minitest (5.27.0)
     mize (0.6.1)
     msgpack (1.7.5)
     multi_json (1.15.0)
@@ -351,6 +352,8 @@ GEM
       rubocop-ast (>= 1.44.0, < 2.0)
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
+    spotify-client (1.1.2)
+      excon (>= 1.4, < 2.0)
     stimulus-rails (1.3.4)
       railties (>= 6.0.0)
     stringio (3.1.7)
@@ -412,6 +415,7 @@ DEPENDENCIES
   jwt
   listen (~> 3.8)
   meilisearch-rails
+  minitest (~> 5.25)
   omniauth-rails_csrf_protection (~> 2.0)
   ostruct
   pagy
@@ -428,6 +432,7 @@ DEPENDENCIES
   rubocop
   rubocop-performance
   rubocop-rails
+  spotify-client
   stimulus-rails
   turbo-rails
 

@@ -1,0 +1,109 @@
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= t('admin.dashboard.overview') %></span>
+    <h1><%= t('admin.dashboard.title') %></h1>
+    <p><%= t('admin.dashboard.description') %></p>
+  </div>
+</div>
+
+<div class="admin-stat-grid">
+  <div class="admin-stat-card">
+    <span class="admin-stat-label"><%= t('admin.dashboard.total_records') %></span>
+    <strong><%= number_with_delimiter(@total_records) %></strong>
+    <span><%= t('admin.dashboard.count_suffix') %></span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-label"><%= t('admin.dashboard.resource_count') %></span>
+    <strong><%= number_with_delimiter(@resources.size) %></strong>
+    <span><%= t('admin.dashboard.all_resources') %></span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-label"><%= t('admin.dashboard.action_count') %></span>
+    <strong><%= number_with_delimiter(@total_actions) %></strong>
+    <span><%= t('admin.dashboard.actions_suffix') %></span>
+  </div>
+  <div class="admin-stat-card">
+    <span class="admin-stat-label"><%= t('admin.dashboard.latest_update') %></span>
+    <% latest_update = @recent_resources.first&.fetch(:latest_updated_at) %>
+    <strong class="admin-stat-date"><%= latest_update.present? ? l(latest_update, format: :short) : t('admin.dashboard.no_updates') %></strong>
+    <span><%= @recent_resources.first&.fetch(:resource)&.label || t('admin.dashboard.no_updates') %></span>
+  </div>
+</div>
+
+<div class="admin-dashboard-grid">
+  <section class="admin-panel">
+    <div class="admin-panel-header">
+      <h2><%= t('admin.dashboard.top_resources') %></h2>
+    </div>
+    <div class="admin-list-stack">
+      <% @top_resources.each do |summary| %>
+        <% resource = summary[:resource] %>
+        <%= link_to admin_resources_path(resource.key), class: 'admin-resource-row' do %>
+          <span>
+            <strong><%= resource.label %></strong>
+            <small><%= resource.description %></small>
+          </span>
+          <span class="admin-count-pill"><%= number_with_delimiter(summary[:count]) %></span>
+        <% end %>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="admin-panel">
+    <div class="admin-panel-header">
+      <h2><%= t('admin.dashboard.recent_resources') %></h2>
+    </div>
+    <div class="admin-list-stack">
+      <% if @recent_resources.any? %>
+        <% @recent_resources.each do |summary| %>
+          <% resource = summary[:resource] %>
+          <%= link_to admin_resources_path(resource.key), class: 'admin-resource-row' do %>
+            <span>
+              <strong><%= resource.label %></strong>
+              <small><%= t('admin.dashboard.updated_at') %></small>
+            </span>
+            <span class="admin-date-pill"><%= l(summary[:latest_updated_at], format: :short) %></span>
+          <% end %>
+        <% end %>
+      <% else %>
+        <p class="admin-empty"><%= t('admin.dashboard.no_updates') %></p>
+      <% end %>
+    </div>
+  </section>
+</div>
+
+<section class="admin-panel">
+  <div class="admin-panel-header">
+    <h2><%= t('admin.dashboard.all_resources') %></h2>
+  </div>
+
+  <div class="admin-resource-grid">
+    <% @resource_groups.each do |group_key, resources| %>
+      <div class="admin-resource-group-card">
+        <h3><%= t("admin.navigation.groups.#{group_key}") %></h3>
+        <div class="admin-list-stack">
+          <% resources.each do |resource| %>
+            <% summary = @summary_by_key.fetch(resource.key) %>
+            <div class="admin-resource-item">
+              <div>
+                <strong><%= resource.label %></strong>
+                <small><%= resource.description %></small>
+              </div>
+              <div class="admin-resource-actions">
+                <span class="admin-count-pill"><%= number_with_delimiter(summary[:count]) %></span>
+                <%= link_to admin_resources_path(resource.key), class: 'btn btn-sm admin-btn', title: t('admin.actions.index') do %>
+                  <i class="bi bi-list-ul" aria-hidden="true"></i>
+                  <span><%= t('admin.actions.index') %></span>
+                <% end %>
+                <%= link_to admin_new_resource_path(resource.key), class: 'btn btn-sm admin-btn-primary', title: t('admin.actions.new_record') do %>
+                  <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                  <span><%= t('admin.actions.new_record') %></span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>

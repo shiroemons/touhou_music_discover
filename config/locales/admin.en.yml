@@ -1,0 +1,307 @@
+en:
+  admin:
+    dashboard:
+      title: "Admin"
+      description: "A Rails-native admin interface for checking data status and key actions quickly."
+      total_records: "Total records"
+      resource_count: "Resources"
+      action_count: "Available actions"
+      latest_update: "Latest update"
+      no_updates: "No updates"
+      overview: "Overview"
+      top_resources: "Largest resources"
+      recent_resources: "Recently updated resources"
+      all_resources: "All resources"
+      count_suffix: "records"
+      actions_suffix: "actions"
+      updated_at: "Last updated"
+    navigation:
+      groups:
+        master: "Master"
+        catalog: "Catalog"
+        streaming: "Streaming data"
+    titles:
+      show: "%{resource} Details"
+      new: "New %{resource}"
+      edit: "Edit %{resource}"
+    shared:
+      blank: "Not set"
+    spotify_rate_limit:
+      kicker: "Spotify API 429"
+      title: "Spotify API rate limited"
+      retry_after: "Retry-After: %{seconds}s (%{duration})"
+      remaining: "Remaining"
+      remaining_value: "%{duration}"
+      available_at: "Available at: %{time} (Japan time)"
+      observed_at: "Detected: %{time} (Japan time)"
+      expires_at: "Available after: %{time}"
+      expired: "Wait time has ended"
+      duration:
+        hours: "%{hours}h"
+        minutes: "%{minutes}m"
+        seconds: "%{seconds}s"
+    search:
+      placeholder: "Search"
+      submit: "Search"
+      clear: "Clear"
+    pagination:
+      aria_label: "Pagination"
+      summary: "Showing %{from}-%{to} of %{count}"
+      first: "First"
+      prev: "Previous"
+      next: "Next"
+      last: "Last"
+      go_to: "Go to page %{page}"
+    scroll_mode:
+      label: "Display mode"
+      pagination: "Pagination"
+      infinite: "Infinite scroll"
+      ready: "Scroll down to load more."
+      loading: "Loading..."
+      complete: "All records loaded."
+      error: "Could not load more records."
+    filters:
+      heading: "Filters"
+      all: "All"
+      not_delivered:
+        label: "Not delivered"
+      missing_streaming_track:
+        label: "Missing"
+      original_songs_count:
+        label: "Original songs"
+      tracks_original_songs:
+        label: "Original songs"
+      spotify_album_display:
+        label: "Display"
+      track_status:
+        label: "Track retrieval"
+      touhou:
+        label: "Touhou"
+      audio_feature_profile:
+        label: "Feature"
+      audio_tempo:
+        label: "Tempo"
+      audio_mode:
+        label: "Mode"
+      audio_loudness:
+        label: "Loudness"
+      audio_duration:
+        label: "Duration"
+      audio_time_signature:
+        label: "Time signature"
+      audio_data_quality:
+        label: "Data quality"
+      boolean:
+        true: "Yes"
+        false: "No"
+    table:
+      actions: "Actions"
+      empty: "No records found."
+    track_status:
+      missing: "No tracks"
+      incomplete: "Incomplete"
+      complete: "Complete"
+      present: "Has tracks"
+      action: "Fetch"
+    streaming_status:
+      complete: "Complete"
+      missing: "%{service} missing"
+    form:
+      save_failed: "Could not save the record."
+    confirm:
+      destroy: "Delete this record?"
+    relations:
+      heading: "Relations"
+      empty: "No related records."
+      preview_limit: "Showing the first %{count} records only."
+      meta:
+        disc_track: "Disc %{disc} / Track %{track}"
+        track: "Track %{track}"
+        total_tracks: "%{count} tracks"
+      labels:
+        album: "Album"
+        albums: "Albums"
+        circles: "Circles"
+        circles_albums: "Circle albums"
+        tracks: "Tracks"
+        original: "Original"
+        original_songs: "Original songs"
+        tracks_original_songs: "Track original songs"
+        apple_music_album: "Apple Music album"
+        apple_music_albums: "Apple Music albums"
+        apple_music_tracks: "Apple Music tracks"
+        line_music_album: "LINE MUSIC album"
+        line_music_albums: "LINE MUSIC albums"
+        line_music_tracks: "LINE MUSIC tracks"
+        spotify_album: "Spotify album"
+        spotify_albums: "Spotify albums"
+        spotify_tracks: "Spotify tracks"
+        spotify_track_audio_features: "Spotify audio features"
+        ytmusic_album: "YouTube Music album"
+        ytmusic_albums: "YouTube Music albums"
+        ytmusic_tracks: "YouTube Music tracks"
+    attributes:
+      common:
+        id: "ID"
+        created_at: "Created at"
+        updated_at: "Updated at"
+        name: "Name"
+        title: "Title"
+        short_title: "Short title"
+        code: "Code"
+        key: "Key"
+        url: "URL"
+        payload: "Payload"
+        jan_code: "JAN code"
+        isrc: "ISRC"
+        is_touhou: "Touhou"
+        circle_name: "Circle"
+        album_name: "Album name"
+        albums_count: "Albums count"
+        original_songs_count: "Original songs count"
+        streaming_tracks_status: "Streaming retrieval"
+        original_code: "Original code"
+        composer: "Composer"
+        track_number: "Track number"
+        disc_number: "Disc number"
+        is_duplicate: "Duplicate"
+        original_type: "Type"
+        series_order: "Series order"
+        streaming_type: "Streaming type"
+        spotify_id: "Spotify ID"
+        apple_music_id: "Apple Music ID"
+        line_music_id: "LINE MUSIC ID"
+        browse_id: "Browse ID"
+        video_id: "Video ID"
+        playlist_id: "Playlist ID"
+        spotify_user_id: "Spotify user ID"
+        original_song_code: "Original song code"
+        album_id: "Album ID"
+        track_id: "Track ID"
+        track_reference: "Track"
+        spotify_track_id: "Spotify track ID"
+        spotify_track_reference: "Spotify track"
+        spotify_album_id: "Spotify album ID"
+        spotify_album_reference: "Spotify album"
+        apple_music_album_id: "Apple Music album ID"
+        apple_music_album_reference: "Apple Music album"
+        line_music_album_id: "LINE MUSIC album ID"
+        line_music_album_reference: "LINE MUSIC album"
+        ytmusic_album_id: "YouTube Music album ID"
+        ytmusic_album_reference: "YouTube Music album"
+        spotify_album_name: "Spotify album name"
+        apple_music_album_name: "Apple Music album name"
+        ytmusic_album_name: "YouTube Music album name"
+        line_music_album_name: "LINE MUSIC album name"
+        album_type: "Album type"
+        label: "Label"
+        release_date: "Release date"
+        release_year: "Release year"
+        tracks_status: "Track retrieval"
+        total_tracks: "Total tracks"
+        active: "Active"
+        artist_name: "Artist name"
+        composer_name: "Composer name"
+        duration_ms: "Duration (ms)"
+        playlist_url: "Playlist URL"
+        total: "Total"
+        followers: "Followers"
+        spotify_url: "Spotify URL"
+        synced_at: "Synced at"
+        position: "Position"
+        acousticness: "Acousticness"
+        analysis_url: "Analysis URL"
+        danceability: "Danceability"
+        energy: "Energy"
+        instrumentalness: "Instrumentalness"
+        loudness: "Loudness"
+        mode: "Mode"
+        speechiness: "Speechiness"
+        tempo: "Tempo"
+        time_signature: "Time signature"
+        valence: "Valence"
+    actions:
+      heading: "Actions"
+      primary: "Primary actions"
+      default_description: "Run this admin action in the background."
+      completed: "Completed."
+      confirmation: "This action may update data or call external APIs. Review the details before running it."
+      index: "Index"
+      show: "Show"
+      edit: "Edit"
+      save: "Save"
+      cancel: "Cancel"
+      destroy: "Delete"
+      run: "Run"
+      new_record: "New"
+      back_to_index: "Back to index"
+      back_to_show: "Back to details"
+      progress:
+        description: "The action is running in the background. Progress updates automatically."
+        started: "Action started."
+        count: "%{current} / %{total}"
+        return: "Return"
+        statuses:
+          processing: "Running"
+          completed: "Completed"
+          error: "Error"
+      change_touhou_flag:
+        label: "Update Touhou flags"
+        description: "Recalculates Touhou flags only for tracks with original-song links. Unlinked tracks are not changed."
+      set_circles:
+        label: "Assign circles"
+      bulk_retrieval:
+        label: "Bulk retrieval"
+      fetch_apple_music_album_by_id:
+        label: "Fetch by Apple Music album ID"
+      import_tracks_with_original_songs:
+        label: "Import original-song links TSV"
+    resources:
+      albums:
+        label: "Albums"
+        description: "Manage JAN codes and Touhou flags."
+      tracks:
+        label: "Tracks"
+        description: "Manage JAN codes, ISRCs, and Touhou flags."
+      circles:
+        label: "Circles"
+        description: "Manage circle names."
+      originals:
+        label: "Originals"
+        description: "Manage original work master data."
+      original_songs:
+        label: "Original songs"
+        description: "Manage original-song master data."
+      master_artists:
+        label: "Artists"
+        description: "Manage artist master data."
+      spotify_albums:
+        label: "Spotify albums"
+        description: "Manage fetched Spotify album data and active state."
+      spotify_tracks:
+        label: "Spotify tracks"
+        description: "Manage Spotify track data."
+      spotify_track_audio_features:
+        label: "Spotify audio features"
+        description: "Manage Spotify track audio feature data."
+      apple_music_albums:
+        label: "Apple Music albums"
+        description: "Manage Apple Music album data."
+      apple_music_tracks:
+        label: "Apple Music tracks"
+        description: "Manage Apple Music track data."
+      line_music_albums:
+        label: "LINE MUSIC albums"
+        description: "Manage LINE MUSIC album data."
+      line_music_tracks:
+        label: "LINE MUSIC tracks"
+        description: "Manage LINE MUSIC track data."
+      ytmusic_albums:
+        label: "YouTube Music albums"
+        description: "Manage YouTube Music album data."
+      ytmusic_tracks:
+        label: "YouTube Music tracks"
+        description: "Manage YouTube Music track data."
+      spotify_playlists:
+        label: "Spotify playlists"
+        description: "Manage Spotify playlist sync data."

@@ -13,6 +13,7 @@ class ImportTracksWithOriginalSongs < Avo::BaseAction
     fail('Import error.') unless field['tsv_file']&.content_type&.in?(['text/tab-separated-values'])
 
     songs = CSV.table(field['tsv_file'].path, col_sep: "\t", converters: nil, liberal_parsing: true)
+    Admin::ActionProgress.start(total: songs.size, message: 'TSVの楽曲紐づけをインポートしています')
     songs.each do |song|
       jan_code = song[:jan_code]
       isrc = song[:isrc]
@@ -22,6 +23,7 @@ class ImportTracksWithOriginalSongs < Avo::BaseAction
         original_song_list = OriginalSong.where(title: original_songs.split('/'), is_duplicate: false)
         track.original_songs = original_song_list
       end
+      Admin::ActionProgress.advance(message: "楽曲を処理しています: #{jan_code} / #{isrc}")
     end
     succeed('Completed!')
     reload

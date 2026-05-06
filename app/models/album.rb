@@ -10,10 +10,11 @@ class Album < ApplicationRecord
   has_many :apple_music_tracks, -> { order(Arel.sql('apple_music_tracks.disc_number ASC, apple_music_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
   has_many :line_music_tracks, -> { order(Arel.sql('line_music_tracks.disc_number ASC, line_music_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
   has_many :spotify_tracks, -> { order(Arel.sql('spotify_tracks.disc_number ASC, spotify_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
+  has_many :spotify_albums, dependent: :destroy
   has_many :ytmusic_tracks, -> { order(Arel.sql('ytmusic_tracks.track_number ASC')) }, inverse_of: :album, dependent: :destroy
 
   has_one :apple_music_album, dependent: :destroy
-  has_one :spotify_album, dependent: :destroy
+  has_one :spotify_album, -> { where(active: true) }, inverse_of: :album, dependent: nil
   has_one :line_music_album, dependent: :destroy
   has_one :ytmusic_album, dependent: :destroy
 
@@ -34,14 +35,15 @@ class Album < ApplicationRecord
 
   # Albumに紐づくTrackのうち、original_songsが紐づいていないものが1つでも存在するAlbumを絞り込みます
   scope :tracks_missing_original_songs, lambda {
-    joins(:tracks)
-      .left_joins(tracks: :original_songs)
-      .group('albums.id')
-      .having('COUNT(original_songs.code) = 0')
+    where(jan_code: Track.missing_original_songs.select(:jan_code))
   }
 
   def circle_name
     circles&.map(&:name)&.join(' / ')
+  end
+
+  def image_url
+    spotify_album&.image_url || apple_music_album&.image_url || ytmusic_album&.image_url || line_music_album&.image_url
   end
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -49,6 +51,6 @@ class Album < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[apple_music_album apple_music_tracks circles circles_albums line_music_album line_music_tracks spotify_album spotify_tracks tracks ytmusic_album ytmusic_tracks]
+    %w[apple_music_album apple_music_tracks circles circles_albums line_music_album line_music_tracks spotify_album spotify_albums spotify_tracks tracks ytmusic_album ytmusic_tracks]
   end
 end
