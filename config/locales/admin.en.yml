@@ -115,6 +115,7 @@ en:
       empty: "No related records."
       preview_limit: "Showing the first %{count} records only."
       meta:
+        original: "Original: %{title}"
         disc_track: "Disc %{disc} / Track %{track}"
         track: "Track %{track}"
         total_tracks: "%{count} tracks"

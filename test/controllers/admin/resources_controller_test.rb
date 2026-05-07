@@ -117,6 +117,34 @@ module Admin
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
     end
 
+    test 'hides join relation and shows original title on original song relation' do
+      album = Album.create!(jan_code: '9777777777778')
+      track = Track.create!(album:, isrc: 'JPABC260005')
+      original = Original.create!(
+        code: 'ADMIN-RELATION-ORIGINAL',
+        title: 'Admin Relation Original',
+        short_title: 'Relation Original',
+        original_type: 'other',
+        series_order: 1.0
+      )
+      original_song = OriginalSong.create!(
+        code: 'ADMIN-RELATION-ORIGINAL-001',
+        original:,
+        title: 'Admin Relation Original Song',
+        composer: 'ZUN',
+        track_number: 1
+      )
+      TracksOriginalSong.create!(track:, original_song:)
+
+      get admin_resource_url('tracks', track)
+
+      assert_response :success
+      assert_select '.admin-relation-header', /原曲/
+      assert_select '.admin-relation-header', { text: /楽曲・原曲/, count: 0 }
+      assert_select '.admin-relation-record-label', text: 'Admin Relation Original Song'
+      assert_select '.admin-relation-record-meta', text: '原作: Admin Relation Original / トラック 1'
+    end
+
     test 'lists tracks by jan code and shows album name on detail' do
       older_album = Album.create!(jan_code: '9777777777901')
       newer_album = Album.create!(jan_code: '9777777777902')

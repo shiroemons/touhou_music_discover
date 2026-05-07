@@ -16,7 +16,8 @@ module Admin
     }.freeze
 
     attr_accessor :key, :model_class_name, :index_attributes, :detail_attributes, :form_attributes,
-                  :search_attributes, :search_scope, :filter_definitions, :includes, :default_order, :action_class_names
+                  :search_attributes, :search_scope, :filter_definitions, :includes, :hidden_relations,
+                  :default_order, :action_class_names
 
     delegate :count, :primary_key, to: :model_class
 
@@ -447,6 +448,7 @@ module Admin
             search_attributes: %i[jan_code isrc],
             filter_definitions: [missing_streaming_track_filter, original_songs_count_filter],
             includes: track_preview_includes,
+            hidden_relations: %i[tracks_original_songs],
             default_order: ->(scope) { scope.order(jan_code: :desc, id: :asc) },
             action_class_names: %w[ExportMissingOriginalSongsTracks ImportTracksWithOriginalSongs ChangeTouhouFlag]
           ),
@@ -469,7 +471,8 @@ module Admin
             model_class_name: 'OriginalSong',
             index_attributes: %i[code original_code title composer track_number is_duplicate],
             form_attributes: %i[code original_code title composer track_number is_duplicate],
-            search_attributes: %i[code original_code title composer]
+            search_attributes: %i[code original_code title composer],
+            hidden_relations: %i[tracks_original_songs]
           ),
           new(
             key: 'master_artists',
@@ -734,6 +737,10 @@ module Admin
 
     def attributes_for_detail
       Array(detail_attributes.presence || model_class.columns.map(&:name)).map(&:to_s)
+    end
+
+    def hidden_relation?(name)
+      name.to_sym.in?(Array(hidden_relations))
     end
 
     def index_attribute_label(attribute)

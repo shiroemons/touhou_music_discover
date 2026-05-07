@@ -115,6 +115,7 @@ ja:
       empty: "関連レコードはありません。"
       preview_limit: "先頭%{count}件のみ表示しています。"
       meta:
+        original: "原作: %{title}"
         disc_track: "ディスク %{disc} / トラック %{track}"
         track: "トラック %{track}"
         total_tracks: "総トラック数 %{count}"

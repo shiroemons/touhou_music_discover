@@ -5,6 +5,8 @@ module Admin
     module RelationHelper
       def admin_relation_sections(resource_config, record)
         resource_config.model_class.reflect_on_all_associations.filter_map do |reflection|
+          next if resource_config.hidden_relation?(reflection.name)
+
           Admin::RelationSection.new(resource_config:, record:, reflection:)
         end
       end
@@ -32,9 +34,16 @@ module Admin
 
       def admin_relation_record_meta(record)
         values = []
+        values << admin_original_song_original_title(record)
         values << admin_track_position(record)
         values << t('admin.relations.meta.total_tracks', count: record.total_tracks) if record.respond_to?(:total_tracks) && record.total_tracks.present?
         values.compact.join(' / ').presence
+      end
+
+      def admin_original_song_original_title(record)
+        return unless record.is_a?(OriginalSong) && record.original_title.present?
+
+        t('admin.relations.meta.original', title: record.original_title)
       end
 
       def admin_track_position(record)
