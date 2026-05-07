@@ -3,7 +3,9 @@
 require 'test_helper'
 
 class LineMusicAlbumTest < ActiveSupport::TestCase
-  LineMusicApiAlbum = Struct.new(:album_id, :album_title, :release_date, :track_total_count, keyword_init: true) do
+  LineMusicApiArtist = Struct.new(:artist_name, keyword_init: true)
+  StreamingAlbum = Struct.new(:album_id, :name, :release_date, :total_tracks, :artist_name, :album, keyword_init: true)
+  LineMusicApiAlbum = Struct.new(:album_id, :album_title, :release_date, :track_total_count, :artists, keyword_init: true) do
     def as_json(*)
       {
         'album_id' => album_id,
@@ -83,10 +85,112 @@ class LineMusicAlbumTest < ActiveSupport::TestCase
     assert_equal 'Updated Title', line_music_album.reload.name
   end
 
+  test 'does not match same title and track count when artist and release date differ' do
+    source_album = Album.create!(jan_code: "line-music-mismatch-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: 'Chasing Rain',
+      artist_name: 'DiGiTAL WiNG',
+      release_date: Date.new(2026, 5, 4),
+      total_tracks: 2
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: 'Chasing Rain',
+      artist_names: ['Montage Whisky'],
+      release_date: Date.new(2025, 11, 24),
+      track_total_count: 2
+    )
+
+    assert_not LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'matches same title and track count when artist matches even if release date differs' do
+    source_album = Album.create!(jan_code: "line-music-artist-match-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: 'Stargaze',
+      artist_name: 'XL Project',
+      release_date: Date.new(2025, 7, 7),
+      total_tracks: 1
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: 'Stargaze',
+      artist_names: ['XL Project'],
+      release_date: Date.new(2025, 6, 18),
+      track_total_count: 1
+    )
+
+    assert LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'matches same title and track count when release date matches' do
+    source_album = Album.create!(jan_code: "line-music-date-match-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: 'Edge',
+      artist_name: '舞音KAGURA & KOTOHGE MAI',
+      release_date: Date.new(2018, 12, 30),
+      total_tracks: 6
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: 'Edge',
+      artist_names: ['Various Artists'],
+      release_date: Date.new(2018, 12, 30),
+      track_total_count: 6
+    )
+
+    assert LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'matches title when streaming album has a subtitle and release date matches' do
+    source_album = Album.create!(jan_code: "line-music-subtitle-match-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: '東方風櫻宴 (Phantasmagoria mystical expectation)',
+      artist_name: 'IOSYS',
+      release_date: Date.new(2006, 5, 21),
+      total_tracks: 11
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: '東方風櫻宴',
+      artist_names: ['IOSYS'],
+      release_date: Date.new(2006, 5, 21),
+      track_total_count: 11
+    )
+
+    assert LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'matches special title notation when artist and release date match' do
+    source_album = Album.create!(jan_code: "line-music-special-title-match-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: '🤞',
+      artist_name: 'askey',
+      release_date: Date.new(2024, 5, 3),
+      total_tracks: 4
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: ':crossed_finger:',
+      artist_names: ['askey'],
+      release_date: Date.new(2024, 5, 3),
+      track_total_count: 4
+    )
+
+    assert LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
   private
 
-  def build_line_music_api_album(...)
-    LineMusicApiAlbum.new(...)
+  def build_line_music_api_album(artist_names: [], **)
+    LineMusicApiAlbum.new(
+      artists: artist_names.map { |artist_name| LineMusicApiArtist.new(artist_name:) },
+      **
+    )
+  end
+
+  def build_streaming_album(source_album:, **attributes)
+    StreamingAlbum.new(album_id: source_album.id, album: source_album, **attributes)
   end
 
   def stub_line_music_album_find(fetched_album)

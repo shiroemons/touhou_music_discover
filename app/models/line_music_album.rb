@@ -236,8 +236,10 @@ class LineMusicAlbum < ApplicationRecord
       Rails.logger.info "トラック数が一致するアルバム: #{matching_by_tracks.size}件"
 
       if matching_by_tracks.any?
-        # トラック数が一致する中から、タイトルが完全一致するか、リリース日が近いものを選択
-        exact_title_match = matching_by_tracks.find { |la| la.album_title == album.name }
+        # トラック数が一致する中から、タイトルと配信日またはアーティストが一致するものを優先して選択
+        exact_title_match = matching_by_tracks.find do |la|
+          title_matches?(la.album_title, album.name) && album_identity_matches?(la, album)
+        end
 
         if exact_title_match
           Rails.logger.info "タイトルが完全一致するアルバムを選択: #{exact_title_match.album_title}"
@@ -246,9 +248,11 @@ class LineMusicAlbum < ApplicationRecord
         end
 
         # リリース日が最も近いアルバムを選択
-        closest_date_match = matching_by_tracks.min_by { |la| (la.release_date - album.release_date).abs }
-        if closest_date_match && (closest_date_match.release_date - album.release_date).abs <= 7
-          Rails.logger.info "リリース日が近いアルバムを選択: #{closest_date_match.album_title}, 日付差: #{(closest_date_match.release_date - album.release_date).abs}日"
+        closest_date_match = matching_by_tracks
+                             .select { |la| title_matches?(la.album_title, album.name) }
+                             .min_by { |la| (la.release_date - album.release_date).abs }
+        if closest_date_match && release_date_matches?(closest_date_match, album)
+          Rails.logger.info "リリース日が近いアルバムを選択: #{closest_date_match.album_title}, 日付差: #{release_date_difference(closest_date_match, album)}日"
           LineMusicAlbum.save_album(album.album_id, closest_date_match)
           return true
         end
@@ -284,11 +288,61 @@ class LineMusicAlbum < ApplicationRecord
 
   # アルバムがマッチするかどうかを判定するヘルパーメソッド
   def self.matches_album?(line_album, album)
-    release_date_match = line_album.release_date == album.release_date
     track_count_match = line_album.track_total_count == album.total_tracks
-    title_match = line_album.album_title == album.name
 
-    (release_date_match && track_count_match) || (title_match && track_count_match)
+    track_count_match && (
+      (title_matches?(line_album.album_title, album.name) && album_identity_matches?(line_album, album)) ||
+      (release_date_matches?(line_album, album) && artist_matches?(line_album, album))
+    )
+  end
+
+  def self.album_identity_matches?(line_album, album)
+    release_date_matches?(line_album, album) || artist_matches?(line_album, album)
+  end
+
+  def self.release_date_matches?(line_album, album)
+    release_date_difference(line_album, album) <= 7
+  end
+
+  def self.release_date_difference(line_album, album)
+    (line_album.release_date - album.release_date).abs
+  end
+
+  def self.artist_matches?(line_album, album)
+    line_artist_tokens = artist_tokens(line_album.artists&.map(&:artist_name)&.join(' '))
+    expected_artist_tokens = artist_tokens(expected_artist_names(album).join(' '))
+    return false if line_artist_tokens.empty? || expected_artist_tokens.empty?
+
+    (line_artist_tokens & expected_artist_tokens).any?
+  end
+
+  def self.expected_artist_names(album)
+    names = []
+    names << album.artist_name if album.respond_to?(:artist_name)
+    names << album.album.circle_name if album.respond_to?(:album) && album.album.present?
+    names.compact
+  end
+
+  def self.artist_tokens(value)
+    normalize_text(value)
+      .split
+      .reject { |token| token.length <= 1 || %w[feat featuring with and the zun].include?(token) }
+  end
+
+  def self.title_matches?(line_title, album_title)
+    line = normalize_title(line_title)
+    album = normalize_title(album_title)
+    return false if line.blank? || album.blank?
+
+    line == album || line.include?(album) || album.include?(line)
+  end
+
+  def self.normalize_title(value)
+    normalize_text(value).sub(/ single\z/, '').sub(/ ep\z/, '')
+  end
+
+  def self.normalize_text(value)
+    value.to_s.unicode_normalize(:nfkc).downcase.gsub(/[^[:alnum:]ぁ-んァ-ン一-龥]+/, ' ').squish
   end
 
   def self.find_and_save(id, album)
