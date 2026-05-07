@@ -29,6 +29,15 @@ module Admin
 
       def admin_index_display_value(resource_config, record, attribute)
         value = resource_config.value_for(record, attribute)
+        associated_record = admin_index_attribute_record(resource_config, record, attribute)
+        if associated_record.present?
+          content = admin_record_image_url(associated_record).present? ? admin_value_with_thumbnail(associated_record, value) : value.to_s
+          associated_resource = Admin::Resource.find_by_model_class(associated_record.class)
+          return link_to(content, admin_resource_path(associated_resource.key, associated_record), class: 'admin-index-record-link') if associated_resource.present?
+
+          return content
+        end
+
         content = admin_display_value(resource_config, record, attribute)
         return content unless admin_linkable_index_attribute?(resource_config, attribute, value)
 
@@ -36,6 +45,22 @@ module Admin
       end
 
       private
+
+      STREAMING_ALBUM_INDEX_ASSOCIATIONS = {
+        'spotify_album_name' => :spotify_album,
+        'apple_music_album_name' => :apple_music_album,
+        'ytmusic_album_name' => :ytmusic_album,
+        'line_music_album_name' => :line_music_album
+      }.freeze
+
+      def admin_index_attribute_record(resource_config, record, attribute)
+        return unless resource_config.model_class == Album
+
+        association = STREAMING_ALBUM_INDEX_ASSOCIATIONS[attribute.to_s]
+        return if association.blank? || !record.respond_to?(association)
+
+        record.public_send(association)
+      end
 
       def admin_linkable_index_attribute?(resource_config, attribute, value)
         return false if value.blank?

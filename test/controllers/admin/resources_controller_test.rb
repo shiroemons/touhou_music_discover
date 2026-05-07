@@ -49,6 +49,33 @@ module Admin
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
 
+    test 'links streaming album names to each service resource with service artwork' do
+      album = Album.create!(jan_code: '9777777777767')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'spotify-admin-service-artwork',
+        album_type: 'album',
+        name: 'Admin Spotify Artwork Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: { 'images' => [{ 'url' => 'https://example.test/spotify-cover.jpg' }] }
+      )
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'line-music-admin-service-artwork',
+        name: 'Admin LINE Artwork Album',
+        payload: { 'image_url' => 'https://example.test/line-cover.jpg' }
+      )
+
+      get admin_resources_url('albums'), params: { q: album.jan_code }
+
+      assert_response :success
+      assert_select 'a[href=?].admin-index-record-link .admin-value-label', admin_resource_path('spotify_albums', spotify_album), text: spotify_album.name
+      assert_select 'a[href=?].admin-index-record-link img[src=?][alt=?]', admin_resource_path('spotify_albums', spotify_album), 'https://example.test/spotify-cover.jpg', spotify_album.name
+      assert_select 'a[href=?].admin-index-record-link .admin-value-label', admin_resource_path('line_music_albums', line_music_album), text: line_music_album.name
+      assert_select 'a[href=?].admin-index-record-link img[src=?][alt=?]', admin_resource_path('line_music_albums', line_music_album), 'https://example.test/line-cover.jpg', line_music_album.name
+      assert_select 'a[href=?].admin-index-record-link img[src=?]', admin_resource_path('line_music_albums', line_music_album), 'https://example.test/spotify-cover.jpg', count: 0
+    end
+
     test 'filters albums with tracks missing original songs' do
       missing_album = Album.create!(jan_code: '9777777777931')
       linked_album = Album.create!(jan_code: '9777777777932')
