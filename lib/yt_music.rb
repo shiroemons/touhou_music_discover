@@ -9,6 +9,7 @@ module YtMusic
   autoload :SimpleAlbum, 'yt_music/simple_album'
   autoload :Thumbnail,   'yt_music/thumbnail'
   autoload :Track,       'yt_music/track'
+  autoload :Video,       'yt_music/video'
 
   # Client メソッドの委譲
   class << self
@@ -18,6 +19,14 @@ module YtMusic
 
     def send_request(endpoint, body: nil, options: {})
       Client.send_request(endpoint, body: body, options: options)
+    end
+
+    def youtube_body(video_id:)
+      Client.generate_youtube_body(video_id:)
+    end
+
+    def send_youtube_request(endpoint, body: nil)
+      Client.send_youtube_request(endpoint, body:)
     end
   end
 end
