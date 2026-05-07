@@ -46,10 +46,16 @@ class LineMusicAlbum < ApplicationRecord
     '4582736137688' => 'mb000000000526fa66'  # POLTANEST - リジッドパラダイス ~ Reanimate
   }.freeze
 
-  def self.fetch_albums
+  def self.fetch_albums(progress_callback: nil)
     Rails.logger.info 'LINE MUSIC アルバム取得処理を開始します'
     album_count = Album.includes(:spotify_album, :apple_music_album).missing_line_music_album.count
     Rails.logger.info "処理対象アルバム数: #{album_count}件"
+    progress_callback&.call(
+      current: 0,
+      total: album_count,
+      message: 'LINE MUSICアルバム候補を処理しています',
+      reset: true
+    )
 
     processed_count = 0
     Album.includes(:spotify_album, :apple_music_album).missing_line_music_album.find_each do |album|
@@ -60,10 +66,15 @@ class LineMusicAlbum < ApplicationRecord
       process_apple_music_albums(album.apple_music_album) if album.apple_music_album.present?
 
       Rails.logger.info "#{processed_count}件のアルバムを処理しました" if (processed_count % 10).zero?
+      progress_callback&.call(
+        current: processed_count,
+        total: album_count,
+        message: "LINE MUSICアルバム候補を処理しています: #{album.jan_code}"
+      )
     end
 
     Rails.logger.info 'LINE MUSIC アルバム情報更新処理を開始します'
-    update_line_music_album_info
+    update_line_music_album_info(progress_callback:)
     Rails.logger.info 'LINE MUSIC アルバム取得処理が完了しました'
   end
 
@@ -115,19 +126,35 @@ class LineMusicAlbum < ApplicationRecord
     search_and_save_with_queries(search_queries.uniq, am_album)
   end
 
-  def self.update_line_music_album_info
+  def self.update_line_music_album_info(progress_callback: nil)
     lm_album_ids = where(url: nil).pluck(:id)
     batch_size = 1000
     total_count = lm_album_ids.size
     Rails.logger.info "LINE MUSIC アルバム情報更新対象: #{total_count}件"
+    return if total_count.zero?
+
+    progress_callback&.call(
+      current: 0,
+      total: total_count,
+      message: 'LINE MUSICアルバム情報を更新しています',
+      reset: true
+    )
 
     processed_count = 0
     lm_album_ids.each_slice(batch_size) do |ids|
       batch_count = ids.size
       Rails.logger.info "バッチ処理開始: #{batch_count}件"
+      finish_callback = lambda do |_line_music_album, _index, _result|
+        processed_count += 1
+        progress_callback&.call(
+          current: processed_count,
+          total: total_count,
+          message: "LINE MUSICアルバム情報を更新しています: #{processed_count}/#{total_count}"
+        )
+      end
 
       where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 4) do |line_music_album|
+        Parallel.each(records, in_processes: 4, finish: finish_callback) do |line_music_album|
           with_retry(max_attempts: 3) do
             Rails.logger.info "LINE MUSIC アルバム情報取得: #{line_music_album.line_music_id}"
             lm_album = LineMusic::Album.find(line_music_album.line_music_id)
@@ -149,7 +176,6 @@ class LineMusicAlbum < ApplicationRecord
         end
       end
 
-      processed_count += batch_count
       Rails.logger.info "バッチ処理完了: 合計 #{processed_count}/#{total_count}件処理済み"
     end
     Rails.logger.info "LINE MUSIC アルバム情報更新処理が完了しました: 合計 #{processed_count}件"

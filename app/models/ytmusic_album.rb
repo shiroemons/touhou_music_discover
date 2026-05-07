@@ -198,14 +198,30 @@ class YtmusicAlbum < ApplicationRecord
     %w[album ytmusic_tracks]
   end
 
-  def self.fetch_albums
-    Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code).find_each do |album|
+  def self.fetch_albums(progress_callback: nil)
+    albums = Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code)
+    total_count = albums.count
+    progress_callback&.call(
+      current: 0,
+      total: total_count,
+      message: 'YouTube Musicアルバム候補を処理しています',
+      reset: true
+    )
+
+    processed_count = 0
+    albums.find_each do |album|
       sleep(0.2) # API呼び出し等のレート制限に配慮
       process_album_with_spotify(album)
       process_album_with_apple_music(album) if album.apple_music_album.present?
+      processed_count += 1
+      progress_callback&.call(
+        current: processed_count,
+        total: total_count,
+        message: "YouTube Musicアルバム候補を処理しています: #{album.jan_code}"
+      )
     end
 
-    update_ytmusic_album_urls
+    update_ytmusic_album_urls(progress_callback:)
   end
 
   def self.process_jan_to_album_browse_ids
@@ -296,12 +312,32 @@ class YtmusicAlbum < ApplicationRecord
     end
   end
 
-  def self.update_ytmusic_album_urls
+  def self.update_ytmusic_album_urls(progress_callback: nil)
     ytmusic_album_ids = where(url: nil).pluck(:id)
     batch_size = 1000
+    total_count = ytmusic_album_ids.size
+    return if total_count.zero?
+
+    progress_callback&.call(
+      current: 0,
+      total: total_count,
+      message: 'YouTube MusicアルバムURLを更新しています',
+      reset: true
+    )
+
+    processed_count = 0
     ytmusic_album_ids.each_slice(batch_size) do |ids|
+      finish_callback = lambda do |_ytmusic_album, _index, _result|
+        processed_count += 1
+        progress_callback&.call(
+          current: processed_count,
+          total: total_count,
+          message: "YouTube MusicアルバムURLを更新しています: #{processed_count}/#{total_count}"
+        )
+      end
+
       where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 7) do |ytmusic_album|
+        Parallel.each(records, in_processes: 7, finish: finish_callback) do |ytmusic_album|
           album = YtMusic::Album.find(ytmusic_album.browse_id)
           url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
           ytmusic_album.update_album(album, url) if album

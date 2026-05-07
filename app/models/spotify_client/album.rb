@@ -9,8 +9,26 @@ module SpotifyClient
     DEFAULT_RATE_LIMIT_MAX_WAIT = 60
     KEYWORD = 'label:東方同人音楽流通'
 
-    def self.fetch_touhou_albums
-      Parallel.each(2000..Time.zone.today.year, in_processes: 3) do |year|
+    def self.fetch_touhou_albums(progress_callback: nil)
+      years = (2000..Time.zone.today.year).to_a
+      processed_count = 0
+      progress_callback&.call(
+        current: processed_count,
+        total: years.size,
+        message: 'Spotify アルバムを取得しています',
+        reset: true
+      )
+
+      finish_callback = lambda do |year, _index, _result|
+        processed_count += 1
+        progress_callback&.call(
+          current: processed_count,
+          total: years.size,
+          message: "Spotify アルバムを処理しています: #{year}年 (#{processed_count}/#{years.size})"
+        )
+      end
+
+      Parallel.each(years, in_processes: 3, finish: finish_callback) do |year|
         keyword = "#{KEYWORD} year:#{year}"
         retry_count = 0
         max_retries = 5

@@ -46,9 +46,69 @@ class LineMusicAlbumTest < ActiveSupport::TestCase
     end
   end
 
+  test 'reports progress while updating LINE MUSIC album info' do
+    album = Album.create!(jan_code: "line-music-progress-#{SecureRandom.hex(4)}")
+    line_music_album = LineMusicAlbum.create!(
+      album:,
+      line_music_id: 'mb-test-progress',
+      name: 'Old Title',
+      url: nil,
+      total_tracks: 1,
+      payload: {}
+    )
+    fetched_album = build_line_music_api_album(
+      album_id: line_music_album.line_music_id,
+      album_title: 'Updated Title',
+      release_date: Date.new(2026, 2, 21),
+      track_total_count: 2
+    )
+    updates = []
+
+    with_parallel_each_running_inline do
+      stub_line_music_album_find(fetched_album) do
+        LineMusicAlbum.unscoped.where(id: line_music_album.id).scoping do
+          LineMusicAlbum.update_line_music_album_info(
+            progress_callback: ->(**attrs) { updates << attrs }
+          )
+        end
+      end
+    end
+
+    assert_equal(
+      { current: 0, total: 1, message: 'LINE MUSICアルバム情報を更新しています', reset: true },
+      updates.first
+    )
+    assert_equal 1, updates.last.fetch(:current)
+    assert_equal 1, updates.last.fetch(:total)
+    assert_equal 'Updated Title', line_music_album.reload.name
+  end
+
   private
 
   def build_line_music_api_album(...)
     LineMusicApiAlbum.new(...)
+  end
+
+  def stub_line_music_album_find(fetched_album)
+    original_method = LineMusic::Album.method(:find)
+
+    LineMusic::Album.define_singleton_method(:find) { |_id| fetched_album }
+    yield
+  ensure
+    LineMusic::Album.define_singleton_method(:find, original_method)
+  end
+
+  def with_parallel_each_running_inline
+    original_method = Parallel.method(:each)
+
+    Parallel.define_singleton_method(:each) do |items, options = {}, &block|
+      items.each_with_index do |item, index|
+        result = block.call(item)
+        options[:finish]&.call(item, index, result)
+      end
+    end
+    yield
+  ensure
+    Parallel.define_singleton_method(:each, original_method)
   end
 end

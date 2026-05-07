@@ -16,12 +16,30 @@ class YtmusicTrack < ApplicationRecord
   scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
 
-  def self.fetch_tracks
+  def self.fetch_tracks(progress_callback: nil)
     album_ids = Album.pluck(:id)
+    total_count = album_ids.size
+    progress_callback&.call(
+      current: 0,
+      total: total_count,
+      message: 'YouTube Musicトラックを取得しています',
+      reset: true
+    )
+
+    processed_count = 0
     batch_size = 1000
     album_ids.each_slice(batch_size) do |ids|
+      finish_callback = lambda do |album, _index, _result|
+        processed_count += 1
+        progress_callback&.call(
+          current: processed_count,
+          total: total_count,
+          message: "YouTube Musicトラックを処理しています: #{album.jan_code}"
+        )
+      end
+
       Album.includes(:ytmusic_album, spotify_album: [:spotify_tracks], apple_music_album: [:apple_music_tracks]).where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 7) do |r|
+        Parallel.each(records, in_processes: 7, finish: finish_callback) do |r|
           process_album(r)
         end
       end

@@ -44,6 +44,14 @@ module Admin
 
         (count * 100.0 / total).round(1)
       end
+
+      def record_progress(current:, total:, message:, reset: false)
+        if reset
+          Admin::ActionProgress.start(total:, message:)
+        else
+          Admin::ActionProgress.update(current:, total:, message:)
+        end
+      end
     end
 
     class BulkRetrieval < BaseAction
@@ -244,7 +252,7 @@ module Admin
       self.action_name = 'LINE MUSIC アルバムを取得'
 
       def handle(_args)
-        LineMusicAlbum.fetch_albums
+        LineMusicAlbum.fetch_albums(progress_callback: method(:record_progress))
 
         succeed 'Done!'
       end
@@ -254,7 +262,7 @@ module Admin
       self.action_name = 'LINE MUSIC トラックを取得'
 
       def handle(_args)
-        LineMusicTrack.fetch_tracks
+        LineMusicTrack.fetch_tracks(progress_callback: method(:record_progress))
 
         succeed 'Done!'
       end
@@ -286,7 +294,7 @@ module Admin
       self.action_name = 'Spotify アルバムを取得'
 
       def handle(_args)
-        SpotifyClient::Album.fetch_touhou_albums
+        SpotifyClient::Album.fetch_touhou_albums(progress_callback: method(:record_progress))
 
         succeed 'Done!'
       end
@@ -318,7 +326,7 @@ module Admin
       self.action_name = 'YouTube Music アルバムを取得'
 
       def handle(_args)
-        YtmusicAlbum.fetch_albums
+        YtmusicAlbum.fetch_albums(progress_callback: method(:record_progress))
 
         succeed 'Done!'
       end
@@ -328,7 +336,7 @@ module Admin
       self.action_name = 'YouTube Music トラックを取得'
 
       def handle(_args)
-        YtmusicTrack.fetch_tracks
+        YtmusicTrack.fetch_tracks(progress_callback: method(:record_progress))
 
         succeed 'Done!'
       end

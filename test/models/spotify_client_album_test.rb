@@ -95,6 +95,29 @@ module SpotifyClient
       assert_equal first_page.concat(second_page).map(&:id), processed_ids
     end
 
+    test 'reports progress while fetching Touhou albums by year' do
+      updates = []
+      searched_years = []
+
+      with_spotify_album_searcher(->(_keyword, year) { searched_years << year }) do
+        with_parallel_each_running_inline do
+          SpotifyClient::Album.fetch_touhou_albums(
+            progress_callback: ->(**attrs) { updates << attrs }
+          )
+        end
+      end
+
+      years = (2000..Time.zone.today.year).to_a
+      assert_equal years, searched_years
+      assert_equal(
+        { current: 0, total: years.size, message: 'Spotify アルバムを取得しています', reset: true },
+        updates.first
+      )
+      assert_equal years.size, updates.last.fetch(:current)
+      assert_equal years.size, updates.last.fetch(:total)
+      assert_includes updates.last.fetch(:message), "#{Time.zone.today.year}年"
+    end
+
     test 'does not search albums that already have inactive Spotify albums' do
       jan_code = "spotify-jan-skip-#{SecureRandom.hex(4)}"
       album = create_album_with_apple_music(jan_code:)
@@ -163,6 +186,30 @@ module SpotifyClient
       yield
     ensure
       singleton_class.define_method(:process_album, original_method)
+    end
+
+    def with_spotify_album_searcher(searcher)
+      singleton_class = SpotifyClient::Album.singleton_class
+      original_method = SpotifyClient::Album.method(:search_and_save_albums)
+
+      singleton_class.define_method(:search_and_save_albums) { |keyword, year| searcher.call(keyword, year) }
+      yield
+    ensure
+      singleton_class.define_method(:search_and_save_albums, original_method)
+    end
+
+    def with_parallel_each_running_inline
+      original_method = Parallel.method(:each)
+
+      Parallel.define_singleton_method(:each) do |items, options = {}, &block|
+        items.each_with_index do |item, index|
+          result = block.call(item)
+          options[:finish]&.call(item, index, result)
+        end
+      end
+      yield
+    ensure
+      Parallel.define_singleton_method(:each, original_method)
     end
   end
 end

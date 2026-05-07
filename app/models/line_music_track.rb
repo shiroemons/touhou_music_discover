@@ -24,25 +24,38 @@ class LineMusicTrack < ApplicationRecord
     %w[album line_music_album track]
   end
 
-  def self.fetch_tracks
+  def self.fetch_tracks(progress_callback: nil)
     Rails.logger.info 'LINE MUSIC トラック取得処理を開始します'
     album_ids = Album.pluck(:id)
     total_count = album_ids.size
     Rails.logger.info "処理対象アルバム数: #{total_count}件"
+    progress_callback&.call(
+      current: 0,
+      total: total_count,
+      message: 'LINE MUSICトラックを取得しています',
+      reset: true
+    )
 
     processed_count = 0
     batch_size = 1000
     album_ids.each_slice(batch_size) do |ids|
       batch_count = ids.size
       Rails.logger.info "バッチ処理開始: #{batch_count}件"
+      finish_callback = lambda do |album, _index, _result|
+        processed_count += 1
+        progress_callback&.call(
+          current: processed_count,
+          total: total_count,
+          message: "LINE MUSICトラックを処理しています: #{album.jan_code}"
+        )
+      end
 
       Album.includes(:spotify_album, :apple_music_album, :line_music_album).where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 4) do |r|
+        Parallel.each(records, in_processes: 4, finish: finish_callback) do |r|
           process_album(r)
         end
       end
 
-      processed_count += batch_count
       Rails.logger.info "バッチ処理完了: 合計 #{processed_count}/#{total_count}件処理済み"
     end
     Rails.logger.info 'LINE MUSIC トラック取得処理が完了しました'
