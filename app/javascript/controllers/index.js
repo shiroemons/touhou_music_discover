@@ -5,6 +5,7 @@
 import { application } from "./application"
 
 import AdminActionProgressController from "./admin_action_progress_controller"
+import AdminActionConfirmController from "./admin_action_confirm_controller"
 import AdminInfiniteScrollController from "./admin_infinite_scroll_controller"
 import CountdownController from "./countdown_controller"
 import HelloController from "./hello_controller"
@@ -12,6 +13,7 @@ import PlaylistRefreshPollingController from "./playlist_refresh_polling_control
 import ProgressPollingController from "./progress_polling_controller"
 
 application.register("admin-action-progress", AdminActionProgressController)
+application.register("admin-action-confirm", AdminActionConfirmController)
 application.register("admin-infinite-scroll", AdminInfiniteScrollController)
 application.register("countdown", CountdownController)
 application.register("hello", HelloController)

@@ -226,6 +226,9 @@ ja:
       default_description: "管理画面のアクションをバックグラウンドで実行します。"
       completed: "完了しました。"
       confirmation: "このアクションはデータ更新や外部API通信を行う可能性があります。内容を確認してから実行してください。"
+      confirm_modal:
+        title: "アクションを実行しますか？"
+        close: "閉じる"
       index: "一覧"
       show: "詳細"
       edit: "編集"

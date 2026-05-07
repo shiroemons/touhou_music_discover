@@ -226,6 +226,9 @@ en:
       default_description: "Run this admin action in the background."
       completed: "Completed."
       confirmation: "This action may update data or call external APIs. Review the details before running it."
+      confirm_modal:
+        title: "Run this action?"
+        close: "Close"
       index: "Index"
       show: "Show"
       edit: "Edit"

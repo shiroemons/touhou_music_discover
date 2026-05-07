@@ -796,7 +796,24 @@ module Admin
       assert_response :success
       assert_select 'h1', '東方フラグを変更'
       assert_select '.alert-warning', /外部API通信/
+      assert_select 'form[data-controller=?][data-action=?]', 'admin-action-confirm', 'submit->admin-action-confirm#submit'
+      assert_select '.modal[data-admin-action-confirm-target=?]', 'modal'
+      assert_select '.modal-title', text: 'アクションを実行しますか？'
       assert_select 'button[type=submit]', text: '実行'
+      assert_select 'button[type=submit][data-turbo-confirm]', count: 0
+    end
+
+    test 'shows ytmusic jan action form without browser confirm dependency' do
+      get admin_resource_action_url('ytmusic_albums', 'process_ytmusic_jan_to_album_browse_ids')
+
+      assert_response :success
+      assert_select 'h1', 'JAN_TO_ALBUM_BROWSE_IDS を処理'
+      assert_select 'form[action=?][method=post]', admin_resource_action_path('ytmusic_albums', 'process_ytmusic_jan_to_album_browse_ids')
+      assert_select 'form[data-controller=?][data-action=?]', 'admin-action-confirm', 'submit->admin-action-confirm#submit'
+      assert_select '.alert-warning', /外部API通信/
+      assert_select '.modal[data-admin-action-confirm-target=?]', 'modal'
+      assert_select 'button[type=submit]', text: '実行'
+      assert_select 'button[type=submit][data-turbo-confirm]', count: 0
     end
 
     private
