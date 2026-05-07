@@ -82,7 +82,8 @@ class YtmusicAlbum < ApplicationRecord
     '4582736137503' => 'MPREb_7rkSN3YNR4U', # 染色硝子ノ欠片 - 絶対零度の六花
     '4582736137800' => 'MPREb_bPACsUquwVB', # イノライ - Valentine Mode♡
     '4582736137589' => 'MPREb_Db20SEqtUq8', # Amateras Records - Endless Journey
-    '4582736137572' => 'MPREb_oW3jQYYowoE'  # Amateras Records - 恋トラ -KOIIRO MASTER TRANCE 04-
+    '4582736137572' => 'MPREb_oW3jQYYowoE', # Amateras Records - 恋トラ -KOIIRO MASTER TRANCE 04-
+    '4582736137664' => 'MPREb_Hldch6TUzZL'  # Moonlight Magic - Coldblood
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
