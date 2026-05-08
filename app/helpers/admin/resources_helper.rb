@@ -3,6 +3,7 @@
 module Admin
   module ResourcesHelper
     include Resources::DisplayHelper
+    include Resources::ExternalLinksHelper
     include Resources::FormHelper
     include Resources::NavigationHelper
     include Resources::RelationHelper

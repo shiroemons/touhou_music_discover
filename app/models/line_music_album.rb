@@ -313,7 +313,7 @@ class LineMusicAlbum < ApplicationRecord
     expected_artist_tokens = artist_tokens(expected_artist_names(album).join(' '))
     return false if line_artist_tokens.empty? || expected_artist_tokens.empty?
 
-    (line_artist_tokens & expected_artist_tokens).any?
+    line_artist_tokens.intersect?(expected_artist_tokens)
   end
 
   def self.expected_artist_names(album)
@@ -338,7 +338,7 @@ class LineMusicAlbum < ApplicationRecord
   end
 
   def self.normalize_title(value)
-    normalize_text(value).sub(/ single\z/, '').sub(/ ep\z/, '')
+    normalize_text(value).delete_suffix(' single').delete_suffix(' ep')
   end
 
   def self.normalize_text(value)

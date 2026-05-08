@@ -1,0 +1,12 @@
+<% links = Array(external_links) %>
+<% if links.any? %>
+  <div class="admin-external-link-bar" aria-label="外部リンク">
+    <span>外部リンク</span>
+    <% links.each do |link| %>
+      <%= link_to link[:url], class: 'btn btn-sm admin-btn', target: '_blank', rel: 'noopener noreferrer' do %>
+        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+        <span><%= "#{link[:label]}で開く" %></span>
+      <% end %>
+    <% end %>
+  </div>
+<% end %>

@@ -3,9 +3,7 @@
 require 'csv'
 
 args = ARGV.reject { it == '--' }
-unless args.size.between?(1, 2)
-  abort "Usage: bin/rails runner scripts/export_ytmusic_album_dates.rb -- FROM_DATE [OUTPUT_PATH]\nExample: bin/rails runner scripts/export_ytmusic_album_dates.rb -- 2026-03-16"
-end
+abort "Usage: bin/rails runner scripts/export_ytmusic_album_dates.rb -- FROM_DATE [OUTPUT_PATH]\nExample: bin/rails runner scripts/export_ytmusic_album_dates.rb -- 2026-03-16" unless args.size.between?(1, 2)
 
 from_date = Date.iso8601(args[0])
 from_time = from_date.in_time_zone.beginning_of_day
@@ -13,7 +11,7 @@ output_path = args[1]&.then { Rails.root.join(it) } || Rails.root.join('tmp', "y
 
 tracks = YtmusicTrack.unscoped
                      .includes(:album, :ytmusic_album)
-                     .where('ytmusic_tracks.created_at >= ?', from_time)
+                     .where(ytmusic_tracks: { created_at: from_time.. })
 groups = tracks.group_by(&:ytmusic_album)
 
 headers = %w[

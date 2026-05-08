@@ -16,6 +16,8 @@
   </div>
 </div>
 
+<%= render 'external_links', external_links: admin_external_album_links(@resource_config, @record) %>
+
 <% member_actions = admin_resource_actions(@resource_config, record: @record) %>
 <% if member_actions.any? %>
   <div class="admin-action-bar">

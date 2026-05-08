@@ -253,7 +253,8 @@
 .admin-resource-actions,
 .admin-form-actions,
 .admin-search-actions,
-.admin-action-bar {
+.admin-action-bar,
+.admin-external-link-bar {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
@@ -535,7 +536,8 @@
   color: #7a5200;
 }
 
-.admin-action-bar {
+.admin-action-bar,
+.admin-external-link-bar {
   background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 8px;
@@ -544,7 +546,8 @@
   padding: 0.75rem;
 }
 
-.admin-action-bar > span {
+.admin-action-bar > span,
+.admin-external-link-bar > span {
   color: var(--admin-muted);
   font-size: 0.78rem;
   font-weight: 800;

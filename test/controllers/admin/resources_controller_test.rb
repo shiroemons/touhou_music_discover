@@ -49,6 +49,23 @@ module Admin
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
 
+    test 'shows streaming service top links on album index pages' do
+      get admin_resources_url('albums')
+
+      assert_response :success
+      assert_select '.admin-external-link-bar a', count: 4
+      assert_select '.admin-external-link-bar a[href=?]', 'https://open.spotify.com/', text: 'Spotifyで開く'
+      assert_select '.admin-external-link-bar a[href=?]', 'https://music.apple.com/jp/browse', text: 'Apple Musicで開く'
+      assert_select '.admin-external-link-bar a[href=?]', 'https://music.youtube.com/', text: 'YouTube Musicで開く'
+      assert_select '.admin-external-link-bar a[href=?]', 'https://music.line.me/webapp', text: 'LINE MUSICで開く'
+
+      get admin_resources_url('spotify_albums')
+
+      assert_response :success
+      assert_select '.admin-external-link-bar a', count: 1
+      assert_select '.admin-external-link-bar a[href=?]', 'https://open.spotify.com/', text: 'Spotifyで開く'
+    end
+
     test 'links streaming album names to each service resource with service artwork' do
       album = Album.create!(jan_code: '9777777777767')
       spotify_album = SpotifyAlbum.create!(
@@ -282,6 +299,46 @@ module Admin
       assert_select '.admin-relation-record-label', text: 'Relation Track 11'
       assert_select '.admin-relation-record-meta', text: 'ディスク 1 / トラック 11'
       assert_select '.admin-hint', 0
+    end
+
+    test 'shows external service links at the top of streaming album detail pages' do
+      album = Album.create!(jan_code: '9777777777801')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'spotify-admin-external-link',
+        album_type: 'album',
+        name: 'Admin Spotify External Link',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        url: 'https://open.spotify.com/album/admin-external-link',
+        payload: {}
+      )
+      apple_music_album = AppleMusicAlbum.create!(
+        album:,
+        apple_music_id: 'apple-admin-external-link',
+        name: 'Admin Apple External Link',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        url: 'https://music.apple.com/jp/album/admin-external-link',
+        payload: {}
+      )
+      ytmusic_album = YtmusicAlbum.create!(
+        album:,
+        browse_id: 'ytmusic-admin-external-link',
+        name: 'Admin YouTube Music External Link',
+        playlist_url: 'https://music.youtube.com/playlist?list=admin-external-link',
+        payload: {}
+      )
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'line-admin-external-link',
+        name: 'Admin LINE External Link',
+        url: 'https://music.line.me/webapp/album/line-admin-external-link',
+        payload: {}
+      )
+
+      assert_streaming_album_external_link('spotify_albums', spotify_album, 'Spotifyで開く', spotify_album.url)
+      assert_streaming_album_external_link('apple_music_albums', apple_music_album, 'Apple Musicで開く', apple_music_album.url)
+      assert_streaming_album_external_link('ytmusic_albums', ytmusic_album, 'YouTube Musicで開く', ytmusic_album.playlist_url)
+      assert_streaming_album_external_link('line_music_albums', line_music_album, 'LINE MUSICで開く', line_music_album.url)
     end
 
     test 'shows artwork and readable association labels instead of raw foreign keys' do
@@ -922,6 +979,14 @@ module Admin
         analysis_url: attributes.fetch(:analysis_url),
         payload: attributes.fetch(:payload)
       )
+    end
+
+    def assert_streaming_album_external_link(resource_key, record, label, url)
+      get admin_resource_url(resource_key, record)
+
+      assert_response :success
+      assert_select '.admin-external-link-bar', text: /外部リンク/
+      assert_select '.admin-external-link-bar a[href=?][target=?][rel=?]', url, '_blank', 'noopener noreferrer', text: label
     end
 
     def spotify_track_audio_feature_attributes(overrides)

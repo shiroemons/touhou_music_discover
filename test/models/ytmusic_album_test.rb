@@ -34,7 +34,7 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     original_apple_music_method = YtmusicAlbum.method(:process_album_with_apple_music)
 
     singleton_class.define_method(:process_album_with_spotify) { |album| processor.call(album) }
-    singleton_class.define_method(:process_album_with_apple_music) { |_album| }
+    singleton_class.define_method(:process_album_with_apple_music) { |_album| nil }
     yield
   ensure
     singleton_class.define_method(:process_album_with_spotify, original_spotify_method)
@@ -45,7 +45,7 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     singleton_class = YtmusicAlbum.singleton_class
     original_method = YtmusicAlbum.method(:update_ytmusic_album_urls)
 
-    singleton_class.define_method(:update_ytmusic_album_urls) { |progress_callback: nil| }
+    singleton_class.define_method(:update_ytmusic_album_urls) { |**_kwargs| nil }
     yield
   ensure
     singleton_class.define_method(:update_ytmusic_album_urls, original_method)

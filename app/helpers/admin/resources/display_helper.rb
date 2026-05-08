@@ -3,6 +3,13 @@
 module Admin
   module Resources
     module DisplayHelper
+      STREAMING_ALBUM_INDEX_ASSOCIATIONS = {
+        'spotify_album_name' => :spotify_album,
+        'apple_music_album_name' => :apple_music_album,
+        'ytmusic_album_name' => :ytmusic_album,
+        'line_music_album_name' => :line_music_album
+      }.freeze
+
       def admin_display_value(resource_config, record, attribute)
         return admin_tracks_status_value(record) if attribute.to_s == 'tracks_status'
         return admin_streaming_tracks_status_value(record) if attribute.to_s == 'streaming_tracks_status'
@@ -45,13 +52,6 @@ module Admin
       end
 
       private
-
-      STREAMING_ALBUM_INDEX_ASSOCIATIONS = {
-        'spotify_album_name' => :spotify_album,
-        'apple_music_album_name' => :apple_music_album,
-        'ytmusic_album_name' => :ytmusic_album,
-        'line_music_album_name' => :line_music_album
-      }.freeze
 
       def admin_index_attribute_record(resource_config, record, attribute)
         return unless resource_config.model_class == Album
