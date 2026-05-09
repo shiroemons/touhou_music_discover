@@ -347,7 +347,9 @@
 
 .admin-panel,
 .admin-stat-card,
-.admin-resource-group-card {
+.admin-resource-group-card,
+.admin-catalog-metric-card,
+.admin-catalog-chart {
   background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 8px;
@@ -425,6 +427,150 @@
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-catalog-health-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(22rem, 0.95fr) minmax(0, 1.2fr);
+  padding: 1rem;
+}
+
+.admin-catalog-metric-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-catalog-metric-card {
+  border-left: 0.25rem solid var(--admin-border);
+  box-shadow: none;
+  color: var(--admin-text);
+  display: grid;
+  gap: 0.18rem;
+  min-height: 7.2rem;
+  padding: 0.8rem;
+  text-decoration: none;
+}
+
+.admin-catalog-metric-card:hover,
+.admin-catalog-metric-card:focus {
+  border-color: var(--admin-border-strong);
+  color: var(--admin-text);
+}
+
+.admin-catalog-metric-card.is-danger {
+  border-left-color: var(--admin-danger);
+}
+
+.admin-catalog-metric-card.is-warning {
+  border-left-color: var(--admin-warning-border);
+}
+
+.admin-catalog-metric-card.is-notice {
+  border-left-color: var(--admin-primary);
+}
+
+.admin-catalog-metric-card span {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.admin-catalog-metric-card strong {
+  font-size: 1.45rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.admin-catalog-metric-card small {
+  align-self: end;
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.admin-catalog-chart-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-catalog-chart {
+  box-shadow: none;
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.8rem;
+}
+
+.admin-catalog-chart h3 {
+  font-size: 0.88rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.admin-stacked-bar {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 999px;
+  display: flex;
+  height: 0.9rem;
+  overflow: hidden;
+}
+
+.admin-stacked-bar-segment {
+  display: block;
+  min-width: 0;
+}
+
+.admin-stacked-bar-segment.is-primary,
+.admin-chart-legend li.is-primary::before {
+  background: var(--admin-primary);
+}
+
+.admin-stacked-bar-segment.is-warning,
+.admin-chart-legend li.is-warning::before {
+  background: var(--admin-warning-border);
+}
+
+.admin-stacked-bar-segment.is-danger,
+.admin-chart-legend li.is-danger::before {
+  background: var(--admin-danger);
+}
+
+.admin-chart-legend {
+  display: grid;
+  gap: 0.45rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.admin-chart-legend li {
+  align-items: baseline;
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+}
+
+.admin-chart-legend li::before {
+  border-radius: 999px;
+  content: "";
+  display: inline-block;
+  height: 0.58rem;
+  width: 0.58rem;
+}
+
+.admin-chart-legend span,
+.admin-chart-legend small {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+}
+
+.admin-chart-legend strong {
+  color: var(--admin-text);
+  font-size: 0.8rem;
+  font-weight: 850;
 }
 
 .admin-coverage-grid {
@@ -1649,6 +1795,8 @@
   }
 
   .admin-dashboard-grid,
+  .admin-catalog-health-grid,
+  .admin-catalog-chart-grid,
   .admin-relation-grid,
   .admin-sync-grid {
     grid-template-columns: 1fr;
@@ -1691,6 +1839,7 @@
   }
 
   .admin-stat-grid,
+  .admin-catalog-metric-grid,
   .admin-coverage-grid,
   .admin-coverage-actions,
   .admin-sync-details,

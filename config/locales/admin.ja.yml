@@ -17,6 +17,9 @@ ja:
       catalog_tracks: "カタログ楽曲"
       streaming_services: "4サービス平均"
       dashboard_generated_at: "集計 %{time}"
+      catalog_health: "カタログ整備状況"
+      track_classification: "楽曲分類"
+      circle_assignment: "サークル紐づけ"
       streaming_coverage: "配信カバレッジ"
       albums: "アルバム"
       tracks: "楽曲"
@@ -106,6 +109,10 @@ ja:
         label: "原曲数"
       tracks_original_songs:
         label: "原曲"
+      circle_status:
+        label: "サークル"
+      catalog_type:
+        label: "楽曲分類"
       spotify_album_display:
         label: "表示"
       track_status:

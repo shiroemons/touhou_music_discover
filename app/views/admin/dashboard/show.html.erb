@@ -4,6 +4,16 @@
      filters = item[:filters].presence
      filters.present? ? admin_resources_path(item.fetch(:resource_key), filters:) : admin_resources_path(item.fetch(:resource_key))
    end %>
+<% segment_width = lambda do |segment|
+     segment.fetch(:count).positive? && segment.fetch(:percent).zero? ? 0.4 : segment.fetch(:percent)
+   end %>
+<% segment_percent_label = lambda do |segment|
+     if segment.fetch(:count).positive? && segment.fetch(:percent).zero?
+       '0.1%未満'
+     else
+       number_to_percentage(segment.fetch(:percent), precision: 1, strip_insignificant_zeros: true)
+     end
+   end %>
 
 <div class="admin-page-header">
   <div class="admin-page-title">
@@ -35,6 +45,70 @@
     <span><%= t('admin.dashboard.dashboard_generated_at', time: l(metrics.fetch(:generated_at), format: :short)) %></span>
   </div>
 </div>
+
+<% catalog_health = metrics.fetch(:catalog_health) %>
+<section class="admin-panel admin-catalog-health-panel">
+  <div class="admin-panel-header">
+    <h2><%= t('admin.dashboard.catalog_health') %></h2>
+  </div>
+
+  <div class="admin-catalog-health-grid">
+    <div class="admin-catalog-metric-grid">
+      <% %i[missing_circle_albums missing_original_tracks original_or_other_tracks touhou_arrangement_tracks].each do |key| %>
+        <% item = catalog_health.fetch(key) %>
+        <%= link_to metric_path.call(item), class: "admin-catalog-metric-card is-#{item.fetch(:severity)}" do %>
+          <span><%= item.fetch(:label) %></span>
+          <strong><%= number_with_delimiter(item.fetch(:count)) %></strong>
+          <small><%= item.fetch(:description) %></small>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="admin-catalog-chart-grid">
+      <div class="admin-catalog-chart">
+        <h3><%= t('admin.dashboard.track_classification') %></h3>
+        <div class="admin-stacked-bar" aria-label="<%= t('admin.dashboard.track_classification') %>">
+          <% catalog_health.fetch(:track_segments).each do |segment| %>
+            <span
+              class="admin-stacked-bar-segment is-<%= segment.fetch(:tone) %>"
+              style="width: <%= segment_width.call(segment) %>%"
+              title="<%= "#{segment.fetch(:label)} #{number_with_delimiter(segment.fetch(:count))}件" %>"></span>
+          <% end %>
+        </div>
+        <ul class="admin-chart-legend">
+          <% catalog_health.fetch(:track_segments).each do |segment| %>
+            <li class="is-<%= segment.fetch(:tone) %>">
+              <span><%= segment.fetch(:label) %></span>
+              <strong><%= number_with_delimiter(segment.fetch(:count)) %></strong>
+              <small><%= segment_percent_label.call(segment) %></small>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+
+      <div class="admin-catalog-chart">
+        <h3><%= t('admin.dashboard.circle_assignment') %></h3>
+        <div class="admin-stacked-bar" aria-label="<%= t('admin.dashboard.circle_assignment') %>">
+          <% catalog_health.fetch(:circle_segments).each do |segment| %>
+            <span
+              class="admin-stacked-bar-segment is-<%= segment.fetch(:tone) %>"
+              style="width: <%= segment_width.call(segment) %>%"
+              title="<%= "#{segment.fetch(:label)} #{number_with_delimiter(segment.fetch(:count))}件" %>"></span>
+          <% end %>
+        </div>
+        <ul class="admin-chart-legend">
+          <% catalog_health.fetch(:circle_segments).each do |segment| %>
+            <li class="is-<%= segment.fetch(:tone) %>">
+              <span><%= segment.fetch(:label) %></span>
+              <strong><%= number_with_delimiter(segment.fetch(:count)) %></strong>
+              <small><%= segment_percent_label.call(segment) %></small>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="admin-panel admin-coverage-panel">
   <div class="admin-panel-header">

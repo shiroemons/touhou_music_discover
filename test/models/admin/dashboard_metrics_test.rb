@@ -59,6 +59,57 @@ module Admin
       assert_equal 50.0, metrics.dig(:playlist_sync, :stale_percent)
     end
 
+    test 'summarizes catalog health and chart segments' do
+      album_with_circle = Album.create!(jan_code: '4980000000101')
+      album_without_circle = Album.create!(jan_code: '4980000000102')
+      circle = Circle.create!(name: 'Dashboard Test Circle')
+      CirclesAlbum.create!(album: album_with_circle, circle:)
+      missing_original_track = Track.create!(album: album_with_circle, jan_code: album_with_circle.jan_code, isrc: 'JPABC2600101')
+      original_track = Track.create!(album: album_with_circle, jan_code: album_with_circle.jan_code, isrc: 'JPABC2600102')
+      arrangement_track = Track.create!(album: album_without_circle, jan_code: album_without_circle.jan_code, isrc: 'JPABC2600103')
+      original = Original.create!(
+        code: 'dashboard-original-other',
+        title: 'Dashboard Original',
+        short_title: 'Original',
+        original_type: 'other',
+        series_order: 1
+      )
+      touhou_original = Original.create!(
+        code: 'dashboard-original-touhou',
+        title: 'Dashboard Touhou',
+        short_title: 'Touhou',
+        original_type: 'windows',
+        series_order: 2
+      )
+      original_song = OriginalSong.create!(
+        code: 'dashboard-original-song-other',
+        original:,
+        title: 'オリジナル',
+        track_number: 1
+      )
+      touhou_original_song = OriginalSong.create!(
+        code: 'dashboard-original-song-touhou',
+        original: touhou_original,
+        title: '亡き王女の為のセプテット',
+        track_number: 1
+      )
+      TracksOriginalSong.create!(track: original_track, original_song:)
+      TracksOriginalSong.create!(track: arrangement_track, original_song: touhou_original_song)
+
+      catalog_health = Admin::DashboardMetrics.call.fetch(:catalog_health)
+
+      assert_equal 1, catalog_health.dig(:missing_circle_albums, :count)
+      assert_equal 1, catalog_health.dig(:missing_original_tracks, :count)
+      assert_equal missing_original_track.id, Track.missing_original_songs.pick(:id)
+      assert_equal 1, catalog_health.dig(:original_or_other_tracks, :count)
+      assert_equal 1, catalog_health.dig(:touhou_arrangement_tracks, :count)
+      track_segment_percents = catalog_health.fetch(:track_segments).map { |segment| segment.fetch(:percent) }
+      circle_segment_percents = catalog_health.fetch(:circle_segments).map { |segment| segment.fetch(:percent) }
+
+      assert_equal [33.3, 33.3, 33.3], track_segment_percents
+      assert_equal [50.0, 50.0], circle_segment_percents
+    end
+
     test 'does not round incomplete coverage up to 100 percent' do
       metrics = Admin::DashboardMetrics.new
 

@@ -172,6 +172,25 @@ module Admin
             }
           }
         }
+        album_circle_filter = {
+          key: 'circle_status',
+          label_key: 'admin.filters.circle_status.label',
+          include_blank: true,
+          options: [
+            %w[missing 未設定],
+            %w[present 設定済み]
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'missing'
+              scope.missing_circles
+            when 'present'
+              scope.where.associated(:circles).distinct
+            else
+              scope
+            end
+          }
+        }
         missing_streaming_track_filter = {
           key: 'missing_streaming_track',
           label_key: 'admin.filters.missing_streaming_track.label',
@@ -208,6 +227,25 @@ module Admin
           ],
           apply: lambda { |scope, value|
             Admin::Resource.track_original_songs_count_scope(scope, value)
+          }
+        }
+        track_catalog_type_filter = {
+          key: 'catalog_type',
+          label_key: 'admin.filters.catalog_type.label',
+          include_blank: true,
+          options: [
+            %w[original_or_other オリジナル・その他],
+            %w[touhou_arrangement 東方アレンジ]
+          ],
+          apply: lambda { |scope, value|
+            case value
+            when 'original_or_other'
+              scope.original_or_other
+            when 'touhou_arrangement'
+              scope.touhou_arrangements
+            else
+              scope
+            end
           }
         }
         audio_feature_profile_filter = {
@@ -434,6 +472,7 @@ module Admin
                   end
                 }
               },
+              album_circle_filter,
               album_original_songs_filter
             ],
             includes: album_preview_includes,
@@ -446,7 +485,7 @@ module Admin
             detail_attributes: %i[id name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count created_at updated_at],
             form_attributes: %i[jan_code isrc is_touhou],
             search_attributes: %i[jan_code isrc],
-            filter_definitions: [missing_streaming_track_filter, original_songs_count_filter],
+            filter_definitions: [missing_streaming_track_filter, original_songs_count_filter, track_catalog_type_filter],
             includes: track_preview_includes,
             hidden_relations: %i[tracks_original_songs],
             default_order: ->(scope) { scope.order(jan_code: :desc, id: :asc) },

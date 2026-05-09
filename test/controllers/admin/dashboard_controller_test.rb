@@ -11,6 +11,13 @@ module Admin
       assert_select 'h1', '管理画面'
       assert_select 'a[href=?]', '/avo', count: 0
       assert_select '.admin-stat-card', minimum: 4
+      assert_select 'h2', 'カタログ整備状況'
+      assert_select '.admin-catalog-metric-card', text: /サークル未設定アルバム/
+      assert_select '.admin-catalog-metric-card', text: /原曲未紐付け楽曲/
+      assert_select '.admin-catalog-metric-card', text: /オリジナル・その他/
+      assert_select '.admin-catalog-metric-card', text: /東方アレンジ/
+      assert_select '.admin-catalog-chart h3', '楽曲分類'
+      assert_select '.admin-catalog-chart h3', 'サークル紐づけ'
       assert_select 'h2', '配信カバレッジ'
       assert_select '.admin-coverage-action', text: /アルバム未取得/
       assert_select '.admin-coverage-action', text: /楽曲未取得/

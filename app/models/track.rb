@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Track < ApplicationRecord
+  ORIGINAL_OR_OTHER_TITLES = %w[オリジナル その他].freeze
+
   has_many :tracks_original_songs, dependent: :destroy
   has_many :original_songs, through: :tracks_original_songs
 
@@ -17,6 +19,8 @@ class Track < ApplicationRecord
   scope :missing_spotify_tracks, -> { where.missing(:spotify_tracks) }
   scope :missing_ytmusic_tracks, -> { where.missing(:ytmusic_tracks) }
   scope :missing_original_songs, -> { where.missing(:original_songs) }
+  scope :original_or_other, -> { where(id: original_or_other_track_ids) }
+  scope :touhou_arrangements, -> { where.associated(:original_songs).where.not(id: original_or_other_track_ids).distinct }
   scope :is_touhou, -> { where(is_touhou: true) }
   scope :non_touhou, -> { where(is_touhou: false) }
   scope :jan, ->(jan) { where(jan_code: jan) }
@@ -38,6 +42,13 @@ class Track < ApplicationRecord
 
   def original_songs_count
     original_songs.size
+  end
+
+  def self.original_or_other_track_ids
+    TracksOriginalSong
+      .joins(:original_song)
+      .where(original_songs: { title: ORIGINAL_OR_OTHER_TITLES })
+      .select(:track_id)
   end
 
   def apple_music_track(album)

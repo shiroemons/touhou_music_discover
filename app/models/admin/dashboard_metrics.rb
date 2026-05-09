@@ -81,6 +81,7 @@ module Admin
 
       {
         totals: totals(album_total, track_total, service_coverages, data_quality),
+        catalog_health: catalog_health(album_total, track_total),
         service_coverages:,
         work_queue: work_queue_items(service_coverages),
         data_quality:,
@@ -128,6 +129,68 @@ module Admin
         incomplete_album_tracks_count: completion.fetch(:incomplete),
         complete_album_tracks_count: completion.fetch(:complete),
         missing_track_samples: missing_track_samples(config)
+      }
+    end
+
+    def catalog_health(album_total, track_total)
+      missing_circle_albums_count = Album.unscoped.missing_circles.count
+      albums_with_circles_count = album_total - missing_circle_albums_count
+      missing_original_tracks_count = Track.unscoped.missing_original_songs.count
+      original_or_other_tracks_count = Track.unscoped.original_or_other.count
+      touhou_arrangement_tracks_count = Track.unscoped.touhou_arrangements.count
+
+      {
+        missing_circle_albums: catalog_item(
+          key: 'missing_circle_albums',
+          label: 'サークル未設定アルバム',
+          count: missing_circle_albums_count,
+          description: 'サークルと紐づいていないアルバム',
+          resource_key: 'albums',
+          filters: { circle_status: 'missing' },
+          severity: :warning
+        ),
+        missing_original_tracks: catalog_item(
+          key: 'missing_original_tracks',
+          label: '原曲未紐付け楽曲',
+          count: missing_original_tracks_count,
+          description: '原曲との関連がない楽曲',
+          resource_key: 'tracks',
+          filters: { original_songs_count: 'none' },
+          severity: :danger
+        ),
+        original_or_other_tracks: catalog_item(
+          key: 'original_or_other_tracks',
+          label: 'オリジナル・その他',
+          count: original_or_other_tracks_count,
+          description: '原曲がオリジナルまたはその他の楽曲',
+          resource_key: 'tracks',
+          filters: { catalog_type: 'original_or_other' },
+          severity: :notice
+        ),
+        touhou_arrangement_tracks: catalog_item(
+          key: 'touhou_arrangement_tracks',
+          label: '東方アレンジ',
+          count: touhou_arrangement_tracks_count,
+          description: '原曲と紐づいている東方アレンジ楽曲',
+          resource_key: 'tracks',
+          filters: { catalog_type: 'touhou_arrangement' },
+          severity: :notice
+        ),
+        track_segments: chart_segments(
+          [
+            { key: 'missing_original_tracks', label: '原曲未紐付け', count: missing_original_tracks_count, tone: :danger },
+            { key: 'original_or_other_tracks', label: 'オリジナル・その他', count: original_or_other_tracks_count, tone: :warning },
+            { key: 'touhou_arrangement_tracks', label: '東方アレンジ', count: touhou_arrangement_tracks_count, tone: :primary }
+          ],
+          track_total
+        ),
+        circle_segments: chart_segments(
+          [
+            { key: 'albums_with_circles', label: 'サークル設定済み', count: albums_with_circles_count, tone: :primary },
+            { key: 'missing_circle_albums', label: 'サークル未設定', count: missing_circle_albums_count, tone: :warning }
+          ],
+          album_total
+        )
       }
     end
 
@@ -314,6 +377,13 @@ module Admin
     end
 
     alias quality_item queue_item
+    alias catalog_item queue_item
+
+    def chart_segments(items, total)
+      items.map do |item|
+        item.merge(percent: percentage(item.fetch(:count), total))
+      end
+    end
 
     def percentage(value, total)
       return 0 if total.to_i.zero?

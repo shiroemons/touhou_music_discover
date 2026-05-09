@@ -9,6 +9,9 @@ en:
       latest_update: "Latest update"
       no_updates: "No updates"
       overview: "Overview"
+      catalog_health: "Catalog health"
+      track_classification: "Track classification"
+      circle_assignment: "Circle assignment"
       top_resources: "Largest resources"
       recent_resources: "Recently updated resources"
       all_resources: "All resources"
@@ -71,6 +74,10 @@ en:
         label: "Original songs"
       tracks_original_songs:
         label: "Original songs"
+      circle_status:
+        label: "Circle"
+      catalog_type:
+        label: "Track classification"
       spotify_album_display:
         label: "Display"
       track_status:
