@@ -7,8 +7,8 @@ ruby file: '.ruby-version'
 
 gem 'bootsnap', '>= 1.4.4', require: false
 gem 'pg', '~> 1.6'
-gem 'puma', '~> 7.0'
-gem 'rails', '~> 8.0.0'
+gem 'puma', '~> 8.0'
+gem 'rails', '~> 8.1.0'
 
 gem 'cssbundling-rails'
 gem 'jsbundling-rails'
@@ -20,7 +20,7 @@ gem 'turbo-rails'
 group :development, :test do
   gem 'debug'
   gem 'dotenv-rails'
-  gem 'minitest', '~> 5.25'
+  gem 'minitest', '~> 6.0'
 end
 
 group :development do
@@ -36,7 +36,6 @@ gem 'csv'
 gem 'faraday', '~> 2.0'
 gem 'faraday-retry'
 gem 'jwt'
-gem 'meilisearch-rails'
 gem 'ostruct'
 gem 'pagy'
 gem 'parallel'
