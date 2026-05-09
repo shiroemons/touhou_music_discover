@@ -32,7 +32,7 @@
 
 ### サーバーの起動
 
-全サービス（PostgreSQL, Redis, Rails, JS/CSS）をまとめて起動:
+全サービス（PostgreSQL, Redis, Rails, Solid Queue worker, JS/CSS）をまとめて起動:
 
 ```shell
 make tui
@@ -45,6 +45,20 @@ make up
 ```
 
 実行すると http://localhost:3000 でアクセスできる。
+
+管理画面のアクション処理はSolid Queue経由の非同期ジョブとして実行される。`make up` / `make tui` では `jobs` サービスも起動するため、管理画面のアクションを動かす場合はRailsだけでなく `jobs` も起動していることを確認する。
+
+サービス状態の確認:
+
+```shell
+make status
+```
+
+Solid Queueのジョブ実行状況を確認:
+
+```shell
+devbox run -- bin/rails runner 'SolidQueue::Job.order(id: :desc).limit(5).each { |job| p [job.id, job.queue_name, job.class_name, job.finished_at, job.created_at] }'
+```
 
 サービスの停止:
 
@@ -59,6 +73,15 @@ make bundle
 ```
 
 ### DB関連
+
+このアプリはRails本体用の `primary` DBと、Solid Queue用の `queue` DBを使う。ローカル環境では以下のDBが作成される。
+
+- `touhou_music_discover_development`
+- `touhou_music_discover_development_queue`
+- `touhou_music_discover_test`
+- `touhou_music_discover_test_queue`
+
+Solid Queueのスキーマは `db/queue_schema.rb` で管理される。
 
 - DB初期化（drop & setup）
   ```shell
