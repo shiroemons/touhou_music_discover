@@ -7,6 +7,7 @@ module Admin
     def show
       @resources = admin_resources
       @resource_summaries = @resources.map { |resource| dashboard_summary(resource) }
+      @dashboard_metrics = Admin::DashboardMetrics.call
       @total_records = @resource_summaries.sum { |summary| summary[:count] }
       @total_actions = @resource_summaries.sum { |summary| summary[:actions_count] }
       @top_resources = @resource_summaries.max_by(6) { |summary| summary[:count] }

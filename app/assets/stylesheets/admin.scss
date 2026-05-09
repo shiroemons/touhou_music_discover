@@ -410,9 +410,265 @@
   font-size: 1.1rem;
 }
 
+.admin-stat-link {
+  color: var(--admin-text);
+  text-decoration: none;
+}
+
+.admin-stat-link:hover,
+.admin-stat-link:focus {
+  border-color: var(--admin-border-strong);
+  color: var(--admin-text);
+}
+
 .admin-dashboard-grid {
   display: grid;
   gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-coverage-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 1rem;
+}
+
+.admin-coverage-card {
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.admin-coverage-heading {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-coverage-heading h3 {
+  font-size: 0.98rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.admin-coverage-heading span,
+.admin-coverage-row span,
+.admin-coverage-action span,
+.admin-missing-track-preview-header a,
+.admin-missing-track-link small,
+.admin-missing-track-empty,
+.admin-sync-details span {
+  color: var(--admin-muted);
+  font-size: 0.8rem;
+}
+
+.admin-coverage-row {
+  align-items: end;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.admin-coverage-row strong {
+  display: block;
+  font-size: 0.86rem;
+}
+
+.admin-coverage-percent {
+  color: var(--admin-primary);
+  font-size: 1.05rem;
+  font-weight: 850;
+  text-decoration: none;
+}
+
+.admin-coverage-percent:hover,
+.admin-coverage-percent:focus,
+.admin-missing-track-preview-header a:hover,
+.admin-missing-track-preview-header a:focus {
+  color: var(--admin-primary-hover);
+}
+
+.admin-meter {
+  background: var(--admin-surface-muted);
+  border-radius: 999px;
+  height: 0.55rem;
+  overflow: hidden;
+}
+
+.admin-meter span {
+  background: var(--admin-primary);
+  display: block;
+  height: 100%;
+}
+
+.admin-coverage-actions {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0.15rem;
+}
+
+.admin-coverage-action {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+  padding: 0.55rem;
+  text-decoration: none;
+}
+
+.admin-coverage-action:hover,
+.admin-coverage-action:focus {
+  border-color: var(--admin-border-strong);
+  color: var(--admin-text);
+}
+
+.admin-coverage-action strong {
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.admin-coverage-action.is-danger strong {
+  color: var(--admin-danger);
+}
+
+.admin-coverage-action.is-warning strong {
+  color: #7a5200;
+}
+
+.admin-missing-track-preview {
+  border-top: 1px solid var(--admin-border);
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.1rem;
+  padding-top: 0.75rem;
+}
+
+.admin-missing-track-preview-header {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+}
+
+.admin-missing-track-preview-header strong {
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.admin-missing-track-preview-header a {
+  text-decoration: none;
+}
+
+.admin-missing-track-list {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.admin-missing-track-link {
+  border-radius: 8px;
+  color: var(--admin-text);
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.45rem 0.5rem;
+  text-decoration: none;
+}
+
+.admin-missing-track-link:hover,
+.admin-missing-track-link:focus {
+  background: var(--admin-surface-muted);
+  color: var(--admin-text);
+}
+
+.admin-missing-track-link span {
+  font-size: 0.84rem;
+  font-weight: 750;
+  overflow-wrap: anywhere;
+}
+
+.admin-missing-track-empty {
+  margin: 0;
+}
+
+.admin-metric-list {
+  gap: 0.25rem;
+}
+
+.admin-metric-row {
+  align-items: center;
+  border-left: 0.25rem solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  display: flex;
+  gap: 0.8rem;
+  justify-content: space-between;
+  min-height: 3.6rem;
+  padding: 0.7rem;
+  text-decoration: none;
+}
+
+.admin-metric-row:hover,
+.admin-metric-row:focus {
+  background: var(--admin-surface-muted);
+  color: var(--admin-text);
+}
+
+.admin-metric-row strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.admin-metric-row small {
+  color: var(--admin-muted);
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.12rem;
+}
+
+.admin-metric-row.is-danger {
+  border-left-color: var(--admin-danger);
+}
+
+.admin-metric-row.is-warning {
+  border-left-color: var(--admin-warning-border);
+}
+
+.admin-metric-row.is-notice {
+  border-left-color: var(--admin-primary);
+}
+
+.admin-sync-grid {
+  align-items: stretch;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  padding: 1rem;
+}
+
+.admin-sync-summary {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem;
+}
+
+.admin-sync-summary strong {
+  font-size: 1.8rem;
+  font-weight: 850;
+  line-height: 1.1;
+}
+
+.admin-sync-details {
+  align-content: center;
+  display: grid;
+  gap: 0.45rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
@@ -1163,6 +1419,7 @@
   }
 
   .admin-stat-grid,
+  .admin-coverage-grid,
   .admin-resource-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1201,7 +1458,8 @@
   }
 
   .admin-dashboard-grid,
-  .admin-relation-grid {
+  .admin-relation-grid,
+  .admin-sync-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1242,6 +1500,9 @@
   }
 
   .admin-stat-grid,
+  .admin-coverage-grid,
+  .admin-coverage-actions,
+  .admin-sync-details,
   .admin-resource-grid {
     grid-template-columns: 1fr;
   }

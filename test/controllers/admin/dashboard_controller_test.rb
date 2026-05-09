@@ -11,6 +11,14 @@ module Admin
       assert_select 'h1', '管理画面'
       assert_select 'a[href=?]', '/avo', count: 0
       assert_select '.admin-stat-card', minimum: 4
+      assert_select 'h2', '配信カバレッジ'
+      assert_select '.admin-coverage-action', text: /アルバム未取得/
+      assert_select '.admin-coverage-action', text: /楽曲未取得/
+      assert_select '.admin-coverage-action', text: /楽曲不足アルバム/
+      assert_select '.admin-missing-track-preview-header', text: /未取得楽曲/
+      assert_select 'h2', '作業キュー'
+      assert_select 'h2', 'データ品質'
+      assert_select 'h2', 'Spotifyプレイリスト同期'
       assert_select 'h2', 'リソース一覧'
       assert_select 'a[href=?]', admin_resources_path('albums'), text: 'アルバム'
       assert_select 'a[href=?]', admin_new_resource_path('albums'), text: '新規作成'

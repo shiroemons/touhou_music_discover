@@ -1,6 +1,8 @@
 all: help
 
-.PHONY: setup shell versions up tui logs down restart status ps server console console-sandbox bundle \
+DEVBOX_PC_PORT_NUM ?= 53177
+
+.PHONY: setup shell versions up tui logs down restart status ps health doctor recover recover-force kill-orphan-ports server console console-sandbox bundle \
 	dbinit dbconsole migrate migrate-redo rollback dbseed upsert-original-data \
 	minitest rubocop rubocop-autocorrect rubocop-autocorrect-all db-dump db-restore \
 	fetch-touhou-music-with-original-songs export-touhou-music-with-original-songs \
@@ -30,10 +32,10 @@ versions: ## 開発ツールのバージョンを表示
 		| sed '/^[0-9]/s/^/  Yarn:       /'
 
 up: ## 全サービスをバックグラウンドで起動（起動済みの場合はステータスを表示）
-	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
+	@if devbox services ls --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>&1 | grep -q "Services running in process-compose"; then \
 		echo "サービスは既に起動しています"; \
 	else \
-		devbox services up -b; \
+		devbox services up --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) -b --pcport $(DEVBOX_PC_PORT_NUM); \
 	fi
 	@echo ""
 	@$(MAKE) --no-print-directory versions
@@ -47,24 +49,100 @@ logs: ## Railsサーバーのログを表示
 	tail -f log/development.log
 
 down: ## devboxサービスを停止
-	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
-		devbox services stop 2>/dev/null; \
+	@if devbox services ls --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services stop --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>/dev/null; \
 		echo "サービスを停止しました"; \
 	else \
 		echo "サービスは起動していません"; \
 	fi
 
 restart: ## devboxサービスを再起動
-	devbox services restart
+	@$(MAKE) --no-print-directory recover
 
 status: ## devboxサービスの状態を表示
-	@if devbox services ls 2>&1 | grep -q "Services running in process-compose"; then \
-		devbox services ls; \
+	@if devbox services ls --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>&1 | grep -q "Services running in process-compose"; then \
+		devbox services ls --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM); \
 	else \
 		echo "サービスは起動していません。make up で起動できます。"; \
 	fi
 
 ps: status ## devboxサービスの状態を表示（statusのエイリアス）
+
+health: ## Rails/DB/Redisの起動状態とHTTP応答を確認
+	@echo "=== devbox services ==="
+	@devbox services ls --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) || true
+	@echo ""
+	@echo "=== listening ports ==="
+	@lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ':(3000|5432|6379)' || true
+	@if ! devbox services ls --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>&1 | grep -q "Services running in process-compose"; then \
+		if (lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1) && ! curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then \
+			echo ""; \
+			echo "WARNING: devbox管理外の孤児プロセスがポートを掴んでいる可能性があります。make recover-force で掃除できます。"; \
+		fi; \
+	fi
+	@echo ""
+	@echo "=== HTTP health ==="
+	@curl -s -o /dev/null -w '  /up    status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/up || true
+	@curl -s -o /dev/null -w '  /admin status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/admin || true
+
+doctor: health ## healthのエイリアス
+
+recover: ## Terminating/Pendingなどから復旧するため全サービスを停止してバックグラウンド起動
+	@echo "devboxサービスを停止します"
+	@devbox services stop --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>/dev/null || true
+	@if lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1; then \
+		echo "devbox停止後も 3000/5432/6379 のいずれかが使用中です。"; \
+		echo "孤児プロセスを停止するには make recover-force を実行してください。"; \
+		$(MAKE) --no-print-directory health; \
+		exit 1; \
+	fi
+	@echo "devboxサービスをバックグラウンドで起動します"
+	@devbox services up --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) -b --pcport $(DEVBOX_PC_PORT_NUM)
+	@echo "Railsの /up を待機します"
+	@for i in $$(seq 1 30); do \
+		if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then \
+			echo "Rails is ready"; \
+			$(MAKE) --no-print-directory health; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "Rails did not become ready within 30 seconds"; \
+	$(MAKE) --no-print-directory health; \
+	exit 1
+
+recover-force: ## devbox管理外に残った3000/5432/6379の孤児プロセスも停止して復旧
+	@echo "devboxサービスを停止します"
+	@devbox services stop --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) 2>/dev/null || true
+	@$(MAKE) --no-print-directory kill-orphan-ports
+	@echo "devboxサービスをバックグラウンドで起動します"
+	@devbox services up --env DEVBOX_PC_PORT_NUM=$(DEVBOX_PC_PORT_NUM) -b --pcport $(DEVBOX_PC_PORT_NUM)
+	@echo "Railsの /up を待機します"
+	@for i in $$(seq 1 30); do \
+		if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then \
+			echo "Rails is ready"; \
+			$(MAKE) --no-print-directory health; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "Rails did not become ready within 30 seconds"; \
+	$(MAKE) --no-print-directory health; \
+	exit 1
+
+kill-orphan-ports: ## 3000/5432/6379を掴む孤児プロセスを停止
+	@pids="$$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:6379 -sTCP:LISTEN 2>/dev/null)"; \
+	if [ -n "$$pids" ]; then \
+		echo "孤児プロセスを停止します: $$pids"; \
+		kill $$pids 2>/dev/null || true; \
+		sleep 2; \
+	fi; \
+	pids="$$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:6379 -sTCP:LISTEN 2>/dev/null)"; \
+	if [ -n "$$pids" ]; then \
+		echo "通常終了しない孤児プロセスを強制停止します: $$pids"; \
+		kill -9 $$pids 2>/dev/null || true; \
+		sleep 1; \
+	fi
 
 server: ## Railsサーバーを起動
 	devbox run server
