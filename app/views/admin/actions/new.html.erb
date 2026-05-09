@@ -19,6 +19,19 @@
 
 <div class="admin-panel admin-form-panel">
   <div class="admin-form-body">
+    <div class="admin-action-summary">
+      <div>
+        <span><%= t('admin.actions.summary.heading') %></span>
+        <strong><%= @action.label %></strong>
+      </div>
+      <p><%= @action.description %></p>
+      <ul>
+        <li><%= t('admin.actions.summary.background_job') %></li>
+        <li><%= t('admin.actions.summary.progress') %></li>
+        <li><%= t('admin.actions.summary.external_api') %></li>
+      </ul>
+    </div>
+
     <%= form_with scope: :fields,
                   url: @record.present? ? admin_member_resource_action_path(@resource_config.key, @record, @action.key) : admin_resource_action_path(@resource_config.key, @action.key),
                   method: :post,
@@ -62,6 +75,7 @@
             <div class="modal-body">
               <p><%= t('admin.actions.confirmation') %></p>
               <strong><%= @action.label %></strong>
+              <p class="admin-action-confirm-description"><%= @action.description %></p>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn admin-btn" data-bs-dismiss="modal">

@@ -15,6 +15,10 @@ module Admin
       assert_select '.admin-coverage-action', text: /アルバム未取得/
       assert_select '.admin-coverage-action', text: /楽曲未取得/
       assert_select '.admin-coverage-action', text: /楽曲不足アルバム/
+      assert_select 'a[href=?]', admin_resource_action_path('spotify_tracks', 'fetch_missing_spotify_tracks'), text: '未取得だけ取得'
+      assert_select 'a[href=?]', admin_resource_action_path('apple_music_tracks', 'fetch_missing_apple_music_tracks'), text: '未取得だけ取得'
+      assert_select 'a[href=?]', admin_resource_action_path('line_music_tracks', 'fetch_missing_line_music_tracks'), text: '未取得だけ取得'
+      assert_select 'a[href=?]', admin_resource_action_path('ytmusic_tracks', 'fetch_missing_ytmusic_tracks'), text: '未取得だけ取得'
       assert_select '.admin-missing-track-preview-header', text: /未取得楽曲/
       assert_select 'h2', '作業キュー'
       assert_select 'h2', 'データ品質'

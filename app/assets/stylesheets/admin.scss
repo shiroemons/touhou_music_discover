@@ -541,6 +541,17 @@
   color: #7a5200;
 }
 
+.admin-coverage-fetch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.admin-coverage-fetch-actions .btn {
+  flex: 1 1 8.5rem;
+  justify-content: center;
+}
+
 .admin-missing-track-preview {
   border-top: 1px solid var(--admin-border);
   display: grid;
@@ -1144,6 +1155,50 @@
   padding: 1.15rem;
 }
 
+.admin-action-summary {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  color: var(--admin-text);
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+}
+
+.admin-action-summary > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-action-summary span {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.admin-action-summary strong {
+  font-size: 0.98rem;
+}
+
+.admin-action-summary p,
+.admin-action-summary ul {
+  margin: 0;
+}
+
+.admin-action-summary p,
+.admin-action-summary li,
+.admin-action-confirm-description {
+  color: var(--admin-muted);
+  font-size: 0.88rem;
+}
+
+.admin-action-summary ul {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.2rem;
+}
+
 .admin-field {
   display: grid;
   gap: 0.35rem;
@@ -1242,6 +1297,56 @@
   display: flex;
   gap: 0.6rem;
   padding: 0.8rem 0.9rem;
+}
+
+.admin-action-progress-result-content {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.admin-action-progress-result-content p,
+.admin-action-result-list,
+.admin-action-result-sublist {
+  margin: 0;
+}
+
+.admin-action-result-list,
+.admin-action-result-sublist {
+  display: grid;
+  gap: 0.25rem;
+  padding-left: 1.2rem;
+}
+
+.admin-action-result-sublist {
+  gap: 0.2rem;
+  margin-top: 0.25rem;
+}
+
+.admin-action-result-detail-table {
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  margin-top: 0.35rem;
+  width: 100%;
+}
+
+.admin-action-result-detail-table th,
+.admin-action-result-detail-table td {
+  border-top: 1px solid rgb(31 122 102 / 18%);
+  padding: 0.28rem 0.45rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+.admin-action-result-detail-table th {
+  color: var(--admin-muted);
+  font-weight: 800;
+}
+
+.admin-action-result-detail-table td:first-child {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  white-space: nowrap;
+  width: 12rem;
 }
 
 .admin-action-progress-result.is-success {

@@ -90,6 +90,19 @@
           <% end %>
         </div>
 
+        <div class="admin-coverage-fetch-actions">
+          <%= link_to admin_resource_action_path(coverage.fetch(:missing_track_action_resource_key), coverage.fetch(:missing_track_action_key)),
+                      class: 'btn btn-sm admin-btn-primary' do %>
+            <i class="bi bi-cloud-arrow-down" aria-hidden="true"></i>
+            <span><%= t('admin.dashboard.fetch_missing_tracks') %></span>
+          <% end %>
+          <%= link_to admin_resources_path('tracks', filters: coverage.fetch(:missing_track_filter)),
+                      class: 'btn btn-sm admin-btn' do %>
+            <i class="bi bi-list-ul" aria-hidden="true"></i>
+            <span><%= t('admin.dashboard.review_missing_tracks') %></span>
+          <% end %>
+        </div>
+
         <div class="admin-missing-track-preview">
           <div class="admin-missing-track-preview-header">
             <strong><%= t('admin.dashboard.missing_track_samples') %></strong>

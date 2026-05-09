@@ -537,7 +537,7 @@ module Admin
               :spotify_album,
               { track: track_preview_includes }
             ],
-            action_class_names: %w[UpdateSpotifyTrack]
+            action_class_names: %w[FetchMissingSpotifyTracks UpdateSpotifyTrack]
           ),
           new(
             key: 'spotify_track_audio_features',
@@ -562,7 +562,7 @@ module Admin
               { spotify_track: [{ album: album_preview_includes }, :spotify_album, { track: track_preview_includes }] }
             ],
             default_order: ->(scope) { Admin::Resource.spotify_track_audio_feature_order(scope) },
-            action_class_names: %w[FetchSpotifyAudioFeatures]
+            action_class_names: %w[FetchSpotifyAudioFeatures FetchMissingSpotifyAudioFeatures]
           ),
           new(
             key: 'apple_music_albums',
@@ -591,7 +591,7 @@ module Admin
               :apple_music_album,
               { track: track_preview_includes }
             ],
-            action_class_names: %w[FetchAppleMusicTrack FetchAppleMusicTrackByIsrc UpdateAppleMusicTrack]
+            action_class_names: %w[FetchAppleMusicTrack FetchMissingAppleMusicTracks FetchAppleMusicTrackByIsrc UpdateAppleMusicTrack]
           ),
           new(
             key: 'line_music_albums',
@@ -615,7 +615,7 @@ module Admin
               :line_music_album,
               { track: track_preview_includes }
             ],
-            action_class_names: %w[FetchLineMusicTrack UpdateLineMusicTrack]
+            action_class_names: %w[FetchLineMusicTrack FetchMissingLineMusicTracks UpdateLineMusicTrack]
           ),
           new(
             key: 'ytmusic_albums',
@@ -645,7 +645,7 @@ module Admin
               :ytmusic_album,
               { track: track_preview_includes }
             ],
-            action_class_names: %w[FetchYtmusicTrack]
+            action_class_names: %w[FetchYtmusicTrack FetchMissingYtmusicTracks]
           ),
           new(
             key: 'spotify_playlists',

@@ -52,6 +52,206 @@ module Admin
           Admin::ActionProgress.update(current:, total:, message:)
         end
       end
+
+      def albums_with_missing_tracks(track_scope, album_association:, includes: [])
+        scope = Album
+                .unscoped
+                .where(jan_code: track_scope.select(:jan_code))
+                .where
+                .associated(album_association)
+
+        includes.present? ? scope.includes(*includes) : scope
+      end
+
+      def fetch_missing_tracks_by_album(service_name:, track_scope:, album_association:, target_association:, includes: [])
+        albums = albums_with_missing_tracks(track_scope, album_association:, includes:)
+        total_count = albums.count
+        stats = {
+          target_albums: total_count,
+          acquired_tracks: 0,
+          completed_albums: 0,
+          partial_albums: 0,
+          not_found_albums: 0,
+          errors: 0,
+          acquired_examples: [],
+          not_found_examples: [],
+          partial_examples: [],
+          error_examples: []
+        }
+        Admin::ActionProgress.start(total: total_count, message: "#{service_name}の未取得楽曲を取得しています")
+
+        albums.find_each.with_index(1) do |album, index|
+          before_count = missing_track_count(album, target_association)
+          missing_tracks = missing_track_examples(album, target_association)
+          Admin::ActionProgress.update(
+            current: index - 1,
+            total: total_count,
+            message: "#{service_name}: #{index}/#{total_count} #{album_display_name(album)} を処理中 " \
+                     "(未取得#{before_count}件: #{missing_tracks})"
+          )
+
+          begin
+            yield album
+            after_count = missing_track_count(album, target_association)
+            record_album_fetch_outcome(stats, album:, before_count:, after_count:, target_association:)
+            progress_context = {
+              service_name:,
+              index:,
+              total_count:,
+              album:,
+              before_count:,
+              after_count:,
+              stats:
+            }
+            Admin::ActionProgress.update(
+              current: index,
+              total: total_count,
+              message: album_fetch_progress_message(progress_context)
+            )
+          rescue RestClient::TooManyRequests
+            raise
+          rescue StandardError => e
+            stats[:errors] += 1
+            append_example(stats, :error_examples, "#{album_display_name(album)}: #{e.class}")
+            Rails.logger.error("[Admin::Actions] #{service_name} missing track fetch failed for JAN #{album.jan_code}: #{e.class} - #{e.message}")
+            Admin::ActionProgress.update(
+              current: index,
+              total: total_count,
+              message: "#{service_name}: #{index}/#{total_count} #{album_display_name(album)} エラー (#{e.class})"
+            )
+          end
+        end
+
+        stats
+      end
+
+      def missing_track_count(album, target_association)
+        Track.unscoped.where(jan_code: album.jan_code).where.missing(target_association).count
+      end
+
+      def record_album_fetch_outcome(stats, album:, before_count:, after_count:, target_association:)
+        acquired_count = [before_count - after_count, 0].max
+        stats[:acquired_tracks] += acquired_count
+        append_example(stats, :acquired_examples, "#{album_display_name(album)}: 取得#{acquired_count}件") if acquired_count.positive?
+
+        if after_count.zero?
+          stats[:completed_albums] += 1
+        elsif acquired_count.positive?
+          stats[:partial_albums] += 1
+          append_example(
+            stats,
+            :partial_examples,
+            album_track_example(album, count_label: "残り#{after_count}件", target_association:)
+          )
+        else
+          stats[:not_found_albums] += 1
+          append_example(
+            stats,
+            :not_found_examples,
+            album_track_example(album, count_label: "未取得#{after_count}件", target_association:)
+          )
+        end
+      end
+
+      def album_fetch_progress_message(context)
+        service_name = context.fetch(:service_name)
+        index = context.fetch(:index)
+        total_count = context.fetch(:total_count)
+        album = context.fetch(:album)
+        before_count = context.fetch(:before_count)
+        after_count = context.fetch(:after_count)
+        stats = context.fetch(:stats)
+        acquired_count = [before_count - after_count, 0].max
+        outcome = if after_count.zero?
+                    '取得完了'
+                  elsif acquired_count.positive?
+                    "一部取得(取得#{acquired_count}件/残り#{after_count}件)"
+                  else
+                    "未検出(残り#{after_count}件)"
+                  end
+
+        "#{service_name}: #{index}/#{total_count} #{album_display_name(album)} #{outcome} " \
+          "(累計 取得#{stats[:acquired_tracks]}件 / 完了#{stats[:completed_albums]}アルバム / " \
+          "一部#{stats[:partial_albums]}アルバム / 未検出#{stats[:not_found_albums]}アルバム / エラー#{stats[:errors]}件)"
+      end
+
+      def album_display_name(album)
+        name = album.line_music_album&.name ||
+               album.ytmusic_album&.name ||
+               album.spotify_album&.name ||
+               album.apple_music_album&.name
+        name.present? ? "#{name} (JAN #{album.jan_code})" : "JAN #{album.jan_code}"
+      end
+
+      def track_display_name(track)
+        name = track.name.presence || '曲名未取得'
+        "#{track.isrc} - #{name}"
+      end
+
+      def spotify_track_display_name(spotify_track)
+        name = spotify_track.name.presence || spotify_track.track&.name.presence || '曲名未取得'
+        isrc = spotify_track.track&.isrc
+        isrc.present? ? "#{isrc} - #{name}" : "#{spotify_track.spotify_id} - #{name}"
+      end
+
+      def missing_track_examples(album, target_association, limit: 3)
+        missing_tracks(album, target_association, limit:).map { |track| track_display_name(track) }.presence&.join(', ') || 'なし'
+      end
+
+      def album_track_example(album, count_label:, target_association:)
+        lines = ["#{album_display_name(album)}: #{count_label}"]
+        lines.concat(missing_tracks(album, target_association).map { |track| "    - #{track_display_name(track)}" })
+        lines.join("\n")
+      end
+
+      def missing_tracks(album, target_association, limit: nil)
+        scope = Track
+                .unscoped
+                .where(jan_code: album.jan_code)
+                .where
+                .missing(target_association)
+                .includes(:spotify_tracks, :apple_music_tracks)
+                .order(:isrc)
+        scope = scope.limit(limit) if limit.present?
+        scope.to_a
+      end
+
+      def album_fetch_summary(service_name, stats)
+        lines = [
+          "#{service_name}未取得楽曲",
+          "- 対象: #{stats[:target_albums]}アルバム",
+          "- 取得: #{stats[:acquired_tracks]}件",
+          "- 完了: #{stats[:completed_albums]}アルバム",
+          "- 一部取得: #{stats[:partial_albums]}アルバム",
+          "- 未検出: #{stats[:not_found_albums]}アルバム",
+          "- エラー: #{stats[:errors]}件",
+          *fetch_summary_example_lines(stats)
+        ]
+        lines.join("\n")
+      end
+
+      def fetch_summary_example_lines(stats)
+        [
+          summary_example_line('取得一覧', stats[:acquired_examples]),
+          summary_example_line('一部取得一覧', stats[:partial_examples]),
+          summary_example_line('未検出一覧', stats[:not_found_examples]),
+          summary_example_line('エラー一覧', stats[:error_examples])
+        ].compact
+      end
+
+      def summary_example_line(label, examples)
+        return if examples.blank?
+
+        ["- #{label}:", *examples.map { |example| "  - #{example}" }].join("\n")
+      end
+
+      def append_example(stats, key, value)
+        stats[key] << value
+      end
+
+      def finish_with_summary(message, errors:)
+        errors.positive? ? warn(message) : succeed(message)
+      end
     end
 
     class BulkRetrieval < BaseAction
@@ -231,6 +431,72 @@ module Admin
       end
     end
 
+    class FetchMissingAppleMusicTracks < BaseAction
+      self.action_name = 'Apple Music未取得楽曲だけ取得'
+
+      def handle(_args)
+        total_count = Track.missing_apple_music_tracks.count
+        stats = {
+          target_tracks: total_count,
+          acquired_tracks: 0,
+          not_found_tracks: 0,
+          errors: 0,
+          acquired_examples: [],
+          not_found_examples: [],
+          error_examples: []
+        }
+        Admin::ActionProgress.start(total: total_count, message: 'Apple Music未取得楽曲をISRCから取得しています')
+
+        Track.missing_apple_music_tracks.find_each.with_index(1) do |track, index|
+          Admin::ActionProgress.update(
+            current: index - 1,
+            total: total_count,
+            message: "Apple Music: #{index}/#{total_count} #{track_display_name(track)} を処理中"
+          )
+
+          begin
+            AppleMusicClient::Track.fetch_tracks_by_isrc(track.isrc)
+            if AppleMusicTrack.unscoped.exists?(track_id: track.id)
+              stats[:acquired_tracks] += 1
+              append_example(stats, :acquired_examples, track_display_name(track))
+              outcome = '取得成功'
+            else
+              stats[:not_found_tracks] += 1
+              append_example(stats, :not_found_examples, track_display_name(track))
+              outcome = '未検出'
+            end
+            Admin::ActionProgress.update(
+              current: index,
+              total: total_count,
+              message: "Apple Music: #{index}/#{total_count} #{track_display_name(track)} #{outcome} " \
+                       "(累計 取得#{stats[:acquired_tracks]}件 / 未検出#{stats[:not_found_tracks]}件 / エラー#{stats[:errors]}件)"
+            )
+          rescue RestClient::TooManyRequests
+            raise
+          rescue StandardError => e
+            stats[:errors] += 1
+            append_example(stats, :error_examples, "#{track_display_name(track)}: #{e.class}")
+            Rails.logger.error("[Admin::Actions] Apple Music missing track fetch failed for ISRC #{track.isrc}: #{e.class} - #{e.message}")
+            Admin::ActionProgress.update(
+              current: index,
+              total: total_count,
+              message: "Apple Music: #{index}/#{total_count} #{track_display_name(track)} エラー (#{e.class})"
+            )
+          end
+        end
+
+        message = [
+          'Apple Music未取得楽曲',
+          "- 対象: #{stats[:target_tracks]}件",
+          "- 取得: #{stats[:acquired_tracks]}件",
+          "- 未検出: #{stats[:not_found_tracks]}件",
+          "- エラー: #{stats[:errors]}件",
+          *fetch_summary_example_lines(stats)
+        ].join("\n")
+        finish_with_summary(message, errors: stats[:errors])
+      end
+    end
+
     class FetchAppleMusicVariousArtistsAlbum < BaseAction
       self.action_name = 'Apple Music Various Artistsアルバムを取得'
 
@@ -268,6 +534,24 @@ module Admin
       end
     end
 
+    class FetchMissingLineMusicTracks < BaseAction
+      self.action_name = 'LINE MUSIC未取得楽曲だけ取得'
+
+      def handle(_args)
+        stats = fetch_missing_tracks_by_album(
+          service_name: 'LINE MUSIC',
+          track_scope: Track.missing_line_music_tracks,
+          album_association: :line_music_album,
+          target_association: :line_music_tracks,
+          includes: [:line_music_album, { spotify_album: :spotify_tracks }, { apple_music_album: :apple_music_tracks }]
+        ) do |album|
+          LineMusicTrack.process_album(album)
+        end
+
+        finish_with_summary(album_fetch_summary('LINE MUSIC', stats), errors: stats[:errors])
+      end
+    end
+
     class FetchMissingSpotifyAlbumByAppleMusicJan < BaseAction
       self.action_name = 'Apple Music JANでSpotifyアルバムを補完'
 
@@ -300,6 +584,80 @@ module Admin
       end
     end
 
+    class FetchMissingSpotifyTracks < BaseAction
+      self.action_name = 'Spotify未取得楽曲だけ取得'
+
+      def handle(_args)
+        stats = {
+          target_albums: 0,
+          acquired_tracks: 0,
+          completed_albums: 0,
+          partial_albums: 0,
+          not_found_albums: 0,
+          errors: 0,
+          acquired_examples: [],
+          not_found_examples: [],
+          partial_examples: [],
+          error_examples: []
+        }
+        spotify_albums = SpotifyAlbum
+                         .unscoped
+                         .active
+                         .joins(:album)
+                         .where(albums: { jan_code: Track.missing_spotify_tracks.select(:jan_code) })
+                         .includes(:album, :spotify_tracks)
+                         .distinct
+        total_count = spotify_albums.count
+        stats[:target_albums] = total_count
+        Admin::ActionProgress.start(total: total_count, message: 'Spotify未取得楽曲を取得しています')
+
+        spotify_albums.find_each.with_index(1) do |spotify_album, index|
+          before_count = missing_track_count(spotify_album.album, :spotify_tracks)
+          Admin::ActionProgress.update(
+            current: index - 1,
+            total: total_count,
+            message: "Spotify: #{index}/#{total_count} #{album_display_name(spotify_album.album)} を処理中 " \
+                     "(未取得#{before_count}件: #{missing_track_examples(spotify_album.album, :spotify_tracks)})"
+          )
+
+          begin
+            Array(RSpotify::Album.find([spotify_album.spotify_id])).each do |api_album|
+              SpotifyClient::Album.process_album(api_album)
+            end
+            after_count = missing_track_count(spotify_album.album, :spotify_tracks)
+            record_album_fetch_outcome(stats, album: spotify_album.album, before_count:, after_count:, target_association: :spotify_tracks)
+            progress_context = {
+              service_name: 'Spotify',
+              index:,
+              total_count:,
+              album: spotify_album.album,
+              before_count:,
+              after_count:,
+              stats:
+            }
+            Admin::ActionProgress.update(
+              current: index,
+              total: total_count,
+              message: album_fetch_progress_message(progress_context)
+            )
+          rescue RestClient::TooManyRequests
+            raise
+          rescue StandardError => e
+            stats[:errors] += 1
+            append_example(stats, :error_examples, "#{album_display_name(spotify_album.album)}: #{e.class}")
+            Rails.logger.error("[Admin::Actions] Spotify missing track fetch failed for JAN #{spotify_album.jan_code}: #{e.class} - #{e.message}")
+            Admin::ActionProgress.update(
+              current: index,
+              total: total_count,
+              message: "Spotify: #{index}/#{total_count} #{album_display_name(spotify_album.album)} エラー (#{e.class})"
+            )
+          end
+        end
+
+        finish_with_summary(album_fetch_summary('Spotify', stats), errors: stats[:errors])
+      end
+    end
+
     class FetchSpotifyAudioFeatures < BaseAction
       self.action_name = 'Spotify オーディオ特性を取得'
 
@@ -322,6 +680,72 @@ module Admin
       end
     end
 
+    class FetchMissingSpotifyAudioFeatures < BaseAction
+      self.action_name = 'Spotify未取得オーディオ特性だけ取得'
+
+      def handle(_args)
+        count = 0
+        stats = {
+          target_tracks: 0,
+          acquired_tracks: 0,
+          not_found_tracks: 0,
+          errors: 0,
+          acquired_examples: [],
+          not_found_examples: [],
+          error_examples: []
+        }
+        spotify_tracks = SpotifyTrack
+                         .unscoped
+                         .where
+                         .missing(:spotify_track_audio_feature)
+                         .includes(:album, :spotify_album, :track)
+        total_count = spotify_tracks.count
+        stats[:target_tracks] = total_count
+        inform "Spotify オーディオ特性未取得楽曲: #{count}/#{total_count} Progress: #{progress_percent(count, total_count)}%"
+
+        spotify_tracks.find_in_batches(batch_size: 100) do |batch|
+          inform "Spotify オーディオ特性取得中: #{batch.first&.album&.spotify_album_name || batch.first&.spotify_album&.name || 'アルバム名未取得'} / " \
+                 "#{batch.first(3).map { |spotify_track| spotify_track_display_name(spotify_track) }.join(', ')}"
+          begin
+            Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
+              warn "try #{retries} failed with exception: #{exception}" if retries.positive?
+
+              SpotifyClient::AudioFeatures.fetch_by_spotify_tracks(batch)
+            end
+            batch.each do |spotify_track|
+              if SpotifyTrackAudioFeature.unscoped.exists?(spotify_track_id: spotify_track.id)
+                stats[:acquired_tracks] += 1
+                append_example(stats, :acquired_examples, spotify_track_display_name(spotify_track))
+              else
+                stats[:not_found_tracks] += 1
+                append_example(stats, :not_found_examples, spotify_track_display_name(spotify_track))
+              end
+            end
+          rescue RestClient::TooManyRequests
+            raise
+          rescue StandardError => e
+            stats[:errors] += batch.size
+            append_example(stats, :error_examples, "#{spotify_track_display_name(batch.first)}: #{e.class}") if batch.first
+            Rails.logger.error("[Admin::Actions] Spotify audio features fetch failed: #{e.class} - #{e.message}")
+          end
+          count += batch.size
+          inform "Spotify オーディオ特性未取得楽曲: #{count}/#{total_count} Progress: #{progress_percent(count, total_count)}% " \
+                 "(取得#{stats[:acquired_tracks]}件 / 未検出#{stats[:not_found_tracks]}件 / エラー#{stats[:errors]}件)"
+          sleep 0.5
+        end
+
+        message = [
+          'Spotify未取得オーディオ特性',
+          "- 対象: #{stats[:target_tracks]}件",
+          "- 取得: #{stats[:acquired_tracks]}件",
+          "- 未検出: #{stats[:not_found_tracks]}件",
+          "- エラー: #{stats[:errors]}件",
+          *fetch_summary_example_lines(stats)
+        ].join("\n")
+        finish_with_summary(message, errors: stats[:errors])
+      end
+    end
+
     class FetchYtmusicAlbum < BaseAction
       self.action_name = 'YouTube Music アルバムを取得'
 
@@ -339,6 +763,24 @@ module Admin
         YtmusicTrack.fetch_tracks(progress_callback: method(:record_progress))
 
         succeed 'Done!'
+      end
+    end
+
+    class FetchMissingYtmusicTracks < BaseAction
+      self.action_name = 'YouTube Music未取得楽曲だけ取得'
+
+      def handle(_args)
+        stats = fetch_missing_tracks_by_album(
+          service_name: 'YouTube Music',
+          track_scope: Track.missing_ytmusic_tracks,
+          album_association: :ytmusic_album,
+          target_association: :ytmusic_tracks,
+          includes: [:ytmusic_album, { spotify_album: :spotify_tracks }, { apple_music_album: :apple_music_tracks }]
+        ) do |album|
+          YtmusicTrack.process_album(album)
+        end
+
+        finish_with_summary(album_fetch_summary('YouTube Music', stats), errors: stats[:errors])
       end
     end
 

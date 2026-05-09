@@ -29,7 +29,9 @@
     <% if status != 'processing' %>
       <div class="admin-action-progress-result <%= status == 'completed' ? 'is-success' : 'is-error' %>">
         <i class="bi <%= status == 'completed' ? 'bi-check-circle' : 'bi-exclamation-circle' %>" aria-hidden="true"></i>
-        <span><%= action_run['result_message'].presence || action_run['message'] %></span>
+        <div class="admin-action-progress-result-content">
+          <%= admin_action_result_message(action_run['result_message'].presence || action_run['message']) %>
+        </div>
       </div>
 
       <div class="admin-form-actions">

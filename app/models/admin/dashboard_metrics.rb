@@ -17,7 +17,9 @@ module Admin
         album_resource_key: 'spotify_albums',
         track_resource_key: 'tracks',
         missing_album_filter: { not_delivered: 'spotify' },
-        missing_track_filter: { missing_streaming_track: 'spotify' }
+        missing_track_filter: { missing_streaming_track: 'spotify' },
+        missing_track_action_resource_key: 'spotify_tracks',
+        missing_track_action_key: 'fetch_missing_spotify_tracks'
       },
       {
         key: :apple_music,
@@ -30,7 +32,9 @@ module Admin
         album_resource_key: 'apple_music_albums',
         track_resource_key: 'tracks',
         missing_album_filter: { not_delivered: 'apple_music' },
-        missing_track_filter: { missing_streaming_track: 'apple_music' }
+        missing_track_filter: { missing_streaming_track: 'apple_music' },
+        missing_track_action_resource_key: 'apple_music_tracks',
+        missing_track_action_key: 'fetch_missing_apple_music_tracks'
       },
       {
         key: :line_music,
@@ -43,7 +47,9 @@ module Admin
         album_resource_key: 'line_music_albums',
         track_resource_key: 'tracks',
         missing_album_filter: { not_delivered: 'line_music' },
-        missing_track_filter: { missing_streaming_track: 'line_music' }
+        missing_track_filter: { missing_streaming_track: 'line_music' },
+        missing_track_action_resource_key: 'line_music_tracks',
+        missing_track_action_key: 'fetch_missing_line_music_tracks'
       },
       {
         key: :ytmusic,
@@ -56,7 +62,9 @@ module Admin
         album_resource_key: 'ytmusic_albums',
         track_resource_key: 'tracks',
         missing_album_filter: { not_delivered: 'ytmusic' },
-        missing_track_filter: { missing_streaming_track: 'ytmusic' }
+        missing_track_filter: { missing_streaming_track: 'ytmusic' },
+        missing_track_action_resource_key: 'ytmusic_tracks',
+        missing_track_action_key: 'fetch_missing_ytmusic_tracks'
       }
     ].freeze
 
@@ -114,6 +122,8 @@ module Admin
         track_resource_key: config.fetch(:track_resource_key),
         missing_album_filter: config.fetch(:missing_album_filter),
         missing_track_filter: config.fetch(:missing_track_filter),
+        missing_track_action_resource_key: config.fetch(:missing_track_action_resource_key),
+        missing_track_action_key: config.fetch(:missing_track_action_key),
         missing_album_tracks_count: completion.fetch(:missing),
         incomplete_album_tracks_count: completion.fetch(:incomplete),
         complete_album_tracks_count: completion.fetch(:complete),
@@ -217,9 +227,9 @@ module Admin
 
     def data_quality_items
       spotify_duplicate_album_ids = SpotifyAlbum.unscoped
-                                               .select(:album_id)
-                                               .group(:album_id)
-                                               .having('COUNT(*) > 1')
+                                                .select(:album_id)
+                                                .group(:album_id)
+                                                .having('COUNT(*) > 1')
 
       [
         quality_item(
@@ -286,7 +296,12 @@ module Admin
       }
     end
 
-    def queue_item(key:, label:, count:, description:, resource_key:, severity:, filters: {})
+    def queue_item(key:, label:, count:, **options)
+      description = options.fetch(:description)
+      resource_key = options.fetch(:resource_key)
+      severity = options.fetch(:severity)
+      filters = options.fetch(:filters, {})
+
       {
         key:,
         label:,

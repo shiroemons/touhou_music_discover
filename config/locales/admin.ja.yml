@@ -28,6 +28,8 @@ ja:
       missing_albums: "アルバム未取得"
       missing_tracks: "楽曲未取得"
       incomplete_albums: "楽曲不足アルバム"
+      fetch_missing_tracks: "未取得だけ取得"
+      review_missing_tracks: "未取得を確認"
       missing_track_samples: "未取得楽曲"
       view_all: "すべて見る"
       track_identity: "JAN %{jan_code} / ISRC %{isrc}"
@@ -273,6 +275,11 @@ ja:
       new_record: "新規作成"
       back_to_index: "一覧へ戻る"
       back_to_show: "詳細へ戻る"
+      summary:
+        heading: "実行内容"
+        background_job: "実行後はバックグラウンドで処理し、この画面で進捗を確認できます。"
+        progress: "処理中の対象、取得件数、未検出、エラー件数を順次表示します。"
+        external_api: "外部APIへ通信するため、レート制限や未検出が発生する場合があります。"
       progress:
         description: "アクションをバックグラウンドで実行しています。進捗は自動更新されます。"
         started: "アクションを開始しました。"
@@ -291,6 +298,21 @@ ja:
         label: "一括取得"
       fetch_apple_music_album_by_id:
         label: "Apple MusicアルバムIDから取得"
+      fetch_missing_spotify_tracks:
+        label: "Spotify未取得楽曲だけ取得"
+        description: "Spotifyアルバムが取得済みで、楽曲だけ不足しているアルバムを対象にSpotify楽曲を取得します。"
+      fetch_missing_apple_music_tracks:
+        label: "Apple Music未取得楽曲だけ取得"
+        description: "Apple Music楽曲が未取得の既存楽曲を対象に、ISRCからApple Music楽曲を取得します。"
+      fetch_missing_line_music_tracks:
+        label: "LINE MUSIC未取得楽曲だけ取得"
+        description: "LINE MUSICアルバムが取得済みで、楽曲だけ不足しているアルバムを対象にLINE MUSIC楽曲を取得します。"
+      fetch_missing_ytmusic_tracks:
+        label: "YouTube Music未取得楽曲だけ取得"
+        description: "YouTube Musicアルバムが取得済みで、楽曲だけ不足しているアルバムを対象にYouTube Music楽曲を取得します。"
+      fetch_missing_spotify_audio_features:
+        label: "Spotify未取得オーディオ特性だけ取得"
+        description: "Spotify楽曲のうちオーディオ特性が未取得のものだけを対象に取得します。"
       import_tracks_with_original_songs:
         label: "原曲紐づけTSVをインポート"
     resources:
