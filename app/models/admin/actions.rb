@@ -1222,7 +1222,7 @@ module Admin
 
       def ytmusic_album_from_fields(args)
         fields = args.values_at(:fields).first || args[:fields]
-        resource_ids = fields&.dig('avo_resource_ids') || fields&.[]('avo_resource_ids')
+        resource_ids = fields&.dig('admin_resource_ids') || fields&.[]('admin_resource_ids')
         return if resource_ids.blank?
 
         YtmusicAlbum.find(Array(resource_ids).first)

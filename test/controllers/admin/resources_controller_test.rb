@@ -53,7 +53,7 @@ module Admin
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
 
-    test 'searches albums by streaming service album names like avo' do
+    test 'searches albums by streaming service album names' do
       matching_album = Album.create!(jan_code: '9777777777768')
       other_album = Album.create!(jan_code: '9777777777769')
       AppleMusicAlbum.create!(
@@ -78,7 +78,7 @@ module Admin
       assert_select 'td', { text: other_album.jan_code, count: 0 }
     end
 
-    test 'searches streaming albums by related circle name like avo' do
+    test 'searches streaming albums by related circle name' do
       matching_circle = Circle.create!(name: 'Admin Search Circle')
       other_circle = Circle.create!(name: 'Admin Other Circle')
       matching_album = Album.create!(jan_code: '9777777777770')
@@ -109,7 +109,7 @@ module Admin
       assert_select 'td', { text: other_spotify_album.name, count: 0 }
     end
 
-    test 'searches streaming tracks by service album and circle names like avo' do
+    test 'searches streaming tracks by service album and circle names' do
       circle = Circle.create!(name: 'Admin Track Search Circle')
       matching_album = Album.create!(jan_code: '9777777777772')
       other_album = Album.create!(jan_code: '9777777777773')
@@ -832,7 +832,7 @@ module Admin
       assert_select 'td', { text: delivered_album.jan_code, count: 0 }
     end
 
-    test 'matches Avo spotify album display filter' do
+    test 'matches spotify album display filter' do
       active_album = Album.create!(jan_code: '9777777777811', is_touhou: true)
       inactive_album = Album.create!(jan_code: '9777777777812')
       non_touhou_album = Album.create!(jan_code: '9777777777813', is_touhou: false)
@@ -1138,8 +1138,10 @@ module Admin
       assert_select 'pre.admin-json-block', %r{"url": "https://example.test/json-cover.jpg"}
     end
 
-    test 'keeps avo mounted' do
-      assert_equal '/avo', Avo.configuration.root_path
+    test 'does not mount legacy avo admin' do
+      get '/avo'
+
+      assert_response :not_found
     end
 
     test 'does not route unknown admin resource names to generic resources controller' do

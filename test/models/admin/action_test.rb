@@ -4,16 +4,15 @@ require 'test_helper'
 
 module Admin
   class ActionTest < ActiveSupport::TestCase
-    test 'resolves non Avo admin action classes' do
+    test 'resolves custom admin action classes' do
       Admin::Resource.all.each do |resource|
         resource.actions.each do |action|
           assert_operator action.action_class, :<, Admin::Actions::BaseAction
-          assert_not_equal 'Avo::BaseAction', action.action_class.superclass.name
         end
       end
     end
 
-    test 'runs touhou flag action without depending on Avo action implementation' do
+    test 'runs touhou flag action through custom admin implementation' do
       album = Album.create!(jan_code: '4777777777777')
       track = Track.create!(album:, isrc: 'JPABC260601')
 

@@ -82,7 +82,7 @@ module Admin
 
     def fields_for_action(fields, record)
       action_fields = fields.with_indifferent_access
-      action_fields[:avo_resource_ids] = [record.id] if record.present?
+      action_fields[:admin_resource_ids] = [record.id] if record.present?
       action_fields
     end
 

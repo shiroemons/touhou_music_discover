@@ -31,7 +31,6 @@ group :development do
 end
 
 gem 'amatch'
-gem 'avo'
 gem 'connection_pool'
 gem 'csv'
 gem 'faraday', '~> 2.0'

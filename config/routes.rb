@@ -3,7 +3,6 @@
 Rails.application.routes.draw do
   get 'up' => 'rails/health#show', as: :rails_health_check
 
-  mount Avo::Engine, at: Avo.configuration.root_path
   namespace :admin do
     root to: 'dashboard#show'
     constraints resource: Admin::Resource.route_constraint do

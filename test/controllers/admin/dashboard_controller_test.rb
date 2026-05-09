@@ -4,7 +4,7 @@ require 'test_helper'
 
 module Admin
   class DashboardControllerTest < ActionDispatch::IntegrationTest
-    test 'shows admin dashboard without depending on avo routes' do
+    test 'shows admin dashboard without legacy admin links' do
       get admin_root_url
 
       assert_response :success
