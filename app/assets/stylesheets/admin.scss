@@ -435,22 +435,79 @@
 }
 
 .admin-coverage-card {
+  --admin-service-accent: var(--admin-primary);
+  --admin-service-card-bg: var(--admin-surface);
+  --admin-service-color-soft: var(--admin-primary-soft);
+  --admin-service-tone: var(--admin-primary-hover);
+  background: var(--admin-service-card-bg);
   border: 1px solid var(--admin-border);
+  border-top: 0.22rem solid var(--admin-service-accent);
   border-radius: 8px;
   display: grid;
   gap: 0.75rem;
+  grid-template-rows:
+    minmax(2.55rem, auto)
+    minmax(2.65rem, auto)
+    0.55rem
+    minmax(2.65rem, auto)
+    0.55rem
+    minmax(5.65rem, auto)
+    minmax(4.95rem, auto)
+    1fr;
   padding: 1rem;
 }
 
+.admin-coverage-card.is-spotify {
+  --admin-service-accent: #1db954;
+  --admin-service-card-bg: #f3fbf6;
+  --admin-service-color-soft: #e8f7ee;
+  --admin-service-tone: #1f7a45;
+}
+
+.admin-coverage-card.is-apple-music {
+  --admin-service-accent: #ff0436;
+  --admin-service-card-bg: #fff5f7;
+  --admin-service-color-soft: #fff0f2;
+  --admin-service-tone: #9f2140;
+}
+
+.admin-coverage-card.is-line-music {
+  --admin-service-accent: #06c755;
+  --admin-service-card-bg: #f2fcf6;
+  --admin-service-color-soft: #e8faef;
+  --admin-service-tone: #167a42;
+}
+
+.admin-coverage-card.is-ytmusic {
+  --admin-service-accent: #ff0033;
+  --admin-service-card-bg: #fff5f6;
+  --admin-service-color-soft: #fff0f3;
+  --admin-service-tone: #a8212d;
+}
+
 .admin-coverage-heading {
+  align-content: start;
   display: grid;
   gap: 0.15rem;
 }
 
 .admin-coverage-heading h3 {
+  align-items: center;
+  color: var(--admin-text);
+  display: flex;
   font-size: 0.98rem;
   font-weight: 850;
+  gap: 0.45rem;
   margin: 0;
+}
+
+.admin-coverage-heading h3::before {
+  background: var(--admin-service-accent);
+  border-radius: 999px;
+  content: "";
+  display: inline-block;
+  height: 0.58rem;
+  width: 0.58rem;
 }
 
 .admin-coverage-heading span,
@@ -477,7 +534,7 @@
 }
 
 .admin-coverage-percent {
-  color: var(--admin-primary);
+  color: var(--admin-primary-hover);
   font-size: 1.05rem;
   font-weight: 850;
   text-decoration: none;
@@ -511,12 +568,14 @@
 }
 
 .admin-coverage-action {
+  align-content: start;
   background: var(--admin-surface-muted);
   border: 1px solid var(--admin-border);
   border-radius: 8px;
   color: var(--admin-text);
   display: grid;
   gap: 0.12rem;
+  grid-template-rows: minmax(2.4rem, auto) auto;
   min-width: 0;
   padding: 0.55rem;
   text-decoration: none;
@@ -542,6 +601,7 @@
 }
 
 .admin-coverage-fetch-actions {
+  align-content: start;
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
@@ -550,6 +610,26 @@
 .admin-coverage-fetch-actions .btn {
   flex: 1 1 8.5rem;
   justify-content: center;
+}
+
+.admin-shell .admin-coverage-fetch-actions .btn.admin-btn-primary,
+.admin-shell .admin-coverage-fetch-actions .btn.admin-btn-primary:visited {
+  background: var(--admin-primary);
+  border-color: var(--admin-primary);
+  box-shadow: inset 0 0.16rem 0 var(--admin-service-accent);
+  color: #fff;
+}
+
+.admin-shell .admin-coverage-fetch-actions .btn.admin-btn-primary:hover,
+.admin-shell .admin-coverage-fetch-actions .btn.admin-btn-primary:focus {
+  background: var(--admin-primary-hover);
+  border-color: var(--admin-service-accent);
+  color: #fff;
+}
+
+.admin-coverage-card .admin-missing-track-link:hover,
+.admin-coverage-card .admin-missing-track-link:focus {
+  background: var(--admin-service-color-soft);
 }
 
 .admin-missing-track-preview {
@@ -599,7 +679,13 @@
 .admin-missing-track-link span {
   font-size: 0.84rem;
   font-weight: 750;
+  line-height: 1.35;
+  min-height: 2.3em;
   overflow-wrap: anywhere;
+}
+
+.admin-missing-track-link small {
+  line-height: 1.35;
 }
 
 .admin-missing-track-empty {

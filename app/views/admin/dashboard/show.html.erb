@@ -43,7 +43,7 @@
 
   <div class="admin-coverage-grid">
     <% metrics.fetch(:service_coverages).each do |coverage| %>
-      <article class="admin-coverage-card">
+      <article class="admin-coverage-card is-<%= coverage.fetch(:key).to_s.dasherize %>">
         <div class="admin-coverage-heading">
           <h3><%= coverage.fetch(:label) %></h3>
           <span><%= t('admin.dashboard.album_track_completion', count: number_with_delimiter(coverage.fetch(:complete_album_tracks_count))) %></span>
