@@ -1,12 +1,29 @@
 <% links = Array(external_links) %>
 <% if links.any? %>
-  <div class="admin-external-link-bar" aria-label="外部リンク">
-    <span>外部リンク</span>
-    <% links.each do |link| %>
-      <%= link_to link[:url], class: 'btn btn-sm admin-btn', target: '_blank', rel: 'noopener noreferrer' do %>
+  <% if local_assigns[:compact] %>
+    <details class="admin-external-link-menu">
+      <summary class="btn btn-sm admin-btn">
         <%= admin_icon(:box_arrow_up_right) %>
-        <span><%= "#{link[:label]}で開く" %></span>
+        <span>外部リンク</span>
+      </summary>
+      <div class="admin-external-link-menu-list">
+        <% links.each do |link| %>
+          <%= link_to link[:url], class: 'btn btn-sm admin-btn', target: '_blank', rel: 'noopener noreferrer' do %>
+            <%= admin_icon(:box_arrow_up_right) %>
+            <span><%= link[:label] %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </details>
+  <% else %>
+    <div class="admin-external-link-bar" aria-label="外部リンク">
+      <span>外部リンク</span>
+      <% links.each do |link| %>
+        <%= link_to link[:url], class: 'btn btn-sm admin-btn', target: '_blank', rel: 'noopener noreferrer' do %>
+          <%= admin_icon(:box_arrow_up_right) %>
+          <span><%= "#{link[:label]}で開く" %></span>
+        <% end %>
       <% end %>
-    <% end %>
-  </div>
+    </div>
+  <% end %>
 <% end %>

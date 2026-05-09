@@ -22,6 +22,8 @@ module Admin
       assert_select 'select[name=?] option', 'filters[not_delivered]', text: 'Apple Music未配信'
       assert_select 'select[name=?] option', 'filters[tracks_original_songs]', text: '未設定の楽曲あり'
       assert_select 'a[href=?]', admin_resource_action_path('albums', 'change_touhou_flag'), text: '東方フラグを変更'
+      assert_select '.admin-list-toolbar'
+      assert_select '.admin-record-count', text: /表示中/
       assert_select 'table'
     end
 
@@ -45,6 +47,8 @@ module Admin
       assert_response :success
       assert_select 'th', text: 'YouTube Musicアルバム名'
       assert_select 'th', text: 'LINE MUSICアルバム名'
+      assert_select 'tr.admin-clickable-row[data-controller=?]', 'admin-clickable-row'
+      assert_select 'tr.admin-clickable-row[data-admin-clickable-row-href-value=?]', admin_resource_path('albums', album)
       assert_select 'td', text: 'Admin YouTube Music Album'
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
@@ -53,17 +57,18 @@ module Admin
       get admin_resources_url('albums')
 
       assert_response :success
-      assert_select '.admin-external-link-bar a', count: 4
-      assert_select '.admin-external-link-bar a[href=?]', 'https://open.spotify.com/', text: 'Spotifyで開く'
-      assert_select '.admin-external-link-bar a[href=?]', 'https://music.apple.com/jp/browse', text: 'Apple Musicで開く'
-      assert_select '.admin-external-link-bar a[href=?]', 'https://music.youtube.com/', text: 'YouTube Musicで開く'
-      assert_select '.admin-external-link-bar a[href=?]', 'https://music.line.me/webapp', text: 'LINE MUSICで開く'
+      assert_select '.admin-page-actions .admin-external-link-menu summary', text: '外部リンク'
+      assert_select '.admin-page-actions .admin-external-link-menu a', count: 4
+      assert_select '.admin-page-actions .admin-external-link-menu a[href=?]', 'https://open.spotify.com/', text: 'Spotify'
+      assert_select '.admin-page-actions .admin-external-link-menu a[href=?]', 'https://music.apple.com/jp/browse', text: 'Apple Music'
+      assert_select '.admin-page-actions .admin-external-link-menu a[href=?]', 'https://music.youtube.com/', text: 'YouTube Music'
+      assert_select '.admin-page-actions .admin-external-link-menu a[href=?]', 'https://music.line.me/webapp', text: 'LINE MUSIC'
 
       get admin_resources_url('spotify_albums')
 
       assert_response :success
-      assert_select '.admin-external-link-bar a', count: 1
-      assert_select '.admin-external-link-bar a[href=?]', 'https://open.spotify.com/', text: 'Spotifyで開く'
+      assert_select '.admin-page-actions .admin-external-link-menu a', count: 1
+      assert_select '.admin-page-actions .admin-external-link-menu a[href=?]', 'https://open.spotify.com/', text: 'Spotify'
     end
 
     test 'links streaming album names to each service resource with service artwork' do
@@ -118,6 +123,10 @@ module Admin
 
       assert_response :success
       assert_select 'select[name=?] option[selected]', 'filters[tracks_original_songs]', text: '未設定の楽曲あり'
+      assert_select '.admin-filter-chip', text: /原曲/
+      assert_select '.admin-filter-chip', text: /未設定の楽曲あり/
+      assert_select '.admin-filter-chip', text: /検索語/
+      assert_select '.admin-filter-chip', text: /977777777793/
       assert_select 'td', text: missing_album.jan_code
       assert_select 'td', { text: linked_album.jan_code, count: 0 }
     end
@@ -129,6 +138,9 @@ module Admin
       get admin_resource_url('albums', album)
 
       assert_response :success
+      assert_select 'h2', '概要'
+      assert_select 'h2', 'すべての項目'
+      assert_select '.admin-record-overview'
       assert_select 'h2', '関連'
       assert_select '.admin-relation-header', /楽曲/
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
@@ -754,12 +766,12 @@ module Admin
         Circle.create!(name: "Pagination Circle #{index}")
       end
 
-      get admin_resources_url('circles')
+      get admin_resources_url('circles'), params: { scroll: 'pagination' }
 
       assert_response :success
       assert_select '.admin-view-mode-label', text: '表示方式'
       assert_select 'a.admin-view-mode-link.is-active', text: 'ページ送り'
-      assert_select 'a[href*=?].admin-view-mode-link', 'scroll=infinite', text: '無限スクロール'
+      assert_select 'a.admin-view-mode-link[href$=?]', admin_resources_path('circles'), text: '無限スクロール'
       assert_select 'nav.admin-pagination[aria-label=?]', 'ページ送り'
       assert_select '.admin-pagination-summary', /件中/
       assert_select '.admin-pagination-link.is-current', text: '1'
@@ -771,7 +783,7 @@ module Admin
         Circle.create!(name: "Infinite Scroll Circle #{index}")
       end
 
-      get admin_resources_url('circles'), params: { scroll: 'infinite' }
+      get admin_resources_url('circles')
 
       assert_response :success
       assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'

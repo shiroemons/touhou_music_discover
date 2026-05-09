@@ -47,9 +47,11 @@ en:
       placeholder: "Search"
       submit: "Search"
       clear: "Clear"
+      query: "Query"
     pagination:
       aria_label: "Pagination"
       summary: "Showing %{from}-%{to} of %{count}"
+      empty_summary: "0 records"
       first: "First"
       prev: "Previous"
       next: "Next"
@@ -65,6 +67,7 @@ en:
       error: "Could not load more records."
     filters:
       heading: "Filters"
+      active: "Active filters"
       all: "All"
       not_delivered:
         label: "Not delivered"
@@ -104,6 +107,10 @@ en:
     table:
       actions: "Actions"
       empty: "No records found."
+      current_results: "Results"
+    details:
+      overview: "Overview"
+      all_fields: "All fields"
     track_status:
       missing: "No tracks"
       incomplete: "Incomplete"

@@ -431,6 +431,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-priority-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  margin-bottom: 1rem;
+}
+
 .admin-catalog-health-grid {
   display: grid;
   gap: 1rem;
@@ -1056,11 +1063,37 @@
 }
 
 .admin-search-form {
+  margin-bottom: 1rem;
+}
+
+.admin-list-toolbar {
+  align-items: stretch;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  box-shadow: var(--admin-shadow);
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 0.28fr);
+  padding: 0.85rem;
+}
+
+.admin-list-toolbar-main {
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.admin-list-toolbar-side {
+  align-content: start;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-search-row {
   align-items: stretch;
   display: flex;
-  flex-wrap: wrap;
   gap: 0.65rem;
-  margin-bottom: 1rem;
 }
 
 .admin-search-input {
@@ -1111,13 +1144,8 @@
 
 .admin-filter-bar {
   align-items: end;
-  background: var(--admin-surface);
-  border: 1px solid var(--admin-border);
-  border-radius: 8px;
   display: flex;
-  flex: 1 0 100%;
   gap: 0.65rem;
-  padding: 0.75rem;
 }
 
 .admin-filter-heading {
@@ -1145,7 +1173,7 @@
   display: flex;
   gap: 0.7rem;
   justify-content: flex-end;
-  margin-bottom: 0.75rem;
+  margin: 0;
 }
 
 .admin-view-mode-label {
@@ -1182,6 +1210,58 @@
 .admin-view-mode-link.is-active {
   background: var(--admin-primary);
   color: #fff;
+}
+
+.admin-record-count {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.admin-record-count span {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.admin-record-count strong {
+  color: var(--admin-text);
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.admin-active-filter-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  grid-column: 1 / -1;
+}
+
+.admin-filter-chip {
+  align-items: center;
+  background: var(--admin-primary-soft);
+  border: 1px solid rgb(31 122 104 / 22%);
+  border-radius: 999px;
+  color: var(--admin-primary);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.35rem;
+  min-height: 1.85rem;
+  padding: 0.24rem 0.65rem;
+}
+
+.admin-filter-chip span {
+  color: var(--admin-muted);
+}
+
+.admin-filter-chip strong {
+  color: var(--admin-primary);
 }
 
 .admin-shell .admin-input:focus,
@@ -1246,7 +1326,27 @@
 
 .admin-row-actions {
   justify-content: flex-end;
-  min-width: 10rem;
+  min-width: 5.25rem;
+}
+
+.admin-clickable-row {
+  cursor: pointer;
+}
+
+.admin-clickable-row:hover td {
+  background: var(--admin-surface-muted);
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  border: 0;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
 }
 
 .admin-track-status {
@@ -1391,6 +1491,46 @@
   overflow: visible;
   text-overflow: clip;
   white-space: normal;
+}
+
+.admin-record-overview-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 1rem;
+}
+
+.admin-record-identity,
+.admin-record-summary-item {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.8rem;
+}
+
+.admin-record-identity {
+  background: var(--admin-primary-soft);
+  border-color: rgb(31 122 104 / 24%);
+}
+
+.admin-record-identity span,
+.admin-record-summary-item span {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.admin-record-identity strong,
+.admin-record-summary-item strong {
+  color: var(--admin-text);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.35;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .admin-form-panel {
@@ -3725,4 +3865,489 @@ html[data-admin-resolved-theme="light"] .admin-pagination-link.is-disabled,
 html[data-admin-resolved-theme="light"] .admin-pagination-gap {
   background: #edf2fb;
   color: rgb(100 116 139 / 64%);
+}
+
+/* Admin UX refinements: list toolbar, compact row actions, and record overview. */
+.admin-search-form {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: block;
+  margin-bottom: 1rem;
+  padding: 0;
+}
+
+.admin-list-toolbar {
+  align-items: stretch;
+  background: linear-gradient(180deg, rgb(17 24 39 / 92%), rgb(15 23 42 / 92%));
+  border: 1px solid rgb(148 163 184 / 17%);
+  border-radius: 8px;
+  box-shadow: var(--admin-shadow-soft);
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 1fr;
+  padding: 0.85rem;
+}
+
+.admin-search-row {
+  align-items: center;
+  display: flex;
+  gap: 0.65rem;
+  min-width: min(100%, 28rem);
+}
+
+.admin-search-form .admin-filter-bar {
+  grid-column: auto;
+}
+
+.admin-list-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.admin-filter-bar {
+  padding: 0.75rem;
+}
+
+.admin-view-mode-bar {
+  margin: 0;
+}
+
+.admin-record-count,
+.admin-record-identity,
+.admin-record-summary-item {
+  background: rgb(15 23 42 / 72%);
+  border: 1px solid rgb(148 163 184 / 16%);
+  border-radius: 8px;
+}
+
+.admin-record-count {
+  display: grid;
+  gap: 0.2rem;
+  margin-left: auto;
+  min-height: var(--admin-control-height);
+  min-width: 13rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.admin-record-count span,
+.admin-record-identity span,
+.admin-record-summary-item span {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.admin-record-count strong,
+.admin-record-identity strong,
+.admin-record-summary-item strong {
+  color: var(--admin-text);
+}
+
+.admin-active-filter-bar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  grid-column: 1 / -1;
+}
+
+.admin-filter-chip {
+  align-items: center;
+  background: var(--admin-primary-soft);
+  border: 1px solid rgb(34 211 238 / 22%);
+  border-radius: 999px;
+  color: var(--admin-primary-hover);
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 800;
+  gap: 0.35rem;
+  min-height: 1.85rem;
+  padding: 0.24rem 0.65rem;
+}
+
+.admin-filter-chip span {
+  color: var(--admin-muted);
+}
+
+.admin-filter-chip strong {
+  color: var(--admin-primary-hover);
+}
+
+.admin-clickable-row {
+  cursor: pointer;
+}
+
+.admin-row-actions {
+  min-width: 5.25rem;
+}
+
+.admin-record-overview-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  padding: 1rem;
+}
+
+.admin-record-identity,
+.admin-record-summary-item {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.8rem;
+}
+
+.admin-record-identity {
+  background: var(--admin-primary-soft);
+  border-color: rgb(34 211 238 / 24%);
+}
+
+.admin-record-identity strong,
+.admin-record-summary-item strong {
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.35;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-priority-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  margin-bottom: 1rem;
+}
+
+.visually-hidden {
+  clip: rect(0 0 0 0);
+  border: 0;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+html[data-admin-resolved-theme="light"] .admin-list-toolbar {
+  background: linear-gradient(180deg, rgb(255 255 255 / 96%), rgb(248 250 252 / 94%));
+  border-color: rgb(148 163 184 / 28%);
+}
+
+html[data-admin-resolved-theme="light"] .admin-record-count,
+html[data-admin-resolved-theme="light"] .admin-record-summary-item {
+  background: rgb(244 247 255 / 80%);
+  border-color: rgb(148 163 184 / 25%);
+}
+
+html[data-admin-resolved-theme="light"] .admin-record-identity {
+  background: var(--admin-primary-soft);
+  border-color: rgb(8 145 178 / 20%);
+}
+
+html[data-admin-resolved-theme="light"] .admin-filter-chip {
+  border-color: rgb(8 145 178 / 20%);
+  color: var(--admin-primary-hover);
+}
+
+html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
+  color: var(--admin-primary-hover);
+}
+
+@media (max-width: 1199.98px) {
+  .admin-priority-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .admin-record-overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-list-controls,
+  .admin-search-row,
+  .admin-filter-bar,
+  .admin-view-mode-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-search-actions {
+    justify-content: stretch;
+  }
+
+  .admin-search-input {
+    max-width: none;
+  }
+
+  .admin-record-count {
+    margin-left: 0;
+  }
+
+  .admin-record-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep inline SVG icons centered even when controls resize across themes. */
+.admin-shell .btn .admin-icon,
+.admin-view-mode-link .admin-icon,
+.admin-filter-chip .admin-icon {
+  align-self: center;
+}
+
+.admin-search-input {
+  align-items: center;
+  display: grid;
+  flex: 1 1 18rem;
+  max-width: 28rem;
+  min-width: 12rem;
+}
+
+.admin-view-mode-bar {
+  flex: 0 0 auto;
+}
+
+.admin-search-input .admin-icon {
+  grid-area: 1 / 1;
+  left: auto;
+  margin-left: 0.85rem;
+  pointer-events: none;
+  position: static;
+  top: auto;
+  transform: none;
+  z-index: 2;
+}
+
+.admin-search-input .admin-input {
+  grid-area: 1 / 1;
+  padding-left: 2.35rem;
+}
+
+/* Resource index should fit the viewport; only the table body scrolls. */
+.admin-content:has(.admin-resource-index-page) {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.admin-resource-index-page {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 0.75rem;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  height: auto;
+  min-height: 0;
+}
+
+.admin-resource-index-page > *,
+.admin-resource-index-page .admin-list-toolbar,
+.admin-resource-index-page .admin-list-controls,
+.admin-resource-index-page .admin-search-row,
+.admin-resource-index-page .admin-view-mode-bar {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.admin-content:has(.admin-resource-index-page) > .admin-flash,
+.admin-content:has(.admin-resource-index-page) > .admin-rate-limit-banner {
+  flex: 0 0 auto;
+  margin-bottom: 0.75rem;
+}
+
+.admin-resource-index-page .admin-page-header,
+.admin-resource-index-page .admin-search-form,
+.admin-resource-index-page .admin-table-panel {
+  margin-bottom: 0;
+}
+
+.admin-resource-index-header {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-resource-index-header .admin-page-title {
+  min-width: 0;
+}
+
+.admin-resource-index-header .admin-page-title h1 {
+  font-size: clamp(1.25rem, 1.05vw + 0.9rem, 1.8rem);
+}
+
+.admin-resource-index-header .admin-page-title p {
+  font-size: 0.88rem;
+}
+
+.admin-resource-index-header .admin-page-actions {
+  align-items: center;
+  align-self: stretch;
+  gap: 0.4rem;
+  justify-content: flex-start;
+  min-width: 0;
+}
+
+.admin-resource-index-header .admin-page-actions .btn {
+  min-height: 2.2rem;
+  padding: 0.34rem 0.62rem;
+}
+
+@media (max-width: 1399.98px) {
+  .admin-resource-index-new-label {
+    clip: rect(0 0 0 0);
+    border: 0;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    padding: 0;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+}
+
+.admin-resource-index-page .admin-list-toolbar {
+  gap: 0.65rem;
+  padding: 0.7rem;
+}
+
+.admin-resource-index-page .admin-list-controls {
+  align-items: stretch;
+}
+
+.admin-resource-index-page .admin-search-row {
+  flex: 1 1 28rem;
+}
+
+.admin-resource-index-page .admin-view-mode-bar {
+  margin-left: 0;
+}
+
+.admin-resource-index-page .admin-filter-bar {
+  align-items: end;
+  padding: 0.6rem;
+}
+
+.admin-resource-index-page .admin-filter-field {
+  min-width: 11rem;
+}
+
+.admin-resource-index-page .admin-filter-field .admin-label {
+  margin-bottom: 0.18rem;
+}
+
+.admin-resource-index-page .admin-record-count {
+  margin-left: auto;
+  padding-block: 0.48rem;
+}
+
+.admin-resource-index-page .admin-table-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.admin-resource-index-page .admin-table-scroll {
+  flex: 1 1 auto;
+  max-height: none;
+  min-height: 0;
+}
+
+.admin-resource-index-page .admin-infinite-scroll-footer {
+  min-height: 2.5rem;
+  padding: 0.45rem 0;
+}
+
+.admin-table-actions-heading,
+.admin-table-actions-cell {
+  max-width: 5.75rem;
+  min-width: 5.75rem;
+  width: 5.75rem;
+}
+
+.admin-table-actions-cell {
+  padding-inline: 0.55rem;
+}
+
+.admin-table-actions-cell .admin-row-actions {
+  min-width: 0;
+}
+
+.admin-external-link-menu {
+  position: relative;
+}
+
+.admin-external-link-menu summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-external-link-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-external-link-menu-list {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  box-shadow: var(--admin-shadow);
+  display: grid;
+  gap: 0.35rem;
+  left: 0;
+  min-width: 13rem;
+  padding: 0.45rem;
+  position: absolute;
+  right: auto;
+  top: calc(100% + 0.35rem);
+  z-index: 20;
+}
+
+.admin-external-link-menu:not([open]) .admin-external-link-menu-list {
+  display: none;
+}
+
+.admin-external-link-menu-list .btn {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+html[data-admin-resolved-theme="light"] .admin-external-link-menu-list {
+  background: #ffffff;
+  border-color: rgb(148 163 184 / 28%);
+}
+
+@media (max-width: 991.98px) {
+  .admin-resource-index-page {
+    min-height: 0;
+  }
+
+  .admin-resource-index-header .admin-page-title {
+    flex-basis: auto;
+  }
+
+  .admin-resource-index-page .admin-list-controls,
+  .admin-resource-index-page .admin-search-row,
+  .admin-resource-index-page .admin-view-mode-bar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-resource-index-page .admin-record-count {
+    margin-left: 0;
+  }
+
+  .admin-resource-index-page .admin-search-input {
+    max-width: none;
+  }
 }

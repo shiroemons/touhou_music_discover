@@ -6,6 +6,7 @@ import { application } from "./application"
 
 import AdminActionProgressController from "./admin_action_progress_controller"
 import AdminActionConfirmController from "./admin_action_confirm_controller"
+import AdminClickableRowController from "./admin_clickable_row_controller"
 import AdminInfiniteScrollController from "./admin_infinite_scroll_controller"
 import AdminThemeController from "./admin_theme_controller"
 import CountdownController from "./countdown_controller"
@@ -15,6 +16,7 @@ import ProgressPollingController from "./progress_polling_controller"
 
 application.register("admin-action-progress", AdminActionProgressController)
 application.register("admin-action-confirm", AdminActionConfirmController)
+application.register("admin-clickable-row", AdminClickableRowController)
 application.register("admin-infinite-scroll", AdminInfiniteScrollController)
 application.register("admin-theme", AdminThemeController)
 application.register("countdown", CountdownController)

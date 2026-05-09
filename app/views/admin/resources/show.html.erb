@@ -31,7 +31,30 @@
   </div>
 <% end %>
 
+<% summary_attributes = @resource_config.index_attributes.first(4).map(&:to_s) %>
+<% summary_attributes = @resource_config.attributes_for_detail.first(4) if summary_attributes.empty? %>
+<section class="admin-panel admin-record-overview">
+  <div class="admin-panel-header">
+    <h2><%= t('admin.details.overview') %></h2>
+  </div>
+  <div class="admin-record-overview-grid">
+    <div class="admin-record-identity">
+      <span><%= @resource_config.model_class.model_name.human %></span>
+      <strong><%= @record.to_param %></strong>
+    </div>
+    <% summary_attributes.each do |attribute| %>
+      <div class="admin-record-summary-item">
+        <span><%= @resource_config.index_attribute_label(attribute) %></span>
+        <strong><%= admin_display_value(@resource_config, @record, attribute) %></strong>
+      </div>
+    <% end %>
+  </div>
+</section>
+
 <div class="admin-panel admin-table-panel">
+  <div class="admin-panel-header">
+    <h2><%= t('admin.details.all_fields') %></h2>
+  </div>
   <div class="admin-table-scroll">
     <table class="table admin-detail-table">
       <tbody>

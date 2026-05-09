@@ -7,19 +7,34 @@ module Admin
         params[:q].present? || resource_config.non_default_filters?(active_filters)
       end
 
+      def admin_active_filter_chips(resource_config, active_filters)
+        chips = []
+        chips << [t('admin.search.query'), params[:q]] if params[:q].present?
+
+        resource_config.filters.each do |filter|
+          value = active_filters[filter[:attribute]]
+          next if value.blank? || value == filter[:default]
+
+          option = filter[:options].find { |option_value, _label| option_value.to_s == value.to_s }
+          chips << [filter[:label], option&.second || value]
+        end
+
+        chips
+      end
+
       def admin_infinite_scroll?
-        params[:scroll].to_s == 'infinite'
+        params[:scroll].to_s != 'pagination'
       end
 
       def admin_scroll_mode_path(mode)
         query = request.query_parameters.merge(page: nil)
-        query[:scroll] = mode.to_s == 'infinite' ? 'infinite' : nil
+        query[:scroll] = mode.to_s == 'pagination' ? 'pagination' : nil
 
         url_for(query.compact)
       end
 
       def admin_clear_filters_path(resource_config)
-        query = admin_infinite_scroll? ? { scroll: 'infinite' } : {}
+        query = admin_infinite_scroll? ? {} : { scroll: 'pagination' }
 
         admin_resources_path(resource_config.key, query)
       end
@@ -33,6 +48,14 @@ module Admin
       def admin_resource_actions(resource_config, record: nil)
         resource_config.actions.select do |action|
           record.present? ? action.member? : action.collection?
+        end
+      end
+
+      def admin_records_summary(pagy)
+        if pagy.count.zero?
+          t('admin.pagination.empty_summary')
+        else
+          t('admin.pagination.summary', from: pagy.from, to: pagy.to, count: pagy.count)
         end
       end
 

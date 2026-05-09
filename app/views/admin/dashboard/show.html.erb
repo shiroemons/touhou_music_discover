@@ -23,6 +23,50 @@
   </div>
 </div>
 
+<div class="admin-priority-grid">
+  <section class="admin-panel">
+    <div class="admin-panel-header">
+      <h2><%= t('admin.dashboard.work_queue') %></h2>
+    </div>
+    <div class="admin-list-stack admin-metric-list">
+      <% if metrics.fetch(:work_queue).any? %>
+        <% metrics.fetch(:work_queue).each do |item| %>
+          <%= link_to metric_path.call(item), class: "admin-metric-row is-#{item.fetch(:severity)}" do %>
+            <span>
+              <strong><%= item.fetch(:label) %></strong>
+              <small><%= item.fetch(:description) %></small>
+            </span>
+            <span class="admin-count-pill"><%= number_with_delimiter(item.fetch(:count)) %></span>
+          <% end %>
+        <% end %>
+      <% else %>
+        <p class="admin-empty"><%= t('admin.dashboard.no_work_queue') %></p>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="admin-panel">
+    <div class="admin-panel-header">
+      <h2><%= t('admin.dashboard.data_quality') %></h2>
+    </div>
+    <div class="admin-list-stack admin-metric-list">
+      <% if metrics.fetch(:data_quality).any? %>
+        <% metrics.fetch(:data_quality).each do |item| %>
+          <%= link_to metric_path.call(item), class: "admin-metric-row is-#{item.fetch(:severity)}" do %>
+            <span>
+              <strong><%= item.fetch(:label) %></strong>
+              <small><%= item.fetch(:description) %></small>
+            </span>
+            <span class="admin-count-pill"><%= number_with_delimiter(item.fetch(:count)) %></span>
+          <% end %>
+        <% end %>
+      <% else %>
+        <p class="admin-empty"><%= t('admin.dashboard.no_quality_issues') %></p>
+      <% end %>
+    </div>
+  </section>
+</div>
+
 <div class="admin-stat-grid">
   <%= link_to admin_resources_path('albums'), class: 'admin-stat-card admin-stat-link' do %>
     <span class="admin-stat-label"><%= t('admin.dashboard.album_count') %></span>
@@ -200,50 +244,6 @@
     <% end %>
   </div>
 </section>
-
-<div class="admin-dashboard-grid">
-  <section class="admin-panel">
-    <div class="admin-panel-header">
-      <h2><%= t('admin.dashboard.work_queue') %></h2>
-    </div>
-    <div class="admin-list-stack admin-metric-list">
-      <% if metrics.fetch(:work_queue).any? %>
-        <% metrics.fetch(:work_queue).each do |item| %>
-          <%= link_to metric_path.call(item), class: "admin-metric-row is-#{item.fetch(:severity)}" do %>
-            <span>
-              <strong><%= item.fetch(:label) %></strong>
-              <small><%= item.fetch(:description) %></small>
-            </span>
-            <span class="admin-count-pill"><%= number_with_delimiter(item.fetch(:count)) %></span>
-          <% end %>
-        <% end %>
-      <% else %>
-        <p class="admin-empty"><%= t('admin.dashboard.no_work_queue') %></p>
-      <% end %>
-    </div>
-  </section>
-
-  <section class="admin-panel">
-    <div class="admin-panel-header">
-      <h2><%= t('admin.dashboard.data_quality') %></h2>
-    </div>
-    <div class="admin-list-stack admin-metric-list">
-      <% if metrics.fetch(:data_quality).any? %>
-        <% metrics.fetch(:data_quality).each do |item| %>
-          <%= link_to metric_path.call(item), class: "admin-metric-row is-#{item.fetch(:severity)}" do %>
-            <span>
-              <strong><%= item.fetch(:label) %></strong>
-              <small><%= item.fetch(:description) %></small>
-            </span>
-            <span class="admin-count-pill"><%= number_with_delimiter(item.fetch(:count)) %></span>
-          <% end %>
-        <% end %>
-      <% else %>
-        <p class="admin-empty"><%= t('admin.dashboard.no_quality_issues') %></p>
-      <% end %>
-    </div>
-  </section>
-</div>
 
 <section class="admin-panel">
   <% playlist_sync = metrics.fetch(:playlist_sync) %>

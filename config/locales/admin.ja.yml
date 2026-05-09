@@ -82,9 +82,11 @@ ja:
       placeholder: "検索"
       submit: "検索"
       clear: "解除"
+      query: "検索語"
     pagination:
       aria_label: "ページ送り"
       summary: "%{count}件中 %{from}-%{to}件を表示"
+      empty_summary: "0件"
       first: "最初"
       prev: "前へ"
       next: "次へ"
@@ -100,6 +102,7 @@ ja:
       error: "読み込みに失敗しました。"
     filters:
       heading: "フィルター"
+      active: "適用中の条件"
       all: "すべて"
       not_delivered:
         label: "未配信"
@@ -139,6 +142,10 @@ ja:
     table:
       actions: "操作"
       empty: "レコードがありません。"
+      current_results: "表示中"
+    details:
+      overview: "概要"
+      all_fields: "すべての項目"
     track_status:
       missing: "楽曲なし"
       incomplete: "不足"
