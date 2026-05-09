@@ -4,11 +4,13 @@ require 'test_helper'
 require 'rake'
 
 class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
+  Rake::Task.define_task(:environment)
+  load Rails.root.join('lib/tasks/touhou_music_discover.rake')
+
   SPOTIFY_EXPORT_PATH = Rails.root.join('tmp/export/spotify_touhou_music.tsv')
   TOUHOU_MUSIC_WITH_ORIGINAL_SONGS_EXPORT_PATH = Rails.root.join('tmp/export/touhou_music_with_original_songs.tsv')
 
   setup do
-    Rails.application.load_tasks unless Rake::Task.task_defined?('touhou_music_discover:export:spotify') && Rake::Task.task_defined?('touhou_music_discover:export:touhou_music_with_original_songs')
     Rake::Task['touhou_music_discover:export:spotify'].reenable
     Rake::Task['touhou_music_discover:export:touhou_music_with_original_songs'].reenable
     FileUtils.rm_f(SPOTIFY_EXPORT_PATH)
