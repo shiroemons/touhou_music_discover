@@ -4327,6 +4327,152 @@ html[data-admin-resolved-theme="light"] .admin-external-link-menu-list {
   border-color: rgb(148 163 184 / 28%);
 }
 
+/* Admin action pages: keep destructive/background tasks readable and balanced. */
+.admin-action-page {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.admin-action-header {
+  align-items: center;
+}
+
+.admin-action-layout {
+  align-items: start;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.35fr) minmax(20rem, 0.65fr);
+}
+
+.admin-action-page .admin-form-panel,
+.admin-action-progress-shell,
+.admin-action-progress-card {
+  max-width: none;
+  min-width: 0;
+}
+
+.admin-action-execution-panel {
+  overflow: hidden;
+}
+
+.admin-action-execution-panel .admin-panel-header,
+.admin-action-check-card .admin-panel-header {
+  min-height: 3.2rem;
+}
+
+.admin-action-status-pill {
+  background: var(--admin-primary-soft);
+  border: 1px solid rgb(34 211 238 / 22%);
+  border-radius: 999px;
+  color: var(--admin-primary-hover);
+  font-size: 0.78rem;
+  font-weight: 850;
+  padding: 0.28rem 0.62rem;
+}
+
+.admin-action-execution-panel .admin-action-summary {
+  background:
+    linear-gradient(135deg, rgb(34 211 238 / 10%), rgb(99 102 241 / 9%)),
+    var(--admin-surface-muted);
+  margin-bottom: 0;
+}
+
+.admin-action-fields {
+  border-top: 1px solid var(--admin-border);
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.admin-action-side-panel {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.admin-action-side-panel .admin-action-warning {
+  align-items: flex-start;
+  margin: 0;
+  padding: 0.85rem;
+}
+
+.admin-action-check-card {
+  overflow: hidden;
+}
+
+.admin-action-checklist {
+  display: grid;
+  gap: 0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0.9rem;
+}
+
+.admin-action-checklist li {
+  align-items: flex-start;
+  color: var(--admin-muted);
+  display: grid;
+  font-size: 0.88rem;
+  gap: 0.55rem;
+  grid-template-columns: auto minmax(0, 1fr);
+  line-height: 1.45;
+}
+
+.admin-action-checklist .admin-icon {
+  color: var(--admin-primary);
+  margin-top: 0.08rem;
+}
+
+.admin-action-checklist li:last-child .admin-icon {
+  color: #d97706;
+}
+
+.admin-action-target {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem;
+}
+
+.admin-action-target span {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.admin-action-target strong {
+  color: var(--admin-text);
+  font-size: 0.98rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.admin-action-progress-shell {
+  min-width: 0;
+}
+
+html[data-admin-resolved-theme="light"] .admin-action-status-pill {
+  background: rgb(8 145 178 / 11%);
+  border-color: rgb(8 145 178 / 20%);
+  color: var(--admin-primary-hover);
+}
+
+html[data-admin-resolved-theme="light"] .admin-action-execution-panel .admin-action-summary {
+  background:
+    linear-gradient(135deg, rgb(8 145 178 / 8%), rgb(79 70 229 / 7%)),
+    #f8fafc;
+}
+
+@media (max-width: 1199.98px) {
+  .admin-action-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-action-side-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 991.98px) {
   .admin-resource-index-page {
     min-height: 0;
@@ -4349,5 +4495,20 @@ html[data-admin-resolved-theme="light"] .admin-external-link-menu-list {
 
   .admin-resource-index-page .admin-search-input {
     max-width: none;
+  }
+
+  .admin-action-side-panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-action-header {
+    align-items: stretch;
+  }
+
+  .admin-action-execution-panel .admin-panel-header,
+  .admin-action-check-card .admin-panel-header {
+    align-items: flex-start;
   }
 }

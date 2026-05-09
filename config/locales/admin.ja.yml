@@ -291,6 +291,9 @@ ja:
       back_to_show: "詳細へ戻る"
       summary:
         heading: "実行内容"
+        checkpoints: "実行前の確認"
+        ready: "実行前"
+        target: "対象"
         background_job: "実行後はバックグラウンドで処理し、この画面で進捗を確認できます。"
         progress: "処理中の対象、取得件数、未検出、エラー件数を順次表示します。"
         external_api: "外部APIへ通信するため、レート制限や未検出が発生する場合があります。"

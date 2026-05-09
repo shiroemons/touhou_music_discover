@@ -920,11 +920,13 @@ module Admin
       assert_response :success
       assert_select 'h1', '東方フラグを変更'
       assert_select '.alert-warning', /外部API通信/
-      assert_select '.admin-action-summary', text: /実行内容/
+      assert_select '.admin-action-execution-panel .admin-panel-header h2', text: '実行内容'
       assert_select '.admin-action-summary strong', '東方フラグを変更'
       assert_select '.admin-action-summary p', /原曲紐づけ済み/
-      assert_select '.admin-action-summary li', /進捗を確認できます/
-      assert_select '.admin-action-summary li', /未検出/
+      assert_select '.admin-action-checklist li', /進捗を確認できます/
+      assert_select '.admin-action-checklist li', /未検出/
+      assert_select '.admin-action-layout'
+      assert_select '.admin-action-side-panel'
       assert_select 'form[data-controller=?][data-action=?]', 'admin-action-confirm', 'submit->admin-action-confirm#submit'
       assert_select '.modal[data-admin-action-confirm-target=?]', 'modal'
       assert_select '#admin-action-confirm-title', text: 'アクションを実行しますか？'

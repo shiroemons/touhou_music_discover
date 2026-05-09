@@ -254,6 +254,14 @@ en:
       new_record: "New"
       back_to_index: "Back to index"
       back_to_show: "Back to details"
+      summary:
+        heading: "Action details"
+        checkpoints: "Pre-run checks"
+        ready: "Ready"
+        target: "Target"
+        background_job: "Runs in the background after confirmation; progress stays visible on this page."
+        progress: "Shows processed targets, fetched items, missing records, and errors as they update."
+        external_api: "May call external APIs, so rate limits or missing results can occur."
       progress:
         description: "The action is running in the background. Progress updates automatically."
         started: "Action started."
