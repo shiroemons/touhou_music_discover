@@ -122,12 +122,23 @@ en:
       missing: "%{service} missing"
     form:
       save_failed: "Could not save the record."
+      association_search_placeholder: "Search options"
+      association_change_placeholder: "Search to change"
     confirm:
       destroy: "Delete this record?"
     relations:
       heading: "Relations"
       empty: "No related records."
       preview_limit: "Showing the first %{count} records only."
+      add: "Add"
+      add_label: "Add %{relation}"
+      add_placeholder: "Search by ID, code, or name"
+      remove: "Remove"
+      destroy_confirm: "Remove this relation?"
+      create_success: "Relation added."
+      destroy_success: "Relation removed."
+      blank_query: "Enter a related record to add"
+      record_not_found: "Related record was not found: %{message}"
       meta:
         original: "Original: %{title}"
         disc_track: "Disc %{disc} / Track %{track}"

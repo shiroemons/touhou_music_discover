@@ -100,9 +100,34 @@
                       <span><%= t('admin.actions.show') %></span>
                     <% end %>
                   <% end %>
+                  <% if section.editable? %>
+                    <%= button_to admin_resource_relation_record_path(@resource_config.key, @record, section.name, related_record),
+                                  method: :delete,
+                                  class: 'btn btn-sm admin-btn-danger',
+                                  form: { data: { turbo_confirm: t('admin.relations.destroy_confirm') } } do %>
+                      <%= admin_icon(:x) %>
+                      <span><%= t('admin.relations.remove') %></span>
+                    <% end %>
+                  <% end %>
                 </div>
               <% end %>
             </div>
+          <% end %>
+          <% if section.editable? %>
+            <%= form_with url: admin_resource_relation_path(@resource_config.key, @record, section.name),
+                          method: :post,
+                          class: 'admin-relation-form' do |form| %>
+              <%= form.label :related_query, t('admin.relations.add_label', relation: section.label), class: 'admin-label' %>
+              <div class="admin-relation-form-row">
+                <%= form.text_field :related_query,
+                                    class: 'input admin-input',
+                                    placeholder: t('admin.relations.add_placeholder') %>
+                <%= form.button type: :submit, class: 'btn btn-sm admin-btn-primary' do %>
+                  <%= admin_icon(:plus) %>
+                  <span><%= t('admin.relations.add') %></span>
+                <% end %>
+              </div>
+            <% end %>
           <% end %>
         </div>
     </div>

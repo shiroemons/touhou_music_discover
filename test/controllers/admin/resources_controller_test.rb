@@ -53,6 +53,123 @@ module Admin
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
 
+    test 'searches albums by streaming service album names like avo' do
+      matching_album = Album.create!(jan_code: '9777777777768')
+      other_album = Album.create!(jan_code: '9777777777769')
+      AppleMusicAlbum.create!(
+        album: matching_album,
+        apple_music_id: 'apple-admin-search-match',
+        name: 'Admin Searchable Apple Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      AppleMusicAlbum.create!(
+        album: other_album,
+        apple_music_id: 'apple-admin-search-other',
+        name: 'Other Apple Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+
+      get admin_resources_url('albums'), params: { q: 'Searchable Apple' }
+
+      assert_response :success
+      assert_select 'td', text: matching_album.jan_code
+      assert_select 'td', { text: other_album.jan_code, count: 0 }
+    end
+
+    test 'searches streaming albums by related circle name like avo' do
+      matching_circle = Circle.create!(name: 'Admin Search Circle')
+      other_circle = Circle.create!(name: 'Admin Other Circle')
+      matching_album = Album.create!(jan_code: '9777777777770')
+      other_album = Album.create!(jan_code: '9777777777771')
+      matching_album.circles << matching_circle
+      other_album.circles << other_circle
+      matching_spotify_album = SpotifyAlbum.create!(
+        album: matching_album,
+        spotify_id: 'spotify-admin-circle-search-match',
+        album_type: 'album',
+        name: 'Circle Search Match Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      other_spotify_album = SpotifyAlbum.create!(
+        album: other_album,
+        spotify_id: 'spotify-admin-circle-search-other',
+        album_type: 'album',
+        name: 'Circle Search Other Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+
+      get admin_resources_url('spotify_albums'), params: { q: matching_circle.name }
+
+      assert_response :success
+      assert_select 'td', text: matching_spotify_album.name
+      assert_select 'td', { text: other_spotify_album.name, count: 0 }
+    end
+
+    test 'searches streaming tracks by service album and circle names like avo' do
+      circle = Circle.create!(name: 'Admin Track Search Circle')
+      matching_album = Album.create!(jan_code: '9777777777772')
+      other_album = Album.create!(jan_code: '9777777777773')
+      matching_album.circles << circle
+      matching_track = Track.create!(album: matching_album, isrc: 'JPABC260006')
+      other_track = Track.create!(album: other_album, isrc: 'JPABC260007')
+      matching_spotify_album = SpotifyAlbum.create!(
+        album: matching_album,
+        spotify_id: 'spotify-admin-track-search-album',
+        album_type: 'album',
+        name: 'Admin Track Search Service Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      other_spotify_album = SpotifyAlbum.create!(
+        album: other_album,
+        spotify_id: 'spotify-admin-track-search-other-album',
+        album_type: 'album',
+        name: 'Other Service Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      matching_spotify_track = SpotifyTrack.create!(
+        album: matching_album,
+        track: matching_track,
+        spotify_album: matching_spotify_album,
+        spotify_id: 'spotify-admin-track-search-match',
+        name: 'Admin Track Search Match',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        payload: {}
+      )
+      other_spotify_track = SpotifyTrack.create!(
+        album: other_album,
+        track: other_track,
+        spotify_album: other_spotify_album,
+        spotify_id: 'spotify-admin-track-search-other',
+        name: 'Admin Track Search Other',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        payload: {}
+      )
+
+      get admin_resources_url('spotify_tracks'), params: { q: 'Search Service Album' }
+
+      assert_response :success
+      assert_select 'td', text: matching_spotify_track.name
+      assert_select 'td', { text: other_spotify_track.name, count: 0 }
+
+      get admin_resources_url('spotify_tracks'), params: { q: circle.name }
+
+      assert_response :success
+      assert_select 'td', text: matching_spotify_track.name
+      assert_select 'td', { text: other_spotify_track.name, count: 0 }
+    end
+
     test 'shows streaming service top links on album index pages' do
       get admin_resources_url('albums')
 
@@ -146,6 +263,27 @@ module Admin
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
     end
 
+    test 'adds and removes editable through relations' do
+      album = Album.create!(jan_code: '9777777777774')
+      circle = Circle.create!(name: 'Admin Relation Editable Circle')
+
+      get admin_resource_url('albums', album)
+
+      assert_response :success
+      assert_select 'form[action=?]', admin_resource_relation_path('albums', album, 'circles')
+      assert_select 'input[name=?][placeholder=?]', 'related_query', 'ID・コード・名前で検索'
+
+      assert_difference('album.circles.count', 1) do
+        post admin_resource_relation_url('albums', album, 'circles'), params: { related_query: circle.name }
+      end
+      assert_redirected_to admin_resource_path('albums', album)
+
+      assert_difference('album.circles.count', -1) do
+        delete admin_resource_relation_record_url('albums', album, 'circles', circle)
+      end
+      assert_redirected_to admin_resource_path('albums', album)
+    end
+
     test 'hides join relation and shows original title on original song relation' do
       album = Album.create!(jan_code: '9777777777778')
       track = Track.create!(album:, isrc: 'JPABC260005')
@@ -208,6 +346,40 @@ module Admin
       assert_select '.admin-detail-table th', text: 'アルバム名'
       assert_select '.admin-detail-table th', text: '配信取得'
       assert_select '.admin-detail-table td', text: 'Admin Track Detail Album'
+    end
+
+    test 'sorts admin resource index by sortable database columns' do
+      lower_album = Album.create!(jan_code: '9777777777851')
+      upper_album = Album.create!(jan_code: '9777777777852')
+      lower_spotify_album = SpotifyAlbum.create!(
+        album: lower_album,
+        spotify_id: 'spotify-admin-sort-lower',
+        album_type: 'album',
+        name: 'Admin Sort A Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      upper_spotify_album = SpotifyAlbum.create!(
+        album: upper_album,
+        spotify_id: 'spotify-admin-sort-upper',
+        album_type: 'album',
+        name: 'Admin Sort Z Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+
+      get admin_resources_url('spotify_albums'), params: { q: 'Admin Sort', sort: 'name', direction: 'asc' }
+
+      assert_response :success
+      assert_select 'a.admin-sort-link.is-active[aria-sort=?]', 'ascending', text: '名前'
+      row_names = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+      assert_equal [lower_spotify_album.name, upper_spotify_album.name], row_names
+
+      get admin_resources_url('spotify_albums'), params: { q: 'Admin Sort', sort: 'name', direction: 'desc' }
+
+      assert_response :success
+      row_names = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+      assert_equal [upper_spotify_album.name, lower_spotify_album.name], row_names
     end
 
     test 'filters tracks by missing streaming service' do
@@ -404,6 +576,67 @@ module Admin
       assert_select '.admin-detail-table th', { text: 'アルバムID', count: 0 }
       assert_select '.admin-detail-table th', { text: '楽曲ID', count: 0 }
       assert_select '.admin-detail-table th', { text: 'SpotifyアルバムID', count: 0 }
+    end
+
+    test 'uses searchable comboboxes for foreign keys and readonly service identifiers on edit' do
+      album = Album.create!(jan_code: '9777777777861')
+      other_album = Album.create!(jan_code: '9777777777862')
+      track = Track.create!(album:, isrc: 'JPABC260861')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'spotify-admin-edit-select-album',
+        album_type: 'album',
+        name: 'Admin Edit Select Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        payload: {}
+      )
+      spotify_track = SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id: 'spotify-admin-edit-readonly-track',
+        name: 'Admin Edit Readonly Track',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        duration_ms: 180_000,
+        payload: {}
+      )
+
+      get admin_edit_resource_url('spotify_tracks', spotify_track)
+
+      assert_response :success
+      assert_select '.admin-association-combobox[data-controller=?]', 'admin-association-select'
+      assert_select '.admin-association-combobox[data-admin-association-select-url-value=?]', admin_resource_association_options_path('spotify_tracks', 'album_id')
+      assert_select '.admin-association-combobox input[type=hidden][name=?][value=?]', 'record[album_id]', album.id
+      assert_select '.admin-association-combobox input[type=search][role=?][placeholder=?]', 'combobox', '変更する場合は検索'
+      assert_select '.admin-association-combobox input[type=search]' do |inputs|
+        assert_match(/#{album.jan_code}.+Admin Edit Select Album/, inputs.first['value'])
+      end
+      assert_select '.admin-association-listbox[role=?][hidden]', 'listbox'
+      assert_select '.admin-association-option', count: 0
+      assert_select '.admin-association-combobox input[type=hidden][name=?]', 'record[track_id]'
+      assert_select '.admin-association-combobox input[type=hidden][name=?]', 'record[spotify_album_id]'
+      assert_select 'input[name=?][readonly=?][value=?]', 'record[spotify_id]', 'readonly', spotify_track.spotify_id
+
+      get admin_resource_association_options_url('spotify_tracks', 'album_id'), params: { q: 'Admin Edit Select' }
+
+      assert_response :success
+      options = JSON.parse(@response.body).fetch('options')
+      assert_equal [album.id.to_s], options.map { |option| option.fetch('value') }
+      assert_match(/#{album.jan_code}.+Admin Edit Select Album/, options.first.fetch('label'))
+
+      patch admin_resource_url('spotify_tracks', spotify_track), params: {
+        record: {
+          album_id: other_album.id,
+          spotify_id: 'spotify-admin-edit-mutated-track'
+        }
+      }
+
+      assert_redirected_to admin_resource_path('spotify_tracks', spotify_track)
+      spotify_track.reload
+      assert_equal other_album.id, spotify_track.album_id
+      assert_equal 'spotify-admin-edit-readonly-track', spotify_track.spotify_id
     end
 
     test 'lists spotify track audio features resource with fetch action' do

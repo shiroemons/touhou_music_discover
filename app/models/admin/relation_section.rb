@@ -26,6 +26,14 @@ module Admin
       macro.in?(%i[has_many has_and_belongs_to_many])
     end
 
+    def editable?
+      collection? && through? && associated_resource.present?
+    end
+
+    def through?
+      reflection.respond_to?(:through_reflection) && reflection.through_reflection.present?
+    end
+
     def records
       return Array(record.public_send(name)).compact unless collection?
 

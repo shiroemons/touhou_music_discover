@@ -104,7 +104,7 @@
       <thead>
         <tr>
           <% @resource_config.index_attributes.each do |attribute| %>
-            <th><%= @resource_config.index_attribute_label(attribute) %></th>
+            <th><%= admin_sortable_header(@resource_config, attribute) %></th>
           <% end %>
           <th class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
         </tr>

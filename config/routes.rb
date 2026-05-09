@@ -18,6 +18,9 @@ Rails.application.routes.draw do
       post ':resource/:id/actions/:action_key', to: 'actions#create'
       get ':resource/:id/actions/:action_key/runs/:run_id', to: 'actions#show', as: :member_resource_action_run
       get ':resource/:id/actions/:action_key/runs/:run_id/progress', to: 'actions#progress', as: :member_resource_action_run_progress
+      get ':resource/association_options/:attribute', to: 'association_options#index', as: :resource_association_options
+      post ':resource/:id/relations/:association', to: 'relations#create', as: :resource_relation
+      delete ':resource/:id/relations/:association/:related_id', to: 'relations#destroy', as: :resource_relation_record
       get ':resource/:id', to: 'resources#show', as: :resource
       get ':resource/:id/edit', to: 'resources#edit', as: :edit_resource
       patch ':resource/:id', to: 'resources#update'

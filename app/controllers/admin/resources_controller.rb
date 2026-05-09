@@ -12,6 +12,7 @@ module Admin
       @active_filters = @resource_config.normalize_filters(params.fetch(:filters, {}))
       @filters = @resource_config.filters
       scope = @resource_config.filter(scope, @active_filters)
+      scope = @resource_config.sort(scope, params[:sort], params[:direction])
       @pagy, @records = pagy(scope, items: Admin::Resource::DEFAULT_ITEMS)
     end
 
@@ -78,6 +79,8 @@ module Admin
 
         attributes[attribute] = JSON.parse(attributes[attribute])
       end
+
+      attributes.except!(*@resource_config.readonly_attributes_for_update) if @record.persisted?
 
       attributes
     end

@@ -157,12 +157,23 @@ ja:
       missing: "%{service}未取得"
     form:
       save_failed: "保存できませんでした。"
+      association_search_placeholder: "選択肢を検索"
+      association_change_placeholder: "変更する場合は検索"
     confirm:
       destroy: "削除しますか？"
     relations:
       heading: "関連"
       empty: "関連レコードはありません。"
       preview_limit: "先頭%{count}件のみ表示しています。"
+      add: "追加"
+      add_label: "%{relation}を追加"
+      add_placeholder: "ID・コード・名前で検索"
+      remove: "解除"
+      destroy_confirm: "関連を解除しますか？"
+      create_success: "関連を追加しました。"
+      destroy_success: "関連を解除しました。"
+      blank_query: "追加する関連レコードを入力してください"
+      record_not_found: "関連レコードが見つかりません: %{message}"
       meta:
         original: "原作: %{title}"
         disc_track: "ディスク %{disc} / トラック %{track}"

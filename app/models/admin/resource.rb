@@ -5,6 +5,17 @@ module Admin
     include ActiveModel::Model
 
     DEFAULT_ITEMS = 50
+    FORM_ASSOCIATION_SELECT_LIMIT = 500
+    FORM_ASSOCIATION_AUTOCOMPLETE_LIMIT = 50
+    READONLY_EXTERNAL_ID_ATTRIBUTES = %w[
+      apple_music_id
+      browse_id
+      line_music_id
+      playlist_id
+      spotify_id
+      spotify_user_id
+      video_id
+    ].freeze
     INDEX_ATTRIBUTE_LABEL_OVERRIDES = {
       'album_id' => :jan_code,
       'track_id' => :track_reference,
@@ -17,7 +28,8 @@ module Admin
 
     attr_accessor :key, :model_class_name, :index_attributes, :detail_attributes, :form_attributes,
                   :search_attributes, :search_scope, :filter_definitions, :includes, :hidden_relations,
-                  :default_order, :action_class_names
+                  :default_order, :action_class_names, :readonly_attributes
+    attr_writer :sortable_attributes
 
     delegate :count, :primary_key, to: :model_class
 
@@ -130,6 +142,15 @@ module Admin
             SQL
             query: pattern
           )
+      end
+
+      def associated_search(scope, query, associations:, columns:)
+        return scope if query.blank?
+
+        pattern = "%#{scope.klass.sanitize_sql_like(query)}%"
+        searched_scope = associations.present? ? scope.left_joins(*associations) : scope
+
+        searched_scope.where(associated_search_clause(scope.klass.connection, columns), query: pattern)
       end
 
       private
@@ -445,7 +466,20 @@ module Admin
             model_class_name: 'Album',
             index_attributes: %i[jan_code circle_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name is_touhou],
             form_attributes: %i[jan_code is_touhou],
-            search_attributes: %i[jan_code],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: %i[spotify_album apple_music_album line_music_album ytmusic_album],
+                columns: [
+                  %i[albums jan_code],
+                  %i[spotify_albums name],
+                  %i[apple_music_albums name],
+                  %i[line_music_albums name],
+                  %i[ytmusic_albums name]
+                ]
+              )
+            },
             filter_definitions: [
               {
                 key: 'not_delivered',
@@ -525,7 +559,20 @@ module Admin
             model_class_name: 'SpotifyAlbum',
             index_attributes: %i[name circle_name album_id active release_date tracks_status total_tracks spotify_id],
             form_attributes: %i[album_id spotify_id album_type name label url release_date total_tracks active payload],
-            search_attributes: %i[name spotify_id label],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }],
+                columns: [
+                  %i[spotify_albums name],
+                  %i[spotify_albums spotify_id],
+                  %i[spotify_albums label],
+                  %i[albums jan_code],
+                  %i[circles name]
+                ]
+              )
+            },
             filter_definitions: [
               {
                 key: 'display',
@@ -569,7 +616,22 @@ module Admin
             model_class_name: 'SpotifyTrack',
             index_attributes: %i[name circle_name album_id track_id spotify_album_id disc_number track_number spotify_id],
             form_attributes: %i[album_id track_id spotify_album_id spotify_id name label url release_date disc_number track_number duration_ms payload],
-            search_attributes: %i[name spotify_id label],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }, :spotify_album, :track],
+                columns: [
+                  %i[spotify_tracks name],
+                  %i[spotify_tracks spotify_id],
+                  %i[spotify_tracks label],
+                  %i[albums jan_code],
+                  %i[circles name],
+                  %i[spotify_albums name],
+                  %i[tracks isrc]
+                ]
+              )
+            },
             filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
@@ -608,7 +670,20 @@ module Admin
             model_class_name: 'AppleMusicAlbum',
             index_attributes: %i[name circle_name album_id release_date tracks_status total_tracks apple_music_id],
             form_attributes: %i[album_id apple_music_id name label url release_date total_tracks payload],
-            search_attributes: %i[name apple_music_id label],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }],
+                columns: [
+                  %i[apple_music_albums name],
+                  %i[apple_music_albums apple_music_id],
+                  %i[apple_music_albums label],
+                  %i[albums jan_code],
+                  %i[circles name]
+                ]
+              )
+            },
             filter_definitions: [track_status_filter.call(:apple_music_tracks), touhou_filter.call],
             includes: [:apple_music_tracks, { album: album_preview_includes }],
             action_class_names: %w[
@@ -623,7 +698,24 @@ module Admin
             model_class_name: 'AppleMusicTrack',
             index_attributes: %i[name artist_name composer_name circle_name album_id track_id apple_music_album_id disc_number track_number apple_music_id],
             form_attributes: %i[album_id track_id apple_music_album_id apple_music_id name label artist_name composer_name url release_date disc_number track_number duration_ms payload],
-            search_attributes: %i[name apple_music_id artist_name composer_name label],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }, :apple_music_album, :track],
+                columns: [
+                  %i[apple_music_tracks name],
+                  %i[apple_music_tracks apple_music_id],
+                  %i[apple_music_tracks artist_name],
+                  %i[apple_music_tracks composer_name],
+                  %i[apple_music_tracks label],
+                  %i[albums jan_code],
+                  %i[circles name],
+                  %i[apple_music_albums name],
+                  %i[tracks isrc]
+                ]
+              )
+            },
             filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
@@ -637,7 +729,19 @@ module Admin
             model_class_name: 'LineMusicAlbum',
             index_attributes: %i[name circle_name album_id release_date tracks_status total_tracks line_music_id],
             form_attributes: %i[album_id line_music_id name url release_date total_tracks payload],
-            search_attributes: %i[name line_music_id],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }],
+                columns: [
+                  %i[line_music_albums name],
+                  %i[line_music_albums line_music_id],
+                  %i[albums jan_code],
+                  %i[circles name]
+                ]
+              )
+            },
             filter_definitions: [track_status_filter.call(:line_music_tracks), touhou_filter.call],
             includes: [:line_music_tracks, { album: album_preview_includes }],
             action_class_names: %w[FetchLineMusicAlbum UpdateLineMusicAlbum ProcessLineMusicJanToAlbumIds]
@@ -647,7 +751,21 @@ module Admin
             model_class_name: 'LineMusicTrack',
             index_attributes: %i[name circle_name album_id track_id line_music_album_id disc_number track_number line_music_id],
             form_attributes: %i[album_id track_id line_music_album_id line_music_id name url disc_number track_number payload],
-            search_attributes: %i[name line_music_id],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }, :line_music_album, :track],
+                columns: [
+                  %i[line_music_tracks name],
+                  %i[line_music_tracks line_music_id],
+                  %i[albums jan_code],
+                  %i[circles name],
+                  %i[line_music_albums name],
+                  %i[tracks isrc]
+                ]
+              )
+            },
             filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
@@ -661,7 +779,19 @@ module Admin
             model_class_name: 'YtmusicAlbum',
             index_attributes: %i[name circle_name album_id release_year tracks_status total_tracks browse_id],
             form_attributes: %i[album_id browse_id name url playlist_url release_year total_tracks payload],
-            search_attributes: %i[name browse_id],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }],
+                columns: [
+                  %i[ytmusic_albums name],
+                  %i[ytmusic_albums browse_id],
+                  %i[albums jan_code],
+                  %i[circles name]
+                ]
+              )
+            },
             filter_definitions: [track_status_filter.call(:ytmusic_tracks), touhou_filter.call],
             includes: [:ytmusic_tracks, { album: album_preview_includes }],
             action_class_names: %w[
@@ -677,7 +807,22 @@ module Admin
             model_class_name: 'YtmusicTrack',
             index_attributes: %i[name circle_name album_id track_id ytmusic_album_id track_number video_id playlist_id],
             form_attributes: %i[album_id track_id ytmusic_album_id video_id playlist_id name url track_number payload],
-            search_attributes: %i[name video_id playlist_id],
+            search_scope: lambda { |scope, query|
+              Admin::Resource.associated_search(
+                scope,
+                query,
+                associations: [{ album: :circles }, :ytmusic_album, :track],
+                columns: [
+                  %i[ytmusic_tracks name],
+                  %i[ytmusic_tracks video_id],
+                  %i[ytmusic_tracks playlist_id],
+                  %i[albums jan_code],
+                  %i[circles name],
+                  %i[ytmusic_albums name],
+                  %i[tracks isrc]
+                ]
+              )
+            },
             filter_definitions: [touhou_filter.call],
             includes: [
               { album: album_preview_includes },
@@ -726,6 +871,25 @@ module Admin
       default_order.present? ? default_order.call(scoped) : scoped
     end
 
+    def sort(scope, attribute, direction)
+      return scope unless sortable_attribute?(attribute)
+
+      direction = sort_direction(direction)
+      scope.reorder(Arel.sql("#{quoted_table_name}.#{model_class.connection.quote_column_name(attribute)} #{direction.upcase} NULLS LAST"))
+    end
+
+    def sort_direction(direction)
+      direction.to_s == 'desc' ? 'desc' : 'asc'
+    end
+
+    def sortable_attribute?(attribute)
+      sortable_attributes.map(&:to_s).include?(attribute.to_s)
+    end
+
+    def sortable_attributes
+      Array(@sortable_attributes.presence || index_attributes.select { |attribute| column_for(attribute).present? })
+    end
+
     def search(scope, query)
       return scope if query.blank?
       return search_scope.call(scope, query) if search_scope.present?
@@ -772,6 +936,26 @@ module Admin
 
     def attributes_for_form
       form_attributes.map(&:to_s)
+    end
+
+    def readonly_attribute?(attribute)
+      attribute.to_s.in?(readonly_attributes_for_update)
+    end
+
+    def readonly_attributes_for_update
+      readonly = Array(readonly_attributes).map(&:to_s)
+      readonly += attributes_for_form & READONLY_EXTERNAL_ID_ATTRIBUTES
+      readonly.uniq
+    end
+
+    def form_association_for(attribute)
+      return unless attribute.to_s.end_with?('_id')
+
+      association_name = attribute.to_s.delete_suffix('_id').to_sym
+      reflection = model_class.reflect_on_association(association_name)
+      return unless reflection&.belongs_to? && reflection.foreign_key.to_s == attribute.to_s
+
+      reflection
     end
 
     def attributes_for_detail
@@ -828,6 +1012,16 @@ module Admin
 
     def quoted_table_name
       model_class.connection.quote_table_name(model_class.table_name)
+    end
+
+    def self.associated_search_clause(connection, columns)
+      columns
+        .map do |table_name, column_name|
+          table = connection.quote_table_name(table_name)
+          column = connection.quote_column_name(column_name)
+          "CAST(#{table}.#{column} AS TEXT) ILIKE :query"
+        end
+        .join(' OR ')
     end
   end
 end
