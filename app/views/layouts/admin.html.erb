@@ -5,41 +5,81 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
+  <script>
+    (() => {
+      const storageKey = "touhou-admin-theme";
+      const root = document.documentElement;
+      const storedTheme = (() => {
+        try {
+          return localStorage.getItem(storageKey);
+        } catch (_error) {
+          return null;
+        }
+      })();
+      const theme = ["light", "dark", "system"].includes(storedTheme) ? storedTheme : "system";
+      const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)")?.matches;
+      const resolvedTheme = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
+
+      root.dataset.adminTheme = theme;
+      root.dataset.adminResolvedTheme = resolvedTheme;
+      root.dataset.theme = resolvedTheme;
+    })();
+  </script>
   <%= stylesheet_link_tag "application", "data-turbo-track": "reload" %>
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 </head>
 
-<body class="admin-shell" data-theme="corporate">
+<body class="admin-shell">
   <div class="admin-layout">
     <aside class="admin-sidebar">
-      <div class="admin-brand">
-        <%= link_to admin_root_path, class: 'admin-brand-link' do %>
-          <span class="admin-brand-mark">T</span>
-          <span>
-            <span class="admin-brand-title">Touhou Music</span>
-            <span class="admin-brand-subtitle">Admin Console</span>
-          </span>
-        <% end %>
-      </div>
+      <div class="admin-sidebar-inner">
+        <div class="admin-brand">
+          <%= link_to admin_root_path, class: 'admin-brand-link' do %>
+            <span class="admin-brand-mark">T</span>
+            <span>
+              <span class="admin-brand-title">Touhou Music</span>
+              <span class="admin-brand-subtitle">Admin Console</span>
+            </span>
+          <% end %>
+        </div>
 
-      <nav class="admin-nav" aria-label="Admin navigation">
-        <%= link_to admin_root_path, class: "admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
-          <%= admin_icon(:dashboard) %>
-          <span><%= t('admin.dashboard.title') %></span>
-        <% end %>
+        <nav class="admin-nav" aria-label="Admin navigation">
+          <%= link_to admin_root_path, class: "admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
+            <%= admin_icon(:dashboard) %>
+            <span><%= t('admin.dashboard.title') %></span>
+          <% end %>
 
-        <% admin_resource_groups.each do |group_key, resources| %>
-          <div class="admin-nav-group">
-            <div class="admin-nav-heading"><%= t("admin.navigation.groups.#{group_key}") %></div>
-            <% resources.each do |resource| %>
-              <%= link_to admin_resources_path(resource.key), class: "admin-nav-link #{'active' if params[:resource] == resource.key}" do %>
-                <%= admin_icon(:collection) %>
-                <span><%= resource.label %></span>
+          <% admin_resource_groups.each do |group_key, resources| %>
+            <div class="admin-nav-group">
+              <div class="admin-nav-heading"><%= t("admin.navigation.groups.#{group_key}") %></div>
+              <% resources.each do |resource| %>
+                <%= link_to admin_resources_path(resource.key), class: "admin-nav-link #{'active' if params[:resource] == resource.key}" do %>
+                  <%= admin_icon(:collection) %>
+                  <span><%= resource.label %></span>
+                <% end %>
               <% end %>
-            <% end %>
+            </div>
+          <% end %>
+        </nav>
+
+        <div class="admin-theme-switcher" data-controller="admin-theme">
+          <span class="admin-theme-switcher-label">Theme</span>
+          <div class="admin-theme-options" role="group" aria-label="管理画面テーマ">
+            <button type="button" class="admin-theme-option" data-admin-theme-target="button" data-admin-theme-mode="light" data-action="admin-theme#set" aria-label="ライトテーマ">
+              <%= admin_icon(:sun) %>
+              <span>Light</span>
+            </button>
+            <button type="button" class="admin-theme-option" data-admin-theme-target="button" data-admin-theme-mode="dark" data-action="admin-theme#set" aria-label="ダークテーマ">
+              <%= admin_icon(:moon) %>
+              <span>Dark</span>
+            </button>
+            <button type="button" class="admin-theme-option" data-admin-theme-target="button" data-admin-theme-mode="system" data-action="admin-theme#set" aria-label="システム設定に合わせる">
+              <%= admin_icon(:monitor) %>
+              <span>System</span>
+            </button>
           </div>
-        <% end %>
-      </nav>
+        </div>
+      </div>
     </aside>
 
     <div class="admin-main">

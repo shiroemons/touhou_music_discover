@@ -10,6 +10,10 @@ module Admin
       assert_response :success
       assert_select 'h1', '管理画面'
       assert_select 'a[href=?]', '/avo', count: 0
+      assert_select '.admin-theme-switcher[data-controller=?]', 'admin-theme'
+      assert_select 'button[data-admin-theme-mode=?]', 'light', text: 'Light'
+      assert_select 'button[data-admin-theme-mode=?]', 'dark', text: 'Dark'
+      assert_select 'button[data-admin-theme-mode=?]', 'system', text: 'System'
       assert_select '.admin-stat-card', minimum: 4
       assert_select 'h2', 'カタログ整備状況'
       assert_select '.admin-catalog-metric-card', text: /サークル未設定アルバム/
