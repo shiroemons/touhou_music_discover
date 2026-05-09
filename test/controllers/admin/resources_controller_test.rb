@@ -623,7 +623,8 @@ module Admin
 
       assert_response :success
       options = JSON.parse(@response.body).fetch('options')
-      assert_equal [album.id.to_s], options.map { |option| option.fetch('value') }
+      option_values = options.map { |option| option.fetch('value') }
+      assert_equal [album.id.to_s], option_values
       assert_match(/#{album.jan_code}.+Admin Edit Select Album/, options.first.fetch('label'))
 
       patch admin_resource_url('spotify_tracks', spotify_track), params: {

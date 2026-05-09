@@ -34,9 +34,7 @@ module Admin
                 .limit(Admin::Resource::FORM_ASSOCIATION_AUTOCOMPLETE_LIMIT)
                 .to_a
                 .uniq { |record| record.public_send(@association.association_primary_key).to_s }
-      if query.blank? && selected_record.present? && records.none? { |record| same_record?(record, selected_record) }
-        records.unshift(selected_record)
-      end
+      records.unshift(selected_record) if prepend_selected_record?(query, records)
       records
     end
 
@@ -60,9 +58,7 @@ module Admin
       searchable_columns = columns & scope.klass.column_names
       clauses = searchable_columns.map { |column| "#{scope.klass.connection.quote_column_name(column)} ILIKE :query" }
 
-      if query.match?(/\A\d+\z/)
-        clauses << "#{scope.klass.connection.quote_column_name(scope.klass.primary_key)} = :id"
-      end
+      clauses << "#{scope.klass.connection.quote_column_name(scope.klass.primary_key)} = :id" if query.match?(/\A\d+\z/)
 
       return scope if clauses.empty?
 
@@ -71,8 +67,9 @@ module Admin
 
     def selected_record
       return if params[:selected].blank?
+      return @selected_record if defined?(@selected_record)
 
-      @selected_record ||= @association.klass.find_by(@association.association_primary_key => params[:selected])
+      @selected_record = @association.klass.find_by(@association.association_primary_key => params[:selected])
     end
 
     def associated_resource
@@ -81,6 +78,10 @@ module Admin
 
     def same_record?(left, right)
       left.public_send(@association.association_primary_key).to_s == right.public_send(@association.association_primary_key).to_s
+    end
+
+    def prepend_selected_record?(query, records)
+      query.blank? && selected_record.present? && records.none? { |record| same_record?(record, selected_record) }
     end
   end
 end

@@ -6,6 +6,7 @@ module Admin
     include Resources::ExternalLinksHelper
     include Resources::FormHelper
     include Resources::NavigationHelper
+    include Resources::PaginationHelper
     include Resources::RelationHelper
     include Resources::StatusHelper
   end

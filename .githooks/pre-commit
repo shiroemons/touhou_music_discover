@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ "${SKIP_HOOKS:-}" = "1" ]; then
+  echo "SKIP_HOOKS=1: skipping pre-commit checks"
+  exit 0
+fi
+
+echo "Running RuboCop before commit..."
+RUBOCOP_CACHE_ROOT=tmp/rubocop_cache devbox run rubocop

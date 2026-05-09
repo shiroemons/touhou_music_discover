@@ -3,16 +3,16 @@
 module Admin
   module Resources
     module FormHelper
+      include AssociationFormHelper
+
       def admin_form_field(form, resource_config, record, attribute)
-        column = resource_config.column_for(attribute)
-        value = record.public_send(attribute) if record.respond_to?(attribute)
-        field_id = "#{resource_config.key}_#{attribute}"
+        field_id = admin_field_id(resource_config, attribute)
 
         content_tag(:div, class: 'admin-field') do
           safe_join(
             [
               form.label(attribute, resource_config.attribute_label(attribute), class: 'admin-label', for: field_id),
-              admin_input_for(form, resource_config, record, column, attribute, value, field_id)
+              admin_input_for(form, resource_config, record, attribute)
             ]
           )
         end
@@ -20,7 +20,11 @@ module Admin
 
       private
 
-      def admin_input_for(form, resource_config, record, column, attribute, value, field_id)
+      def admin_input_for(form, resource_config, record, attribute)
+        column = resource_config.column_for(attribute)
+        value = record.public_send(attribute) if record.respond_to?(attribute)
+        field_id = admin_field_id(resource_config, attribute)
+
         return admin_readonly_input(form, column, attribute, value, field_id) if record.persisted? && resource_config.readonly_attribute?(attribute)
 
         association = resource_config.form_association_for(attribute)
@@ -63,66 +67,8 @@ module Admin
         end
       end
 
-      def admin_association_select(form, resource_config, association, value, field_id)
-        selected_option = admin_association_selected_option(association, value)
-        placeholder = selected_option.present? ? t('admin.form.association_change_placeholder') : t('admin.form.association_search_placeholder')
-
-        tag.div(
-          class: 'admin-association-combobox',
-          data: {
-            controller: 'admin-association-select',
-            admin_association_select_url_value: admin_resource_association_options_path(resource_config.key, association.foreign_key)
-          }
-        ) do
-          safe_join(
-            [
-              form.hidden_field(association.foreign_key, value:, id: "#{field_id}_value", data: { admin_association_select_target: 'hidden' }),
-              tag.div(class: 'admin-association-combobox-frame') do
-                safe_join(
-                  [
-                    admin_icon(:search),
-                    tag.input(
-                      type: 'search',
-                      id: field_id,
-                      class: 'input admin-input admin-association-combobox-input',
-                      placeholder:,
-                      value: selected_option&.first,
-                      autocomplete: 'off',
-                      role: 'combobox',
-                      aria: { autocomplete: 'list', expanded: false, controls: "#{field_id}_listbox" },
-                      data: {
-                        admin_association_select_target: 'input',
-                        action: [
-                          'focus->admin-association-select#focus',
-                          'input->admin-association-select#filter',
-                          'keydown->admin-association-select#keydown',
-                          'blur->admin-association-select#blur'
-                        ].join(' ')
-                      }
-                    ),
-                    tag.div(
-                      nil,
-                      id: "#{field_id}_listbox",
-                      class: 'admin-association-listbox',
-                      role: 'listbox',
-                      hidden: true,
-                      data: { admin_association_select_target: 'listbox' }
-                    )
-                  ]
-                )
-              end
-            ]
-          )
-        end
-      end
-
-      def admin_association_selected_option(association, value)
-        return if value.blank?
-
-        record = association.klass.find_by(association.association_primary_key => value)
-        return if record.blank?
-
-        [Admin::AssociationOption.label(record), record.public_send(association.association_primary_key)]
+      def admin_field_id(resource_config, attribute)
+        "#{resource_config.key}_#{attribute}"
       end
     end
   end

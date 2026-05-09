@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+set -eu
+
+if [ "${SKIP_HOOKS:-}" = "1" ]; then
+  echo "SKIP_HOOKS=1: skipping pre-push checks"
+  exit 0
+fi
+
+echo "Running tests before push..."
+devbox run env PARALLEL_WORKERS=1 RAILS_ENV=test bin/rails db:test:prepare
+devbox run env PARALLEL_WORKERS=1 RAILS_ENV=test bin/rails test

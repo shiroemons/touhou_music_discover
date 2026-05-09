@@ -1023,5 +1023,6 @@ module Admin
         end
         .join(' OR ')
     end
+    private_class_method :associated_search_clause
   end
 end
