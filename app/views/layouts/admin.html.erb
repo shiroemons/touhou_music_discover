@@ -9,7 +9,7 @@
   <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
 </head>
 
-<body class="admin-shell">
+<body class="admin-shell" data-theme="corporate">
   <div class="admin-layout">
     <aside class="admin-sidebar">
       <div class="admin-brand">
@@ -24,7 +24,7 @@
 
       <nav class="admin-nav" aria-label="Admin navigation">
         <%= link_to admin_root_path, class: "admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
-          <i class="bi bi-speedometer2" aria-hidden="true"></i>
+          <%= admin_icon(:dashboard) %>
           <span><%= t('admin.dashboard.title') %></span>
         <% end %>
 
@@ -33,7 +33,7 @@
             <div class="admin-nav-heading"><%= t("admin.navigation.groups.#{group_key}") %></div>
             <% resources.each do |resource| %>
               <%= link_to admin_resources_path(resource.key), class: "admin-nav-link #{'active' if params[:resource] == resource.key}" do %>
-                <i class="bi bi-collection" aria-hidden="true"></i>
+                <%= admin_icon(:collection) %>
                 <span><%= resource.label %></span>
               <% end %>
             <% end %>
@@ -45,7 +45,7 @@
     <div class="admin-main">
       <main class="admin-content">
         <% flash.each do |type, message| %>
-          <% alert_class = type == 'notice' ? 'alert-success' : 'alert-danger' %>
+          <% alert_class = type == 'notice' ? 'alert-success' : 'alert-error' %>
           <div class="alert <%= alert_class %> admin-flash" role="alert"><%= message %></div>
         <% end %>
         <% if @spotify_rate_limit_status.present? %>
@@ -57,7 +57,7 @@
             data-countdown-expired-text-value="<%= t('admin.spotify_rate_limit.expired') %>"
           >
             <div class="admin-rate-limit-icon">
-              <i class="bi bi-spotify" aria-hidden="true"></i>
+              <%= admin_icon(:service) %>
             </div>
             <div class="admin-rate-limit-body">
               <span class="admin-rate-limit-kicker"><%= t('admin.spotify_rate_limit.kicker') %></span>

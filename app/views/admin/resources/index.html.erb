@@ -6,7 +6,7 @@
   </div>
   <div class="admin-page-actions">
     <%= link_to admin_new_resource_path(@resource_config.key), class: 'btn admin-btn-primary' do %>
-      <i class="bi bi-plus-lg" aria-hidden="true"></i>
+      <%= admin_icon(:plus) %>
       <span><%= t('admin.actions.new_record') %></span>
     <% end %>
   </div>
@@ -20,7 +20,7 @@
     <span><%= t('admin.actions.primary') %></span>
     <% collection_actions.each do |action| %>
       <%= link_to admin_resource_action_path(@resource_config.key, action.key), class: 'btn btn-sm admin-btn' do %>
-        <i class="bi bi-lightning-charge" aria-hidden="true"></i>
+        <%= admin_icon(:lightning) %>
         <span><%= action.label %></span>
       <% end %>
     <% end %>
@@ -34,11 +34,11 @@
       <span class="admin-filter-heading"><%= t('admin.filters.heading') %></span>
       <% @filters.each do |filter| %>
         <div class="admin-filter-field">
-          <%= form.label "filters_#{filter[:attribute]}", filter[:label], class: 'form-label' %>
+          <%= form.label "filters_#{filter[:attribute]}", filter[:label], class: 'admin-label' %>
           <%= form.select "filters[#{filter[:attribute]}]",
                           options_for_select((filter[:include_blank] ? [[t('admin.filters.all'), '']] : []) + filter[:options].map { |value, label| [label, value] }, @active_filters[filter[:attribute]]),
                           {},
-                          class: 'form-select',
+                          class: 'select admin-select',
                           id: "filters_#{filter[:attribute]}",
                           onchange: 'this.form.requestSubmit()' %>
         </div>
@@ -46,17 +46,17 @@
     </div>
   <% end %>
   <div class="admin-search-input">
-    <i class="bi bi-search" aria-hidden="true"></i>
-    <%= form.search_field :q, value: params[:q], placeholder: t('admin.search.placeholder'), class: 'form-control' %>
+    <%= admin_icon(:search) %>
+    <%= form.search_field :q, value: params[:q], placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
   </div>
   <div class="admin-search-actions">
     <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
-      <i class="bi bi-search" aria-hidden="true"></i>
+      <%= admin_icon(:search) %>
       <span><%= t('admin.search.submit') %></span>
     <% end %>
     <% if admin_active_filters?(@resource_config, @active_filters) %>
       <%= link_to admin_clear_filters_path(@resource_config), class: 'btn admin-btn' do %>
-        <i class="bi bi-x-lg" aria-hidden="true"></i>
+        <%= admin_icon(:x) %>
         <span><%= t('admin.search.clear') %></span>
       <% end %>
     <% end %>
@@ -67,11 +67,11 @@
   <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
   <div class="admin-view-mode-options">
     <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'true' } do %>
-      <i class="bi bi-list-ol" aria-hidden="true"></i>
+      <%= admin_icon(:list_ordered) %>
       <span><%= t('admin.scroll_mode.pagination') %></span>
     <% end %>
     <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'true' : nil } do %>
-      <i class="bi bi-arrow-down-circle" aria-hidden="true"></i>
+      <%= admin_icon(:arrow_down_circle) %>
       <span><%= t('admin.scroll_mode.infinite') %></span>
     <% end %>
   </div>
@@ -81,14 +81,14 @@
      data-controller="<%= 'admin-infinite-scroll' if admin_infinite_scroll? %>"
      data-admin-infinite-scroll-enabled-value="<%= admin_infinite_scroll? %>"
      data-admin-infinite-scroll-next-url-value="<%= admin_infinite_scroll_next_url(@pagy) %>">
-  <div class="table-responsive" data-admin-infinite-scroll-target="container">
-    <table class="table table-hover align-middle admin-table mb-0">
+  <div class="admin-table-scroll" data-admin-infinite-scroll-target="container">
+    <table class="table admin-table">
       <thead>
         <tr>
           <% @resource_config.index_attributes.each do |attribute| %>
             <th><%= @resource_config.index_attribute_label(attribute) %></th>
           <% end %>
-          <th class="text-end"><%= t('admin.table.actions') %></th>
+          <th class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
         </tr>
       </thead>
       <tbody data-admin-infinite-scroll-target="rows">
@@ -100,11 +100,11 @@
             <td>
               <div class="admin-row-actions">
                 <%= link_to admin_resource_path(@resource_config.key, record), class: 'btn btn-sm admin-btn', title: t('admin.actions.show') do %>
-                  <i class="bi bi-eye" aria-hidden="true"></i>
+                  <%= admin_icon(:eye) %>
                   <span><%= t('admin.actions.show') %></span>
                 <% end %>
                 <%= link_to admin_edit_resource_path(@resource_config.key, record), class: 'btn btn-sm admin-btn', title: t('admin.actions.edit') do %>
-                  <i class="bi bi-pencil" aria-hidden="true"></i>
+                  <%= admin_icon(:edit) %>
                   <span><%= t('admin.actions.edit') %></span>
                 <% end %>
               </div>
@@ -113,7 +113,7 @@
         <% end %>
         <% if @records.empty? %>
           <tr>
-            <td colspan="<%= @resource_config.index_attributes.size + 1 %>" class="text-center text-body-secondary py-5"><%= t('admin.table.empty') %></td>
+            <td colspan="<%= @resource_config.index_attributes.size + 1 %>" class="admin-table-empty"><%= t('admin.table.empty') %></td>
           </tr>
         <% end %>
       </tbody>

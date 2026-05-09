@@ -28,7 +28,7 @@
 
     <% if status != 'processing' %>
       <div class="admin-action-progress-result <%= status == 'completed' ? 'is-success' : 'is-error' %>">
-        <i class="bi <%= status == 'completed' ? 'bi-check-circle' : 'bi-exclamation-circle' %>" aria-hidden="true"></i>
+        <%= admin_icon(status == 'completed' ? :check_circle : :error_circle) %>
         <div class="admin-action-progress-result-content">
           <%= admin_action_result_message(action_run['result_message'].presence || action_run['message']) %>
         </div>
@@ -36,7 +36,7 @@
 
       <div class="admin-form-actions">
         <%= link_to action_run.fetch('redirect_path'), class: 'btn admin-btn-primary' do %>
-          <i class="bi bi-arrow-left" aria-hidden="true"></i>
+          <%= admin_icon(:arrow_left) %>
           <span><%= t('admin.actions.progress.return') %></span>
         <% end %>
       </div>

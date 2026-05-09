@@ -4,7 +4,7 @@
     <span>外部リンク</span>
     <% links.each do |link| %>
       <%= link_to link[:url], class: 'btn btn-sm admin-btn', target: '_blank', rel: 'noopener noreferrer' do %>
-        <i class="bi bi-box-arrow-up-right" aria-hidden="true"></i>
+        <%= admin_icon(:box_arrow_up_right) %>
         <span><%= "#{link[:label]}で開く" %></span>
       <% end %>
     <% end %>

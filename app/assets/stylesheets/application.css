@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+@plugin "daisyui" {
+  themes: corporate --default, dark --prefersdark;
+}
+
+@import "./spotify/playlists_progress.css";
+@import "./admin.css";

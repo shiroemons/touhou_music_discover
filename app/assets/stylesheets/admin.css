@@ -113,7 +113,8 @@
   text-decoration: none;
 }
 
-.admin-nav-link i {
+.admin-nav-link i,
+.admin-nav-link .admin-icon {
   color: rgba(255, 255, 255, 0.52);
   font-size: 1rem;
 }
@@ -129,7 +130,8 @@
   color: var(--admin-text);
 }
 
-.admin-nav-link.active i {
+.admin-nav-link.active i,
+.admin-nav-link.active .admin-icon {
   color: var(--admin-primary);
 }
 
@@ -284,7 +286,7 @@
   white-space: nowrap;
 }
 
-.admin-shell .btn i {
+.admin-icon {
   align-items: center;
   display: inline-flex;
   flex: 0 0 auto;
@@ -1066,7 +1068,7 @@
   position: relative;
 }
 
-.admin-search-input i {
+.admin-search-input .admin-icon {
   align-items: center;
   color: var(--admin-muted);
   display: inline-flex;
@@ -1081,16 +1083,17 @@
   z-index: 2;
 }
 
-.admin-shell .form-control,
-.admin-shell .form-select {
+.admin-shell .admin-input,
+.admin-shell .admin-select {
   border-color: var(--admin-border);
   border-radius: 8px;
   color: var(--admin-text);
   height: var(--admin-control-height);
   min-height: var(--admin-control-height);
+  width: 100%;
 }
 
-.admin-shell textarea.form-control {
+.admin-shell textarea.admin-input {
   height: auto;
 }
 
@@ -1102,7 +1105,7 @@
   height: var(--admin-control-height);
 }
 
-.admin-search-input .form-control {
+.admin-search-input .admin-input {
   padding-left: 2.25rem;
 }
 
@@ -1130,7 +1133,7 @@
   min-width: 10rem;
 }
 
-.admin-filter-field .form-label {
+.admin-filter-field .admin-label {
   color: var(--admin-muted);
   font-size: 0.76rem;
   font-weight: 800;
@@ -1181,8 +1184,8 @@
   color: #fff;
 }
 
-.admin-shell .form-control:focus,
-.admin-shell .form-select:focus {
+.admin-shell .admin-input:focus,
+.admin-shell .admin-select:focus {
   border-color: var(--admin-primary);
   box-shadow: 0 0 0 0.22rem rgba(31, 122, 104, 0.16);
 }
@@ -1191,8 +1194,9 @@
   overflow: hidden;
 }
 
-.admin-shell .table-responsive {
+.admin-shell .admin-table-scroll {
   max-height: calc(100vh - 17rem);
+  overflow: auto;
 }
 
 .admin-table {
@@ -1228,6 +1232,16 @@
 
 .admin-table th:last-child {
   z-index: 3;
+}
+
+.admin-table-actions-heading {
+  text-align: right;
+}
+
+.admin-table-empty {
+  color: var(--admin-muted);
+  padding-block: 3rem;
+  text-align: center;
 }
 
 .admin-row-actions {
@@ -1437,25 +1451,33 @@
   margin-bottom: 1rem;
 }
 
-.admin-field .form-label {
+.admin-field .admin-label {
   color: var(--admin-text);
   font-size: 0.86rem;
   font-weight: 800;
   margin: 0;
 }
 
-.admin-field textarea.form-control {
+.admin-field textarea.admin-input {
   min-height: 8rem;
 }
 
-.admin-field .form-check {
+.admin-field-help {
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+}
+
+.admin-monospace {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+}
+
+.admin-field .admin-toggle-field {
   align-items: center;
   display: flex;
   min-height: var(--admin-control-height);
-  padding-left: 2.8rem;
 }
 
-.admin-field .form-check-input {
+.admin-field .toggle {
   margin-top: 0;
 }
 
@@ -1463,6 +1485,16 @@
   border-top: 1px solid var(--admin-border);
   margin-top: 1.25rem;
   padding-top: 1rem;
+}
+
+.admin-form-error-title {
+  font-weight: 800;
+  margin: 0 0 0.25rem;
+}
+
+.admin-form-error-list {
+  margin: 0;
+  padding-left: 1.2rem;
 }
 
 .admin-action-warning {
@@ -1473,6 +1505,48 @@
   color: #59410a;
   display: flex;
   gap: 0.6rem;
+}
+
+.admin-confirm-modal {
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  box-shadow: var(--admin-shadow);
+  max-width: 34rem;
+}
+
+.admin-confirm-modal-header,
+.admin-confirm-modal-actions {
+  align-items: center;
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+}
+
+.admin-confirm-modal-header h2 {
+  font-size: 1.05rem;
+  font-weight: 850;
+  margin: 0;
+}
+
+.admin-icon-button {
+  color: var(--admin-text);
+  min-height: 2.15rem;
+  padding-inline: 0.55rem;
+}
+
+.admin-icon-button:hover,
+.admin-icon-button:focus-visible {
+  color: var(--admin-primary);
+}
+
+.admin-confirm-modal-body {
+  display: grid;
+  gap: 0.5rem;
+  padding-top: 1rem;
+}
+
+.admin-confirm-modal-body p {
+  margin: 0;
 }
 
 .admin-action-progress-card {
@@ -1629,6 +1703,10 @@
   padding: 0.9rem 1rem;
 }
 
+.admin-relation-title {
+  font-weight: 650;
+}
+
 .admin-relation-body {
   padding: 0.45rem;
 }
@@ -1652,20 +1730,6 @@
   max-height: 22rem;
   overflow: auto;
   padding: 0.8rem;
-}
-
-.admin-shell .pagination {
-  gap: 0.25rem;
-}
-
-.admin-shell .page-link {
-  border-color: var(--admin-border);
-  color: var(--admin-primary);
-}
-
-.admin-shell .active > .page-link {
-  background: var(--admin-primary);
-  border-color: var(--admin-primary);
 }
 
 .admin-pagination {

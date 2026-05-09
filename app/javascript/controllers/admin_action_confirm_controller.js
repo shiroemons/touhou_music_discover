@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import { Modal } from "bootstrap"
 
 export default class extends Controller {
   static targets = ["modal"]
@@ -8,27 +7,22 @@ export default class extends Controller {
     this.confirmed = false
   }
 
-  disconnect() {
-    this.modalInstance?.dispose()
-  }
-
   submit(event) {
     if (this.confirmed) {
       return
     }
 
     event.preventDefault()
-    this.modal.show()
+    this.modalTarget.showModal()
   }
 
   confirm() {
     this.confirmed = true
-    this.modal.hide()
+    this.modalTarget.close()
     this.element.requestSubmit()
   }
 
-  get modal() {
-    this.modalInstance ||= new Modal(this.modalTarget)
-    return this.modalInstance
+  cancel() {
+    this.modalTarget.close()
   }
 }

@@ -49,13 +49,13 @@ module Admin
               tag.div(class: 'admin-pagination-controls') do
                 safe_join(
                   [
-                    admin_pagination_link(1, t('admin.pagination.first'), disabled: pagy.page == 1, icon: 'bi-chevron-double-left'),
-                    admin_pagination_link(pagy.prev || 1, t('admin.pagination.prev'), disabled: pagy.prev.blank?, icon: 'bi-chevron-left'),
+                    admin_pagination_link(1, t('admin.pagination.first'), disabled: pagy.page == 1, icon: :chevron_double_left),
+                    admin_pagination_link(pagy.prev || 1, t('admin.pagination.prev'), disabled: pagy.prev.blank?, icon: :chevron_left),
                     tag.div(class: 'admin-pagination-pages') do
                       safe_join(admin_pagination_series(pagy).map { |item| admin_pagination_item(item, pagy.page) })
                     end,
-                    admin_pagination_link(pagy.next || pagy.pages, t('admin.pagination.next'), disabled: pagy.next.blank?, icon: 'bi-chevron-right'),
-                    admin_pagination_link(pagy.pages, t('admin.pagination.last'), disabled: pagy.page == pagy.pages, icon: 'bi-chevron-double-right')
+                    admin_pagination_link(pagy.next || pagy.pages, t('admin.pagination.next'), disabled: pagy.next.blank?, icon: :chevron_right),
+                    admin_pagination_link(pagy.pages, t('admin.pagination.last'), disabled: pagy.page == pagy.pages, icon: :chevron_double_right)
                   ]
                 )
               end
@@ -92,7 +92,7 @@ module Admin
         content = if icon
                     safe_join(
                       [
-                        tag.i(class: "bi #{icon}", aria: { hidden: true }),
+                        admin_icon(icon),
                         tag.span(label, class: 'visually-hidden')
                       ]
                     )

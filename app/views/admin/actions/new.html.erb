@@ -6,14 +6,14 @@
   </div>
   <div class="admin-page-actions">
     <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
-      <i class="bi bi-x-lg" aria-hidden="true"></i>
+      <%= admin_icon(:x) %>
       <span><%= t('admin.actions.cancel') %></span>
     <% end %>
   </div>
 </div>
 
 <div class="alert alert-warning admin-action-warning" role="alert">
-  <i class="bi bi-exclamation-triangle" aria-hidden="true"></i>
+  <%= admin_icon(:warning) %>
   <%= t('admin.actions.confirmation') %>
 </div>
 
@@ -42,54 +42,57 @@
                   } do |form| %>
       <% @action.fields.each do |field| %>
         <div class="admin-field">
-          <%= form.label field.name, field.name.to_s.humanize, class: 'form-label' %>
+          <%= form.label field.name, field.name.to_s.humanize, class: 'admin-label' %>
           <% if field.type == :file %>
-            <%= form.file_field field.name, class: 'form-control', required: field.required %>
+            <%= form.file_field field.name, class: 'file-input admin-input', required: field.required %>
           <% else %>
-            <%= form.text_field field.name, class: 'form-control', required: field.required %>
+            <%= form.text_field field.name, class: 'input admin-input', required: field.required %>
           <% end %>
           <% if field.help.present? %>
-            <div class="form-text"><%= field.help %></div>
+            <div class="admin-field-help"><%= field.help %></div>
           <% end %>
         </div>
       <% end %>
 
       <div class="admin-form-actions">
         <%= form.button type: :submit, class: 'btn admin-btn-danger' do %>
-          <i class="bi bi-play-fill" aria-hidden="true"></i>
+          <%= admin_icon(:play) %>
           <span><%= t('admin.actions.run') %></span>
         <% end %>
         <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
-          <i class="bi bi-x-lg" aria-hidden="true"></i>
+          <%= admin_icon(:x) %>
           <span><%= t('admin.actions.cancel') %></span>
         <% end %>
       </div>
 
-      <div class="modal fade" tabindex="-1" aria-labelledby="admin-action-confirm-title" aria-hidden="true" data-admin-action-confirm-target="modal">
-        <div class="modal-dialog modal-dialog-centered">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h2 class="modal-title fs-5" id="admin-action-confirm-title"><%= t('admin.actions.confirm_modal.title') %></h2>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<%= t('admin.actions.confirm_modal.close') %>"></button>
-            </div>
-            <div class="modal-body">
-              <p><%= t('admin.actions.confirmation') %></p>
-              <strong><%= @action.label %></strong>
-              <p class="admin-action-confirm-description"><%= @action.description %></p>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn admin-btn" data-bs-dismiss="modal">
-                <i class="bi bi-x-lg" aria-hidden="true"></i>
-                <span><%= t('admin.actions.cancel') %></span>
-              </button>
-              <button type="button" class="btn admin-btn-danger" data-action="admin-action-confirm#confirm">
-                <i class="bi bi-play-fill" aria-hidden="true"></i>
-                <span><%= t('admin.actions.run') %></span>
-              </button>
-            </div>
+      <dialog class="modal" aria-labelledby="admin-action-confirm-title" data-admin-action-confirm-target="modal">
+        <div class="modal-box admin-confirm-modal">
+          <div class="admin-confirm-modal-header">
+            <h2 id="admin-action-confirm-title"><%= t('admin.actions.confirm_modal.title') %></h2>
+            <button type="button" class="btn btn-ghost btn-sm admin-icon-button" data-action="admin-action-confirm#cancel" aria-label="<%= t('admin.actions.confirm_modal.close') %>">
+              <%= admin_icon(:x) %>
+            </button>
+          </div>
+          <div class="admin-confirm-modal-body">
+            <p><%= t('admin.actions.confirmation') %></p>
+            <strong><%= @action.label %></strong>
+            <p class="admin-action-confirm-description"><%= @action.description %></p>
+          </div>
+          <div class="modal-action admin-confirm-modal-actions">
+            <button type="button" class="btn admin-btn" data-action="admin-action-confirm#cancel">
+              <%= admin_icon(:x) %>
+              <span><%= t('admin.actions.cancel') %></span>
+            </button>
+            <button type="button" class="btn admin-btn-danger" data-action="admin-action-confirm#confirm">
+              <%= admin_icon(:play) %>
+              <span><%= t('admin.actions.run') %></span>
+            </button>
           </div>
         </div>
-      </div>
+        <form method="dialog" class="modal-backdrop">
+          <button><%= t('admin.actions.confirm_modal.close') %></button>
+        </form>
+      </dialog>
     <% end %>
   </div>
 </div>

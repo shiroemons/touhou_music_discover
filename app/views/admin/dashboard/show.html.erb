@@ -167,12 +167,12 @@
         <div class="admin-coverage-fetch-actions">
           <%= link_to admin_resource_action_path(coverage.fetch(:missing_track_action_resource_key), coverage.fetch(:missing_track_action_key)),
                       class: 'btn btn-sm admin-btn-primary' do %>
-            <i class="bi bi-cloud-arrow-down" aria-hidden="true"></i>
+            <%= admin_icon(:download) %>
             <span><%= t('admin.dashboard.fetch_missing_tracks') %></span>
           <% end %>
           <%= link_to admin_resources_path('tracks', filters: coverage.fetch(:missing_track_filter)),
                       class: 'btn btn-sm admin-btn' do %>
-            <i class="bi bi-list-ul" aria-hidden="true"></i>
+            <%= admin_icon(:list) %>
             <span><%= t('admin.dashboard.review_missing_tracks') %></span>
           <% end %>
         </div>
@@ -250,7 +250,7 @@
   <div class="admin-panel-header">
     <h2><%= t('admin.dashboard.playlist_sync') %></h2>
     <%= link_to admin_resources_path(playlist_sync.fetch(:resource_key)), class: 'btn btn-sm admin-btn' do %>
-      <i class="bi bi-list-ul" aria-hidden="true"></i>
+      <%= admin_icon(:list) %>
       <span><%= t('admin.actions.index') %></span>
     <% end %>
   </div>
@@ -295,11 +295,11 @@
               <div class="admin-resource-actions">
                 <span class="admin-count-pill"><%= number_with_delimiter(summary[:count]) %></span>
                 <%= link_to admin_resources_path(resource.key), class: 'btn btn-sm admin-btn', title: t('admin.actions.index') do %>
-                  <i class="bi bi-list-ul" aria-hidden="true"></i>
+                  <%= admin_icon(:list) %>
                   <span><%= t('admin.actions.index') %></span>
                 <% end %>
                 <%= link_to admin_new_resource_path(resource.key), class: 'btn btn-sm admin-btn-primary', title: t('admin.actions.new_record') do %>
-                  <i class="bi bi-plus-lg" aria-hidden="true"></i>
+                  <%= admin_icon(:plus) %>
                   <span><%= t('admin.actions.new_record') %></span>
                 <% end %>
               </div>

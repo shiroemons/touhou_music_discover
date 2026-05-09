@@ -20,9 +20,9 @@ module Admin
 
         case value
         when TrueClass
-          tag.span('true', class: 'badge text-bg-success')
+          tag.span('true', class: 'badge badge-success')
         when FalseClass
-          tag.span('false', class: 'badge text-bg-secondary')
+          tag.span('false', class: 'badge badge-neutral')
         when Hash, Array
           tag.pre(admin_pretty_json(value), class: 'admin-json-block')
         when Time, DateTime
@@ -76,7 +76,7 @@ module Admin
       end
 
       def admin_scalar_value(record, attribute, value)
-        return tag.span(t('admin.shared.blank'), class: 'text-body-secondary') if value.blank?
+        return tag.span(t('admin.shared.blank'), class: 'admin-muted-text') if value.blank?
         return link_to(value, value, target: '_blank', rel: 'noopener') if attribute.to_s.end_with?('url') && value.to_s.start_with?('http')
         return admin_value_with_thumbnail(record, value) if admin_thumbnail_attribute?(attribute) && admin_record_image_url(record).present?
 

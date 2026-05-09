@@ -6,7 +6,7 @@
   </div>
   <div class="admin-page-actions">
     <%= link_to @action_run.fetch('redirect_path'), class: 'btn admin-btn' do %>
-      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      <%= admin_icon(:arrow_left) %>
       <span><%= @record.present? ? t('admin.actions.back_to_show') : t('admin.actions.back_to_index') %></span>
     <% end %>
   </div>

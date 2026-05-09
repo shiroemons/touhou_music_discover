@@ -6,7 +6,7 @@
   </div>
   <div class="admin-page-actions">
     <%= link_to admin_resource_path(@resource_config.key, @record), class: 'btn admin-btn' do %>
-      <i class="bi bi-arrow-left" aria-hidden="true"></i>
+      <%= admin_icon(:arrow_left) %>
       <span><%= t('admin.actions.back_to_show') %></span>
     <% end %>
   </div>

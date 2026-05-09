@@ -5,6 +5,7 @@ module Admin
     include Pagy::Backend
 
     layout 'admin'
+    helper Admin::IconsHelper
     before_action :set_spotify_rate_limit_status
     around_action :switch_admin_locale
 

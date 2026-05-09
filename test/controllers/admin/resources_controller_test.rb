@@ -871,7 +871,7 @@ module Admin
       patch admin_resource_url('spotify_albums', spotify_album), params: { record: { payload: '{invalid' } }
 
       assert_response :unprocessable_content
-      assert_select '.alert-danger', /JSON/
+      assert_select '.alert-error', /JSON/
     end
 
     test 'formats payload as pretty json on detail page' do
@@ -915,7 +915,7 @@ module Admin
       assert_select '.admin-action-summary li', /未検出/
       assert_select 'form[data-controller=?][data-action=?]', 'admin-action-confirm', 'submit->admin-action-confirm#submit'
       assert_select '.modal[data-admin-action-confirm-target=?]', 'modal'
-      assert_select '.modal-title', text: 'アクションを実行しますか？'
+      assert_select '#admin-action-confirm-title', text: 'アクションを実行しますか？'
       assert_select '.admin-action-confirm-description', /原曲紐づけ済み/
       assert_select 'button[type=submit]', text: '実行'
       assert_select 'button[type=submit][data-turbo-confirm]', count: 0

@@ -4,14 +4,15 @@
   "dependencies": {
     "@hotwired/stimulus": "3.2.2",
     "@hotwired/turbo-rails": "8.0.16",
-    "@popperjs/core": "2.11.8",
-    "bootstrap": "5.3.7",
-    "bootstrap-icons": "1.13.1",
-    "esbuild": "0.27.3",
-    "sass": "1.89.2"
+    "esbuild": "0.27.3"
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds",
-    "build:css": "sass ./app/assets/stylesheets/application.bootstrap.scss ./app/assets/builds/application.css --no-source-map --load-path=node_modules"
+    "build:css": "tailwindcss -i ./app/assets/stylesheets/application.css -o ./app/assets/builds/application.css"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "4.3.0",
+    "daisyui": "5.5.19",
+    "tailwindcss": "4.3.0"
   }
 }

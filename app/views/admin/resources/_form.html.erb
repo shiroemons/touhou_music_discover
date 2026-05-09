@@ -1,11 +1,13 @@
 <% if record.errors.any? %>
-  <div class="alert alert-danger" role="alert">
-    <p class="fw-bold mb-1"><%= t('admin.form.save_failed') %></p>
-    <ul class="mb-0">
-      <% record.errors.full_messages.each do |message| %>
-        <li><%= message %></li>
-      <% end %>
-    </ul>
+  <div class="alert alert-error" role="alert">
+    <div>
+      <p class="admin-form-error-title"><%= t('admin.form.save_failed') %></p>
+      <ul class="admin-form-error-list">
+        <% record.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
   </div>
 <% end %>
 
@@ -18,11 +20,11 @@
 
       <div class="admin-form-actions">
         <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
-          <i class="bi bi-check-lg" aria-hidden="true"></i>
+          <%= admin_icon(:check) %>
           <span><%= t('admin.actions.save') %></span>
         <% end %>
         <%= link_to record.persisted? ? admin_resource_path(resource_config.key, record) : admin_resources_path(resource_config.key), class: 'btn admin-btn' do %>
-          <i class="bi bi-x-lg" aria-hidden="true"></i>
+          <%= admin_icon(:x) %>
           <span><%= t('admin.actions.cancel') %></span>
         <% end %>
       </div>

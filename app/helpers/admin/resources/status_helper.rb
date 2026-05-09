@@ -36,7 +36,7 @@ module Admin
 
       def admin_tracks_status_value(record)
         action_config = STREAMING_TRACK_STATUS_ACTIONS[record.class.name]
-        return tag.span(t('admin.shared.blank'), class: 'text-body-secondary') if action_config.blank?
+        return tag.span(t('admin.shared.blank'), class: 'admin-muted-text') if action_config.blank?
 
         track_count = record.public_send(action_config.fetch(:association)).size
         total_tracks = record.respond_to?(:total_tracks) ? record.total_tracks.to_i : 0
@@ -64,10 +64,10 @@ module Admin
 
       def admin_tracks_status_badge_class(status_key)
         {
-          missing: 'text-bg-danger',
-          incomplete: 'text-bg-warning',
-          complete: 'text-bg-success',
-          present: 'text-bg-secondary'
+          missing: 'badge-error',
+          incomplete: 'badge-warning',
+          complete: 'badge-success',
+          present: 'badge-neutral'
         }.fetch(status_key)
       end
 
@@ -78,7 +78,7 @@ module Admin
                 class: 'btn btn-sm admin-btn admin-track-status-action' do
           safe_join(
             [
-              tag.i(class: 'bi bi-lightning-charge', aria: { hidden: true }),
+              admin_icon(:lightning),
               tag.span(t('admin.track_status.action'))
             ]
           )
@@ -90,7 +90,7 @@ module Admin
           record.respond_to?(service.fetch(:association)) && record.public_send(service.fetch(:association)).empty?
         end
 
-        return tag.span(t('admin.streaming_status.complete'), class: 'badge text-bg-success') if missing_services.empty?
+        return tag.span(t('admin.streaming_status.complete'), class: 'badge badge-success') if missing_services.empty?
 
         tag.div(class: 'admin-streaming-status') do
           safe_join(
@@ -98,7 +98,7 @@ module Admin
               link_to(
                 t('admin.streaming_status.missing', service: service.fetch(:label)),
                 admin_resources_path('tracks', filters: { missing_streaming_track: key }),
-                class: 'badge text-bg-warning admin-streaming-status-badge'
+                class: 'badge badge-warning admin-streaming-status-badge'
               )
             end
           )
