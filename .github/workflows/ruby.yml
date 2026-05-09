@@ -33,7 +33,7 @@ jobs:
     # Ruby のセットアップ
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -49,7 +49,7 @@ jobs:
           echo "RAILS_ENV=test" >> $GITHUB_ENV
 
       - name: Cache vendor/bundle
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: cache_gem
         with:
           path: vendor/bundle
