@@ -8,7 +8,7 @@ module Admin
     before_action :set_relation_section
 
     def create
-      related_record = find_related_record!(params[:related_query].to_s.strip)
+      related_record = find_related_record!(params.expect(:related_query).to_s.strip)
       collection = @record.public_send(@relation_section.name)
 
       collection << related_record unless collection.exists?(related_record.id)
@@ -19,7 +19,7 @@ module Admin
     end
 
     def destroy
-      related_record = @relation_section.reflection.klass.find(params[:related_id])
+      related_record = @relation_section.reflection.klass.find(params.expect(:related_id))
 
       @record.public_send(@relation_section.name).delete(related_record)
       redirect_to admin_resource_path(@resource_config.key, @record), notice: t('admin.relations.destroy_success')
@@ -32,15 +32,16 @@ module Admin
     end
 
     def set_record
-      @record = @resource_config.model_class.find(params[:id])
+      @record = @resource_config.model_class.find(params.expect(:id))
     end
 
     def set_relation_section
-      reflection = @resource_config.model_class.reflect_on_association(params[:association].to_sym)
-      raise ActiveRecord::RecordNotFound, "Unknown relation: #{params[:association]}" if reflection.blank?
+      association = params.expect(:association)
+      reflection = @resource_config.model_class.reflect_on_association(association.to_sym)
+      raise ActiveRecord::RecordNotFound, "Unknown relation: #{association}" if reflection.blank?
 
       @relation_section = Admin::RelationSection.new(resource_config: @resource_config, record: @record, reflection:)
-      raise ActiveRecord::RecordNotFound, "Relation is not editable: #{params[:association]}" unless @relation_section.editable?
+      raise ActiveRecord::RecordNotFound, "Relation is not editable: #{association}" unless @relation_section.editable?
     end
 
     def find_related_record!(query)

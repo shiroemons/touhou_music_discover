@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
 module RootHelper
-  include Pagy::Frontend
+  def pagy_nav(pagy)
+    pagy.series_nav
+  end
 end

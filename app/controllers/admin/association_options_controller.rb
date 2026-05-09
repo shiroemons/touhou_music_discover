@@ -27,7 +27,7 @@ module Admin
 
     def association_records
       scope = association_scope
-      query = params[:q].to_s.strip
+      query = params.fetch(:q, nil).to_s.strip
       scope = search_association_scope(scope, query) if query.present?
 
       records = scope

@@ -24,7 +24,7 @@ module Admin
                 safe_join(
                   [
                     admin_pagination_link(1, t('admin.pagination.first'), disabled: pagy.page == 1, icon: :chevron_double_left),
-                    admin_pagination_link(pagy.prev || 1, t('admin.pagination.prev'), disabled: pagy.prev.blank?, icon: :chevron_left),
+                    admin_pagination_link(pagy.previous || 1, t('admin.pagination.prev'), disabled: pagy.previous.blank?, icon: :chevron_left),
                     tag.div(class: 'admin-pagination-pages') do
                       safe_join(admin_pagination_series(pagy).map { |item| admin_pagination_item(item, pagy.page) })
                     end,
@@ -42,7 +42,7 @@ module Admin
 
       def admin_pagination_series(pagy)
         pages = ([1, pagy.pages] + ((pagy.page - 2)..(pagy.page + 2)).to_a)
-                .select { |page| page.between?(1, pagy.pages) }
+                .grep(1..pagy.pages)
                 .uniq
                 .sort
 

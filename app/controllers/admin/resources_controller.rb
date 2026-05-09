@@ -8,12 +8,12 @@ module Admin
 
     def index
       scope = @resource_config.apply_to(@resource_config.model_class.all)
-      scope = @resource_config.search(scope, params[:q].to_s.strip)
+      scope = @resource_config.search(scope, params.fetch(:q, nil).to_s.strip)
       @active_filters = @resource_config.normalize_filters(params.fetch(:filters, {}))
       @filters = @resource_config.filters
       scope = @resource_config.filter(scope, @active_filters)
       scope = @resource_config.sort(scope, params[:sort], params[:direction])
-      @pagy, @records = pagy(scope, items: Admin::Resource::DEFAULT_ITEMS)
+      @pagy, @records = pagy(:offset, scope, limit: Admin::Resource::DEFAULT_ITEMS)
     end
 
     def show; end
@@ -59,7 +59,7 @@ module Admin
     end
 
     def set_record
-      @record = @resource_config.model_class.find(params[:id])
+      @record = @resource_config.model_class.find(params.expect(:id))
     end
 
     def assign_resource_params

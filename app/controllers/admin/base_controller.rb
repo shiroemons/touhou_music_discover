@@ -2,7 +2,7 @@
 
 module Admin
   class BaseController < ApplicationController
-    include Pagy::Backend
+    include Pagy::Method
 
     layout 'admin'
     helper Admin::IconsHelper
