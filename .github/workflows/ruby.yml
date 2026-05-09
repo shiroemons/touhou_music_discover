@@ -39,6 +39,7 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: .ruby-version
+          bundler-cache: true
 
       # 環境変数の設定
       - name: Set environment variables
@@ -47,20 +48,6 @@ jobs:
           echo "PG_USER=postgres" >> $GITHUB_ENV
           echo "PG_PASSWORD=password" >> $GITHUB_ENV
           echo "RAILS_ENV=test" >> $GITHUB_ENV
-
-      - name: Cache vendor/bundle
-        uses: actions/cache@v5
-        id: cache_gem
-        with:
-          path: vendor/bundle
-          key: v1-gem-${{ runner.os }}-${{ github.sha }}
-          restore-keys: |
-            v1-gem-${{ runner.os }}-
-
-      - name: Build and setup
-        run: |
-          gem install bundler --no-document -v $(grep "BUNDLED WITH" -1 Gemfile.lock | tail -n 1)
-          bundle install --jobs 4 --retry 3
 
       - name: Database setup
         run: |
