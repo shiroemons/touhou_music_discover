@@ -35,6 +35,7 @@
     "scripts": {
       "setup":           "bundle config unset bin && bundle install --jobs=4 && yarn install",
       "server":          "rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0",
+      "jobs":            "bin/jobs start",
       "console":         "bin/rails console",
       "console:sandbox": "bin/rails console --sandbox",
       "bundle":          "bundle config unset bin && bundle config set clean true && bundle install --jobs=4",

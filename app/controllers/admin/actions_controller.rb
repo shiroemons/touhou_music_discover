@@ -26,7 +26,7 @@ module Admin
         action_label: @action.label,
         redirect_path:
       )
-      start_action_thread(run_id:, fields:)
+      enqueue_action_job(run_id:, fields:)
 
       redirect_to action_run_path(run_id)
     end
@@ -77,33 +77,21 @@ module Admin
         path: path.to_s,
         content_type: uploaded_file.content_type,
         original_filename: uploaded_file.original_filename
-      )
+      ).as_job_argument
     end
 
-    def start_action_thread(run_id:, fields:)
-      resource_key = @resource_config.key
-      action_key = @action.key
-      record_id = @record_id
-
-      Thread.new do
-        Rails.application.executor.wrap do
-          progress = Admin::ActionProgress.new(run_id)
-          Admin::ActionProgress.with(progress) do
-            resource_config = Admin::Resource.find!(resource_key)
-            action = resource_config.action_for!(action_key)
-            record = resource_config.model_class.find(record_id) if record_id.present?
-            result = action.run(fields:, record:)
-            Admin::ActionRun.complete!(run_id, result)
-          end
-        rescue StandardError => e
-          Rails.logger.error("[Admin::ActionsController] #{action_key} failed in background: #{e.class} - #{e.message}")
-          Rails.logger.error(e.backtrace.join("\n")) if e.backtrace.present?
-          Admin::ActionRun.fail!(run_id, e)
-        ensure
-          cleanup_uploaded_files(run_id)
-          ActiveRecord::Base.connection_pool.release_connection
-        end
-      end
+    def enqueue_action_job(run_id:, fields:)
+      Admin::ActionJob.perform_later(
+        run_id:,
+        resource_key: @resource_config.key,
+        action_key: @action.key,
+        fields:,
+        record_id: @record_id
+      )
+    rescue SolidQueue::Job::EnqueueError => e
+      Rails.logger.error("[Admin::ActionsController] #{@action.key} enqueue failed: #{e.class} - #{e.message}")
+      Admin::ActionRun.fail!(run_id, e)
+      cleanup_uploaded_files(run_id)
     end
 
     def cleanup_uploaded_files(run_id)
