@@ -5,6 +5,7 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: 'dashboard#show'
+    get 'original_song_missing_albums', to: 'original_song_missing_albums#index', as: :original_song_missing_albums
     get 'track_original_song_assignments', to: 'original_song_assignments#index', as: :track_original_song_assignments
     patch 'track_original_song_assignments', to: 'original_song_assignments#update'
     get 'track_original_song_assignments/options', to: 'original_song_assignments#options', as: :track_original_song_assignment_options

@@ -180,6 +180,15 @@ ja:
       no_assignments: "更新対象がありません。"
       track_not_found: "楽曲が見つかりません: %{id}"
       original_songs_not_found: "%{isrc}: 原曲が見つかりません: %{codes}"
+    original_song_missing_albums:
+      title: "原曲紐づけが必要なアルバム"
+      nav_label: "原曲未設定アルバム"
+      description: "原曲が未設定の楽曲を含むアルバムを一覧できます。コピーすると、サークルとアルバム名をタブ区切りで取得できます。"
+      album: "アルバム"
+      missing_tracks_count: "未設定楽曲数"
+      copy: "サークル/アルバムをコピー"
+      assign: "紐づけ"
+      empty: "原曲紐づけが必要なアルバムはありません。"
     relations:
       heading: "関連"
       empty: "関連レコードはありません。"

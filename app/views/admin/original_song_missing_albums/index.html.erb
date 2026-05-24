@@ -1,0 +1,103 @@
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= t('admin.resources.albums.label') %></span>
+    <h1><%= t('admin.original_song_missing_albums.title') %></h1>
+    <p><%= t('admin.original_song_missing_albums.description') %></p>
+  </div>
+  <div class="admin-page-actions">
+    <%= link_to admin_resources_path('albums'), class: 'btn admin-btn' do %>
+      <%= admin_icon(:arrow_left) %>
+      <span><%= t('admin.actions.back_to_index') %></span>
+    <% end %>
+    <%= link_to admin_track_original_song_assignments_path, class: 'btn admin-btn' do %>
+      <%= admin_icon(:list_ordered) %>
+      <span><%= t('admin.original_song_assignments.nav_label') %></span>
+    <% end %>
+  </div>
+</div>
+
+<%= form_with url: admin_original_song_missing_albums_path, method: :get, class: 'admin-search-form admin-original-song-missing-albums-search-form' do |form| %>
+  <div class="admin-list-toolbar">
+    <div class="admin-list-controls">
+      <div class="admin-search-row">
+        <div class="admin-search-input">
+          <%= admin_icon(:search) %>
+          <%= form.search_field :q, value: @query, placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
+        </div>
+        <div class="admin-search-actions">
+          <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+            <%= admin_icon(:search) %>
+            <span><%= t('admin.search.submit') %></span>
+          <% end %>
+          <% if @query.present? %>
+            <%= link_to admin_original_song_missing_albums_path, class: 'btn admin-btn' do %>
+              <%= admin_icon(:x) %>
+              <span><%= t('admin.search.clear') %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <div class="admin-record-count">
+        <span><%= t('admin.table.current_results') %></span>
+        <strong><%= admin_records_summary(@pagy) %></strong>
+      </div>
+      <div class="admin-original-song-missing-albums-copy"
+           data-controller="admin-clipboard">
+        <textarea class="visually-hidden" data-admin-clipboard-target="source"><%= @copy_text %></textarea>
+        <%= button_tag type: :button,
+                       class: 'btn admin-btn',
+                       disabled: @copy_text.blank?,
+                       data: { action: 'admin-clipboard#copy' } do %>
+          <%= admin_icon(:copy) %>
+          <span><%= t('admin.original_song_missing_albums.copy') %></span>
+        <% end %>
+        <span class="admin-copy-status" data-admin-clipboard-target="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<div class="admin-panel admin-table-panel admin-original-song-missing-albums-panel">
+  <div class="admin-table-scroll">
+    <table class="table admin-table admin-original-song-missing-albums-table">
+      <thead>
+        <tr>
+          <th><%= t('admin.attributes.common.circle_name') %></th>
+          <th><%= t('admin.original_song_missing_albums.album') %></th>
+          <th><%= t('admin.attributes.common.jan_code') %></th>
+          <th><%= t('admin.original_song_missing_albums.missing_tracks_count') %></th>
+          <th class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @albums.each do |album| %>
+          <tr>
+            <td><%= album.circle_name.presence || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %></td>
+            <td><%= album_name(album) %></td>
+            <td><%= album.jan_code %></td>
+            <td><%= @missing_track_counts.fetch(album.jan_code, 0) %></td>
+            <td class="admin-table-actions-cell">
+              <div class="admin-row-actions">
+                <%= link_to admin_track_original_song_assignments_path(q: album.jan_code), class: 'btn btn-sm admin-btn' do %>
+                  <%= admin_icon(:list_ordered) %>
+                  <span><%= t('admin.original_song_missing_albums.assign') %></span>
+                <% end %>
+                <%= link_to admin_resource_path('albums', album), class: 'btn btn-sm admin-btn', title: t('admin.actions.show') do %>
+                  <%= admin_icon(:eye) %>
+                  <span class="visually-hidden"><%= t('admin.actions.show') %></span>
+                <% end %>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+        <% if @albums.empty? %>
+          <tr>
+            <td colspan="5" class="admin-table-empty"><%= t('admin.original_song_missing_albums.empty') %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%= admin_pagination(@pagy) %>

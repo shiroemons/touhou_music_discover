@@ -22,6 +22,12 @@
         <span><%= t('admin.original_song_assignments.nav_label') %></span>
       <% end %>
     <% end %>
+    <% if @resource_config.key == 'albums' %>
+      <%= link_to admin_original_song_missing_albums_path, class: 'btn btn-sm admin-btn' do %>
+        <%= admin_icon(:list_ordered) %>
+        <span><%= t('admin.original_song_missing_albums.nav_label') %></span>
+      <% end %>
+    <% end %>
     <%= link_to admin_new_resource_path(@resource_config.key), class: 'btn admin-btn-primary' do %>
       <%= admin_icon(:plus) %>
       <span class="admin-resource-index-new-label"><%= t('admin.actions.new_record') %></span>

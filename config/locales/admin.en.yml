@@ -145,6 +145,15 @@ en:
       no_assignments: "There are no assignments to update."
       track_not_found: "Track was not found: %{id}"
       original_songs_not_found: "%{isrc}: Original songs were not found: %{codes}"
+    original_song_missing_albums:
+      title: "Albums Needing Original Song Assignments"
+      nav_label: "Albums missing original songs"
+      description: "Review albums that include tracks without original songs. Copy outputs tab-separated circle and album names."
+      album: "Album"
+      missing_tracks_count: "Missing tracks"
+      copy: "Copy circle/album"
+      assign: "Assign"
+      empty: "No albums need original song assignments."
     relations:
       heading: "Relations"
       empty: "No related records."

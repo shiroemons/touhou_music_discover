@@ -1442,6 +1442,31 @@
   position: static;
 }
 
+.admin-original-song-missing-albums-search-form .admin-list-controls {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(18rem, 36rem) auto auto;
+}
+
+.admin-original-song-missing-albums-copy {
+  align-items: center;
+  display: flex;
+  gap: 0.55rem;
+  justify-self: end;
+}
+
+.admin-original-song-missing-albums-table {
+  min-width: 64rem;
+}
+
+.admin-copy-status {
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+  min-width: 7rem;
+}
+
 .admin-original-song-picker {
   display: grid;
   gap: 0.5rem;
@@ -4458,11 +4483,13 @@ html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
   }
 
   .admin-original-song-assignment-search-form .admin-filter-bar,
-  .admin-original-song-assignment-search-form .admin-list-controls {
+  .admin-original-song-assignment-search-form .admin-list-controls,
+  .admin-original-song-missing-albums-search-form .admin-list-controls {
     grid-template-columns: 1fr;
   }
 
-  .admin-original-song-assignment-search-form .admin-record-count {
+  .admin-original-song-assignment-search-form .admin-record-count,
+  .admin-original-song-missing-albums-copy {
     justify-self: stretch;
   }
 
