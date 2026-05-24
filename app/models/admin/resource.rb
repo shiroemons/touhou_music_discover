@@ -587,9 +587,9 @@ module Admin
                 ],
                 apply: lambda { |scope, value|
                   duplicate_album_ids = SpotifyAlbum.unscoped
-                                        .select(:album_id)
-                                        .group(:album_id)
-                                        .having('COUNT(*) > 1')
+                                                    .select(:album_id)
+                                                    .group(:album_id)
+                                                    .having('COUNT(*) > 1')
 
                   case value
                   when 'duplicated_active'
