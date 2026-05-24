@@ -5,6 +5,7 @@ module Admin
     before_action :authenticate_admin_if_configured
 
     STATUS_OPTIONS = %w[missing present all].freeze
+    PASTED_ORIGINAL_SONG_DELIMITER_PATTERN = %r{[,、，/／]+}
 
     def index
       @track_resource = Admin::Resource.find!('tracks')
@@ -179,9 +180,55 @@ module Admin
     end
 
     def pasted_original_song_queries
-      params.fetch(:text, '').to_s.split(%r{[,\n\r、，/／]+}).map do |query|
-        normalize_pasted_original_song_query(query)
+      params.fetch(:text, '').to_s.each_line.flat_map do |line|
+        pasted_original_song_queries_from_line(line)
       end.compact_blank.uniq.first(30)
+    end
+
+    def pasted_original_song_queries_from_line(line)
+      query = normalize_pasted_original_song_query(line)
+      return [] if query.blank?
+
+      split_pasted_original_song_query(query)
+    end
+
+    def split_pasted_original_song_query(query)
+      return [query] if candidate_original_songs(query).exists?
+
+      fragments = query.split(PASTED_ORIGINAL_SONG_DELIMITER_PATTERN)
+      return [query] if fragments.map { |fragment| normalize_pasted_original_song_query(fragment) }.compact_blank.one?
+
+      delimiters = query.scan(PASTED_ORIGINAL_SONG_DELIMITER_PATTERN)
+      queries = []
+      fragment_index = 0
+      while fragment_index < fragments.length
+        match = longest_pasted_original_song_query_match(fragments, delimiters, fragment_index)
+        if match.present?
+          queries << match.fetch(:query)
+          fragment_index = match.fetch(:next_index)
+        else
+          queries << normalize_pasted_original_song_query(fragments.fetch(fragment_index))
+          fragment_index += 1
+        end
+      end
+      queries
+    end
+
+    def longest_pasted_original_song_query_match(fragments, delimiters, start_index)
+      (fragments.length - 1).downto(start_index) do |end_index|
+        query = joined_pasted_original_song_query(fragments, delimiters, start_index, end_index)
+        return { query:, next_index: end_index + 1 } if candidate_original_songs(query).exists?
+      end
+
+      nil
+    end
+
+    def joined_pasted_original_song_query(fragments, delimiters, start_index, end_index)
+      query = (start_index..end_index).each_with_object(+'') do |fragment_index, joined_query|
+        joined_query << delimiters.fetch(fragment_index - 1, '') if fragment_index > start_index
+        joined_query << fragments.fetch(fragment_index)
+      end
+      normalize_pasted_original_song_query(query)
     end
 
     def normalize_pasted_original_song_query(query)

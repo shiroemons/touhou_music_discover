@@ -127,6 +127,39 @@ module Admin
       assert_equal [[first_song.code], [second_song.code], [third_song.code]], resolution_option_values
     end
 
+    test 'does not split a pasted original song title that contains common delimiters' do
+      comma_song = create_original_song(code: 'ASSIGN-PASTE-DELIMITER-001', title: 'Paste、Delimiter Song')
+      slash_song = create_original_song(code: 'ASSIGN-PASTE-DELIMITER-002', title: 'Paste／Delimiter Song')
+      ascii_comma_song = create_original_song(code: 'ASSIGN-PASTE-DELIMITER-003', title: 'Paste, Delimiter Song')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: "#{comma_song.title}\n#{slash_song.title}\n#{ascii_comma_song.title}" }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+      assert_equal [comma_song.title, slash_song.title, ascii_comma_song.title], resolution_queries
+      assert_equal [[comma_song.code], [slash_song.code], [ascii_comma_song.code]], resolution_option_values
+    end
+
+    test 'splits pasted songs while preserving delimiters inside known titles' do
+      comma_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-001', title: 'Paste、Known Song')
+      slash_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-002', title: 'Paste／Known Song')
+      ascii_comma_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-003', title: 'Paste, Known Song')
+      plain_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-004', title: 'Paste Plain Song')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: "#{comma_song.title}、#{slash_song.title}／#{ascii_comma_song.title},#{plain_song.title}" }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+      assert_equal [comma_song.title, slash_song.title, ascii_comma_song.title, plain_song.title], resolution_queries
+      assert_equal [[comma_song.code], [slash_song.code], [ascii_comma_song.code], [plain_song.code]], resolution_option_values
+    end
+
     test 'returns multiple choices for ambiguous pasted original song titles' do
       first_song = create_original_song(code: 'ASSIGN-AMBIGUOUS-001', title: 'Ambiguous Paste Song')
       second_song = create_original_song(code: 'ASSIGN-AMBIGUOUS-002', title: 'Ambiguous Paste Song')
