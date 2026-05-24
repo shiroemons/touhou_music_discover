@@ -161,6 +161,25 @@ ja:
       association_change_placeholder: "変更する場合は検索"
     confirm:
       destroy: "削除しますか？"
+    original_song_assignments:
+      title: "楽曲の原曲紐づけ"
+      nav_label: "原曲を表で紐づけ"
+      description: "楽曲を一覧しながら、原曲を検索して複数紐づけできます。初期表示は原曲未設定の楽曲です。"
+      table_heading: "紐づけ対象楽曲"
+      status_label: "対象"
+      status:
+        missing: "原曲未設定"
+        present: "原曲設定済み"
+        all: "すべて"
+      original_songs: "原曲"
+      show_identifiers: "JAN/ISRCを表示"
+      search_placeholder: "原曲コード・曲名・原作で検索"
+      save: "保存"
+      empty: "対象の楽曲はありません。"
+      update_success: "原曲の紐づけを更新しました。"
+      no_assignments: "更新対象がありません。"
+      track_not_found: "楽曲が見つかりません: %{id}"
+      original_songs_not_found: "%{isrc}: 原曲が見つかりません: %{codes}"
     relations:
       heading: "関連"
       empty: "関連レコードはありません。"

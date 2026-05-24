@@ -9,6 +9,7 @@ import AdminActionProgressController from "./admin_action_progress_controller"
 import AdminActionConfirmController from "./admin_action_confirm_controller"
 import AdminClickableRowController from "./admin_clickable_row_controller"
 import AdminInfiniteScrollController from "./admin_infinite_scroll_controller"
+import AdminOriginalSongPickerController from "./admin_original_song_picker_controller"
 import AdminThemeController from "./admin_theme_controller"
 import CountdownController from "./countdown_controller"
 import HelloController from "./hello_controller"
@@ -20,6 +21,7 @@ application.register("admin-action-progress", AdminActionProgressController)
 application.register("admin-action-confirm", AdminActionConfirmController)
 application.register("admin-clickable-row", AdminClickableRowController)
 application.register("admin-infinite-scroll", AdminInfiniteScrollController)
+application.register("admin-original-song-picker", AdminOriginalSongPickerController)
 application.register("admin-theme", AdminThemeController)
 application.register("countdown", CountdownController)
 application.register("hello", HelloController)
