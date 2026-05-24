@@ -1,0 +1,142 @@
+<div class="admin-page-header">
+  <div class="admin-page-title">
+    <span class="admin-kicker"><%= t('admin.resources.tracks.label') %></span>
+    <h1><%= t('admin.original_song_assignments.title') %></h1>
+    <p><%= t('admin.original_song_assignments.description') %></p>
+  </div>
+  <div class="admin-page-actions">
+    <%= link_to admin_resources_path('tracks'), class: 'btn admin-btn' do %>
+      <%= admin_icon(:arrow_left) %>
+      <span><%= t('admin.actions.back_to_index') %></span>
+    <% end %>
+  </div>
+</div>
+
+<%= form_with url: admin_track_original_song_assignments_path,
+              method: :get,
+              class: 'admin-search-form admin-original-song-assignment-search-form' do |form| %>
+  <div class="admin-list-toolbar">
+    <div class="admin-filter-bar">
+      <div class="admin-filter-field">
+        <%= form.label :status, t('admin.original_song_assignments.status_label'), class: 'admin-label' %>
+        <%= form.select :status,
+                        options_for_select([
+                          [t('admin.original_song_assignments.status.missing'), 'missing'],
+                          [t('admin.original_song_assignments.status.present'), 'present'],
+                          [t('admin.original_song_assignments.status.all'), 'all']
+                        ], @status),
+                        {},
+                        class: 'select admin-select',
+                        onchange: 'this.form.requestSubmit()' %>
+      </div>
+      <label class="admin-checkbox-row">
+        <%= check_box_tag :show_identifiers, '1', @show_identifiers, onchange: 'this.form.requestSubmit()' %>
+        <span><%= t('admin.original_song_assignments.show_identifiers') %></span>
+      </label>
+    </div>
+
+    <div class="admin-list-controls">
+      <div class="admin-search-row">
+        <div class="admin-search-input">
+          <%= admin_icon(:search) %>
+          <%= form.search_field :q, value: @query, placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
+        </div>
+        <div class="admin-search-actions">
+          <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+            <%= admin_icon(:search) %>
+            <span><%= t('admin.search.submit') %></span>
+          <% end %>
+          <% if @query.present? || @status != 'missing' || @show_identifiers %>
+            <%= link_to admin_track_original_song_assignments_path, class: 'btn admin-btn' do %>
+              <%= admin_icon(:x) %>
+              <span><%= t('admin.search.clear') %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <div class="admin-record-count">
+        <span><%= t('admin.table.current_results') %></span>
+        <strong><%= admin_records_summary(@pagy) %></strong>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<%= form_with url: admin_track_original_song_assignments_path(q: @query, status: @status, show_identifiers: (@show_identifiers ? '1' : nil)),
+              method: :patch,
+              class: 'admin-original-song-assignment-form' do %>
+  <div class="admin-panel admin-table-panel admin-original-song-assignment-panel">
+    <div class="admin-panel-header">
+      <h2><%= t('admin.original_song_assignments.table_heading') %></h2>
+      <%= button_tag type: :submit, class: 'btn admin-btn-primary' do %>
+        <%= admin_icon(:check) %>
+        <span><%= t('admin.original_song_assignments.save') %></span>
+      <% end %>
+    </div>
+    <div class="admin-table-scroll">
+      <table class="table admin-table admin-original-song-assignment-table">
+        <thead>
+          <tr>
+            <th><%= t('admin.attributes.common.circle_name') %></th>
+            <th><%= t('admin.attributes.common.album_name') %></th>
+            <th><%= t('admin.attributes.common.name') %></th>
+            <% if @show_identifiers %>
+              <th><%= t('admin.attributes.common.jan_code') %></th>
+              <th><%= t('admin.attributes.common.isrc') %></th>
+            <% end %>
+            <th><%= t('admin.original_song_assignments.original_songs') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @tracks.each do |track| %>
+            <% selected_original_songs = track.original_songs.sort_by { |song| [song.original_code, song.track_number, song.code] } %>
+            <% selected_options = selected_original_songs.map { |song| { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } } %>
+            <tr>
+              <td><%= admin_display_value(@track_resource, track, :circle_name) %></td>
+              <td><%= admin_display_value(@track_resource, track, :album_name) %></td>
+              <td><%= admin_display_value(@track_resource, track, :name) %></td>
+              <% if @show_identifiers %>
+                <td><%= track.jan_code %></td>
+                <td><%= track.isrc %></td>
+              <% end %>
+              <td class="admin-original-song-picker-cell">
+                <div class="admin-original-song-picker"
+                     data-controller="admin-original-song-picker"
+                     data-admin-original-song-picker-url-value="<%= admin_track_original_song_assignment_options_path %>"
+                     data-admin-original-song-picker-resolve-url-value="<%= admin_resolve_track_original_song_assignments_path %>"
+                     data-admin-original-song-picker-initial-options-value="<%= json_escape(selected_options.to_json) %>">
+                  <%= hidden_field_tag "assignments[#{track.id}][original_song_codes]",
+                                       selected_original_songs.map(&:code).join(','),
+                                       data: { admin_original_song_picker_target: 'hidden' } %>
+                  <div class="admin-original-song-selected" data-admin-original-song-picker-target="selected"></div>
+                  <div class="admin-original-song-search">
+                    <%= admin_icon(:search) %>
+                    <input type="search"
+                           class="input admin-input admin-original-song-search-input"
+                           placeholder="<%= t('admin.original_song_assignments.search_placeholder') %>"
+                           autocomplete="off"
+                           role="combobox"
+                           aria-expanded="false"
+                           data-admin-original-song-picker-target="input"
+                           data-action="focus->admin-original-song-picker#focus input->admin-original-song-picker#filter keydown->admin-original-song-picker#keydown paste->admin-original-song-picker#paste blur->admin-original-song-picker#blur">
+                    <div class="admin-original-song-listbox"
+                         role="listbox"
+                         hidden
+                         data-admin-original-song-picker-target="listbox"></div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+          <% if @tracks.empty? %>
+            <tr>
+              <td colspan="<%= @show_identifiers ? 6 : 4 %>" class="admin-table-empty"><%= t('admin.original_song_assignments.empty') %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% end %>
+
+<%= admin_pagination(@pagy) %>

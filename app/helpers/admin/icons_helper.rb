@@ -15,6 +15,7 @@ module Admin
       chevron_right: ['M9 18l6-6-6-6'],
       chevron_up: ['M18 15l-6-6-6 6'],
       collection: ['M4 6h16', 'M4 12h16', 'M4 18h16'],
+      copy: ['M8 8h11a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z', 'M4 16H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h11a1 1 0 0 1 1 1v1'],
       dashboard: ['M4 13a8 8 0 1 1 16 0', 'M12 13l4-4', 'M5 19h14'],
       download: ['M12 3v12', 'M7 10l5 5 5-5', 'M5 21h14'],
       edit: ['M12 20h9', 'M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z'],

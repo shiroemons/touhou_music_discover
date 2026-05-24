@@ -5,6 +5,12 @@ Rails.application.routes.draw do
 
   namespace :admin do
     root to: 'dashboard#show'
+    get 'original_song_missing_albums', to: 'original_song_missing_albums#index', as: :original_song_missing_albums
+    get 'track_original_song_assignments', to: 'original_song_assignments#index', as: :track_original_song_assignments
+    patch 'track_original_song_assignments', to: 'original_song_assignments#update'
+    get 'track_original_song_assignments/options', to: 'original_song_assignments#options', as: :track_original_song_assignment_options
+    get 'track_original_song_assignments/resolve', to: 'original_song_assignments#resolve', as: :resolve_track_original_song_assignments
+
     constraints resource: Admin::Resource.route_constraint do
       get ':resource', to: 'resources#index', as: :resources
       post ':resource', to: 'resources#create'

@@ -1,0 +1,285 @@
+# frozen_string_literal: true
+
+require 'test_helper'
+
+module Admin
+  class OriginalSongAssignmentsControllerTest < ActionDispatch::IntegrationTest
+    test 'shows tracks missing original songs by default' do
+      missing_track = create_track(jan_code: '9777777779101', isrc: 'JPABC269101')
+      linked_track = create_track(jan_code: '9777777779102', isrc: 'JPABC269102')
+      linked_track.original_songs << create_original_song(code: 'ASSIGN-DEFAULT-001', title: 'Assigned Default Song')
+
+      get admin_track_original_song_assignments_url
+
+      assert_response :success
+      assert_select 'h1', '楽曲の原曲紐づけ'
+      assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'
+      assert_select 'input[name=?][type=?]', 'show_identifiers', 'checkbox', count: 1
+      assert_select 'th', { text: 'JANコード', count: 0 }
+      assert_select 'th', { text: 'ISRC', count: 0 }
+      assert_select 'td', { text: missing_track.isrc, count: 0 }
+      assert_select 'form[method=?]', 'post'
+      assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]"
+      assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
+    end
+
+    test 'can show tracks that already have original songs' do
+      missing_track = create_track(jan_code: '9777777779111', isrc: 'JPABC269111')
+      linked_track = create_track(jan_code: '9777777779112', isrc: 'JPABC269112')
+      linked_track.original_songs << create_original_song(code: 'ASSIGN-PRESENT-001', title: 'Assigned Present Song')
+
+      get admin_track_original_song_assignments_url, params: { status: 'present' }
+
+      assert_response :success
+      assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]"
+      assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]", count: 0
+    end
+
+    test 'can show track identifiers when requested' do
+      track = create_track(jan_code: '9777777779113', isrc: 'JPABC269113')
+
+      get admin_track_original_song_assignments_url, params: { show_identifiers: '1' }
+
+      assert_response :success
+      assert_select 'input[name=?][type=?][checked=?]', 'show_identifiers', 'checkbox', 'checked'
+      assert_select 'th', text: 'JANコード'
+      assert_select 'th', text: 'ISRC'
+      assert_select 'td', text: track.jan_code
+      assert_select 'td', text: track.isrc
+    end
+
+    test 'orders tracks by streaming track number within the same album' do
+      album = Album.create!(jan_code: '9777777779115')
+      spotify_album = create_spotify_album(album:, spotify_id: 'assign-order-album')
+      second_track = Track.create!(album:, isrc: 'JPABC2691152')
+      first_track = Track.create!(album:, isrc: 'JPABC2691151')
+      create_spotify_track(album:, track: second_track, spotify_album:, spotify_id: 'assign-order-track-2', track_number: 2)
+      create_spotify_track(album:, track: first_track, spotify_album:, spotify_id: 'assign-order-track-1', track_number: 1)
+
+      get admin_track_original_song_assignments_url, params: { q: album.jan_code }
+
+      assert_response :success
+      assert_operator response.body.index('assign-order-track-1'), :<, response.body.index('assign-order-track-2')
+    end
+
+    test 'updates original song assignments with multiple selected songs' do
+      track = create_track(jan_code: '9777777779121', isrc: 'JPABC269121')
+      first_song = create_original_song(code: 'ASSIGN-UPDATE-001', title: 'Assigned Update First', track_number: 1)
+      second_song = create_original_song(code: 'ASSIGN-UPDATE-002', title: 'Assigned Update Second', track_number: 2)
+
+      patch admin_track_original_song_assignments_url,
+            params: {
+              assignments: {
+                track.id => {
+                  original_song_codes: "#{first_song.code},#{second_song.code}"
+                }
+              }
+            }
+
+      assert_redirected_to admin_track_original_song_assignments_path
+      assert_equal [first_song.code, second_song.code], track.reload.original_songs.order(:track_number).pluck(:code)
+    end
+
+    test 'does not persist partial updates when an original song code is invalid' do
+      valid_track = create_track(jan_code: '9777777779131', isrc: 'JPABC269131')
+      invalid_track = create_track(jan_code: '9777777779132', isrc: 'JPABC269132')
+      song = create_original_song(code: 'ASSIGN-ROLLBACK-001', title: 'Assigned Rollback Song')
+
+      patch admin_track_original_song_assignments_url,
+            params: {
+              assignments: {
+                valid_track.id => { original_song_codes: song.code },
+                invalid_track.id => { original_song_codes: 'ASSIGN-MISSING-999' }
+              }
+            }
+
+      assert_redirected_to admin_track_original_song_assignments_path
+      assert_empty valid_track.reload.original_songs
+      assert_empty invalid_track.reload.original_songs
+    end
+
+    test 'searches original song options' do
+      create_original_song(code: 'ASSIGN-OPTION-001', title: 'Needle Mountain')
+      create_original_song(code: 'ASSIGN-OPTION-002', title: 'Unrelated Song')
+
+      get admin_track_original_song_assignment_options_url, params: { q: 'Needle' }
+
+      assert_response :success
+      options = response.parsed_body.fetch('options')
+      option_values = options.map { |option| option.fetch('value') }
+      assert_equal ['ASSIGN-OPTION-001'], option_values
+      assert_match(/Needle Mountain/, options.first.fetch('label'))
+    end
+
+    test 'resolves pasted original song titles split by common delimiters' do
+      first_song = create_original_song(code: 'ASSIGN-PASTE-001', title: 'Paste First')
+      second_song = create_original_song(code: 'ASSIGN-PASTE-002', title: 'Paste Second')
+      third_song = create_original_song(code: 'ASSIGN-PASTE-003', title: 'Paste Third')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: "#{first_song.title} / #{second_song.title}、#{third_song.code}" }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+      assert_equal ['Paste First', 'Paste Second', 'ASSIGN-PASTE-003'], resolution_queries
+      assert_equal [[first_song.code], [second_song.code], [third_song.code]], resolution_option_values
+    end
+
+    test 'does not split a pasted original song title that contains common delimiters' do
+      comma_song = create_original_song(code: 'ASSIGN-PASTE-DELIMITER-001', title: 'Paste、Delimiter Song')
+      slash_song = create_original_song(code: 'ASSIGN-PASTE-DELIMITER-002', title: 'Paste／Delimiter Song')
+      ascii_comma_song = create_original_song(code: 'ASSIGN-PASTE-DELIMITER-003', title: 'Paste, Delimiter Song')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: "#{comma_song.title}\n#{slash_song.title}\n#{ascii_comma_song.title}" }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+      assert_equal [comma_song.title, slash_song.title, ascii_comma_song.title], resolution_queries
+      assert_equal [[comma_song.code], [slash_song.code], [ascii_comma_song.code]], resolution_option_values
+    end
+
+    test 'splits pasted songs while preserving delimiters inside known titles' do
+      comma_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-001', title: 'Paste、Known Song')
+      slash_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-002', title: 'Paste／Known Song')
+      ascii_comma_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-003', title: 'Paste, Known Song')
+      plain_song = create_original_song(code: 'ASSIGN-PASTE-MIXED-004', title: 'Paste Plain Song')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: "#{comma_song.title}、#{slash_song.title}／#{ascii_comma_song.title},#{plain_song.title}" }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+      assert_equal [comma_song.title, slash_song.title, ascii_comma_song.title, plain_song.title], resolution_queries
+      assert_equal [[comma_song.code], [slash_song.code], [ascii_comma_song.code], [plain_song.code]], resolution_option_values
+    end
+
+    test 'returns multiple choices for ambiguous pasted original song titles' do
+      first_song = create_original_song(code: 'ASSIGN-AMBIGUOUS-001', title: 'Ambiguous Paste Song')
+      second_song = create_original_song(code: 'ASSIGN-AMBIGUOUS-002', title: 'Ambiguous Paste Song')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: 'Ambiguous Paste Song' }
+
+      assert_response :success
+      options = response.parsed_body.fetch('resolutions').first.fetch('options')
+      option_values = options.map { |option| option.fetch('value') }
+      assert_equal [first_song.code, second_song.code], option_values
+    end
+
+    test 'resolves pasted titles with normalized spaces' do
+      song = create_original_song(code: 'ASSIGN-SPACE-001', title: 'Space　Normalized Song')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: 'Space Normalized Song' }
+
+      assert_response :success
+      options = response.parsed_body.fetch('resolutions').first.fetch('options')
+      option_values = options.map { |option| option.fetch('value') }
+      assert_equal [song.code], option_values
+    end
+
+    test 'resolves pasted titles with compact tilde spacing' do
+      song = create_original_song(code: 'ASSIGN-TILDE-001', title: '最後の一人は慣れてるから　～ Stone Goddess')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: '最後の一人は慣れてるから ～Stone Goddess' }
+
+      assert_response :success
+      options = response.parsed_body.fetch('resolutions').first.fetch('options')
+      option_values = options.map { |option| option.fetch('value') }
+      assert_equal [song.code], option_values
+    end
+
+    test 'resolves pasted titles with normalized question marks' do
+      song = create_original_song(code: 'ASSIGN-QUESTION-001', title: 'U.N.オーエンは彼女なのか？')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: { text: 'U.N.オーエンは彼女なのか?' }
+
+      assert_response :success
+      options = response.parsed_body.fetch('resolutions').first.fetch('options')
+      option_values = options.map { |option| option.fetch('value') }
+      assert_equal [song.code], option_values
+    end
+
+    test 'resolves pasted titles with original song labels and wrapper quotes' do
+      first_song = create_original_song(code: 'ASSIGN-LABEL-001', title: '妖魔夜行')
+      second_song = create_original_song(code: 'ASSIGN-LABEL-002', title: 'U.N.オーエンは彼女なのか？')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: {
+            text: <<~TEXT
+              """
+              原曲: 妖魔夜行
+              原曲： U.N.オーエンは彼女なのか?
+              """
+            TEXT
+          }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+      assert_equal ['妖魔夜行', 'U.N.オーエンは彼女なのか?'], resolution_queries
+      assert_equal [[first_song.code], [second_song.code]], resolution_option_values
+    end
+
+    private
+
+    def create_track(jan_code:, isrc:)
+      album = Album.create!(jan_code:)
+      Track.create!(album:, isrc:)
+    end
+
+    def create_spotify_album(album:, spotify_id:)
+      SpotifyAlbum.create!(
+        album:,
+        spotify_id:,
+        album_type: 'album',
+        name: spotify_id,
+        label: Album::TOUHOU_MUSIC_LABEL,
+        active: true,
+        payload: { 'available_markets' => ['JP'] }
+      )
+    end
+
+    def create_spotify_track(album:, track:, spotify_album:, spotify_id:, track_number:)
+      SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id:,
+        name: spotify_id,
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number:,
+        duration_ms: 180_000,
+        payload: {}
+      )
+    end
+
+    def create_original_song(code:, title:, track_number: 1)
+      original = Original.find_or_create_by!(code: "#{code}-ORIGINAL") do |record|
+        record.title = "#{title} Original"
+        record.short_title = "#{title} Original"
+        record.original_type = 'other'
+        record.series_order = 900.0
+      end
+
+      OriginalSong.create!(
+        code:,
+        original:,
+        title:,
+        composer: 'ZUN',
+        track_number:
+      )
+    end
+  end
+end
