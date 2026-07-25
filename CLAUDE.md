@@ -15,7 +15,7 @@ touhou_music_discover (東方同人音楽流通) is a Rails application that tra
 - **Circle** (doujin groups) ← **CirclesAlbum** → **Album**
 
 ### Admin Interface
-Uses Avo framework at `/avo` for data management with custom actions for:
+A self-built admin interface (not a gem) mounted at `/admin`, with controllers under `app/controllers/admin/`. Data-fetching and operational actions are defined as action classes in `app/models/admin/actions.rb`, each inheriting from `Admin::Actions::BaseAction`, for:
 - Fetching data from streaming platforms
 - Bulk operations
 - Data export/import
@@ -87,9 +87,9 @@ make docker-migrate   # Dockerでマイグレーション
 
 ## Key Workflows
 
-1. **Adding New Albums**: Use Avo actions to fetch from platforms, then associate with circles and original songs
+1. **Adding New Albums**: Use admin actions (`Admin::Actions::*`) to fetch from platforms, then associate with circles and original songs
 2. **Data Export**: Use rake tasks for Algolia search or random selection app exports
-3. **Platform Updates**: Each platform has separate update actions in Avo to refresh metadata
+3. **Platform Updates**: Each platform has separate update actions in the admin actions system to refresh metadata
 
 ## Important Conventions
 
@@ -97,7 +97,7 @@ make docker-migrate   # Dockerでマイグレーション
 - Use UUIDs for primary keys
 - JAN codes identify albums, ISRC codes identify tracks
 - Touhou flag (`is_touhou`) determines if content is actually Touhou-related
-- Use Avo actions for all data fetching operations to maintain consistency
+- Implement data fetching operations as action classes inheriting from `Admin::Actions::BaseAction` in `app/models/admin/actions.rb` to maintain consistency
 
 ## Development Workflow
 When making code modifications:
