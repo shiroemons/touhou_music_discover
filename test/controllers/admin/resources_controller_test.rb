@@ -336,6 +336,7 @@ module Admin
       assert_select 'select[name=?] option', 'filters[original_songs_count]', text: '0曲'
       assert_select 'th', text: '配信取得'
       row_jan_codes = css_select('tbody tr').map { |row| row.css('td')[3].text.squish }
+
       assert_equal [newer_track.jan_code, older_track.jan_code], row_jan_codes
       assert_select 'a.admin-streaming-status-badge', text: 'Spotify未取得'
       assert_select 'a[href=?].admin-streaming-status-badge', admin_resources_path('tracks', filters: { missing_streaming_track: :apple_music }), text: 'Apple Music未取得'
@@ -373,12 +374,14 @@ module Admin
       assert_response :success
       assert_select 'a.admin-sort-link.is-active[aria-sort=?]', 'ascending', text: '名前'
       row_names = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+
       assert_equal [lower_spotify_album.name, upper_spotify_album.name], row_names
 
       get admin_resources_url('spotify_albums'), params: { q: 'Admin Sort', sort: 'name', direction: 'desc' }
 
       assert_response :success
       row_names = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+
       assert_equal [upper_spotify_album.name, lower_spotify_album.name], row_names
     end
 
@@ -624,6 +627,7 @@ module Admin
       assert_response :success
       options = JSON.parse(@response.body).fetch('options')
       option_values = options.map { |option| option.fetch('value') }
+
       assert_equal [album.id.to_s], option_values
       assert_match(/#{album.jan_code}.+Admin Edit Select Album/, options.first.fetch('label'))
 
@@ -636,6 +640,7 @@ module Admin
 
       assert_redirected_to admin_resource_path('spotify_tracks', spotify_track)
       spotify_track.reload
+
       assert_equal other_album.id, spotify_track.album_id
       assert_equal 'spotify-admin-edit-readonly-track', spotify_track.spotify_id
     end
@@ -716,6 +721,7 @@ module Admin
 
       assert_response :success
       row_spotify_ids = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+
       assert_equal(
         [newer_first_feature.spotify_id, newer_second_feature.spotify_id, older_feature.spotify_id],
         row_spotify_ids
@@ -1091,9 +1097,11 @@ module Admin
       end
 
       circle = Circle.find_by!(name: 'New Admin Circle')
+
       assert_redirected_to admin_resource_path('circles', circle)
 
       patch admin_resource_url('circles', circle), params: { record: { name: 'Updated Admin Circle' } }
+
       assert_redirected_to admin_resource_path('circles', circle)
       assert_equal 'Updated Admin Circle', circle.reload.name
 

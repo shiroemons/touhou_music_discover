@@ -30,6 +30,7 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
     Rake::Task['touhou_music_discover:export:spotify'].invoke
 
     output = export_path.read
+
     assert_includes output, 'Export Active Spotify Album'
     assert_includes output, 'Export Active Spotify Track'
     assert_not_includes output, 'Export Inactive Spotify Album'
@@ -66,6 +67,7 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
     end
 
     output = export_path.read
+
     tracks.each { |track| assert_includes output, track.isrc }
     original_songs.each { |original_song| assert_includes output, original_song.title }
     assert_operator original_song_queries, :<=, 1

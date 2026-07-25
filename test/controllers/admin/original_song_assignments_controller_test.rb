@@ -107,6 +107,7 @@ module Admin
       assert_response :success
       options = response.parsed_body.fetch('options')
       option_values = options.map { |option| option.fetch('value') }
+
       assert_equal ['ASSIGN-OPTION-001'], option_values
       assert_match(/Needle Mountain/, options.first.fetch('label'))
     end
@@ -123,6 +124,7 @@ module Admin
       resolutions = response.parsed_body.fetch('resolutions')
       resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
       resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+
       assert_equal ['Paste First', 'Paste Second', 'ASSIGN-PASTE-003'], resolution_queries
       assert_equal [[first_song.code], [second_song.code], [third_song.code]], resolution_option_values
     end
@@ -139,6 +141,7 @@ module Admin
       resolutions = response.parsed_body.fetch('resolutions')
       resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
       resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+
       assert_equal [comma_song.title, slash_song.title, ascii_comma_song.title], resolution_queries
       assert_equal [[comma_song.code], [slash_song.code], [ascii_comma_song.code]], resolution_option_values
     end
@@ -156,6 +159,7 @@ module Admin
       resolutions = response.parsed_body.fetch('resolutions')
       resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
       resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+
       assert_equal [comma_song.title, slash_song.title, ascii_comma_song.title, plain_song.title], resolution_queries
       assert_equal [[comma_song.code], [slash_song.code], [ascii_comma_song.code], [plain_song.code]], resolution_option_values
     end
@@ -170,6 +174,7 @@ module Admin
       assert_response :success
       options = response.parsed_body.fetch('resolutions').first.fetch('options')
       option_values = options.map { |option| option.fetch('value') }
+
       assert_equal [first_song.code, second_song.code], option_values
     end
 
@@ -182,6 +187,7 @@ module Admin
       assert_response :success
       options = response.parsed_body.fetch('resolutions').first.fetch('options')
       option_values = options.map { |option| option.fetch('value') }
+
       assert_equal [song.code], option_values
     end
 
@@ -194,6 +200,7 @@ module Admin
       assert_response :success
       options = response.parsed_body.fetch('resolutions').first.fetch('options')
       option_values = options.map { |option| option.fetch('value') }
+
       assert_equal [song.code], option_values
     end
 
@@ -206,6 +213,7 @@ module Admin
       assert_response :success
       options = response.parsed_body.fetch('resolutions').first.fetch('options')
       option_values = options.map { |option| option.fetch('value') }
+
       assert_equal [song.code], option_values
     end
 
@@ -227,6 +235,7 @@ module Admin
       resolutions = response.parsed_body.fetch('resolutions')
       resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
       resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+
       assert_equal ['妖魔夜行', 'U.N.オーエンは彼女なのか?'], resolution_queries
       assert_equal [[first_song.code], [second_song.code]], resolution_option_values
     end

@@ -4,6 +4,7 @@ inherit_from:
 plugins:
   - rubocop-rails
   - rubocop-performance
+  - rubocop-minitest
 
 AllCops:
   TargetRubyVersion: 4.0
@@ -58,3 +59,16 @@ Style/OpenStructUse:
 Rails/SkipsModelValidations:
   Exclude:
     - 'db/migrate/*active_storage*'
+
+# percentage系の値は ((value.to_f / total) * 1000).floor / 10.0 で算出され、
+# 厳密に比較可能な double になるため assert_equal で問題ない。
+# 「切り上げが起きないこと」を検証する境界値テストでは完全一致であることに意味があり、
+# 許容誤差を導入するとテストの意図が弱まる。
+Minitest/AssertInDelta:
+  Enabled: false
+
+# 本リポジトリは Metrics/AbcSize, BlockLength, CyclomaticComplexity, MethodLength,
+# PerceivedComplexity, ClassLength をいずれも無効化している（.rubocop_base.yml 参照）。
+# Minitest/MultipleAssertions は実質テスト版の Metrics cop であり、この方針に揃える。
+Minitest/MultipleAssertions:
+  Enabled: false

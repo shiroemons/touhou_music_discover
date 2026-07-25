@@ -62,10 +62,12 @@ class SpotifyRetryTest < ActiveSupport::TestCase
     end
 
     expected_bases = [5, 10, 20]
+
     assert_equal expected_bases.size, sleeps.size
 
     sleeps.each_with_index do |delay, index|
       base = expected_bases[index]
+
       assert_operator delay, :>=, base
       assert_operator delay, :<=, base * (1 + SpotifyRetry::JITTER)
     end
@@ -94,6 +96,7 @@ class SpotifyRetryTest < ActiveSupport::TestCase
       end
 
       status = SpotifyRateLimit.current
+
       assert_equal 5, status.retry_after
       assert_equal 'spec-source', status.source
     end
