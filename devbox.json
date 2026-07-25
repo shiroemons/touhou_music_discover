@@ -1,9 +1,9 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": {
-    "ruby":          "4.0.3",
-    "postgresql_18": "18.1",
-    "redis":         "8.2.3",
+    "ruby":          "4.0.6",
+    "postgresql_18": "18.4",
+    "redis":         "8.8.0",
     "nodejs":        "24",
     "yarn":          "1.22",
     "libyaml":       "0.2.5",
@@ -11,7 +11,7 @@
     "zlib":          "1.3.1",
     "readline":      "8.3p3",
     "libffi":        "40",
-    "libpq":         "18.1"
+    "libpq":         "18.4"
   },
   "env": {
     "BUNDLE_PATH":        ".devbox/virtenv/bundle",
