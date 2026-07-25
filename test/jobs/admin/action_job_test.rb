@@ -47,6 +47,7 @@ module Admin
       end
 
       actual_file = action.calls.first.fetch(:fields).fetch('tsv_file')
+
       assert_instance_of Admin::ActionUploadedFile, actual_file
       assert_equal uploaded_file.path, actual_file.path
       assert_equal uploaded_file.content_type, actual_file.content_type

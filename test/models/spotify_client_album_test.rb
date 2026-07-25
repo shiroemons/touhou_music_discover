@@ -58,6 +58,7 @@ module SpotifyClient
       end
 
       spotify_album = SpotifyAlbum.unscoped.find_by!(album:)
+
       assert_equal "spotify-#{jan_code}", spotify_album.spotify_id
       assert_equal 'Spotify JAN Album', spotify_album.name
       assert_equal "upc:#{jan_code}", queries.last
@@ -106,6 +107,7 @@ module SpotifyClient
       end
 
       years = (2000..Time.zone.today.year).to_a
+
       assert_equal years, searched_years
       assert_equal(
         { current: 0, total: years.size, message: 'Spotify アルバムを取得しています', reset: true },

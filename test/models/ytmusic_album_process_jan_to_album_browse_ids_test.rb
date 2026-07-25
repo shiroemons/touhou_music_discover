@@ -38,6 +38,7 @@ class YtmusicAlbumProcessJanToAlbumBrowseIdsTest < ActiveSupport::TestCase
     end
 
     ytmusic_album = YtmusicAlbum.find_by!(album:, browse_id:)
+
     assert_equal 'YouTube Music Album', ytmusic_album.name
     assert_equal "https://music.youtube.com/browse/#{browse_id}", ytmusic_album.url
     assert_equal 'https://music.youtube.com/playlist?list=test', ytmusic_album.playlist_url

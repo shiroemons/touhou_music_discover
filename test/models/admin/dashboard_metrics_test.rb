@@ -51,6 +51,7 @@ module Admin
       assert_equal 'spotify_tracks', spotify_coverage.fetch(:missing_track_action_resource_key)
       assert_equal 'fetch_missing_spotify_tracks', spotify_coverage.fetch(:missing_track_action_key)
       missing_track_sample_ids = spotify_coverage.fetch(:missing_track_samples).map { |track| track.fetch(:id) }
+
       assert_equal [track_without_spotify.id], missing_track_sample_ids
       assert_includes metrics.fetch(:work_queue).map { |item| item.fetch(:key) }, 'spotify_missing_albums'
       assert_includes metrics.fetch(:data_quality).map { |item| item.fetch(:key) }, 'spotify_tracks_missing_audio_features'

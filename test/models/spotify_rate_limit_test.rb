@@ -16,6 +16,7 @@ class SpotifyRateLimitTest < ActiveSupport::TestCase
       assert_equal '54分27秒', status.retry_after_duration
 
       current = SpotifyRateLimit.current(now: observed_at + 10.seconds)
+
       assert_equal 3267, current.retry_after
       assert_equal 3257, current.remaining_seconds(now: observed_at + 10.seconds)
 
