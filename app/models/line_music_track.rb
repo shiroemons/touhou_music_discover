@@ -43,7 +43,7 @@ class LineMusicTrack < ApplicationRecord
       end
 
       Album.includes(:spotify_album, :apple_music_album, :line_music_album).where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 4, finish: finish_callback) do |r|
+        ParallelRunner.each(records, workers: :line_music, finish: finish_callback) do |r|
           process_album(r)
         end
       end

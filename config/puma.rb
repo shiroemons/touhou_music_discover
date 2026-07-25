@@ -29,6 +29,10 @@
 threads_count = ENV.fetch('RAILS_MAX_THREADS', 3)
 threads threads_count, threads_count
 
+# クラスタモード(workers + preload_app!)は採用しない。下記の `plugin :solid_queue` と
+# 併用するとfork後にDB/Redisコネクションを張り直す処理が複数箇所で必要になり、リスクが割に合わない。
+# また本アプリはトラフィックの少ない社内向け管理画面であり、クラスタモードの恩恵も小さい。
+
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
 port ENV.fetch('PORT', 3000)
 

@@ -330,7 +330,7 @@ class YtmusicAlbum < ApplicationRecord
       end
 
       where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 7, finish: finish_callback) do |ytmusic_album|
+        ParallelRunner.each(records, workers: :ytmusic, finish: finish_callback) do |ytmusic_album|
           album = YtMusic::Album.find(ytmusic_album.browse_id)
           url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
           ytmusic_album.update_album(album, url) if album

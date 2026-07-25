@@ -914,7 +914,7 @@ module Admin
         progress = Admin::ActionProgress.current
 
         YtmusicAlbum.find_in_batches(batch_size: 100) do |batch|
-          Parallel.each(batch, in_threads: 3) do |ytmusic_album|
+          ParallelRunner.each(batch, mode: :threads, workers: 3) do |ytmusic_album|
             current_index = nil
             mutex.synchronize do
               processed += 1
