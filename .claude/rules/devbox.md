@@ -34,6 +34,20 @@ globs:
 - 新しいシステム依存パッケージは `devbox.json` の `packages` に追加する
 - `devbox search <package>` でパッケージ名とバージョンを検索
 
+## Rubyバージョン更新時の注意
+
+- devbox の Ruby をパッチ更新しても、`BUNDLE_PATH`（`.devbox/virtenv/bundle`）に残った**ネイティブ拡張は古い Ruby の dylib にリンクされたまま**で、`bundle install` だけでは再コンパイルされない（gem のバージョンが変わらないため）
+- この状態で起動すると `rails` / `jobs` プロセスが `LoadError: linked to incompatible ... libruby-<旧version>.dylib` でクラッシュループする。Rails のロガー初期化より前に落ちるため `log/development.log` には何も残らず原因が分かりにくい
+- 対処: 以下を実行してネイティブ拡張を強制的に再コンパイルする
+
+```bash
+rm -rf .devbox/virtenv/bundle/ruby/<abi>   # 例: 4.0.0
+rm -rf .devbox/virtenv/bootsnap/bootsnap
+devbox run -- bash -c "bundle install"
+```
+
+- `.ruby-version` / `devbox.json` の `ruby` / `Dockerfile` の `FROM ruby:` は3箇所セットで更新する
+
 ## 環境変数
 
 - devbox.jsonの `env` セクションで基本的な環境変数を設定
