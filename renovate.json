@@ -1,5 +1,24 @@
 {
   "extends": [
-    "config:base"
-  ]
+    "config:recommended"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["bundler"],
+      "groupName": "ruby gems",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "matchManagers": ["npm"],
+      "groupName": "js dependencies",
+      "schedule": ["before 6am on monday"]
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true
+  }
 }

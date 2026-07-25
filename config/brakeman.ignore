@@ -1,0 +1,98 @@
+{
+  "ignored_warnings": [
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "7242e62408f2f7fb033e5b9767e2fe653f1a2bb7ca73b1abd870e232f4b0ddb4",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/controllers/admin/original_song_assignments_controller.rb",
+      "line": 61,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "Arel.sql(\"#{assignment_disc_number_sql} ASC\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::OriginalSongAssignmentsController",
+        "method": "order_assignment_scope"
+      },
+      "user_input": "assignment_disc_number_sql",
+      "confidence": "Medium",
+      "cwe_id": [
+        89
+      ],
+      "note": "偽陽性。補間元の assignment_disc_number_sql は同ファイルの active_spotify_track_position_sql / streaming_track_position_sql から組み立てられ、いずれも quoted_table_name と quote_column_name(シンボルリテラル) のみを使用する。呼び出し側が渡すのはクラス定数とシンボルリテラルのみで、外部入力は一切含まれない。"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "6cd2f7cf964a77f4f5d8b946c70e592ada35e3b970d61d6d3abad9889c1678fc",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/controllers/admin/original_song_assignments_controller.rb",
+      "line": 62,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "Arel.sql(\"#{assignment_track_number_sql} ASC\")",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::OriginalSongAssignmentsController",
+        "method": "order_assignment_scope"
+      },
+      "user_input": "assignment_track_number_sql",
+      "confidence": "Medium",
+      "cwe_id": [
+        89
+      ],
+      "note": "偽陽性。補間元の assignment_track_number_sql は同ファイルの active_spotify_track_position_sql / streaming_track_position_sql から組み立てられ、いずれも quoted_table_name と quote_column_name(シンボルリテラル) のみを使用する。呼び出し側が渡すのはクラス定数とシンボルリテラルのみで、外部入力は一切含まれない。"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "85841bd70a8daf5b2eb1623d3665287bc13735bb076821f8969843ee12f8f0fd",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/controllers/admin/original_song_assignments_controller.rb",
+      "line": 307,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "scope.left_joins(:original).where(\"(...)\\n#{normalized_term_sql}\", conditions)",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::OriginalSongAssignmentsController",
+        "method": "search_original_songs"
+      },
+      "user_input": "normalized_term_sql",
+      "confidence": "Medium",
+      "cwe_id": [
+        89
+      ],
+      "note": "偽陽性。補間される normalized_term_sql はリテラルSQLと :normalized_term_<整数> 形式のプレースホルダ名のみで構成される。整数は each_with_index 由来。ユーザー入力は全て conditions ハッシュ経由の名前付きバインドパラメータとして渡され、各値は OriginalSong.sanitize_sql_like を通している。"
+    },
+    {
+      "warning_type": "SQL Injection",
+      "warning_code": 0,
+      "fingerprint": "8a95c92f9173f429b36e20c08dbe8804c82672df887e3c8174897cea4bcc1b20",
+      "check_name": "SQL",
+      "message": "Possible SQL injection",
+      "file": "app/models/admin/resource.rb",
+      "line": 878,
+      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
+      "code": "scope.reorder(Arel.sql(\"#{quoted_table_name}.#{model_class.connection.quote_column_name(attribute)} #{direction.upcase} NULLS LAST\"))",
+      "render_path": null,
+      "location": {
+        "type": "method",
+        "class": "Admin::Resource",
+        "method": "sort"
+      },
+      "user_input": "attribute",
+      "confidence": "Medium",
+      "cwe_id": [
+        89
+      ],
+      "note": "偽陽性。sortable_attribute? の allowlist を通らない属性は早期 return する。列名は quote_column_name でクォートされ、ソート方向は sort_direction が 'asc' / 'desc' のいずれかに正規化する。"
+    }
+  ],
+  "updated": "2026-07-25 18:25:42 +0900",
+  "brakeman_version": "8.0.5"
+}
