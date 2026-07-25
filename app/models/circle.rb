@@ -39,7 +39,8 @@ class Circle < ApplicationRecord
     'ともきち' => '幻光庭',
     'askey' => '.new label',
     '激戦の人' => '激戦魂 -Gekisen Soul-',
-    'ぱらどっと' => '給食頭蛮'
+    'ぱらどっと' => '給食頭蛮',
+    '坂本昌一郎' => 'sound sepher'
   }.freeze
 
   JAN_TO_CIRCLE = {
