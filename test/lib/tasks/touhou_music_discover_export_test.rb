@@ -13,8 +13,6 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
   setup do
     Rake::Task['touhou_music_discover:export:spotify'].reenable
     Rake::Task['touhou_music_discover:export:touhou_music_with_original_songs'].reenable
-    FileUtils.rm_f(SPOTIFY_EXPORT_PATH)
-    FileUtils.rm_f(TOUHOU_MUSIC_WITH_ORIGINAL_SONGS_EXPORT_PATH)
   end
 
   test 'spotify export outputs active spotify albums only' do
@@ -27,9 +25,11 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
     create_spotify_track(album: active_album, track: active_track, spotify_album: active_spotify_album, spotify_id: 'export-active-spotify-track', name: 'Export Active Spotify Track')
     create_spotify_track(album: inactive_album, track: inactive_track, spotify_album: inactive_spotify_album, spotify_id: 'export-inactive-spotify-track', name: 'Export Inactive Spotify Track')
 
+    # tmp/export/ は並列ワーカープロセス間で共有されるため、自テストの出力ファイルのみを削除する
+    export_path = reset_export(SPOTIFY_EXPORT_PATH)
     Rake::Task['touhou_music_discover:export:spotify'].invoke
 
-    output = SPOTIFY_EXPORT_PATH.read
+    output = export_path.read
     assert_includes output, 'Export Active Spotify Album'
     assert_includes output, 'Export Active Spotify Track'
     assert_not_includes output, 'Export Inactive Spotify Album'
@@ -59,11 +59,13 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
       end
     end
 
+    # tmp/export/ は並列ワーカープロセス間で共有されるため、自テストの出力ファイルのみを削除する
+    export_path = reset_export(TOUHOU_MUSIC_WITH_ORIGINAL_SONGS_EXPORT_PATH)
     original_song_queries = count_original_song_selects do
       Rake::Task['touhou_music_discover:export:touhou_music_with_original_songs'].invoke
     end
 
-    output = TOUHOU_MUSIC_WITH_ORIGINAL_SONGS_EXPORT_PATH.read
+    output = export_path.read
     tracks.each { |track| assert_includes output, track.isrc }
     original_songs.each { |original_song| assert_includes output, original_song.title }
     assert_operator original_song_queries, :<=, 1
@@ -109,5 +111,13 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
       duration_ms: 180_000,
       payload: {}
     )
+  end
+
+  # テストDBはRailsがワーカーごとに分離するが、tmp/export/ は分離されず全ワーカープロセスで共有される。
+  # そのため setup で全出力ファイルを消すと他テストの出力を消してしまい競合するので、
+  # 各テストが自分の使うパスだけをrake実行直前にリセットする。
+  def reset_export(path)
+    FileUtils.rm_f(path)
+    path
   end
 end
