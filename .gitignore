@@ -41,7 +41,6 @@ yarn-debug.log*
 !/bin/rails
 !/bin/rake
 !/bin/jobs
-!/bin/spring
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
