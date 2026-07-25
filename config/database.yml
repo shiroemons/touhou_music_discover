@@ -19,7 +19,11 @@ default: &default
   encoding: unicode
   # For details on connection pooling, see Rails configuration guide
   # https://guides.rubyonrails.org/configuring.html#database-pooling
-  pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  #
+  # puma.rbのスレッド数とqueue.ymlのスレッド数の大きい方 + 予備2。
+  # 同じ設定をPumaのWebプロセスとSolid Queueのワーカープロセスの双方が使うため、
+  # どちらのプロセスでもコネクションが枯渇しないよう大きい方に合わせる。
+  pool: <%= [ENV.fetch("RAILS_MAX_THREADS", 5).to_i, ENV.fetch("JOB_CONCURRENCY", 1).to_i * 3].max + 2 %>
 
 development:
   primary:

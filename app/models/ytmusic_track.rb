@@ -39,7 +39,7 @@ class YtmusicTrack < ApplicationRecord
       end
 
       Album.includes(:ytmusic_album, spotify_album: [:spotify_tracks], apple_music_album: [:apple_music_tracks]).where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 7, finish: finish_callback) do |r|
+        ParallelRunner.each(records, workers: :ytmusic, finish: finish_callback) do |r|
           process_album(r)
         end
       end

@@ -9,10 +9,8 @@ class YtmusicTrackTest < ActiveSupport::TestCase
     processed_albums = []
 
     with_ytmusic_track_processor(->(processed_album) { processed_albums << processed_album }) do
-      with_parallel_each_running_inline do
-        Album.unscoped.where(id: album.id).scoping do
-          YtmusicTrack.fetch_tracks(progress_callback: ->(**attrs) { updates << attrs })
-        end
+      Album.unscoped.where(id: album.id).scoping do
+        YtmusicTrack.fetch_tracks(progress_callback: ->(**attrs) { updates << attrs })
       end
     end
 
@@ -36,19 +34,5 @@ class YtmusicTrackTest < ActiveSupport::TestCase
     yield
   ensure
     singleton_class.define_method(:process_album, original_method)
-  end
-
-  def with_parallel_each_running_inline
-    original_method = Parallel.method(:each)
-
-    Parallel.define_singleton_method(:each) do |items, options = {}, &block|
-      items.each_with_index do |item, index|
-        result = block.call(item)
-        options[:finish]&.call(item, index, result)
-      end
-    end
-    yield
-  ensure
-    Parallel.define_singleton_method(:each, original_method)
   end
 end

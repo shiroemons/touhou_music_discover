@@ -100,11 +100,9 @@ module SpotifyClient
       searched_years = []
 
       with_spotify_album_searcher(->(_keyword, year) { searched_years << year }) do
-        with_parallel_each_running_inline do
-          SpotifyClient::Album.fetch_touhou_albums(
-            progress_callback: ->(**attrs) { updates << attrs }
-          )
-        end
+        SpotifyClient::Album.fetch_touhou_albums(
+          progress_callback: ->(**attrs) { updates << attrs }
+        )
       end
 
       years = (2000..Time.zone.today.year).to_a
@@ -196,20 +194,6 @@ module SpotifyClient
       yield
     ensure
       singleton_class.define_method(:search_and_save_albums, original_method)
-    end
-
-    def with_parallel_each_running_inline
-      original_method = Parallel.method(:each)
-
-      Parallel.define_singleton_method(:each) do |items, options = {}, &block|
-        items.each_with_index do |item, index|
-          result = block.call(item)
-          options[:finish]&.call(item, index, result)
-        end
-      end
-      yield
-    ensure
-      Parallel.define_singleton_method(:each, original_method)
     end
   end
 end

@@ -66,13 +66,11 @@ class LineMusicAlbumTest < ActiveSupport::TestCase
     )
     updates = []
 
-    with_parallel_each_running_inline do
-      stub_line_music_album_find(fetched_album) do
-        LineMusicAlbum.unscoped.where(id: line_music_album.id).scoping do
-          LineMusicAlbum.update_line_music_album_info(
-            progress_callback: ->(**attrs) { updates << attrs }
-          )
-        end
+    stub_line_music_album_find(fetched_album) do
+      LineMusicAlbum.unscoped.where(id: line_music_album.id).scoping do
+        LineMusicAlbum.update_line_music_album_info(
+          progress_callback: ->(**attrs) { updates << attrs }
+        )
       end
     end
 
@@ -200,19 +198,5 @@ class LineMusicAlbumTest < ActiveSupport::TestCase
     yield
   ensure
     LineMusic::Album.define_singleton_method(:find, original_method)
-  end
-
-  def with_parallel_each_running_inline
-    original_method = Parallel.method(:each)
-
-    Parallel.define_singleton_method(:each) do |items, options = {}, &block|
-      items.each_with_index do |item, index|
-        result = block.call(item)
-        options[:finish]&.call(item, index, result)
-      end
-    end
-    yield
-  ensure
-    Parallel.define_singleton_method(:each, original_method)
   end
 end

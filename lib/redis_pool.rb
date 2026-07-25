@@ -22,11 +22,21 @@ class RedisPool
 
     private
 
+    # プールサイズは必ず RAILS_MAX_THREADS 以上にすること。
+    # app/controllers/spotify/playlists_controller.rb が処理の進捗を Redis に
+    # 継続的に書き込んでおり、ここでコネクションが枯渇すると各スレッドが
+    # ConnectionPool::TimeoutError で待たされ、管理画面の進捗表示が停止してしまう。
     def pool
       @pool ||= ConnectionPool.new(
-        size: ENV.fetch('RAILS_MAX_THREADS', 2).to_i,
-        timeout: ENV.fetch('REDIS_TIMEOUT', 1).to_i
-      ) { Redis.new(url: ENV.fetch('REDIS_URL', nil)) }
+        size: ENV.fetch('REDIS_POOL_SIZE') { ENV.fetch('RAILS_MAX_THREADS', 5) }.to_i,
+        timeout: ENV.fetch('REDIS_TIMEOUT', 5).to_f
+      ) do
+        Redis.new(
+          url: ENV.fetch('REDIS_URL', 'redis://localhost:6379'),
+          connect_timeout: 1, read_timeout: 1, write_timeout: 1,
+          reconnect_attempts: [0.05, 0.1, 0.2]
+        )
+      end
     end
   end
 end

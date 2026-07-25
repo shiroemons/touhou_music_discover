@@ -28,11 +28,11 @@ module SpotifyClient
         )
       end
 
-      # NOTE: このブロックは Parallel の子プロセス内で実行される。そのため
+      # NOTE: このブロックは ParallelRunner (Parallel) の子プロセス内で実行される。そのため
       # SpotifyRetry.with_retry 内の SpotifyRateLimit.record! は子プロセスの Rails.cache に書き込まれる。
       # 本番環境 (Redis) では親プロセスと共有されるが、開発環境 (memory_store) では共有されない。
       # これは元々の挙動と同じであり、今回の変更によるリグレッションではない。
-      Parallel.each(years, in_processes: 3, finish: finish_callback) do |year|
+      ParallelRunner.each(years, workers: :spotify, finish: finish_callback) do |year|
         keyword = "#{KEYWORD} year:#{year}"
         # 全カタログ取得の処理であり、年単位でスキップするとアルバムが欠落してしまうため、
         # デフォルト(tries: 5)より大きいリトライ回数を明示的に指定する。

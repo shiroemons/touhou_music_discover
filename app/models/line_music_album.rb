@@ -150,7 +150,7 @@ class LineMusicAlbum < ApplicationRecord
       end
 
       where(id: ids).then do |records|
-        Parallel.each(records, in_processes: 4, finish: finish_callback) do |line_music_album|
+        ParallelRunner.each(records, workers: :line_music, finish: finish_callback) do |line_music_album|
           with_retry(max_attempts: 3) do
             Rails.logger.info "LINE MUSIC アルバム情報取得: #{line_music_album.line_music_id}"
             lm_album = LineMusic::Album.find(line_music_album.line_music_id)
