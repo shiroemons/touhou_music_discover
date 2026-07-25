@@ -138,16 +138,23 @@ class LineMusicTrack < ApplicationRecord
     Rails.logger.info "LINE MUSIC トラック情報保存: #{lm_track.track_title} (ID: #{lm_track.track_id})"
 
     line_music_track = ::LineMusicTrack.find_or_create_by!(
+      line_music_album_id: lm_album.id,
+      line_music_id: lm_track.track_id
+    ) do |record|
+      record.album_id = album_id
+      record.track_id = track_id
+      record.name = lm_track.track_title
+    end
+
+    line_music_track.update(
       album_id:,
       track_id:,
-      line_music_album_id: lm_album.id,
-      line_music_id: lm_track.track_id,
       name: lm_track.track_title,
       url:,
       disc_number: lm_track.disc_number,
-      track_number: lm_track.track_number
+      track_number: lm_track.track_number,
+      payload: lm_track.as_json
     )
-    line_music_track.update(payload: lm_track.as_json)
     Rails.logger.info "LINE MUSIC トラック情報を保存しました: #{lm_track.track_title}"
   end
 

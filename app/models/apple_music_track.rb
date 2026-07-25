@@ -25,9 +25,16 @@ class AppleMusicTrack < ApplicationRecord
     track = ::Track.find_or_create_by!(jan_code: apple_music_album.album.jan_code, isrc: am_track.isrc)
 
     apple_music_track = ::AppleMusicTrack.find_or_create_by!(
-      track_id: track.id,
       apple_music_album_id: apple_music_album.id,
-      apple_music_id: am_track.id,
+      apple_music_id: am_track.id
+    ) do |record|
+      record.track_id = track.id
+      record.label = apple_music_album.label
+      record.name = am_track.name
+    end
+
+    apple_music_track.update!(
+      track_id: track.id,
       name: am_track.name,
       label: apple_music_album.label,
       artist_name: am_track.artist_name,
@@ -36,9 +43,7 @@ class AppleMusicTrack < ApplicationRecord
       release_date: am_track.release_date,
       disc_number: am_track.disc_number,
       track_number: am_track.track_number,
-      duration_ms: am_track.duration_in_millis
-    )
-    apple_music_track.update!(
+      duration_ms: am_track.duration_in_millis,
       album_id: apple_music_album.album_id,
       payload: am_track.as_json
     )

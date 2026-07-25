@@ -32,19 +32,20 @@ class AppleMusicAlbum < ApplicationRecord
 
     return nil if am_album.record_label != ::Album::TOUHOU_MUSIC_LABEL
 
-    apple_music_album = ::AppleMusicAlbum.find_or_create_by!(
-      apple_music_id: am_album.id,
-      name: am_album.name,
-      label: am_album.record_label,
-      url: am_album.url,
-      release_date: am_album.release_date,
-      total_tracks: am_album.track_count
-    )
+    apple_music_album = ::AppleMusicAlbum.find_or_create_by!(apple_music_id: am_album.id) do |record|
+      record.name = am_album.name
+      record.label = am_album.record_label
+    end
 
     jan_code = am_album.upc
     album = ::Album.find_or_create_by!(jan_code:)
 
     apple_music_album.update(
+      name: am_album.name,
+      label: am_album.record_label,
+      url: am_album.url,
+      release_date: am_album.release_date,
+      total_tracks: am_album.track_count,
       album_id: album.id,
       payload: am_album.as_json
     )

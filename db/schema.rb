@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_120000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -35,7 +35,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.datetime "updated_at", null: false
     t.string "url"
     t.index ["album_id"], name: "index_apple_music_albums_on_album_id"
-    t.index ["apple_music_id"], name: "index_apple_music_albums_on_apple_music_id"
+    t.index ["apple_music_id"], name: "index_apple_music_albums_on_apple_music_id", unique: true
   end
 
   create_table "apple_music_artists", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -45,6 +45,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.jsonb "payload"
     t.datetime "updated_at", null: false
     t.string "url"
+    t.index ["apple_music_id"], name: "index_apple_music_artists_on_apple_music_id", unique: true
   end
 
   create_table "apple_music_tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -65,6 +66,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.datetime "updated_at", null: false
     t.string "url", default: "", null: false
     t.index ["album_id"], name: "index_apple_music_tracks_on_album_id"
+    t.index ["apple_music_album_id", "apple_music_id"], name: "index_apple_music_tracks_on_am_album_id_and_am_id", unique: true
     t.index ["apple_music_album_id"], name: "index_apple_music_tracks_on_apple_music_album_id"
     t.index ["apple_music_id"], name: "index_apple_music_tracks_on_apple_music_id"
     t.index ["track_id"], name: "index_apple_music_tracks_on_track_id"
@@ -96,6 +98,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.integer "total_tracks"
     t.datetime "updated_at", null: false
     t.string "url"
+    t.index ["album_id", "line_music_id"], name: "index_line_music_albums_on_album_id_and_line_music_id", unique: true
     t.index ["album_id"], name: "index_line_music_albums_on_album_id"
     t.index ["line_music_id"], name: "index_line_music_albums_on_line_music_id"
   end
@@ -113,6 +116,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.datetime "updated_at", null: false
     t.string "url", default: "", null: false
     t.index ["album_id"], name: "index_line_music_tracks_on_album_id"
+    t.index ["line_music_album_id", "line_music_id"], name: "index_line_music_tracks_on_lm_album_id_and_lm_id", unique: true
     t.index ["line_music_album_id"], name: "index_line_music_tracks_on_line_music_album_id"
     t.index ["line_music_id"], name: "index_line_music_tracks_on_line_music_id"
     t.index ["track_id"], name: "index_line_music_tracks_on_track_id"
@@ -173,6 +177,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.string "spotify_id", null: false
     t.datetime "updated_at", null: false
     t.string "url"
+    t.index ["spotify_id"], name: "index_spotify_artists_on_spotify_id", unique: true
   end
 
   create_table "spotify_playlists", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
@@ -213,7 +218,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.uuid "track_id", null: false
     t.datetime "updated_at", null: false
     t.float "valence", null: false
-    t.index ["spotify_track_id"], name: "index_spotify_track_audio_features_on_spotify_track_id"
+    t.index ["spotify_track_id"], name: "index_spotify_track_audio_features_on_spotify_track_id", unique: true
     t.index ["track_id"], name: "index_spotify_track_audio_features_on_track_id"
   end
 
@@ -233,6 +238,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.datetime "updated_at", null: false
     t.string "url"
     t.index ["album_id"], name: "index_spotify_tracks_on_album_id"
+    t.index ["spotify_album_id", "spotify_id"], name: "index_spotify_tracks_on_spotify_album_id_and_spotify_id", unique: true
     t.index ["spotify_album_id"], name: "index_spotify_tracks_on_spotify_album_id"
     t.index ["spotify_id"], name: "index_spotify_tracks_on_spotify_id"
     t.index ["track_id"], name: "index_spotify_tracks_on_track_id"
@@ -281,6 +287,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.integer "total_tracks"
     t.datetime "updated_at", null: false
     t.string "url"
+    t.index ["album_id", "browse_id"], name: "index_ytmusic_albums_on_album_id_and_browse_id", unique: true
     t.index ["album_id"], name: "index_ytmusic_albums_on_album_id"
     t.index ["browse_id"], name: "index_ytmusic_albums_on_browse_id"
   end
@@ -300,6 +307,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_10_010205) do
     t.index ["album_id"], name: "index_ytmusic_tracks_on_album_id"
     t.index ["track_id"], name: "index_ytmusic_tracks_on_track_id"
     t.index ["video_id"], name: "index_ytmusic_tracks_on_video_id"
+    t.index ["ytmusic_album_id", "track_id"], name: "index_ytmusic_tracks_on_ytmusic_album_id_and_track_id", unique: true
     t.index ["ytmusic_album_id"], name: "index_ytmusic_tracks_on_ytmusic_album_id"
   end
 

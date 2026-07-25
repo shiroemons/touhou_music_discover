@@ -3,6 +3,33 @@
 require 'test_helper'
 
 class YtmusicAlbumTest < ActiveSupport::TestCase
+  YtmusicApiAlbum = Struct.new(:title, :playlist_url, :track_total_count, :year, keyword_init: true) do
+    def as_json(*)
+      { 'title' => title, 'year' => year, 'artists' => [] }
+    end
+  end
+
+  test 'save_album reuses the row with the same album_id and browse_id when other attributes differ' do
+    album = Album.create!(jan_code: "ytmusic-album-save-#{SecureRandom.hex(4)}")
+    browse_id = "MPREb_#{SecureRandom.hex(4)}"
+
+    assert_difference -> { YtmusicAlbum.unscoped.count }, 1 do
+      YtmusicAlbum.save_album(album.id, browse_id, build_api_album(title: '東方猫鍵盤'))
+    end
+
+    assert_no_difference -> { YtmusicAlbum.unscoped.count } do
+      @ytmusic_album = YtmusicAlbum.save_album(
+        album.id,
+        browse_id,
+        build_api_album(title: '東方猫鍵盤 9', track_total_count: 12)
+      )
+    end
+
+    assert_equal '東方猫鍵盤 9', @ytmusic_album.reload.name
+    assert_equal 12, @ytmusic_album.total_tracks
+    assert_equal "https://music.youtube.com/browse/#{browse_id}", @ytmusic_album.url
+  end
+
   test 'reports progress while fetching YouTube Music albums' do
     album = Album.create!(jan_code: "ytmusic-progress-#{SecureRandom.hex(4)}")
     updates = []
@@ -27,6 +54,16 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
   end
 
   private
+
+  def build_api_album(**attributes)
+    YtmusicApiAlbum.new(
+      title: 'YouTube Music Album',
+      playlist_url: 'https://music.youtube.com/playlist?list=test',
+      track_total_count: 10,
+      year: '2026',
+      **attributes
+    )
+  end
 
   def with_ytmusic_album_processors(processor)
     singleton_class = YtmusicAlbum.singleton_class

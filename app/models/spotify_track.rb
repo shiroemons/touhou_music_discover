@@ -26,19 +26,27 @@ class SpotifyTrack < ApplicationRecord
     spotify_album.album.tracks << track unless spotify_album.album.tracks.include?(track)
 
     spotify_track = ::SpotifyTrack.find_or_create_by!(
+      spotify_album_id: spotify_album.id,
+      spotify_id: s_track.id
+    ) do |record|
+      record.album_id = spotify_album.album.id
+      record.track_id = track.id
+      record.label = spotify_album.label
+      record.name = s_track.name
+    end
+
+    spotify_track.update!(
       album_id: spotify_album.album.id,
       track_id: track.id,
-      spotify_album_id: spotify_album.id,
-      spotify_id: s_track.id,
       name: s_track.name,
       label: spotify_album.label,
       url: s_track.external_urls['spotify'],
       release_date: spotify_album.release_date,
       disc_number: s_track.disc_number,
       track_number: s_track.track_number,
-      duration_ms: s_track.duration_ms
+      duration_ms: s_track.duration_ms,
+      payload: s_track.as_json
     )
-    spotify_track.update!(payload: s_track.as_json)
     spotify_track
   end
 
