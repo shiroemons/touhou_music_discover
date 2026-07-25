@@ -29,11 +29,12 @@ module AppleMusic
     attr_reader :config
 
     def connection
-      @connection ||= Faraday.new(url: API_URI) do |conn|
+      @connection ||= ExternalApi::Connection.build(:apple_music, url: API_URI, adapter: config.adapter) do |conn|
         conn.request :json
         conn.response :json, content_type: /\bjson$/
-        conn.adapter config.adapter
-        conn.headers['Authorization'] = "Bearer #{config.authentication_token}"
+        # Proc を渡すとリクエストごとに評価されるため、JWT の期限切れ後も
+        # 更新されたトークンが使われる（コネクション生成時の値に固定されない）。
+        conn.request :authorization, 'Bearer', -> { config.authentication_token }
       end
     end
 

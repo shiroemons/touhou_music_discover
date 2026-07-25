@@ -61,5 +61,22 @@ module YtMusic
 
       assert_equal 'xyz123', Client.send(:sapisid)
     end
+
+    test 'client uses the shared yt_music connection profile' do
+      assert_yt_music_profile Client.send(:client)
+    end
+
+    test 'youtube_client uses the shared yt_music connection profile' do
+      assert_yt_music_profile Client.send(:youtube_client)
+    end
+
+    private
+
+    def assert_yt_music_profile(conn)
+      assert_equal 5, conn.options.open_timeout
+      assert_equal 15, conn.options.timeout
+      assert_includes conn.builder.handlers.map(&:klass), Faraday::Retry::Middleware
+      assert_includes conn.builder.handlers.map(&:klass), Faraday::Response::Json
+    end
   end
 end

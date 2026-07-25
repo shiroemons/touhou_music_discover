@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'faraday'
-require 'faraday/retry'
 
 module LineMusic
   class ApiError < StandardError; end
@@ -11,19 +9,17 @@ module LineMusic
   API_URI = 'https://music.line.me/api2/'
 
   class Client
+    # クラス変数へのメモ化を複数スレッドから同時に行うと、コネクションが二重に
+    # 生成されうるため排他制御する。
+    CLIENT_MUTEX = Mutex.new
+
     class << self
       def client
-        @client ||= Faraday.new(API_URI) do |conn|
-          conn.request :retry, max: 3,
-                               interval: 30,
-                               interval_randomness: 0,
-                               backoff_factor: 1,
-                               exceptions: [Faraday::ConnectionFailed, Faraday::TimeoutError]
-          conn.request :json
-          conn.response :json, content_type: /\bjson$/
-          conn.response :logger, Rails.logger, { headers: false, bodies: false } if Rails.env.development?
-          conn.options.open_timeout = 5
-          conn.options.timeout = 10
+        CLIENT_MUTEX.synchronize do
+          @client ||= ExternalApi::Connection.build(:line_music, url: API_URI) do |conn|
+            conn.request :json
+            conn.response :json, content_type: /\bjson$/
+          end
         end
       end
 
