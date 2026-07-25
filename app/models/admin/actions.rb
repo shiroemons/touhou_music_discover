@@ -666,8 +666,8 @@ module Admin
         max_count = SpotifyTrack.count
         inform "Spotify 楽曲: #{count}/#{max_count} Progress: #{progress_percent(count, max_count)}%"
         SpotifyTrack.eager_load(:album, :spotify_album, :track).find_in_batches(batch_size: 100) do |spotify_tracks|
-          Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
-            warn "try #{retries} failed with exception: #{exception}" if retries.positive?
+          SpotifyRetry.with_retry(source: 'Admin::Actions::FetchSpotifyAudioFeatures') do |attempt, exception|
+            warn "try #{attempt} failed with exception: #{exception}" if attempt.positive?
 
             SpotifyClient::AudioFeatures.fetch_by_spotify_tracks(spotify_tracks)
           end
@@ -707,8 +707,8 @@ module Admin
           inform "Spotify オーディオ特性取得中: #{batch.first&.album&.spotify_album_name || batch.first&.spotify_album&.name || 'アルバム名未取得'} / " \
                  "#{batch.first(3).map { |spotify_track| spotify_track_display_name(spotify_track) }.join(', ')}"
           begin
-            Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
-              warn "try #{retries} failed with exception: #{exception}" if retries.positive?
+            SpotifyRetry.with_retry(source: 'Admin::Actions::FetchMissingSpotifyAudioFeatures') do |attempt, exception|
+              warn "try #{attempt} failed with exception: #{exception}" if attempt.positive?
 
               SpotifyClient::AudioFeatures.fetch_by_spotify_tracks(batch)
             end
@@ -1155,8 +1155,8 @@ module Admin
         count = 0
         max_count = SpotifyAlbum.count
         SpotifyAlbum.eager_load(:album).find_in_batches(batch_size: 20) do |spotify_albums|
-          Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
-            warn "try #{retries} failed with exception: #{exception}" if retries.positive?
+          SpotifyRetry.with_retry(source: 'Admin::Actions::UpdateSpotifyAlbum') do |attempt, exception|
+            warn "try #{attempt} failed with exception: #{exception}" if attempt.positive?
 
             SpotifyClient::Album.update_albums(spotify_albums)
           end
@@ -1176,8 +1176,8 @@ module Admin
         count = 0
         max_count = SpotifyTrack.count
         SpotifyTrack.eager_load(:album, :spotify_album, :track).find_in_batches(batch_size: 50) do |spotify_tracks|
-          Retryable.retryable(tries: 5, sleep: 15, on: [RestClient::TooManyRequests, RestClient::InternalServerError]) do |retries, exception|
-            warn "try #{retries} failed with exception: #{exception}" if retries.positive?
+          SpotifyRetry.with_retry(source: 'Admin::Actions::UpdateSpotifyTrack') do |attempt, exception|
+            warn "try #{attempt} failed with exception: #{exception}" if attempt.positive?
 
             SpotifyClient::Track.update_tracks(spotify_tracks)
           end

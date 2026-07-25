@@ -28,30 +28,23 @@ module SpotifyClient
         )
       end
 
+      # NOTE: このブロックは Parallel の子プロセス内で実行される。そのため
+      # SpotifyRetry.with_retry 内の SpotifyRateLimit.record! は子プロセスの Rails.cache に書き込まれる。
+      # 本番環境 (Redis) では親プロセスと共有されるが、開発環境 (memory_store) では共有されない。
+      # これは元々の挙動と同じであり、今回の変更によるリグレッションではない。
       Parallel.each(years, in_processes: 3, finish: finish_callback) do |year|
         keyword = "#{KEYWORD} year:#{year}"
-        retry_count = 0
-        max_retries = 5
-        begin
+        # 全カタログ取得の処理であり、年単位でスキップするとアルバムが欠落してしまうため、
+        # デフォルト(tries: 5)より大きいリトライ回数を明示的に指定する。
+        # ただし旧実装(429を無限リトライしていた)と異なり上限は設けてあり、
+        # 1回あたりの待機時間も SpotifyRetry の max_retry_after (900秒) で頭打ちになる。
+        SpotifyRetry.with_retry(source: 'SpotifyClient::Album.fetch_touhou_albums', tries: 10) do |attempt, exception|
+          puts "Retrying year:#{year} (attempt #{attempt}) after #{exception.class}: #{exception.message}" if attempt.positive?
+
           search_and_save_albums(keyword, year)
-        rescue RestClient::TooManyRequests => e
-          retry_after = retry_after_seconds(e) || 30
-          SpotifyRateLimit.record!(retry_after:, source: 'SpotifyClient::Album.fetch_touhou_albums')
-          puts "Rate limit exceeded for year:#{year}. Waiting for #{retry_after} seconds..."
-          sleep retry_after
-          retry
-        rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
-          retry_count += 1
-          if retry_count <= max_retries
-            wait_time = 2**retry_count # 指数バックオフ: 2, 4, 8, 16, 32秒
-            puts "Connection timeout for year:#{year}. Retrying in #{wait_time} seconds... (#{retry_count}/#{max_retries})"
-            puts "Error: #{e.message}"
-            sleep wait_time
-            retry
-          else
-            puts "Max retries reached for year:#{year}. Skipping..."
-          end
         end
+      rescue StandardError => e
+        puts "Max retries reached for year:#{year}. Skipping... (#{e.class}: #{e.message})"
       end
     end
 
@@ -226,20 +219,8 @@ module SpotifyClient
     end
     private_class_method :search_and_save_album_by_jan
 
-    def self.with_spotify_retry(max_retry_after:, max_attempts: 3)
-      attempts = 0
-
-      begin
-        yield
-      rescue RestClient::TooManyRequests => e
-        attempts += 1
-        retry_after = retry_after_seconds(e)
-        SpotifyRateLimit.record!(retry_after:, source: 'SpotifyClient::Album.with_spotify_retry')
-        raise if retry_after.blank? || retry_after > max_retry_after || attempts >= max_attempts
-
-        sleep retry_after
-        retry
-      end
+    def self.with_spotify_retry(max_retry_after:, max_attempts: 3, &)
+      SpotifyRetry.with_retry(source: 'SpotifyClient::Album.with_spotify_retry', tries: max_attempts, max_retry_after:, &)
     end
     private_class_method :with_spotify_retry
 

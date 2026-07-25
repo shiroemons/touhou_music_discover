@@ -42,7 +42,6 @@ gem 'ostruct'
 gem 'pagy'
 gem 'parallel'
 gem 'redis'
-gem 'retryable'
 gem 'rspotify'
 gem 'spotify-client', require: 'spotify/client'
 
