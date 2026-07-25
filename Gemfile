@@ -18,6 +18,8 @@ gem 'stimulus-rails'
 gem 'turbo-rails'
 
 group :development, :test do
+  gem 'brakeman', require: false
+  gem 'bundler-audit', require: false
   gem 'debug'
   gem 'dotenv-rails'
   gem 'minitest', '~> 6.0'
