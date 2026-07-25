@@ -147,7 +147,24 @@ module YtMusic
       end
 
       def sapisid
-        @sapisid ||= CGI::Cookie.parse(ENV.fetch('YOUTUBE_MUSIC_COOKIE', nil))['SAPISID']&.first
+        @sapisid ||= parse_cookie_header(ENV.fetch('YOUTUBE_MUSIC_COOKIE', nil))['SAPISID']
+      end
+
+      # Ruby 4.0 で cgi/cookie が削除されたため、その parse 相当の処理を自前で行う。
+      # "NAME1=value1; NAME2=value2" 形式の Cookie ヘッダを 名前 => 値 のハッシュに変換する。
+      def parse_cookie_header(raw_cookie)
+        return {} if raw_cookie.blank?
+
+        raw_cookie.split(/;\s*/).each_with_object({}) do |pair, cookies|
+          name, value = pair.split('=', 2)
+          next if value.nil?
+
+          name = CGI.unescape(name)
+          next if cookies.key?(name)
+
+          # 旧実装は値を '&' 区切りの複数値として扱っていたため、先頭の値を採用する
+          cookies[name] = CGI.unescape(value.split('&').first.to_s)
+        end
       end
 
       def auth_token
