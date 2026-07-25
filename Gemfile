@@ -46,4 +46,4 @@ gem 'retryable'
 gem 'rspotify'
 gem 'spotify-client', require: 'spotify/client'
 
-gem 'solid_queue', '~> 1.4'
+gem 'solid_queue', '~> 1.5'
