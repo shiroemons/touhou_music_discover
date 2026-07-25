@@ -33,6 +33,8 @@ make console       # Railsコンソール
 make shell         # devboxシェルに入る
 ```
 
+JSのパッケージマネージャーはyarn 1.22を使用する（bunは使用しない）。
+
 ### Database Operations
 ```bash
 make migrate       # マイグレーション実行
