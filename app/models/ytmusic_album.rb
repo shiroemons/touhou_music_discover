@@ -191,14 +191,6 @@ class YtmusicAlbum < ApplicationRecord
     payload&.dig('thumbnails', -1, 'url')&.sub(/=w.*\z/, '')
   end
 
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[album_id browse_id name payload playlist_url release_year total_tracks url]
-  end
-
-  def self.ransackable_associations(_auth_object = nil)
-    %w[album ytmusic_tracks]
-  end
-
   def self.fetch_albums(progress_callback: nil)
     albums = Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code)
     total_count = albums.count

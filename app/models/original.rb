@@ -18,8 +18,4 @@ class Original < ApplicationRecord
            dependent: :destroy
 
   scope :original_song_non_duplicated, -> { includes(:original_songs).where(original_songs: { is_duplicate: false }) }
-
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[code original_type series_order short_title title]
-  end
 end

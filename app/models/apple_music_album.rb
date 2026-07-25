@@ -58,12 +58,4 @@ class AppleMusicAlbum < ApplicationRecord
   def image_url
     payload&.dig('attributes', 'artwork', 'url')&.sub('{w}x{h}', '500x500').presence
   end
-
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[album_id apple_music_id label name payload release_date total_tracks url]
-  end
-
-  def self.ransackable_associations(_auth_object = nil)
-    %w[album apple_music_tracks]
-  end
 end

@@ -13,12 +13,4 @@ class SpotifyPlaylist < ApplicationRecord
 
   scope :for_user, ->(user_id) { where(spotify_user_id: user_id) }
   scope :stale, -> { where(synced_at: nil).or(where(synced_at: ...24.hours.ago)) }
-
-  def self.ransackable_attributes(_auth_object = nil)
-    %w[name original_song_code spotify_id spotify_user_id synced_at]
-  end
-
-  def self.ransackable_associations(_auth_object = nil)
-    %w[original_song]
-  end
 end
