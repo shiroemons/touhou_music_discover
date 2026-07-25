@@ -4,7 +4,7 @@
     "ruby":          "4.0.3",
     "postgresql_18": "18.1",
     "redis":         "8.2.3",
-    "nodejs":        "20",
+    "nodejs":        "24",
     "yarn":          "1.22",
     "libyaml":       "0.2.5",
     "openssl":       "3.6.0",
