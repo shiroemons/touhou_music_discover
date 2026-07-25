@@ -415,7 +415,7 @@ namespace :touhou_music_discover do
       token = ENV.fetch('GITHUB_TOKEN', nil)
       if token.present?
         headers = { 'Authorization' => "token #{token}" }
-        response = Faraday.get(url, nil, headers)
+        response = ExternalApi::Connection.build(:github).get(url) { |req| req.headers.merge!(headers) }
         songs = CSV.new(response.body, col_sep: "\t", converters: nil, liberal_parsing: true, encoding: 'UTF-8', headers: true)
         songs = songs.read
         songs.inspect

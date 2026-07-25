@@ -2,8 +2,6 @@
 
 require 'cgi'
 require 'digest/sha1'
-require 'faraday'
-require 'faraday/retry'
 
 module YtMusic
   class Client
@@ -15,6 +13,10 @@ module YtMusic
     YOUTUBE_VERSION = '2.20260501.00.00'
     YOUTUBE_API_KEY = 'AIzaSyC9XL3ZjWddXya6X74dJoCTL-WEYFDNX30'
     YTM_PARAMS = "?alt=json&key=#{YOUTUBE_API_KEY}".freeze
+    # クラス変数へのメモ化を複数スレッドから同時に行うと、コネクションが二重に
+    # 生成されうるため排他制御する。
+    CLIENT_MUTEX = Mutex.new
+
     class << self
       def generate_body(options = {})
         context = initialize_context
@@ -58,16 +60,18 @@ module YtMusic
       private
 
       def client
-        @client ||= Faraday.new(YTM_BASE_API) do |conn|
-          conn.request :retry, max: 3, interval: 0.5, backoff_factor: 2, exceptions: [Faraday::ConnectionFailed, Faraday::SSLError, Net::OpenTimeout]
-          conn.response :json, content_type: /\bjson\z/
+        CLIENT_MUTEX.synchronize do
+          @client ||= ExternalApi::Connection.build(:yt_music, url: YTM_BASE_API) do |conn|
+            conn.response :json, content_type: /\bjson\z/
+          end
         end
       end
 
       def youtube_client
-        @youtube_client ||= Faraday.new(YOUTUBE_BASE_API) do |conn|
-          conn.request :retry, max: 3, interval: 0.5, backoff_factor: 2, exceptions: [Faraday::ConnectionFailed, Faraday::SSLError, Net::OpenTimeout]
-          conn.response :json, content_type: /\bjson\z/
+        CLIENT_MUTEX.synchronize do
+          @youtube_client ||= ExternalApi::Connection.build(:yt_music, url: YOUTUBE_BASE_API) do |conn|
+            conn.response :json, content_type: /\bjson\z/
+          end
         end
       end
 
