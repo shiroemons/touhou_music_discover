@@ -23,6 +23,8 @@ group :development, :test do
   gem 'debug'
   gem 'dotenv-rails'
   gem 'minitest', '~> 6.0'
+  gem 'vcr', require: false
+  gem 'webmock', require: false
 end
 
 group :development do

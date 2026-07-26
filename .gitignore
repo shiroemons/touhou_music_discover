@@ -54,3 +54,7 @@ bun.lock
 # 作業中はローカルに置くが、ドキュメントとして管理はしない。
 /docs/superpowers/
 .superpowers/
+
+# VCR カセットは実アクセストークン・メールアドレス・実プレイリスト名を含むため
+# リポジトリに含めない。fixture は test/fixtures/files/spotify_api/ に合成値で置く。
+/test/vcr_cassettes/

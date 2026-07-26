@@ -97,6 +97,9 @@ GEM
       thor (~> 1.0)
     concurrent-ruby (1.3.8)
     connection_pool (3.0.2)
+    crack (1.0.1)
+      bigdecimal
+      rexml
     crass (1.0.7)
     cssbundling-rails (1.4.3)
       railties (>= 6.0.0)
@@ -133,6 +136,7 @@ GEM
       raabro (~> 1.4)
     globalid (1.4.0)
       activesupport (>= 6.1)
+    hashdiff (1.2.1)
     hashie (5.1.0)
       logger
     http-cookie (1.1.6)
@@ -313,6 +317,7 @@ GEM
       http-cookie (>= 1.0.2, < 2.0)
       mime-types (>= 1.16, < 4.0)
       netrc (~> 0.8)
+    rexml (3.4.4)
     rspotify (2.12.4)
       addressable (~> 2.8.0)
       omniauth-oauth2 (>= 1.6)
@@ -380,7 +385,12 @@ GEM
     unicode-emoji (4.2.0)
     uri (1.1.1)
     useragent (0.16.11)
+    vcr (6.4.0)
     version_gem (1.1.14)
+    webmock (3.26.2)
+      addressable (>= 2.8.0)
+      crack (>= 0.3.2)
+      hashdiff (>= 0.4.0, < 2.0.0)
     websocket-driver (0.8.2)
       base64
       websocket-extensions (>= 0.1.0)
@@ -428,6 +438,8 @@ DEPENDENCIES
   spotify-client
   stimulus-rails
   turbo-rails
+  vcr
+  webmock
 
 RUBY VERSION
   ruby 4.0.6
