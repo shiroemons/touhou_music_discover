@@ -87,18 +87,16 @@ class YtmusicAlbum < ApplicationRecord
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
+    if album.degraded?
+      Rails.logger.warn "browse_id: #{browse_id} の取得結果が縮退しているため保存をスキップしました"
+      return nil
+    end
+
     ytmusic_album = find_or_create_by!(album_id:, browse_id:) do |record|
       record.name = album.title
     end
 
-    ytmusic_album.update!(
-      name: album.title,
-      url: "https://music.youtube.com/browse/#{browse_id}",
-      playlist_url: album.playlist_url,
-      total_tracks: album.track_total_count,
-      release_year: album.year,
-      payload: album.as_json
-    )
+    ytmusic_album.update_album(album, "https://music.youtube.com/browse/#{browse_id}")
     ytmusic_album
   end
 
@@ -158,8 +156,7 @@ class YtmusicAlbum < ApplicationRecord
     ytmusic_album = YtMusic::Album.find(browse_id)
     return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
 
-    save_album(album.album_id, browse_id, ytmusic_album)
-    true
+    save_album(album.album_id, browse_id, ytmusic_album).present?
   end
   # rubocop:enable Naming/PredicateMethod
 
@@ -170,12 +167,22 @@ class YtmusicAlbum < ApplicationRecord
     ytmusic_album = YtMusic::Album.find(ytm_album.browse_id)
     return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
 
-    save_album(album.album_id, ytm_album.browse_id, ytmusic_album)
-    true
+    save_album(album.album_id, ytm_album.browse_id, ytmusic_album).present?
   end
   # rubocop:enable Naming/PredicateMethod
 
   def update_album(album, url)
+    if album.degraded?
+      Rails.logger.warn "YtmusicAlbum##{id} (browse_id: #{browse_id}) の取得結果が縮退しているためpayload更新をスキップしました"
+      return false
+    end
+
+    existing_count = existing_playable_track_count
+    if existing_count.positive? && album.playable_track_count < existing_count
+      Rails.logger.warn "YtmusicAlbum##{id} (browse_id: #{browse_id}) の取得結果は既存 #{existing_count} 件 → 取得 #{album.playable_track_count} 件 で悪化するためpayload更新をスキップしました"
+      return false
+    end
+
     update(
       name: album.title,
       release_year: album.year,
@@ -340,5 +347,16 @@ class YtmusicAlbum < ApplicationRecord
         end
       end
     end
+  end
+
+  private
+
+  # 既存payload中の「video_idが非nilかつtrack_numberが正の整数」であるトラック数。
+  # 既存payloadが無い/tracksが空の場合は0を返す（回帰ガードは0件からの改善を常に許可するため）。
+  def existing_playable_track_count
+    tracks = payload&.dig('tracks')
+    return 0 unless tracks.is_a?(Array)
+
+    tracks.count { |track| track['video_id'].present? && track['track_number'].to_i.positive? }
   end
 end

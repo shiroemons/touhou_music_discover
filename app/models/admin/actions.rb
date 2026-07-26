@@ -934,7 +934,13 @@ module Admin
             end
 
             url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
-            ytmusic_album.update_album(album, url)
+            unless ytmusic_album.update_album(album, url)
+              mutex.synchronize do
+                error_count += 1
+                errors << "#{ytmusic_album.name}: 縮退レスポンスのためスキップしました"
+              end
+              next
+            end
 
             mutex.synchronize { success_count += 1 }
             Rails.logger.info "ペイロード更新成功: #{album.title}"
@@ -1208,7 +1214,10 @@ module Admin
           end
 
           url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
-          ytmusic_album.update_album(album, url)
+          unless ytmusic_album.update_album(album, url)
+            error("アルバム「#{album.title}」: 縮退レスポンスのためスキップしました")
+            return
+          end
 
           Rails.logger.info "ペイロード更新成功: #{album.title}"
           succeed "アルバム「#{album.title}」のペイロードを更新しました"

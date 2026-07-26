@@ -12,6 +12,10 @@ class YtmusicAlbumProcessJanToAlbumBrowseIdsTest < ActiveSupport::TestCase
         'year' => year
       }
     end
+
+    def degraded?
+      false
+    end
   end
 
   test 'creates YouTube Music album from JAN_TO_ALBUM_BROWSE_IDS' do
