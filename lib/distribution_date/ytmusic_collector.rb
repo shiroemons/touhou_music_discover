@@ -36,8 +36,9 @@ module DistributionDate
     SLICE_SIZE = 1000
 
     # 対象抽出条件: YtmusicAlbum.distribution_missing スコープと同じSQL
-    # (配信日が未確定、または前回の集計がfailedだった行)。
-    DISTRIBUTION_MISSING_SQL = "distributed_on IS NULL OR distribution_source = 'failed'"
+    # (配信日が未確定、前回の集計がfailedだった、または縮退したまま残っている動画がある行)。
+    DISTRIBUTION_MISSING_SQL = "distributed_on IS NULL OR distribution_source = 'failed' OR " \
+                               "distribution_track_metadata @> '[{\"degraded\": true}]'"
 
     # collect_album 1件の処理結果。動画メタデータを何件取得できたかも一緒に集計したいため、
     # シンボル単体ではなくstatus/fetched_countを持つStructにしている。
@@ -90,8 +91,12 @@ module DistributionDate
     # 縮退したまま残った動画が1件でもあれば、配信日算出の成否によらず:degradedを優先して報告する。
     # 縮退はONLY_MISSING=1（既定）の再実行で直る可能性が高く、単なる:failedより具体的で
     # actionableな情報のため（distribution_sourceが結果的にfailedになっていても:degradedを優先する）。
+    # any_degradedはcollect_videos内で今回取得した動画だけを見ているため、only_missing: true
+    # （既定）では対象動画が必ず含まれ通常はこれで判定できるが、念のため
+    # ytmusic_album.distribution_source == 'degraded'（DistributionCalculatorが判定した結果）も
+    # 防御的に見て:degradedとして拾う。
     def album_status(ytmusic_album, any_degraded)
-      return :degraded if any_degraded
+      return :degraded if any_degraded || ytmusic_album.distribution_source == 'degraded'
       return :failed if ytmusic_album.distribution_source == 'failed'
 
       :updated

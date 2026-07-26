@@ -312,6 +312,48 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     assert_not_includes missing_ids, succeeded.id
   end
 
+  test 'recalculate_distribution!: 全動画が縮退したアルバムはdistribution_sourceがdegradedになりfailedにならない' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    ytmusic_album.update!(distribution_track_metadata: [
+                            distribution_metadata_entry(video_id: 'v1', art_track: false, published_on: nil, degraded: true),
+                            distribution_metadata_entry(video_id: 'v2', art_track: false, published_on: nil, degraded: true)
+                          ])
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'degraded', ytmusic_album.distribution_source
+    assert_nil ytmusic_album.distributed_on
+    assert_equal 2, ytmusic_album.distribution_stats['degraded_videos']
+  end
+
+  test 'recalculate_distribution!: 一部だけ縮退したアルバムはdistributed_onが算出されてもdistribution_missingに含まれる' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    ytmusic_album.update!(distribution_track_metadata: [
+                            distribution_metadata_entry(video_id: 'v1', art_track: true, published_on: Date.new(2026, 6, 29)),
+                            distribution_metadata_entry(video_id: 'v2', art_track: false, published_on: nil, degraded: true)
+                          ])
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_not_nil ytmusic_album.distributed_on
+    assert_includes YtmusicAlbum.unscoped.distribution_missing.pluck(:id), ytmusic_album.id
+  end
+
+  test 'recalculate_distribution!: 縮退が解消されたアルバムはdistribution_missingから外れる' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    ytmusic_album.update!(distribution_track_metadata: [
+                            distribution_metadata_entry(video_id: 'v1', art_track: true, published_on: Date.new(2026, 6, 29), degraded: false),
+                            distribution_metadata_entry(video_id: 'v2', art_track: true, published_on: Date.new(2026, 6, 29), degraded: false)
+                          ])
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_not_includes YtmusicAlbum.unscoped.distribution_missing.pluck(:id), ytmusic_album.id
+  end
+
   private
 
   def create_distribution_album
@@ -333,7 +375,11 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
 
   # distribution_track_metadataの1要素分のFake。DistributionDate::YtmusicCollectorが
   # 実際に保存する形式（文字列キー、日付はISO8601文字列）に合わせている。
-  def distribution_metadata_entry(video_id:, art_track:, published_on:, track_number: 1, original_released_on: nil)
+  # degraded: trueのときは、build_metadata_entryが縮退時にfetched_atをnilのまま保存する
+  # 実装に合わせてfetched_atをnilにする。
+  # rubocop:disable Metrics/ParameterLists -- テストヘルパーとして各テストが個別に指定したい値をそのまま
+  # キーワード引数で公開しているため、オプションハッシュへの集約はしない。
+  def distribution_metadata_entry(video_id:, art_track:, published_on:, track_number: 1, original_released_on: nil, degraded: false)
     {
       'video_id' => video_id,
       'track_number' => track_number,
@@ -342,9 +388,11 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
       'original_released_on' => original_released_on&.iso8601,
       'provided_by' => art_track ? 'Rightsscale' : nil,
       'art_track' => art_track,
-      'fetched_at' => Time.current.iso8601
+      'degraded' => degraded,
+      'fetched_at' => degraded ? nil : Time.current.iso8601
     }
   end
+  # rubocop:enable Metrics/ParameterLists
 
   def playable_tracks_payload(count)
     { 'tracks' => Array.new(count) { |i| { 'video_id' => "v#{i}", 'track_number' => i + 1 } } }

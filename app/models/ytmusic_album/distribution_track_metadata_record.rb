@@ -8,7 +8,7 @@ class YtmusicAlbum
   # 意識せず同じ集計ロジックで扱える。
   class DistributionTrackMetadataRecord
     Record = Struct.new(
-      :video_id, :track_number, :published_on, :original_released_on, :art_track, :video_fetched_at,
+      :video_id, :track_number, :published_on, :original_released_on, :art_track, :video_fetched_at, :degraded,
       keyword_init: true
     )
 
@@ -26,7 +26,8 @@ class YtmusicAlbum
         # entry['fetched_at']は取得を試みた日時であり、成功/失敗を問わず記録される。
         # ytmusic_tracks側のvideo_fetched_at（成功時のみ設定）とは意味が異なるため、
         # distribution_statsのfetched_tracksを集計元間で厳密に比較しないこと。
-        video_fetched_at: entry['fetched_at']
+        video_fetched_at: entry['fetched_at'],
+        degraded: entry['degraded'] == true
       )
     end
 

@@ -148,4 +148,16 @@ class YtmusicTrack < ApplicationRecord
   def artist_name
     payload['artists']&.map { it['name'] }&.join(' / ')
   end
+
+  # rubocop:disable Naming/PredicateMethod -- DistributionTrackMetadataRecord#degraded（Structのメンバ）と
+  # 同じ名前・同じ呼び出し方（track.degraded）で揃えるため、あえて`?`を付けない。
+  # ytmusic_tracksの行は縮退した動画の取得結果を保持しない
+  # (縮退時はcollect_videosがupdate_video_metadataを呼ばないため)。
+  # distribution_track_metadataが無い場合のフォールバック集計(source_of_truth: track_rows)で
+  # DistributionCalculatorがtrack.degradedを呼べるよう、DistributionTrackMetadataRecordと
+  # インターフェースを合わせるための読み取り専用メソッド。常にfalseを返す。
+  def degraded
+    false
+  end
+  # rubocop:enable Naming/PredicateMethod
 end

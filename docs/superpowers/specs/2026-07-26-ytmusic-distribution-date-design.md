@@ -68,7 +68,7 @@ YouTube 側の日付は UTC 基準のため、**日本の配信日 = `publishDat
 | `distributed_on` | date | 可 | **配信日（JST）** = `youtube_published_on + 1 日` |
 | `youtube_published_on` | date | 可 | Art Track の `published_on` 最頻値（UTC の生値） |
 | `original_released_on` | date | 可 | Art Track の `original_released_on` 最頻値（原盤リリース日） |
-| `distribution_source` | string | 可 | 判定根拠。`art_track_mode` / `all_track_mode` / `single_track` / `failed` |
+| `distribution_source` | string | 可 | 判定根拠。`art_track_mode` / `all_track_mode` / `single_track` / `failed` / `degraded`。`failed` は候補0件かつ縮退動画も0件（本当に判定不能）、`degraded` は候補0件だが縮退動画が1件以上（YouTube側のスロットリングによる未確定で、再取得すれば直る可能性がある）を表す |
 | `distribution_stats` | jsonb | 可 | 監査用。日付ごとの件数分布、Art Track 数／総数、除外した video_id など |
 | `distribution_fetched_at` | datetime | 可 | 集計実行日時 |
 | `distribution_track_metadata` | jsonb | 可 | 動画1本ごとの取得結果の配列（`video_id` / `track_number` / `published_on` / `uploaded_on` / `original_released_on` / `provided_by` / `art_track` / `fetched_at`）。取得に失敗した動画も `published_on` 等を `null` にした要素として記録する。`ytmusic_tracks` の行の有無に依存せず配信日を集計・再取得できるようにするための一次データ |
@@ -90,7 +90,8 @@ YouTube 側の日付は UTC 基準のため、**日本の配信日 = `publishDat
   "original_released_on_counts": { "2026-05-04": 10 },
   "excluded_video_ids": ["xxxxxxxxxxx"],
   "tie_break": false,
-  "source_of_truth": "payload"
+  "source_of_truth": "payload",
+  "degraded_videos": 0
 }
 ```
 
@@ -121,7 +122,10 @@ track 行が 0 件、8 件は一部のみで、23 件中 22 件が直近追加�
 3. 同数タイの場合は**より古い日付**を採用する（初回配信を優先。再アップロードや後追い追加より初出を信頼する）
 4. Art Track が 0 件の場合は全トラックの `published_on` 最頻値にフォールバックし、`distribution_source = 'all_track_mode'` を記録する
 5. 対象トラックが 1 件のみの場合は `distribution_source = 'single_track'`（統計的な裏付けが弱いことを明示）
-6. `published_on` が 1 件も無い場合は各カラムを nil のままにし、`distribution_source = 'failed'` を記録する
+6. `published_on` が 1 件も無い場合は各カラムを nil のままにする。このとき縮退した動画
+   （`degraded = true` の要素。詳細は「縮退レスポンスへの対処」章を参照）が1件以上あれば
+   `distribution_source = 'degraded'`（スロットリングで未確定・再取得すれば直る可能性がある）、
+   1件も無ければ `distribution_source = 'failed'`（本当に判定不能）を記録する
 7. `distributed_on = youtube_published_on + 1 日`
 8. `original_released_on` も同じ最頻値ルールで算出する
 9. 分布は必ず `distribution_stats` に記録する
@@ -159,7 +163,10 @@ track 行が 0 件、8 件は一部のみで、23 件中 22 件が直近追加�
 - `recalculate_distribution!` — `distribution_track_metadata` が存在すればそれを、無ければ
   `ytmusic_tracks` の行を集計元として使う（`DistributionTrackMetadataRecord` が両者を
   `DistributionCalculator` が期待する同一インターフェースへ変換する）
-- スコープ `distribution_missing` — `distributed_on` が nil または `distribution_source = 'failed'` の行
+- スコープ `distribution_missing` — `distributed_on` が nil または `distribution_source = 'failed'` の行に加え、
+  `distribution_track_metadata` に縮退した動画（`degraded: true`）が1件以上残っている行も対象にする
+  （一部だけ縮退したアルバムは `distributed_on` が算出済みでも対象に含める。不完全なデータから算出した
+  配信日がそのまま固定化されるのを防ぐため）
 
 ### `app/models/ytmusic_track.rb`（既存を拡張）
 
@@ -223,6 +230,25 @@ track 行が 0 件、8 件は一部のみで、23 件中 22 件が直近追加�
 優先する。縮退は再実行で直る可能性が高く、単なる `:failed` より具体的で actionable な情報のため）。
 `run` のサマリ・進捗表示にも縮退件数を出力し、「`ONLY_MISSING=1`（既定）で再実行すると再取得される」旨を
 明記する。
+
+### 縮退による誤判定の是正（2026-07-26 追加分）
+
+500 アルバムを対象にバックフィルを実行したところ、943 動画中 257 件（約 26.6%）が縮退レスポンスと
+なり、そのうち全動画が縮退した 13 アルバムで `distribution_source = 'failed'` が誤って保存されていた。
+「候補0件」の原因が「本当に判定不能」なのか「縮退で一時的に判定できなかっただけ」なのかを区別できて
+いなかったことが原因であり、後者は `ONLY_MISSING=1`（既定）による再実行で解消できるにもかかわらず
+`failed` のままだと actionable な情報として扱いにくい。
+
+対処として以下を追加した:
+
+- `DistributionCalculator#select_candidates` で候補0件時に縮退動画（`degraded: true`）の有無を見て、
+  縮退動画が1件以上あれば `distribution_source = 'degraded'`、1件も無ければ従来どおり `'failed'` を
+  記録するようにした
+- `distribution_stats` に `'degraded_videos'`（縮退動画数）を追加した
+- `YtmusicAlbum.distribution_missing` スコープ（および `DistributionDate::YtmusicCollector::
+  DISTRIBUTION_MISSING_SQL`）に、`distribution_track_metadata` 中に縮退した要素が1件以上残っている
+  条件を追加した。これにより、一部のトラックだけ縮退したアルバム（`distributed_on` は算出済みだが
+  不完全なデータに基づく値）も再取得対象として拾われ続けるようになる
 
 ## テスト
 

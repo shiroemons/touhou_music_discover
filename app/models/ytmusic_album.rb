@@ -15,7 +15,15 @@ class YtmusicAlbum < ApplicationRecord
   scope :is_touhou, -> { eager_load(:album).where(albums: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
   scope :browse_id, ->(browse_id) { find_by(browse_id:) }
-  scope :distribution_missing, -> { where("distributed_on IS NULL OR distribution_source = 'failed'") }
+  # distributed_onが未確定、前回の集計がfailedだった行に加え、distribution_track_metadataに
+  # 縮退した動画（degraded: true）が1件でも残っている行も対象にする。縮退が一部だけのアルバムは
+  # distributed_onが算出済みでも、不完全なデータから算出した配信日が固定化されてしまうため。
+  scope :distribution_missing, lambda {
+    where(
+      "distributed_on IS NULL OR distribution_source = 'failed' OR " \
+      "distribution_track_metadata @> '[{\"degraded\": true}]'"
+    )
+  }
 
   # 検索で見つけにくいアルバム
   # コメントアウトしているアルバムは、YouTubeMusicで配信されていないアルバム

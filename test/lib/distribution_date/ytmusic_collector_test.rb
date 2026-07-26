@@ -427,6 +427,74 @@ module DistributionDate
       assert_equal :degraded, outcome.status
     end
 
+    test '一部の動画が縮退したまま残ったアルバムはdistributed_on算出済みでもtarget_idsに拾われる（dry-run、回帰テスト）' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      ytmusic_album.update!(distribution_track_metadata: [
+                              distribution_metadata_entry(video_id: 'vid-ok', published_on: Date.new(2026, 6, 29)),
+                              distribution_metadata_entry(video_id: 'vid-degraded', degraded: true)
+                            ])
+      ytmusic_album.recalculate_distribution!
+
+      assert_not_nil ytmusic_album.reload.distributed_on
+
+      result = run_collector(apply: false)
+
+      assert_equal 1, result[:target_count]
+    end
+
+    test '一部の動画が縮退したまま残ったアルバムはapply: trueでも対象になり縮退した動画だけ再取得される（回帰テスト）' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      ytmusic_album.update!(
+        payload: { 'tracks' => [
+          payload_track(video_id: 'vid-ok', track_number: 1),
+          payload_track(video_id: 'vid-degraded', track_number: 2)
+        ] },
+        distribution_track_metadata: [
+          distribution_metadata_entry(video_id: 'vid-ok', published_on: Date.new(2026, 6, 29)),
+          distribution_metadata_entry(video_id: 'vid-degraded', degraded: true)
+        ]
+      )
+      ytmusic_album.recalculate_distribution!
+      video = FakeVideo.new(publish_date: Date.new(2026, 6, 29), upload_date: nil, release_date: nil, provided_by: nil)
+      call_count = 0
+
+      result = nil
+      stub_const(YtMusic, :Video, stub_find_client do |video_id|
+        call_count += 1
+
+        assert_equal 'vid-degraded', video_id
+        video
+      end) do
+        result = run_collector(apply: true, base_interval: 0)
+      end
+
+      assert_equal 1, result[:target_count]
+      assert_equal 1, call_count
+    end
+
+    test '縮退が解消された後（再取得で正常化）は同じアルバムがtarget_idsから外れる' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      ytmusic_album.update!(distribution_track_metadata: [
+                              distribution_metadata_entry(video_id: 'vid-ok', published_on: Date.new(2026, 6, 29)),
+                              distribution_metadata_entry(video_id: 'vid-degraded', degraded: true)
+                            ])
+      ytmusic_album.recalculate_distribution!
+
+      # 縮退が解消され、再取得でmicroformatが正常に返ってきた状態を再現する。
+      ytmusic_album.update!(distribution_track_metadata: [
+                              distribution_metadata_entry(video_id: 'vid-ok', published_on: Date.new(2026, 6, 29)),
+                              distribution_metadata_entry(video_id: 'vid-degraded', published_on: Date.new(2026, 6, 29), degraded: false)
+                            ])
+      ytmusic_album.recalculate_distribution!
+
+      result = run_collector(apply: false)
+
+      assert_equal 0, result[:target_count]
+    end
+
     test 'request_intervalが動画取得ごとにsleepする' do
       album = create_album
       ytmusic_album = create_ytmusic_album(album:)
@@ -475,11 +543,13 @@ module DistributionDate
     end
 
     # ytmusic_albums.distribution_track_metadataの1要素分のFake（既に取得済みの状態を再現する）。
-    def distribution_metadata_entry(video_id:, track_number: 1, published_on: Date.new(2026, 6, 29))
+    # degraded: trueのときは、build_metadata_entryが縮退時にfetched_atをnilのまま保存する
+    # 実装に合わせてfetched_atをnilにする（=only_missingの差分抽出で再取得対象として残る）。
+    def distribution_metadata_entry(video_id:, track_number: 1, published_on: Date.new(2026, 6, 29), degraded: false)
       {
-        'video_id' => video_id, 'track_number' => track_number, 'published_on' => published_on&.iso8601,
+        'video_id' => video_id, 'track_number' => track_number, 'published_on' => degraded ? nil : published_on&.iso8601,
         'uploaded_on' => nil, 'original_released_on' => nil, 'provided_by' => nil, 'art_track' => false,
-        'fetched_at' => Time.current.iso8601
+        'degraded' => degraded, 'fetched_at' => degraded ? nil : Time.current.iso8601
       }
     end
 
