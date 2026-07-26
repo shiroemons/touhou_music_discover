@@ -92,7 +92,7 @@ namespace :ytmusic do
       count += 1
       print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
 
-      album = YTMusic::Album.find(ytmusic_album.browse_id)
+      album = YtMusic::Album.find(ytmusic_album.browse_id)
       url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
       ytmusic_album.update_album(album, url) if album
     end
@@ -106,7 +106,7 @@ namespace :ytmusic do
       count += 1
       print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
 
-      album = YTMusic::Album.find(ytmusic_album.browse_id)
+      album = YtMusic::Album.find(ytmusic_album.browse_id)
       url = "https://music.youtube.com/browse/#{ytmusic_album.browse_id}"
       ytmusic_album.update_album(album, url) if album
 
@@ -116,5 +116,16 @@ namespace :ytmusic do
         ytm_track.update_track(track) if track
       end
     end
+  end
+
+  desc 'YouTube Music アルバムの劣化した payload を再取得して修復する（既定はdry-run。APPLY=1で実行。PARALLEL_WORKERSでワーカー数を上書き可能。ALL=1で劣化の有無に関わらず全アルバムを再取得。回帰ガードにより既存payloadが悪化することはない）'
+  task repair_degraded_album_payloads: :environment do
+    Repair::YtmusicAlbumPayloads.new(
+      apply: ENV['APPLY'] == '1',
+      limit: ENV['LIMIT'].presence&.to_i,
+      max_attempts: ENV.fetch('MAX_ATTEMPTS', Repair::YtmusicAlbumPayloads::DEFAULT_MAX_ATTEMPTS).to_i,
+      sync_tracks: ENV['SYNC_TRACKS'] == '1',
+      all: ENV['ALL'] == '1'
+    ).run
   end
 end

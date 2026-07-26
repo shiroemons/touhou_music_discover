@@ -13,10 +13,12 @@ module YtMusic
     def parser(response)
       result = {}
       contents = response.dig('contents', 'tabbedSearchResultsRenderer', 'tabs', 0, 'tabRenderer', 'content', 'sectionListRenderer', 'contents')
-      contents.each do |content|
-        next if content['itemSectionRenderer']
+      return result if contents.blank?
 
+      contents.each do |content|
         ctx = content['musicShelfRenderer']
+        next if ctx.blank?
+
         category = ctx.dig('title', 'runs', 0, 'text')
         case category
         when 'アルバム'
