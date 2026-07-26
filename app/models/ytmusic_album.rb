@@ -87,9 +87,11 @@ class YtmusicAlbum < ApplicationRecord
   }.freeze
 
   def self.save_album(album_id, browse_id, album)
-    find_or_create_by!(
-      album_id:,
-      browse_id:,
+    ytmusic_album = find_or_create_by!(album_id:, browse_id:) do |record|
+      record.name = album.title
+    end
+
+    ytmusic_album.update!(
       name: album.title,
       url: "https://music.youtube.com/browse/#{browse_id}",
       playlist_url: album.playlist_url,
@@ -97,6 +99,7 @@ class YtmusicAlbum < ApplicationRecord
       release_year: album.year,
       payload: album.as_json
     )
+    ytmusic_album
   end
 
   def self.search_and_save(query, album)

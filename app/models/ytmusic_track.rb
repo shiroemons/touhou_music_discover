@@ -103,16 +103,24 @@ class YtmusicTrack < ApplicationRecord
     return unless url.include?(video_id.to_s) && url.include?(playlist_id.to_s)
 
     ytmusic_track = ::YtmusicTrack.find_or_create_by!(
-      album_id:,
-      track_id:,
       ytmusic_album_id: ytm_album.id,
-      video_id: video_id,
-      playlist_id: playlist_id,
+      track_id:
+    ) do |record|
+      record.album_id = album_id
+      record.video_id = video_id
+      record.playlist_id = playlist_id
+      record.name = title
+    end
+
+    ytmusic_track.update(
+      album_id:,
+      video_id:,
+      playlist_id:,
       name: title,
-      url: url,
-      track_number: track_number
+      url:,
+      track_number:,
+      payload: payload_track
     )
-    ytmusic_track.update(payload: payload_track)
   end
 
   def update_track(ytm_track)
