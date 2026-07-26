@@ -185,27 +185,38 @@ module Admin
       )
       skipped_album = create_album('4777777777832')
       create_track(skipped_album, 'JPABC260732')
-      fetched_ids = []
-      processed_ids = []
-      api_album = Struct.new(:id)
+      fetched_spotify_ids = []
       result = nil
 
-      with_singleton_method(RSpotify::Album, :find, lambda { |ids|
-        fetched_ids.concat(ids)
-        ids.map { |id| api_album.new(id) }
-      }) do
-        with_singleton_method(SpotifyClient::Album, :process_album, ->(spotify_album) { processed_ids << spotify_album.id }) do
-          result = Admin::Resource.find!('spotify_tracks').action_for!('fetch_missing_spotify_tracks').run
+      with_singleton_method(SpotifyClient::Album, :fetch_and_process_album, ->(spotify_id) { fetched_spotify_ids << spotify_id }) do
+        result = Admin::Resource.find!('spotify_tracks').action_for!('fetch_missing_spotify_tracks').run
 
-          assert_predicate result, :success?
-        end
+        assert_predicate result, :success?
       end
 
-      assert_equal ['spotify-album-1'], fetched_ids
-      assert_equal ['spotify-album-1'], processed_ids
+      assert_equal ['spotify-album-1'], fetched_spotify_ids
       assert_includes result.message, '- 未検出: 1アルバム'
       assert_includes result.message, 'Spotify Album'
       assert_includes result.message, 'Spotify Missing Source Track'
+    end
+
+    test 'records Spotify rate limit status when an action raises SpotifyApi::RateLimitError' do
+      error = SpotifyApi::RateLimitError.new('429 Too Many Requests', status: 429, retry_after: 30)
+      result = nil
+      status = nil
+
+      with_spotify_rate_limit_cache(ActiveSupport::Cache::MemoryStore.new) do
+        with_singleton_method(SpotifyClient::Album, :fetch_touhou_albums, ->(**_kwargs) { raise error }) do
+          result = Admin::Resource.find!('spotify_albums').action_for!('fetch_spotify_album').run
+        end
+
+        status = SpotifyRateLimit.current
+      end
+
+      assert_equal :error, result.status
+      assert_equal error.message, result.message
+      assert_equal 30, status.retry_after
+      assert_equal 'FetchSpotifyAlbum', status.source
     end
 
     private
@@ -224,6 +235,14 @@ module Admin
       yield
     ensure
       object.define_singleton_method(method_name, original_method)
+    end
+
+    # テスト環境の cache_store は null_store のため、記録内容を読み戻せるよう一時的に差し替える
+    def with_spotify_rate_limit_cache(cache)
+      SpotifyRateLimit.cache_store = cache
+      yield
+    ensure
+      SpotifyRateLimit.cache_store = nil
     end
   end
 end
