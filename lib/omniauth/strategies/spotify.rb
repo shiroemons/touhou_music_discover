@@ -41,17 +41,21 @@ module OmniAuth
         { raw_info: }
       end
 
+      # client_options.site は OAuth エンドポイント（accounts.spotify.com）を指しているため、
+      # 相対パスを渡すとそちらに対して解決されてしまう。Web API のホストは api.spotify.com と
+      # 別なので、ここは絶対URLで指定する必要がある。
       def raw_info
-        @raw_info ||= access_token.get('v1/me').parsed
+        @raw_info ||= access_token.get('https://api.spotify.com/v1/me').parsed
       end
 
-      # OmniAuth 2 系では callback_url に query string が含まれるとトークン交換で
-      # redirect_uri 不一致になるため、query を落とす。
+      # stock の OmniAuth::Strategy#callback_url は
+      # `full_host + script_name + callback_path + query_string` だが、コールバックは
+      # `/auth/spotify/callback?code=..&state=..` のように query string 付きで届き、
+      # それを含めたままだとトークン交換時に redirect_uri が不一致になる。
+      # そのため query_string だけを落とし、script_name は維持する。
       def callback_url
-        full_host + callback_path
+        full_host + script_name + callback_path
       end
     end
   end
 end
-
-OmniAuth.config.add_camelization('spotify', 'Spotify')

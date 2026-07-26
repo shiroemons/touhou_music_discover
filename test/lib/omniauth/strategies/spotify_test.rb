@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'test_helper'
+require 'oauth2'
 
 module OmniAuth
   module Strategies
@@ -55,6 +56,27 @@ module OmniAuth
         assert_equal 'https://accounts.spotify.com', options[:site]
         assert_equal '/authorize', options[:authorize_url]
         assert_equal '/api/token', options[:token_url]
+      end
+
+      test 'raw_info requests the Spotify Web API host, not the accounts host' do
+        stub = stub_request(:get, 'https://api.spotify.com/v1/me')
+               .to_return(status: 200, body: RAW_INFO.to_json,
+                          headers: { 'Content-Type' => 'application/json' })
+
+        strategy = Spotify.new(nil, 'client-id', 'client-secret')
+        client = ::OAuth2::Client.new('client-id', 'client-secret',
+                                      **Spotify.default_options[:client_options].to_h.symbolize_keys)
+        token = ::OAuth2::AccessToken.new(client, 'USER_TOKEN')
+        strategy.define_singleton_method(:access_token) { token }
+
+        assert_equal 'test-user', strategy.raw_info['id']
+        assert_requested stub
+      end
+
+      test 'auth hash exposes the image url with symbol keys, as app/models/user.rb reads it' do
+        auth = OmniAuth::AuthHash.new(info: build_strategy.info)
+
+        assert_equal 'https://example.test/avatar.png', auth[:info][:images][0][:url]
       end
     end
   end

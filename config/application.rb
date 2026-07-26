@@ -28,7 +28,11 @@ module TouhouMusicDiscover
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    # omniauth: lib/omniauth/strategies/spotify.rb は OmniAuth::Strategies::Spotify を
+    # 定義しており、Zeitwerk が期待する定数名（Omniauth::Strategies::Spotify、ディレクトリ名
+    # ベースの小文字始まり）と一致しない。Zeitwerk の管理対象から外し、
+    # config/initializers/omniauth.rb での明示 require に委ねる。
+    config.autoload_lib(ignore: %w[assets tasks omniauth])
 
     # Configuration for the application, engines, and railties goes here.
     #
