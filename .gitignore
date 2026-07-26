@@ -49,3 +49,8 @@ yarn-debug.log*
 .devbox/
 dump.rdb
 bun.lock
+
+# AI エージェントが生成する設計書・実装計画。
+# 作業中はローカルに置くが、ドキュメントとして管理はしない。
+/docs/superpowers/
+.superpowers/
