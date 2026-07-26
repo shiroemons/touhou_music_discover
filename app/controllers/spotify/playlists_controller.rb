@@ -173,100 +173,24 @@ module Spotify
     end
 
     def refresh_counts
-      redirect_to root_url unless session[:user_id]
-
-      redis = RedisPool.get
-      auth_hash = JSON.parse(redis.get(session[:user_id]))
-      spotify_user = RSpotify::User.new(auth_hash)
-
-      # 進捗状況をRedisに保存するためのキー
       progress_key = "refresh_counts:#{session[:user_id]}"
-
-      # 更新処理開始前にRedisを初期化
-      update_info = {
+      RedisPool.get.set(progress_key, {
         total: 0,
         current: 0,
         current_playlist: '',
         status: 'processing',
         started_at: Time.current.to_s,
         completed_at: nil
-      }
-      redis.set(progress_key, update_info.to_json)
+      }.to_json)
 
-      # 非同期処理を開始
-      spotify_user_id = spotify_user.id
+      # スレッドにはリクエストのコンテキストが無いため、セッションとユーザーIDは
+      # Thread.new の前にローカル変数へ取り出しておく。
+      session_for_thread = spotify_session
+      user_id_for_thread = spotify_user_id
       Thread.new do
-        redis_conn = RedisPool.get
-        begin
-          # Spotify APIから全プレイリストを取得
-          playlists = []
-          offset = 0
-          retry_count = 0
-
-          loop do
-            fetched = spotify_user.playlists(limit: LIMIT, offset: offset)
-            break if fetched.empty?
-
-            playlists.concat(fetched)
-            offset += LIMIT
-            break if fetched.count < LIMIT
-
-            sleep 0.5
-          rescue RestClient::TooManyRequests
-            retry_count += 1
-            break unless retry_count <= MAX_RETRIES
-
-            wait_time = 2**retry_count
-            sleep wait_time
-            retry
-          end
-
-          # 原曲名と一致するプレイリストのみ抽出
-          original_song_titles = OriginalSong.playlist_titles
-          filtered_playlists = playlists.select { |p| p.name.in?(original_song_titles) }
-
-          total = filtered_playlists.size
-          update_info = JSON.parse(redis_conn.get(progress_key))
-          update_info['total'] = total
-          redis_conn.set(progress_key, update_info.to_json)
-
-          # 各プレイリストのトラック数を更新
-          filtered_playlists.each_with_index do |playlist, index|
-            update_info = JSON.parse(redis_conn.get(progress_key))
-            update_info['current'] = index + 1
-            update_info['current_playlist'] = playlist.name
-            redis_conn.set(progress_key, update_info.to_json)
-
-            # DBレコードを更新（存在しなければ作成）
-            spotify_playlist = SpotifyPlaylist.find_or_initialize_by(spotify_id: playlist.id)
-            spotify_playlist.update(
-              spotify_user_id: spotify_user_id,
-              name: playlist.name,
-              total: playlist.total,
-              followers: playlist.followers['total'] || 0,
-              spotify_url: playlist.external_urls['spotify'],
-              original_song_code: OriginalSong.playlist_code_for(playlist.name),
-              position: index
-            )
-
-            sleep 0.2
-          end
-
-          # 完了
-          update_info = JSON.parse(redis_conn.get(progress_key))
-          update_info['status'] = 'completed'
-          update_info['completed_at'] = Time.current.to_s
-          redis_conn.set(progress_key, update_info.to_json)
-        rescue StandardError => e
-          Rails.logger.error("refresh_counts error: #{e.message}")
-          Rails.logger.error(e.backtrace.join("\n"))
-          update_info = JSON.parse(redis_conn.get(progress_key))
-          update_info['status'] = 'error'
-          update_info['error_message'] = e.message
-          redis_conn.set(progress_key, update_info.to_json)
-        ensure
-          ActiveRecord::Base.connection_pool.release_connection
-        end
+        refresh_counts_in_background(session_for_thread, user_id_for_thread, progress_key)
+      ensure
+        ActiveRecord::Base.connection_pool.release_connection
       end
 
       respond_to do |format|
@@ -531,6 +455,77 @@ module Spotify
         record.position = index
         record.save!
       end
+    end
+
+    # 原曲名に一致するプレイリストの total / followers / position を最新化する。
+    #
+    # follower 数は GET /me/playlists のレスポンスに含まれないため、1 件ごとに
+    # GET /playlists/{id} が必要になる。一覧表示のたびに暗黙で払っていたこの
+    # コストを、ユーザーが明示的にボタンを押したときだけ払う形にした。
+    #
+    # Thread.new の中から呼ばれるバックグラウンド処理なので、SpotifyRetry は
+    # 既定値（tries: 5, max_retry_after: 900）のまま使う。待たせる相手が居ないため、
+    # index や sync_single のように早く諦める必要が無い。
+    def refresh_counts_in_background(spotify_session, spotify_user_id, progress_key)
+      redis = RedisPool.get
+      titles = OriginalSong.playlist_titles.to_set
+      code_map = OriginalSong.playlist_code_map
+
+      playlists = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#refresh_counts') do
+        SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT)
+      end
+
+      # index (fetch_playlists_from_spotify) と同じ並びにしてから position を振る。
+      # index は matched を reverse した順に position 0,1,2... を振り、ビューは
+      # order(position: :desc) で描画する。ここで API 順のまま振ると、ボタンを
+      # 押した瞬間に一覧の並びが上下反転してしまう。
+      matched = playlists.compact.select { |playlist| titles.include?(playlist['name']) }.reverse
+
+      write_refresh_progress(redis, progress_key) { |info| info['total'] = matched.size }
+
+      matched.each_with_index do |playlist, index|
+        write_refresh_progress(redis, progress_key) do |info|
+          info['current'] = index + 1
+          info['current_playlist'] = playlist['name']
+        end
+
+        save_refreshed_playlist(spotify_session, spotify_user_id, playlist, code_map, index)
+      end
+
+      write_refresh_progress(redis, progress_key) do |info|
+        info['status'] = 'completed'
+        info['completed_at'] = Time.current.to_s
+      end
+    rescue StandardError => e
+      Rails.logger.error("refresh_counts error: #{e.class} - #{e.message}")
+      Rails.logger.error(e.backtrace.join("\n"))
+      write_refresh_progress(redis, progress_key) do |info|
+        info['status'] = 'error'
+        info['error_message'] = e.message
+      end
+    end
+
+    def save_refreshed_playlist(spotify_session, spotify_user_id, playlist, code_map, position)
+      detail = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#refresh_counts') do
+        SpotifyApi::Playlist.find(spotify_session, playlist['id'])
+      end
+
+      record = SpotifyPlaylist.find_or_initialize_by(spotify_id: playlist['id'])
+      record.spotify_user_id = spotify_user_id
+      record.name = playlist['name']
+      record.total = detail.dig('tracks', 'total').to_i
+      record.followers = detail.dig('followers', 'total').to_i
+      record.spotify_url = playlist.dig('external_urls', 'spotify')
+      record.original_song_code = code_map[playlist['name']]
+      record.position = position
+      record.save!
+    end
+
+    def write_refresh_progress(redis, progress_key)
+      raw = redis.get(progress_key)
+      info = raw.present? ? JSON.parse(raw) : {}
+      yield(info)
+      redis.set(progress_key, info.to_json)
     end
 
     def load_refresh_counts_info

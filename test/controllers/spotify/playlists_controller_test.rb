@@ -4,6 +4,9 @@ require 'test_helper'
 
 module Spotify
   class PlaylistsControllerTest < ActionDispatch::IntegrationTest
+    # refresh_counts の進捗キーが取りうる終了状態。
+    REFRESH_FINISHED_STATUSES = %w[completed error].freeze
+
     setup do
       @original = Original.create!(code: 'TEST_ORIG_PC', title: 'テスト作品', short_title: 'テスト作品',
                                    original_type: :windows, series_order: 9990)
@@ -36,13 +39,34 @@ module Spotify
       spotify_fixture('me_playlists').gsub('PLAYLIST_TITLE_MATCHED', @song.title)
     end
 
-    # GET /playlists/{id} のレスポンス。sync_single は所有確認をこのエンドポイントで行うため、
-    # 名前と owner.id をテストごとに差し替えられるようにする。
-    def playlist_detail_body(id: 'PL_MATCHED', name: @song.title, owner_id: 'test-user')
-      spotify_fixture('playlist_detail')
-        .gsub('PLAYLIST_TITLE_MATCHED', name)
-        .gsub('PLAYLIST_OWNER_ID', owner_id)
-        .gsub('PLAYLIST_ID', id)
+    # GET /playlists/{id} のレスポンス。sync_single は所有確認を、refresh_counts は
+    # follower 数の取得をこのエンドポイントで行うため、名前・owner.id・件数を
+    # テストごとに差し替えられるようにする。
+    def playlist_detail_body(id: 'PL_MATCHED', name: @song.title, owner_id: 'test-user',
+                             followers: 42, total: 7)
+      detail = JSON.parse(
+        spotify_fixture('playlist_detail')
+          .gsub('PLAYLIST_TITLE_MATCHED', name)
+          .gsub('PLAYLIST_OWNER_ID', owner_id)
+          .gsub('PLAYLIST_ID', id)
+      )
+      detail['followers']['total'] = followers
+      detail['tracks']['total'] = total
+      detail.to_json
+    end
+
+    # refresh_counts は Thread.new で非同期実行されるため、Redis の進捗キーが
+    # 終了状態になるまでポーリングして待つ。
+    def wait_for_refresh_counts(timeout: 5)
+      deadline = Time.current + timeout
+      loop do
+        raw = RedisPool.with { |r| r.get("refresh_counts:#{@user.id}") }
+        info = raw.present? ? JSON.parse(raw) : {}
+        return info if REFRESH_FINISHED_STATUSES.include?(info['status'])
+        raise "refresh_counts did not finish within #{timeout}s: #{info.inspect}" if Time.current > deadline
+
+        sleep 0.05
+      end
     end
 
     # @song.code に紐づく SpotifyTrack を1件作る。Album は jan_code (unique, NOT NULL) のみ、
@@ -174,6 +198,65 @@ module Spotify
       delete spotify_clear_playlists_cache_path
 
       assert_redirected_to root_url
+    end
+
+    test 'refresh_counts updates follower counts for original-song playlists only' do
+      log_in
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+      detail_stub = stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+
+      post spotify_playlists_refresh_counts_path
+
+      info = wait_for_refresh_counts
+
+      assert_equal 'completed', info['status']
+      assert_requested detail_stub
+      assert_not_requested :get, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED"
+
+      record = SpotifyPlaylist.find_by(spotify_id: 'PL_MATCHED')
+
+      assert_equal 42, record.followers
+      assert_equal 7, record.total
+      assert_equal @song.code, record.original_song_code
+      assert_nil SpotifyPlaylist.find_by(spotify_id: 'PL_UNMATCHED')
+    end
+
+    # position の付け方は index (fetch_playlists_from_spotify + save_playlists_to_db) と
+    # 完全に一致していなければならない。ビューが order(position: :desc) で描画するため、
+    # 片方だけ API 順のまま position を振ると「曲数を更新」を押した瞬間に一覧の並びが
+    # 上下反転してしまう。同じ入力に対して両経路が同じ position を保存することを固定する。
+    test 'refresh_counts assigns the same positions as index so the display order does not flip' do
+      log_in
+      OriginalSong.create!(code: 'TEST_SONG_PC_2', original_code: @original.code,
+                           title: "#{@song.title}_2", track_number: 2, is_duplicate: false)
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+      stub_spotify_get('playlists/PL_MATCHED_2',
+                       body: playlist_detail_body(id: 'PL_MATCHED_2', name: "#{@song.title}_2",
+                                                  followers: 99, total: 4))
+
+      post spotify_playlists_refresh_counts_path
+
+      assert_equal 'completed', wait_for_refresh_counts['status']
+      # index の 'playlists are stored in reverse API order' テストと同じ期待値。
+      assert_equal %w[PL_MATCHED_2 PL_MATCHED], SpotifyPlaylist.order(:position).pluck(:spotify_id)
+      # 各レコードに対応する詳細レスポンスが正しく紐づいていることも確認する。
+      second = SpotifyPlaylist.find_by(spotify_id: 'PL_MATCHED_2')
+      first = SpotifyPlaylist.find_by(spotify_id: 'PL_MATCHED')
+
+      assert_equal 99, second.followers
+      assert_equal 4, second.total
+      assert_equal 42, first.followers
+      assert_equal 7, first.total
+    end
+
+    test 'refresh_counts redirects to root when not logged in' do
+      post spotify_playlists_refresh_counts_path
+
+      assert_redirected_to root_url
+      assert_not_requested :get, %r{/me/playlists}
     end
 
     test 'sync_single replaces playlist items with the original song tracks' do
