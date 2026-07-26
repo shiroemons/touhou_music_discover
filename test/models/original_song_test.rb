@@ -17,16 +17,6 @@ class OriginalSongTest < ActiveSupport::TestCase
     assert_not_includes titles, '重複のみ原曲'
   end
 
-  test 'playlist_title? mirrors playlist_titles' do
-    original = Original.create!(code: 'TEST_ORIG2', title: 'テスト作品2', short_title: 'テスト作品2',
-                                original_type: :windows, series_order: 9998)
-    OriginalSong.create!(code: 'TEST_S3', original_code: original.code, title: '判定対象原曲',
-                         track_number: 1, is_duplicate: false)
-
-    assert OriginalSong.playlist_title?('判定対象原曲')
-    assert_not OriginalSong.playlist_title?('存在しないプレイリスト名')
-  end
-
   test 'playlist_code_for returns the code of a non-duplicated song' do
     original = Original.create!(code: 'TEST_ORIG3', title: 'テスト作品3', short_title: 'テスト作品3',
                                 original_type: :windows, series_order: 9997)

@@ -66,6 +66,15 @@ module Spotify
 
     def playlist_item(id, name)
       { 'id' => id, 'name' => name, 'tracks' => { 'total' => 0 },
+        'owner' => { 'id' => 'test-user' },
+        'external_urls' => { 'spotify' => "https://open.spotify.com/playlist/#{id}" } }
+    end
+
+    # /me/playlists にはフォロー中・共同編集のプレイリストも含まれるため、
+    # 「一覧に出る」ことは「自分が所有している」ことの証明にならない。
+    def playlist_item_owned_by(id, name, owner_id)
+      { 'id' => id, 'name' => name, 'tracks' => { 'total' => 0 },
+        'owner' => { 'id' => owner_id },
         'external_urls' => { 'spotify' => "https://open.spotify.com/playlist/#{id}" } }
     end
 
@@ -107,6 +116,26 @@ module Spotify
 
       assert_requested put_stub
       assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/me/playlists"
+    end
+
+    # /me/playlists にはフォロー中・共同編集のプレイリストも含まれるため、原曲名と
+    # 同名でも所有者が自分でなければ「既存プレイリスト」として再利用してはならない。
+    # 再利用してしまうと自分用のプレイリストが作られず、書き込みが 403 で永久に失敗し続ける。
+    test 'creates its own playlist instead of reusing one owned by someone else with the same name' do
+      stub_me_playlists([playlist_item_owned_by('PL_FOREIGN', @song.title, 'someone-else')])
+      stub_spotify_post('me/playlists', body: { 'id' => 'PL_NEW', 'name' => @song.title })
+      stub_spotify_put('playlists/PL_NEW/tracks', body: { 'snapshot_id' => 'snap' })
+
+      call_service
+
+      assert_requested :post, "#{SpotifyApiStubs::API_BASE}/me/playlists" do |req|
+        JSON.parse(req.body)['name'] == @song.title
+      end
+      assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_NEW/tracks" do |req|
+        JSON.parse(req.body)['uris'] == ['spotify:track:SVCTRACK1']
+      end
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_FOREIGN/tracks"
+      assert_equal 'completed', progress['status']
     end
 
     # PlaylistTrackWriter は PUT {"uris": []} でプレイリストの中身を空にする。

@@ -62,17 +62,26 @@ module Spotify
       assert_equal expected_uris, calls.flat_map(&:last)
     end
 
-    test 'clears the playlist with an empty uris array when there are no tracks' do
+    test 'clears the playlist with an empty uris array when there are no tracks and allow_clear is true' do
       stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
 
       written = PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
-                                         spotify_tracks: [], source: 'test')
+                                         spotify_tracks: [], source: 'test', allow_clear: true)
 
       assert_equal 0, written
       assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks" do |req|
         JSON.parse(req.body)['uris'] == []
       end
       assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
+    end
+
+    # allow_clear の既定値は false。将来どこかの呼び出し元が空判定を怠っても、
+    # このクラス自身が全消し PUT を拒否することを固定する。
+    test 'refuses to clear the playlist with an empty uris array unless allow_clear is true' do
+      assert_raises(ArgumentError) do
+        PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1', spotify_tracks: [], source: 'test')
+      end
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
     end
   end
 end

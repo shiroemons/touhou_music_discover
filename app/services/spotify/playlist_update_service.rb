@@ -171,13 +171,20 @@ module Spotify
     # GET /me/playlists はまれに items に null 要素を含めて返すため、compact してから扱う
     # （nil['name'] は NoMethodError になる）。
     #
+    # /me/playlists にはフォロー中や共同編集のプレイリストも含まれるため、
+    # 「一覧に出る」ことは「自分が所有している」ことを意味しない。owner.id で絞らないと、
+    # find_playlist が他人所有の同名プレイリストを「既存プレイリスト」として誤認し、
+    # 自分用のプレイリストを作らないまま書き込みが 403 で永久に失敗し続ける。
+    #
     # Thread.new の中から呼ばれるバックグラウンド処理なので、SpotifyRetry は既定値
     # （tries: 5, max_retry_after: 900）のまま使う。待たせる相手が居ないため、
     # index や sync_single のように早く諦める必要が無い。
     def load_playlists_cache
-      @playlists_cache = SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#load_playlists') do
+      fetched = SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#load_playlists') do
         SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT).compact
       end
+
+      @playlists_cache = fetched.select { |p| p.dig('owner', 'id') == spotify_session.spotify_user_id }
     end
 
     # 進捗情報をメモリ上で更新し、一定間隔でRedisに書き込む

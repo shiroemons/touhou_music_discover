@@ -6,6 +6,12 @@ module Spotify
 
     LIMIT = 50
 
+    # PlaylistUpdateService#fetch_originals が受け付ける update_type の一覧。
+    # 未知の値を渡すと fetch_originals が [] を返して call が mark_completed 抜きで
+    # 早期リターンするため、progress_key が 'processing' のまま止まってしまう。
+    # ここで事前に弾き、Redis へ書き込む前にリダイレクトする。
+    VALID_UPDATE_TYPES = %w[windows pc98 zuns_music_collection akyus_untouched_score commercial_books].freeze
+
     before_action :require_spotify_session,
                   only: %i[index clear_cache sync_single create refresh_counts original_songs]
 
@@ -47,21 +53,25 @@ module Spotify
 
       # このアプリが書き込んでよいのは原曲名のプレイリストだけ。
       # playlist_id は外部から渡されるため、破壊的操作の前にサーバ側で必ず検証する。
-      original_song = OriginalSong.non_duplicated.find_by(title: playlist_name)
-      if original_song.nil?
-        redirect_to spotify_playlists_path, alert: "原曲が見つかりません: #{playlist_name}"
+      # ここで必要なのは original_song.code だけなので、レコードそのものではなく
+      # playlist_code_for で直接コードを引く。
+      original_song_code = OriginalSong.playlist_code_for(playlist_name)
+      if original_song_code.nil?
+        redirect_to spotify_playlists_path,
+                    alert: I18n.t('spotify.playlists.alerts.original_song_not_found', name: playlist_name)
         return
       end
 
       # id がユーザー自身のプレイリストであり、かつ実際の名前が原曲名と一致することを確認する。
       playlist = find_user_playlist(playlist_id, playlist_name)
       if playlist.nil?
-        redirect_to spotify_playlists_path, alert: "プレイリストが見つかりません: #{playlist_name}"
+        redirect_to spotify_playlists_path,
+                    alert: I18n.t('spotify.playlists.alerts.playlist_not_found', name: playlist_name)
         return
       end
 
       # through関連の複雑さを避けるため直接SQL
-      spotify_tracks = SpotifyTrack.find_by_sql([<<~SQL.squish, original_song.code])
+      spotify_tracks = SpotifyTrack.find_by_sql([<<~SQL.squish, original_song_code])
         SELECT spotify_tracks.*
         FROM spotify_tracks
         INNER JOIN tracks ON tracks.id = spotify_tracks.track_id
@@ -105,7 +115,7 @@ module Spotify
     def create
       update_type = params[:update_type]
 
-      if update_type.blank?
+      if update_type.blank? || VALID_UPDATE_TYPES.exclude?(update_type)
         redirect_to spotify_playlists_path
         return
       end
@@ -254,6 +264,14 @@ module Spotify
                     disposition: 'attachment'
         end
       end
+    rescue SpotifyApi::QuotaExceededError => e
+      # クォータ超過は復旧まで数時間かかるため、index / sync_single と同じ専用メッセージにする。
+      # RateLimitError のサブクラスなので RateLimitError より先に rescue する必要がある。
+      Rails.logger.error("original_songs quota exceeded: #{e.message}")
+      redirect_to root_path, alert: I18n.t('spotify.playlists.alerts.quota_exceeded')
+    rescue SpotifyApi::RateLimitError => e
+      Rails.logger.error("original_songs rate limited: #{e.message}")
+      redirect_to root_path, alert: I18n.t('spotify.playlists.alerts.rate_limited')
     rescue StandardError => e
       Rails.logger.error("原曲構造JSON出力エラー: #{e.message}")
       # エラー時はトップページにリダイレクト
@@ -359,7 +377,12 @@ module Spotify
 
       # GET /me/playlists はまれに items に null 要素を含めて返すことがあるため、
       # nil を除いてからフィルタする（nil['name'] は NoMethodError になる）。
-      matched = fetched.compact.select { |playlist| titles.include?(playlist['name']) }
+      #
+      # /me/playlists にはフォロー中や共同編集のプレイリストも含まれるため、
+      # 「一覧に出る」ことは「自分が所有している」ことを意味しない。owner.id で
+      # 絞らないと、他人が所有する同名プレイリストをこのユーザーの行として保存してしまう。
+      matched = fetched.compact.select { |p| p.dig('owner', 'id') == spotify_user_id }
+                               .select { |playlist| titles.include?(playlist['name']) }
 
       matched.map do |playlist|
         {
@@ -431,7 +454,11 @@ module Spotify
       # index は matched を reverse した順に position 0,1,2... を振り、ビューは
       # order(position: :desc) で描画する。ここで API 順のまま振ると、ボタンを
       # 押した瞬間に一覧の並びが上下反転してしまう。
-      matched = playlists.compact.select { |playlist| titles.include?(playlist['name']) }.reverse
+      #
+      # index と同じ理由で owner.id によるフィルタも必須。これが無いと、他人が所有する
+      # 同名プレイリストに GET /playlists/{id} を発行してしまう（403 の原因にもなる）。
+      matched = playlists.compact.select { |p| p.dig('owner', 'id') == spotify_user_id }
+                                 .select { |playlist| titles.include?(playlist['name']) }.reverse
 
       write_refresh_progress(redis, progress_key) { |info| info['total'] = matched.size }
 

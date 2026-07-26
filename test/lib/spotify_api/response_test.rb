@@ -101,5 +101,16 @@ module SpotifyApi
       assert_nil response.dig('followers', 'total')
       assert_nil response.dig('tracks', 'missing')
     end
+
+    # 整数キーを to_s すると Array#dig に '0' を渡すことになり、常に nil が返ってしまう。
+    # 配列の要素は添字（整数）でしか辿れないことを固定する。
+    test 'dig walks into an array element by integer index' do
+      response = Response.build({ 'images' => [{ 'url' => 'https://example.test/1.png' },
+                                               { 'url' => 'https://example.test/2.png' }] })
+
+      assert_equal 'https://example.test/1.png', response.dig('images', 0, 'url')
+      assert_equal 'https://example.test/2.png', response.dig('images', 1, 'url')
+      assert_nil response.dig('images', 5, 'url')
+    end
   end
 end

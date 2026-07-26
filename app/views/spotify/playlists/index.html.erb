@@ -16,6 +16,10 @@
     </div>
   <% end %>
 
+  <% if @playlists.present? %>
+    <p class="followers-hint">「最新情報を取得」の直後はいいね数が0件と表示されます。いいね数を最新化するには「曲数を更新」をご利用ください。</p>
+  <% end %>
+
   <% if @error.present? %>
     <div class="error-message">
       <div class="error-icon">
@@ -234,6 +238,12 @@
     .synced-at {
       color: #666;
       font-size: 14px;
+    }
+
+    .followers-hint {
+      color: #666;
+      font-size: 13px;
+      margin: -10px 0 15px;
     }
 
     /* 曲数更新進捗スタイル */

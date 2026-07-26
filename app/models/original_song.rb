@@ -25,12 +25,6 @@ class OriginalSong < ApplicationRecord
       non_duplicated.distinct.pluck(:title)
     end
 
-    def playlist_title?(title)
-      return false if title.blank?
-
-      non_duplicated.exists?(title:)
-    end
-
     def playlist_code_for(title)
       return nil if title.blank?
 

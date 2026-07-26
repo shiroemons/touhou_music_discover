@@ -20,7 +20,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
     OmniAuth.config.test_mode = false
     OmniAuth.config.mock_auth[:spotify] = nil
     User.where(provider: 'spotify', uid: 'test-user').each do |u|
-      RedisPool.with { |r| r.del(SpotifyApi::UserSession.redis_key(u.id)) }
+      RedisPool.with { |r| r.del(SpotifyApi::UserSession.redis_key(u.id), u.id) }
     end
   end
 
@@ -50,5 +50,33 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to root_path
     assert_nil(RedisPool.with { |r| r.get(SpotifyApi::UserSession.redis_key(user.id)) })
+  end
+
+  # Task 12 以前は user.id の生値をキーにしていたため、そのキーには TTL が無い
+  # まま非破棄的トークンが残り続けうる。User は callback が作成するため、
+  # 1回目のログインでユーザーを作ってから旧キーを仕込み、2回目のログインで
+  # 削除されることを確認する。
+  test 'callback deletes a legacy raw-user.id key left over from before the namespaced key existed' do
+    get '/auth/spotify/callback', env: { 'omniauth.auth' => @auth }
+    user = User.find_by!(provider: 'spotify', uid: 'test-user')
+    RedisPool.with { |r| r.set(user.id, { 'legacy' => true }.to_json) }
+
+    get '/auth/spotify/callback', env: { 'omniauth.auth' => @auth }
+
+    assert_redirected_to root_path
+    assert_nil(RedisPool.with { |r| r.get(user.id) })
+    assert_not_nil(RedisPool.with { |r| r.get(SpotifyApi::UserSession.redis_key(user.id)) })
+  end
+
+  # 既存セッションがある状態で、旧キーが生き残っていてもログアウトで確実に消えることを固定する。
+  test 'logout deletes a legacy raw-user.id key too' do
+    get '/auth/spotify/callback', env: { 'omniauth.auth' => @auth }
+    user = User.find_by!(provider: 'spotify', uid: 'test-user')
+    RedisPool.with { |r| r.set(user.id, { 'legacy' => true }.to_json) }
+
+    delete '/logout'
+
+    assert_redirected_to root_path
+    assert_nil(RedisPool.with { |r| r.get(user.id) })
   end
 end

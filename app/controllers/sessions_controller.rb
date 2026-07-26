@@ -8,6 +8,9 @@ class SessionsController < ApplicationController
     RedisPool.with do |redis|
       redis.set(SpotifyApi::UserSession.redis_key(user.id), auth_hash.to_json,
                 ex: SpotifyApi::UserSession::TTL.to_i)
+      # Task 12 以前は user.id をそのままキーにしていた。旧キーは TTL が無く、
+      # ログアウト時の削除対象にもならないため、ログインのタイミングで確実に消す。
+      redis.del(user.id)
     end
 
     session[:user_id] = user.id
@@ -15,7 +18,12 @@ class SessionsController < ApplicationController
   end
 
   def destroy
-    RedisPool.with { |redis| redis.del(SpotifyApi::UserSession.redis_key(session[:user_id])) } if session[:user_id]
+    if session[:user_id]
+      RedisPool.with do |redis|
+        redis.del(SpotifyApi::UserSession.redis_key(session[:user_id]))
+        redis.del(session[:user_id])
+      end
+    end
     reset_session
     redirect_to root_path
   end
