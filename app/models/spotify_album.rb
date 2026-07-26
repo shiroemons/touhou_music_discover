@@ -49,7 +49,7 @@ class SpotifyAlbum < ApplicationRecord
       spotify_album.update!(release_date:)
     end
 
-    spotify_album.update!(payload: s_album.as_json)
+    spotify_album.update!(payload: spotify_album.payload_preserving_available_markets(s_album.as_json))
     spotify_album
   end
 
@@ -91,6 +91,33 @@ class SpotifyAlbum < ApplicationRecord
 
   def self.preferred_active_album(spotify_albums)
     spotify_albums.max_by(&:active_candidate_score)
+  end
+
+  # Spotify は GET /albums/{id} から available_markets を段階的に削除しており、空で返ってきても
+  # 配信が終了したことを意味しない。実測でも、非空から空に変わった4件すべてで market=JP を
+  # 指定すると is_playable が true (restrictions は nil) だった。
+  #
+  # それを検証せずに payload を上書きすると、大多数のアルバムで jp_available? が true → false に
+  # 反転する。jp_available? は active_candidate_score の最優先要素なので、preferred_active_album が
+  # 重複アルバムの選択を誤り、正しい方のアルバムを非アクティブにしてしまう。これは Issue #559 の
+  # 障害パターンそのものである。
+  #
+  # 逆に新しい値が非空なら、たとえ以前より件数が減っていてもそのまま採用する。配信国が実際に
+  # 減ったのであれば、その減少は反映されるべきだから。
+  #
+  # これは恒久対応ではなく暫定措置である。本来の修正は Issue #559 で jp_available? と選択ロジックを
+  # available_markets ではなく is_playable ベースに置き換えることであり、それが入ればこのガードは
+  # 不要になる。
+  def payload_preserving_available_markets(new_payload)
+    fetched_payload = new_payload || {}
+    existing_markets = Array(payload&.dig('available_markets'))
+    return fetched_payload if existing_markets.blank? || Array(fetched_payload['available_markets']).present?
+
+    Rails.logger.debug do
+      "SpotifyAlbum##{id} (spotify_id: #{spotify_id}) の取得結果に available_markets が無いため、" \
+        "既存の #{existing_markets.size} 件 (JP: #{existing_markets.include?('JP')}) を維持しました"
+    end
+    fetched_payload.merge('available_markets' => existing_markets)
   end
 
   private

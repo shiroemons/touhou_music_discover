@@ -102,6 +102,50 @@ class SpotifyRetryTest < ActiveSupport::TestCase
     end
   end
 
+  test 'SpotifyApi::RateLimitError sleeps for its retry_after then succeeds' do
+    error = SpotifyApi::RateLimitError.new('429 Too Many Requests', status: 429, retry_after: 3)
+    sleeps = []
+    attempts = 0
+
+    result = with_spotify_rate_limit_cache(ActiveSupport::Cache::MemoryStore.new) do
+      SpotifyRetry.with_retry(source: 'test', sleeper: recording_sleeper(sleeps)) do |attempt, _exception|
+        attempts += 1
+        raise error if attempt.zero?
+
+        :ok
+      end
+    end
+
+    assert_equal :ok, result
+    assert_equal [3], sleeps
+    assert_equal 2, attempts
+  end
+
+  test 'SpotifyApi::QuotaExceededError is re-raised immediately without sleeping but is still recorded' do
+    error = SpotifyApi::QuotaExceededError.new('429 QUOTA_EXCEEDED', status: 429, retry_after: 7200)
+    sleeps = []
+    attempts = 0
+
+    with_spotify_rate_limit_cache(ActiveSupport::Cache::MemoryStore.new) do
+      raised = assert_raises(SpotifyApi::QuotaExceededError) do
+        SpotifyRetry.with_retry(source: 'quota-source', sleeper: recording_sleeper(sleeps)) do |_attempt, _exception|
+          attempts += 1
+          raise error
+        end
+      end
+
+      assert_same error, raised
+
+      status = SpotifyRateLimit.current
+
+      assert_equal 7200, status.retry_after
+      assert_equal 'quota-source', status.source
+    end
+
+    assert_empty sleeps
+    assert_equal 1, attempts
+  end
+
   test 'yields attempt starting at 0 on the first try and the previous exception thereafter' do
     error = RestClient::InternalServerError.new
     observed = []

@@ -49,35 +49,11 @@ module SpotifyClient
     end
 
     def self.search_and_save_albums(keyword, year)
-      offset = 0
-      loop do
-        s_albums = RSpotify::Album.search(keyword, limit: SEARCH_LIMIT, offset:, market: 'JP')
-        s_albums.each do |s_album|
-          process_album(s_album)
-        end
-        offset += s_albums.size
-        break if s_albums.size < SEARCH_LIMIT
-
-        puts "year:#{year}\toffset: #{offset}"
-        # リクエスト間に短いディレイを追加
-        sleep 1
-      rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
-        puts "Timeout error during search at offset #{offset} for year:#{year}. Retrying after 10 seconds..."
-        puts "Error: #{e.message}"
-        sleep 10
-        retry
-      end
+      backend.search_and_save_albums(keyword, year)
     end
 
     def self.process_album(s_album)
-      spotify_album = SpotifyAlbum.exists?(spotify_id: s_album.id) ? SpotifyAlbum.find_by(spotify_id: s_album.id) : SpotifyAlbum.save_album(s_album)
-      return if spotify_album.nil? || spotify_album.total_tracks == spotify_album.spotify_tracks.count
-
-      s_tracks = s_album.tracks
-      save_tracks(spotify_album, s_tracks)
-    rescue RestClient::Exceptions::OpenTimeout, RestClient::Exceptions::ReadTimeout, Net::OpenTimeout => e
-      puts "Timeout error processing album #{s_album.id}. Skipping..."
-      puts "Error: #{e.message}"
+      backend.process_album(s_album)
     end
 
     def self.save_tracks(spotify_album, s_tracks)
@@ -116,7 +92,7 @@ module SpotifyClient
           end
 
           result[status] += 1
-        rescue RestClient::TooManyRequests => e
+        rescue *SpotifyRetry::RATE_LIMIT_ERRORS => e
           retry_after = retry_after_seconds(e)
           SpotifyRateLimit.record!(retry_after:, source: 'SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan')
           result[:rate_limited] = true
@@ -136,53 +112,12 @@ module SpotifyClient
       result
     end
 
-    def self.fetch_albums(s_artist)
-      s_albums = []
-      album_offset = 0
-      loop do
-        albums = s_artist.albums(limit: LIMIT, offset: album_offset)
-        s_albums.push(*albums)
-        break if albums.count < LIMIT
-
-        album_offset += LIMIT
-      end
-      # labelが "東方同人音楽流通"のみを絞り込む
-      s_albums.select! { it.label == ::Album::TOUHOU_MUSIC_LABEL }
-      s_albums
-    end
-
-    def self.fetch_tracks(s_album)
-      s_tracks = []
-      track_offset = 0
-      loop do
-        tracks = if track_offset.zero?
-                   s_album.tracks_cache
-                 else
-                   s_album.tracks(limit: LIMIT, offset: track_offset)
-                 end
-        s_tracks.push(*tracks)
-        break if tracks.count < LIMIT
-
-        track_offset += LIMIT
-      end
-      s_tracks
-    end
-
     def self.update_albums(spotify_albums)
-      s_albums = RSpotify::Album.find(spotify_albums.map(&:spotify_id))
-      s_albums.each do |s_album|
-        spotify_album = spotify_albums.find { it.spotify_id == s_album.id }
-        spotify_album&.update(
-          album_type: s_album.album_type,
-          name: s_album.name,
-          url: s_album.external_urls['spotify'],
-          total_tracks: s_album.total_tracks,
-          payload: s_album.as_json
-        )
-      end
-    rescue RestClient::TooManyRequests => e
-      SpotifyRateLimit.record_from_error!(e, source: 'SpotifyClient::Album.update_albums')
-      raise
+      backend.update_albums(spotify_albums)
+    end
+
+    def self.fetch_and_process_album(spotify_id)
+      backend.fetch_and_process_album(spotify_id)
     end
 
     def self.missing_spotify_albums_with_apple_music
@@ -193,29 +128,7 @@ module SpotifyClient
     private_class_method :missing_spotify_albums_with_apple_music
 
     def self.search_and_save_album_by_jan(album, logger:)
-      s_album = RSpotify::Album.search("upc:#{album.jan_code}", limit: JAN_SEARCH_LIMIT, market: 'JP')
-                               .find { |candidate| candidate.external_ids&.fetch('upc', nil) == album.jan_code }
-      return :missing if s_album.blank?
-
-      if s_album.label != ::Album::TOUHOU_MUSIC_LABEL
-        logger.info "Spotify album skipped because label is not #{::Album::TOUHOU_MUSIC_LABEL}: JAN #{album.jan_code}, Spotify ID #{s_album.id}, label #{s_album.label}"
-        return :missing
-      end
-
-      existing_spotify_album = SpotifyAlbum.unscoped.find_by(spotify_id: s_album.id)
-      if existing_spotify_album.present?
-        return :skipped if existing_spotify_album.album_id == album.id
-
-        logger.warn "Spotify album ID #{s_album.id} is already linked to another album: JAN #{album.jan_code}, existing album_id #{existing_spotify_album.album_id}"
-        return :errors
-      end
-
-      process_album(s_album)
-      spotify_album = SpotifyAlbum.unscoped.find_by(spotify_id: s_album.id)
-      return :created if spotify_album&.album_id == album.id
-
-      logger.warn "Spotify album was not saved for JAN #{album.jan_code}: Spotify ID #{s_album.id}"
-      :errors
+      backend.search_and_save_album_by_jan(album, logger:)
     end
     private_class_method :search_and_save_album_by_jan
 
@@ -234,5 +147,12 @@ module SpotifyClient
       progress_callback&.call(result, album)
     end
     private_class_method :record_jan_search_progress
+
+    # NOTE: バックエンドはクラスそのものを返す（インスタンス化しない）。
+    #       全メソッドはクラスメソッドとして実装されている。
+    def self.backend
+      SpotifyApi.native_client_enabled? ? NativeBackend : RspotifyBackend
+    end
+    private_class_method :backend
   end
 end

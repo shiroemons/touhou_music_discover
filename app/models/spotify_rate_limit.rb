@@ -61,6 +61,10 @@ class SpotifyRateLimit
     end
 
     def retry_after_seconds(error)
+      from_api_error = api_error_retry_after(error)
+      return from_api_error if from_api_error
+
+      # rest-client 形式（http_headers）の分岐は #563 まで残す
       headers = error.http_headers if error.respond_to?(:http_headers)
       retry_after = headers&.[](:retry_after) || headers&.[]('retry-after')
       retry_after ||= error.response&.headers&.dig(:retry_after)
@@ -84,6 +88,15 @@ class SpotifyRateLimit
     end
 
     private
+
+    # SpotifyApi::ApiError#retry_after を最優先で読む。
+    # 値が無い・数値にできない・0以下の場合は nil を返し、ヘッダーからの抽出にフォールバックさせる。
+    def api_error_retry_after(error)
+      return unless error.respond_to?(:retry_after)
+
+      seconds = Integer(error.retry_after, exception: false)
+      seconds if seconds&.positive?
+    end
 
     def cache_store
       @cache_store || Rails.cache

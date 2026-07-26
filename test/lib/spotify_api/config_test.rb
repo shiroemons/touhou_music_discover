@@ -125,8 +125,15 @@ module SpotifyApi
       end
     end
 
-    test 'native_client_enabled defaults to false' do
-      [nil, 'false', '', '0', 'no'].each do |value|
+    test 'native_client_enabled defaults to true when the env var is unset' do
+      with_native_client_env(nil) do
+        assert_nil ENV.fetch('SPOTIFY_NATIVE_CLIENT', nil), 'nil の代入で ENV からキーが削除されていること'
+        assert Config.new.native_client_enabled, '未設定のときはネイティブ経路が既定になるべきです'
+      end
+    end
+
+    test 'native_client_enabled is false for explicit falsy environment values, including an empty string' do
+      ['false', '', '0', 'no', 'off'].each do |value|
         with_native_client_env(value) do
           assert_not Config.new.native_client_enabled, "#{value.inspect} は false として扱われるべきです"
         end

@@ -108,7 +108,7 @@ module Admin
               total: total_count,
               message: album_fetch_progress_message(progress_context)
             )
-          rescue RestClient::TooManyRequests
+          rescue *SpotifyRetry::RATE_LIMIT_ERRORS
             raise
           rescue StandardError => e
             stats[:errors] += 1
@@ -483,7 +483,7 @@ module Admin
               message: "Apple Music: #{index}/#{total_count} #{track_display_name(track)} #{outcome} " \
                        "(累計 取得#{stats[:acquired_tracks]}件 / 未検出#{stats[:not_found_tracks]}件 / エラー#{stats[:errors]}件)"
             )
-          rescue RestClient::TooManyRequests
+          rescue *SpotifyRetry::RATE_LIMIT_ERRORS
             raise
           rescue StandardError => e
             stats[:errors] += 1
@@ -633,9 +633,7 @@ module Admin
           )
 
           begin
-            Array(RSpotify::Album.find([spotify_album.spotify_id])).each do |api_album|
-              SpotifyClient::Album.process_album(api_album)
-            end
+            SpotifyClient::Album.fetch_and_process_album(spotify_album.spotify_id)
             after_count = missing_track_count(spotify_album.album, :spotify_tracks)
             record_album_fetch_outcome(stats, album: spotify_album.album, before_count:, after_count:, target_association: :spotify_tracks)
             progress_context = {
@@ -652,7 +650,7 @@ module Admin
               total: total_count,
               message: album_fetch_progress_message(progress_context)
             )
-          rescue RestClient::TooManyRequests
+          rescue *SpotifyRetry::RATE_LIMIT_ERRORS
             raise
           rescue StandardError => e
             stats[:errors] += 1
@@ -733,7 +731,7 @@ module Admin
                 append_example(stats, :not_found_examples, spotify_track_display_name(spotify_track))
               end
             end
-          rescue RestClient::TooManyRequests
+          rescue *SpotifyRetry::RATE_LIMIT_ERRORS
             raise
           rescue StandardError => e
             stats[:errors] += batch.size
