@@ -1,0 +1,42 @@
+{
+  "href": "https://api.spotify.com/v1/me/playlists?offset=0&limit=50",
+  "limit": 50,
+  "next": null,
+  "offset": 0,
+  "previous": null,
+  "total": 2,
+  "items": [
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": { "spotify": "https://open.spotify.com/playlist/PL_MATCHED" },
+      "href": "https://api.spotify.com/v1/playlists/PL_MATCHED",
+      "id": "PL_MATCHED",
+      "images": [],
+      "name": "PLAYLIST_TITLE_MATCHED",
+      "owner": { "id": "test-user", "type": "user" },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "snap1",
+      "tracks": { "href": "https://api.spotify.com/v1/playlists/PL_MATCHED/tracks", "total": 7 },
+      "type": "playlist",
+      "uri": "spotify:playlist:PL_MATCHED"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": { "spotify": "https://open.spotify.com/playlist/PL_UNMATCHED" },
+      "href": "https://api.spotify.com/v1/playlists/PL_UNMATCHED",
+      "id": "PL_UNMATCHED",
+      "images": [],
+      "name": "原曲名ではないプレイリスト",
+      "owner": { "id": "test-user", "type": "user" },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "snap2",
+      "tracks": { "href": "https://api.spotify.com/v1/playlists/PL_UNMATCHED/tracks", "total": 3 },
+      "type": "playlist",
+      "uri": "spotify:playlist:PL_UNMATCHED"
+    }
+  ]
+}

@@ -50,4 +50,13 @@ Rails.application.routes.draw do
     post 'playlists/refresh_counts', to: 'playlists#refresh_counts'
     get 'playlists/refresh_counts_stream', to: 'playlists#refresh_counts_stream'
   end
+
+  # 統合テストから session[:user_id] を設定するためのルート。test 環境限定。
+  if Rails.env.test?
+    post '/test_login', to: lambda { |env|
+      req = ActionDispatch::Request.new(env)
+      req.session[:user_id] = req.params[:user_id]
+      [302, { 'Location' => '/' }, []]
+    }
+  end
 end
