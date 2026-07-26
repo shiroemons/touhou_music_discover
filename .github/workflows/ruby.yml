@@ -51,7 +51,7 @@ jobs:
           bundle exec brakeman --no-pager -q -w2
 
       # addressable の CVE-2026-35611 は rspotify 2.12.4 が addressable (~> 2.8.0) を
-      # 固定しているため解消できない。rspotify から spotify-client への移行で解決する想定。
+      # 固定しているため解消できない。Issue #563 で rspotify を削除した時点で ignore を外す。
       - name: Run bundler-audit
         run: |
           bundle exec bundler-audit check --update --ignore CVE-2026-35611
