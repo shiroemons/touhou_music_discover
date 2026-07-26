@@ -41,12 +41,14 @@ module SpotifyClient
         s_albums = ::RSpotify::Album.find(spotify_albums.map(&:spotify_id))
         s_albums.each do |s_album|
           spotify_album = spotify_albums.find { it.spotify_id == s_album.id }
-          spotify_album&.update(
+          next unless spotify_album
+
+          spotify_album.update(
             album_type: s_album.album_type,
             name: s_album.name,
             url: s_album.external_urls['spotify'],
             total_tracks: s_album.total_tracks,
-            payload: s_album.as_json
+            payload: spotify_album.payload_preserving_available_markets(s_album.as_json)
           )
         end
       rescue *SpotifyRetry::RATE_LIMIT_ERRORS => e

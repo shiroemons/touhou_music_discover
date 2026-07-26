@@ -13,6 +13,7 @@ module SpotifyClient
       :external_urls,
       :total_tracks,
       :release_date,
+      :available_markets,
       keyword_init: true
     ) do
       def tracks
@@ -30,7 +31,7 @@ module SpotifyClient
           'total_tracks' => total_tracks,
           'release_date' => release_date,
           'artists' => [],
-          'available_markets' => ['JP']
+          'available_markets' => available_markets
         }
       end
     end
@@ -147,7 +148,8 @@ module SpotifyClient
       spotify_id = "album-#{jan_code}"
       album_api, album_calls = fake_album_api(
         find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: [simplified_track_body(1)]) },
-        search_page: page_body([simplified_album_body(spotify_id)])
+        search_page: page_body([simplified_album_body(spotify_id)]),
+        tracks_pages: [page_body([simplified_track_body(1)])]
       )
       track_api, track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
@@ -227,7 +229,10 @@ module SpotifyClient
       )
       album_api, album_calls = fake_album_api(
         find_results: { spotify_id => album_body },
-        tracks_pages: [page_body([simplified_track_body(SpotifyClient::Album::LIMIT + 1)])]
+        tracks_pages: [
+          page_body(first_page_tracks, next_url: 'https://api.spotify.com/v1/albums/next'),
+          page_body([simplified_track_body(SpotifyClient::Album::LIMIT + 1)])
+        ]
       )
       track_api, _track_calls = fake_track_api(
         (1..(SpotifyClient::Album::LIMIT + 1)).index_with { |number| full_track_body(number) }
@@ -246,18 +251,22 @@ module SpotifyClient
 
       assert_equal SpotifyClient::Album::LIMIT + 1, spotify_album.spotify_tracks.count
       assert_equal(
-        [{ id: spotify_id, options: { limit: SpotifyClient::Album::LIMIT, offset: SpotifyClient::Album::LIMIT } }],
+        [
+          { id: spotify_id, options: { limit: SpotifyClient::Album::LIMIT, offset: 0 } },
+          { id: spotify_id, options: { limit: SpotifyClient::Album::LIMIT, offset: SpotifyClient::Album::LIMIT } }
+        ],
         album_calls[:tracks]
       )
     end
 
-    # GET /albums/{id} のレスポンスに埋め込まれた tracks を再利用し、
-    # 1ページに収まるアルバムでは /albums/{id}/tracks を呼ばない。
-    test 'native backend reuses embedded tracks instead of calling the tracks endpoint' do
+    # GET /albums/{id} に tracks が埋め込まれていても、relinking (下記の回帰テスト参照)
+    # で canonical でない ID になり得るため信用せず、必ず専用の /albums/{id}/tracks を呼ぶ。
+    test 'native backend always calls the tracks endpoint even when tracks are embedded' do
       jan_code = "native-embedded-#{SecureRandom.hex(4)}"
       spotify_id = "album-#{jan_code}"
       album_api, album_calls = fake_album_api(
-        find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: [simplified_track_body(1)]) }
+        find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: [simplified_track_body(1)]) },
+        tracks_pages: [page_body([simplified_track_body(1)])]
       )
       track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
@@ -269,19 +278,20 @@ module SpotifyClient
         end
       end
 
-      assert_empty album_calls[:tracks]
+      assert_equal [spotify_id], called_ids(album_calls[:tracks])
       assert_equal 1, SpotifyAlbum.unscoped.find_by!(spotify_id:).spotify_tracks.count
     end
 
-    # クォータ回帰テスト: 既存の SpotifyAlbum でも GET /albums/{id} に埋め込まれた
-    # tracks を再利用し、/albums/{id}/tracks を呼び直さない。
-    test 'native backend reuses embedded tracks for an album that is already saved' do
+    # クォータ回帰テストではない: 既存の SpotifyAlbum でも GET /albums/{id} に埋め込まれた
+    # tracks は信用せず、/albums/{id}/tracks を必ず呼び直す。
+    test 'native backend always calls the tracks endpoint for an album that is already saved' do
       spotify_album = create_spotify_album(total_tracks: 1)
       spotify_id = spotify_album.spotify_id
       album_api, album_calls = fake_album_api(
         find_results: {
           spotify_id => full_album_body(spotify_id:, jan_code: spotify_album.album.jan_code, tracks: [simplified_track_body(1)])
-        }
+        },
+        tracks_pages: [page_body([simplified_track_body(1)])]
       )
       track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
@@ -293,8 +303,39 @@ module SpotifyClient
         end
       end
 
-      assert_empty album_calls[:tracks]
+      assert_equal [spotify_id], called_ids(album_calls[:tracks])
       assert_equal ['ISRC0001'], spotify_album.spotify_tracks.reload.map(&:isrc)
+    end
+
+    # 回帰テスト: GET /albums/{id} に埋め込まれた tracks は track relinking により
+    # canonical ではない ID (linked_from 付き) で返ることがある。埋め込みを再利用すると
+    # 既存の canonical ID と食い違い、同じ曲が重複保存される。
+    test 'native backend saves the canonical track id even when the embedded tracks are relinked' do
+      jan_code = "native-relinked-#{SecureRandom.hex(4)}"
+      spotify_id = "album-#{jan_code}"
+      relinked_track = simplified_track_body(1).merge(
+        'id' => 'relinked-track-1',
+        'linked_from' => { 'id' => 'track-1' }
+      )
+      album_api, album_calls = fake_album_api(
+        find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: [relinked_track]) },
+        tracks_pages: [page_body([simplified_track_body(1)])]
+      )
+      track_api, track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            SpotifyClient::Album.fetch_and_process_album(spotify_id)
+          end
+        end
+      end
+
+      spotify_album = SpotifyAlbum.unscoped.find_by!(spotify_id:)
+
+      assert_equal 1, album_calls[:tracks].size
+      assert_equal %w[track-1], called_ids(track_calls)
+      assert_equal ['track-1'], spotify_album.spotify_tracks.map(&:spotify_id)
     end
 
     # next はあるのに items が空という異常応答でページングが止まることを保証する。
@@ -313,8 +354,8 @@ module SpotifyClient
           )
         },
         tracks_pages: [
-          page_body([], next_url: 'https://api.spotify.com/v1/albums/next'),
-          page_body([], next_url: nil)
+          page_body(first_page_tracks, next_url: 'https://api.spotify.com/v1/albums/next'),
+          page_body([], next_url: 'https://api.spotify.com/v1/albums/next2')
         ]
       )
       track_api, _track_calls = fake_track_api(
@@ -330,7 +371,7 @@ module SpotifyClient
         end
       end
 
-      assert_equal 1, album_calls[:tracks].size
+      assert_equal 2, album_calls[:tracks].size
       assert_equal SpotifyClient::Album::LIMIT, SpotifyAlbum.unscoped.find_by!(spotify_id:).spotify_tracks.count
     end
 
@@ -409,6 +450,56 @@ module SpotifyClient
       assert_equal 'album-match', SpotifyAlbum.unscoped.find_by!(album:).spotify_id
     end
 
+    # #559 回帰テスト: Spotify は GET /albums/{id} から available_markets を段階的に削除しており、
+    # 空で返ってきても配信終了を意味しない。そのまま payload を上書きすると jp_available? が
+    # 反転し、preferred_active_album が正しいアルバムを非アクティブにしてしまう。
+    test 'native backend keeps existing available_markets when the fetched album has none' do
+      spotify_album = create_spotify_album(total_tracks: 1, payload: { 'available_markets' => %w[JP US] })
+      spotify_id = spotify_album.spotify_id
+      degraded_body = full_album_body(spotify_id:, jan_code: spotify_album.album.jan_code, tracks: []).except('available_markets')
+      album_api, _album_calls = fake_album_api(find_results: { spotify_id => degraded_body })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          SpotifyClient::Album.update_albums([spotify_album])
+        end
+      end
+
+      assert_equal %w[JP US], spotify_album.reload.payload['available_markets']
+      assert_equal 'Full Album', spotify_album.payload['name']
+      assert_predicate spotify_album, :jp_available?
+    end
+
+    # 旧経路でも同じガードが効くことを保証する（#563 で rspotify を削除するまでの間の回帰防止）。
+    test 'rspotify backend keeps existing available_markets when the fetched album has none' do
+      spotify_album = create_spotify_album(total_tracks: 1, payload: { 'available_markets' => %w[JP US] })
+      api_album = SpotifyApiAlbum.new(
+        id: spotify_album.spotify_id,
+        album_type: 'album',
+        name: 'Updated Spotify Album',
+        label: ::Album::TOUHOU_MUSIC_LABEL,
+        external_ids: { 'upc' => spotify_album.album.jan_code },
+        external_urls: { 'spotify' => 'https://open.spotify.com/album/test' },
+        total_tracks: 1,
+        release_date: '2026-01-01',
+        available_markets: []
+      )
+
+      spotify_album_client = Class.new do
+        define_singleton_method(:find) { |_ids| [api_album] }
+      end
+
+      with_rspotify_backend do
+        stub_const(RSpotify, :Album, spotify_album_client) do
+          SpotifyClient::Album.update_albums([spotify_album])
+        end
+      end
+
+      assert_equal %w[JP US], spotify_album.reload.payload['available_markets']
+      assert_equal 'Updated Spotify Album', spotify_album.payload['name']
+      assert_predicate spotify_album, :jp_available?
+    end
+
     private
 
     def create_album_with_apple_music(jan_code:)
@@ -426,7 +517,7 @@ module SpotifyClient
       end
     end
 
-    def create_spotify_album(total_tracks:)
+    def create_spotify_album(total_tracks:, payload: { 'available_markets' => ['JP'] })
       jan_code = "native-existing-#{SecureRandom.hex(4)}"
       album = ::Album.create!(jan_code:)
       SpotifyAlbum.create!(
@@ -436,7 +527,7 @@ module SpotifyClient
         name: 'Existing Spotify Album',
         label: ::Album::TOUHOU_MUSIC_LABEL,
         total_tracks:,
-        payload: { 'available_markets' => ['JP'] }
+        payload:
       )
     end
 
@@ -457,7 +548,7 @@ module SpotifyClient
       )
     end
 
-    def spotify_api_album(jan_code:)
+    def spotify_api_album(jan_code:, available_markets: ['JP'])
       SpotifyApiAlbum.new(
         id: "spotify-#{jan_code}",
         album_type: 'album',
@@ -466,7 +557,8 @@ module SpotifyClient
         external_ids: { 'upc' => jan_code },
         external_urls: { 'spotify' => 'https://open.spotify.com/album/test' },
         total_tracks: 0,
-        release_date: '2026-01-01'
+        release_date: '2026-01-01',
+        available_markets:
       )
     end
 
@@ -541,6 +633,10 @@ module SpotifyClient
         define_singleton_method(:find) do |id, **options|
           calls[:find] << { id:, options: }
           SpotifyApi::Response.build(find_results.fetch(id))
+        end
+
+        define_singleton_method(:find_many) do |ids, **options|
+          ids.map { |id| find(id, **options) }
         end
 
         define_singleton_method(:search) do |query, **options|
