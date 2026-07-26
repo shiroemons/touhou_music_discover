@@ -56,7 +56,7 @@ Rails.application.routes.draw do
     post '/test_login', to: lambda { |env|
       req = ActionDispatch::Request.new(env)
       req.session[:user_id] = req.params[:user_id]
-      [302, { 'Location' => '/' }, []]
+      [302, { 'location' => '/' }, []]
     }
   end
 end

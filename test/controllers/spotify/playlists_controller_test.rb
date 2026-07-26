@@ -4,9 +4,6 @@ require 'test_helper'
 
 module Spotify
   class PlaylistsControllerTest < ActionDispatch::IntegrationTest
-    # Redis を共有するため、ワーカー間でキーが衝突しないよう逐次実行する。
-    parallelize(workers: 1)
-
     setup do
       @original = Original.create!(code: 'TEST_ORIG_PC', title: 'テスト作品', short_title: 'テスト作品',
                                    original_type: :windows, series_order: 9990)
@@ -45,6 +42,15 @@ module Spotify
       assert_redirected_to root_url
     end
 
+    test 'index redirects to root when the session has no stored Spotify credentials' do
+      log_in
+      RedisPool.with { |r| r.del(@user.id) }
+
+      get spotify_playlists_path
+
+      assert_redirected_to root_url
+    end
+
     test 'index fetches playlists from Spotify and stores only original-song ones' do
       log_in
       stub = stub_spotify_get('me/playlists', body: me_playlists_body,
@@ -78,8 +84,40 @@ module Spotify
       get spotify_playlists_path
 
       assert_response :success
-      assert_equal 42, SpotifyPlaylist.find_by(spotify_id: 'PL_MATCHED').followers
-      assert_not_requested :get, "#{SpotifyApiStubs::API_BASE}/me/playlists"
+      assert_match '42', @response.body
+      assert_not_requested :get, %r{/me/playlists}
+    end
+
+    test 'save_playlists_to_db updates an existing row instead of leaving it stale' do
+      log_in
+      SpotifyPlaylist.create!(spotify_id: 'PL_MATCHED', spotify_user_id: 'other-user',
+                              name: 'stale name', total: 0, followers: 5, position: 0)
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+
+      get spotify_playlists_path
+
+      record = SpotifyPlaylist.find_by(spotify_id: 'PL_MATCHED')
+
+      assert_equal 'test-user', record.spotify_user_id
+      assert_equal @song.title, record.name
+      assert_equal 7, record.total
+    end
+
+    test 'playlists are stored in reverse API order so the view renders them API-order' do
+      log_in
+      # フィクスチャの3件目 (PL_MATCHED_2) も原曲名と一致させるため、"#{@song.title}_2" という
+      # 別タイトルの原曲を用意する（me_playlists_body の gsub がプレースホルダの接頭辞を
+      # 共有しているため、この命名で自動的に一致する）。
+      OriginalSong.create!(code: 'TEST_SONG_PC_2', original_code: @original.code,
+                           title: "#{@song.title}_2", track_number: 2, is_duplicate: false)
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+
+      get spotify_playlists_path
+
+      assert_response :success
+      assert_equal %w[PL_MATCHED_2 PL_MATCHED], SpotifyPlaylist.order(:position).pluck(:spotify_id)
     end
 
     test 'index refreshes an expired token before calling the API' do

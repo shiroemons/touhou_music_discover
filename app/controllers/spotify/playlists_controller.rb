@@ -454,25 +454,39 @@ module Spotify
       titles = OriginalSong.playlist_titles.to_set
       code_map = OriginalSong.playlist_code_map
 
-      fetched = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#index') do
+      # これは対話的なリクエスト（ユーザーがページの読み込みを待っている）なので、
+      # レート制限時は長く待たず早めに諦めてバナー表示に切り替える。長時間待つ
+      # デフォルト（tries: 5, max_retry_after: 900）はバックグラウンド処理向け。
+      fetched = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#index', tries: 3,
+                                        max_retry_after: 60) do
         SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT)
       end
 
-      matched = fetched.select { |playlist| titles.include?(playlist['name']) }
-      known_followers = SpotifyPlaylist.where(spotify_id: matched.map { |p| p['id'] })
-                                       .pluck(:spotify_id, :followers).to_h
+      # GET /me/playlists はまれに items に null 要素を含めて返すことがあるため、
+      # nil を除いてからフィルタする（nil['name'] は NoMethodError になる）。
+      matched = fetched.compact.select { |playlist| titles.include?(playlist['name']) }
 
       matched.map do |playlist|
         {
           id: playlist['id'],
           name: playlist['name'],
           external_urls: playlist['external_urls'] || {},
-          followers: known_followers.fetch(playlist['id'], 0),
+          # follower 数は GET /me/playlists のレスポンスに含まれない。ここは clear_cache で
+          # 行を消した直後にしか到達しないため、保存済みの値も残っていない。0 で保存し、
+          # 最新化は「曲数を更新」(refresh_counts) の責務とする。
+          followers: 0,
           total: playlist.dig('tracks', 'total').to_i,
           synced_at: nil,
           original_song_code: code_map[playlist['name']]
         }
       end.reverse
+    rescue SpotifyApi::QuotaExceededError => e
+      # クォータ超過は Retry-After が数時間規模になり、通常のレート制限のように
+      # 「しばらく待てば復旧する」では済まないため、別メッセージで区別する。
+      # RateLimitError のサブクラスなので RateLimitError より先に rescue する必要がある。
+      Rails.logger.error("Spotify APIのクォータ超過: #{e.message}")
+      @error = 'Spotify API の利用枠を使い切りました。復旧まで時間がかかるため、しばらく経ってから再度お試しください。'
+      []
     rescue SpotifyApi::RateLimitError => e
       Rails.logger.error("Spotify APIレート制限: #{e.message}")
       @error = 'Spotify APIのレート制限に達しました。しばらく時間をおいて再度お試しください。'

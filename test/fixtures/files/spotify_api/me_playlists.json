@@ -4,7 +4,7 @@
   "next": null,
   "offset": 0,
   "previous": null,
-  "total": 2,
+  "total": 3,
   "items": [
     {
       "collaborative": false,
@@ -37,6 +37,22 @@
       "tracks": { "href": "https://api.spotify.com/v1/playlists/PL_UNMATCHED/tracks", "total": 3 },
       "type": "playlist",
       "uri": "spotify:playlist:PL_UNMATCHED"
+    },
+    {
+      "collaborative": false,
+      "description": "",
+      "external_urls": { "spotify": "https://open.spotify.com/playlist/PL_MATCHED_2" },
+      "href": "https://api.spotify.com/v1/playlists/PL_MATCHED_2",
+      "id": "PL_MATCHED_2",
+      "images": [],
+      "name": "PLAYLIST_TITLE_MATCHED_2",
+      "owner": { "id": "test-user", "type": "user" },
+      "primary_color": null,
+      "public": true,
+      "snapshot_id": "snap3",
+      "tracks": { "href": "https://api.spotify.com/v1/playlists/PL_MATCHED_2/tracks", "total": 4 },
+      "type": "playlist",
+      "uri": "spotify:playlist:PL_MATCHED_2"
     }
   ]
 }
