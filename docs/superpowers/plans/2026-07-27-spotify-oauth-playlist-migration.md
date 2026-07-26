@@ -582,7 +582,11 @@ Page#items は各要素を Response に包むため、playlist.dig('tracks', 'to
 
 ### Task 5: OmniAuth Spotify ストラテジを自前実装する
 
-**目的:** `require 'rspotify/oauth'` への依存を断ち、scope から未使用の権限を外す。
+**目的:** `require 'rspotify/oauth'` への依存を断つ。
+
+**scope はこのタスクでは変更しない。** ここを scope 同一のままの純粋な置換にしておくと、
+ログインが壊れたときに原因がストラテジ実装か scope 変更かを切り分けられる。
+scope の変更は、同じく再認可が必要になる Redis キー変更（Task 12）にまとめる。
 
 **Files:**
 - Create: `lib/omniauth/strategies/spotify.rb`
@@ -757,30 +761,25 @@ OmniAuth.config.add_camelization('spotify', 'Spotify')
 
 - [ ] **Step 5: initializer を差し替える**
 
-`config/initializers/omniauth.rb` を以下の内容に書き換える。
+`config/initializers/omniauth.rb` の `require 'rspotify/oauth'` の行**だけ**を置き換える。
+**scope の文字列はこのタスクでは変更しない**（Task 12 で変更する）。
+
+変更前:
 
 ```ruby
-# frozen_string_literal: true
+require 'omniauth'
+require 'rspotify/oauth'
+```
 
+変更後:
+
+```ruby
 require 'omniauth'
 require Rails.root.join('lib/omniauth/strategies/spotify')
-
-# OmniAuth 2.0以降のCSRF対策設定
-OmniAuth.config.allowed_request_methods = %i[post]
-
-# scope は必要最小限にする。
-# - user-read-email: users.email に使用（GET /me は 2026-07 時点でも email を返す）
-# - playlist-modify-public: プレイリストの作成・差し替えに必要
-# 以前指定していた user-library-read / user-library-modify は保存済みライブラリ
-# (GET /me/albums 等) の権限で、本アプリでは一度も使っていないため外した。
-# playlist-read-private は対象プレイリストが全件 public のため付けない。
-Rails.application.config.middleware.use OmniAuth::Builder do
-  provider :spotify,
-           ENV.fetch('SPOTIFY_CLIENT_ID', nil),
-           ENV.fetch('SPOTIFY_CLIENT_SECRET', nil),
-           scope: 'user-read-email playlist-modify-public'
-end
 ```
+
+`provider :spotify, ..., scope: 'user-read-email playlist-modify-public user-library-read user-library-modify'`
+の行はそのまま残すこと。
 
 - [ ] **Step 6: テストが通ることを確認する**
 
@@ -804,12 +803,12 @@ git commit -m "OmniAuth の Spotify ストラテジを自前実装する
 
 - rspotify/oauth への依存を断つ（rspotify は #563 で削除予定）
 - omniauth-oauth2 を Gemfile に明示追加（従来は rspotify 経由の推移的依存）
-- scope から未使用の user-library-read / user-library-modify を削除
-- user-read-email は実 API で email が返ることを確認済みのため残す
-- info のキー構造は app/models/user.rb が読む形をそのまま保つ"
+- info のキー構造は app/models/user.rb が読む形をそのまま保つ
+- scope は変更しない。再認可が必要になる変更は Task 12 にまとめる"
 ```
 
-**注意:** この時点で scope が変わったため、**次にログインするときに Spotify の再認可画面が出る**。既存の Redis 上の auth_hash はまだ有効なので、既存機能はそのまま動く。
+**注意:** scope を変えていないため、既存の Redis 上の auth_hash はそのまま有効で、
+既存機能は動き続ける。このタスクは純粋な実装の置換である。
 
 ---
 
@@ -1247,8 +1246,10 @@ module Spotify
                   only: %i[index clear_cache sync_single create refresh_counts original_songs]
 ```
 
-`MAX_RETRIES` と `CACHE_TTL` を削除する（`MAX_RETRIES` は `SpotifyRetry` に統合されるため。
-`CACHE_TTL` は元から未使用）。
+**`MAX_RETRIES` はまだ削除しないこと。** この時点では `refresh_counts`（Task 9）と
+`original_songs`（Task 10）がまだ参照しており、消すと NameError になる。
+最後の参照が消える Task 10 で削除する。`CACHE_TTL` は元から未使用だが、
+デッドコード撤去としてまとめて Task 14 で削除する。
 
 `index`（9-46 行目）を次に置き換える。
 
@@ -1384,17 +1385,165 @@ git commit -m "index と clear_cache を SpotifyApi へ移行しセッション�
 
 ### Task 8: `sync_single` を差し替え、原曲名の再検証を入れる
 
-**目的:** 唯一「外から任意の playlist_id を受け取って破壊的操作に到達しうる経路」を塞ぎ、全消し→全追加を `replace_items` に置き換える。
+**目的:** 唯一「外から任意の playlist_id を受け取って破壊的操作に到達しうる経路」を塞ぎ、全消し→全追加を `replace_items` に置き換える。あわせて、Task 11 のサービス層と共有するトラック書き込みクラスを新設する。
 
 **Files:**
+- Create: `app/services/spotify/playlist_track_writer.rb`
 - Modify: `app/controllers/spotify/playlists_controller.rb`
+- Test: `test/services/spotify/playlist_track_writer_test.rb`
 - Test: `test/controllers/spotify/playlists_controller_test.rb`
 
 **Interfaces:**
-- Consumes: `SpotifyApi::Playlist.all_mine`、`SpotifyApi::Playlist.replace_items(session, id, uris)`、`SpotifyApi::Playlist.add_items(session, id, uris)`、`OriginalSong.playlist_title?`
-- Produces: `Spotify::PlaylistsController#find_user_playlist(playlist_id, expected_name) -> SpotifyApi::Response | nil`
+- Consumes: `SpotifyApi::Playlist.all_mine`、`SpotifyApi::Playlist.replace_items(session, id, uris)`、`SpotifyApi::Playlist.add_items(session, id, uris)`
+- Produces:
+  - `Spotify::PlaylistTrackWriter.call(session:, playlist_id:, spotify_tracks:, source:) -> Integer`
+    （書き込んだ URI の件数を返す。**Task 11 のサービス層も同じクラスを使う**）
+  - `Spotify::PlaylistTrackWriter::MAX_ITEMS_PER_REQUEST = 100`
+  - `Spotify::PlaylistsController#find_user_playlist(playlist_id, expected_name) -> SpotifyApi::Response | nil`
 
-- [ ] **Step 1: 失敗するテストを書く**
+**共有クラスにする理由:** PUT（先頭 100 件）→ POST（残り 100 件ずつ）の**順序を誤ると
+先に足したトラックが消える**破壊的な処理であり、実装が 2 箇所にあると片方だけ壊れうる。
+順序と件数上限をこのクラスの中に閉じ込める。
+
+- [ ] **Step 1: PlaylistTrackWriter の失敗するテストを書く**
+
+`test/services/spotify/playlist_track_writer_test.rb` を Write ツールで作成する。
+
+```ruby
+# frozen_string_literal: true
+
+require 'test_helper'
+
+module Spotify
+  class PlaylistTrackWriterTest < ActiveSupport::TestCase
+    SpotifyTrackStub = Struct.new(:spotify_id)
+
+    setup do
+      @session = SpotifyApi::UserSession.new(
+        { 'uid' => 'test-user',
+          'credentials' => { 'token' => 'USER_TOKEN', 'refresh_token' => 'R',
+                             'expires_at' => 1.hour.from_now.to_i } }
+      )
+    end
+
+    def tracks(count)
+      Array.new(count) { |i| SpotifyTrackStub.new(format('TRACK%03d', i)) }
+    end
+
+    test 'replaces the playlist with a single PUT when within the batch limit' do
+      put_stub = stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+
+      written = PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
+                                         spotify_tracks: tracks(3), source: 'test')
+
+      assert_equal 3, written
+      assert_requested put_stub do |req|
+        JSON.parse(req.body)['uris'] == %w[spotify:track:TRACK000 spotify:track:TRACK001
+                                           spotify:track:TRACK002]
+      end
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
+    end
+
+    test 'PUTs the first 100 then POSTs the remainder in batches of 100' do
+      put_stub = stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+      post_stub = stub_spotify_post('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+
+      written = PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
+                                         spotify_tracks: tracks(250), source: 'test')
+
+      assert_equal 250, written
+      assert_requested put_stub, times: 1
+      assert_requested post_stub, times: 2
+      assert_requested put_stub do |req|
+        JSON.parse(req.body)['uris'].size == 100
+      end
+    end
+
+    test 'clears the playlist with an empty uris array when there are no tracks' do
+      put_stub = stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+
+      written = PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
+                                         spotify_tracks: [], source: 'test')
+
+      assert_equal 0, written
+      assert_requested put_stub do |req|
+        JSON.parse(req.body)['uris'] == []
+      end
+    end
+  end
+end
+```
+
+- [ ] **Step 2: テストが失敗することを確認する**
+
+Run: `devbox run -- bin/rails test test/services/spotify/playlist_track_writer_test.rb`
+
+Expected: FAIL。`NameError: uninitialized constant Spotify::PlaylistTrackWriter`。
+
+- [ ] **Step 3: PlaylistTrackWriter を実装する**
+
+`app/services/spotify/playlist_track_writer.rb` を Write ツールで作成する。
+
+```ruby
+# frozen_string_literal: true
+
+module Spotify
+  # プレイリストの中身をトラック一覧で丸ごと差し替える。
+  #
+  # 以前は「tracks を取得して remove を繰り返す」→「50 件ずつ add する」という
+  # ループだったが、PUT /playlists/{id}/tracks が uris で中身を置き換えられるため、
+  # 1 リクエスト（100 件超の分だけ追加リクエスト）に圧縮できる。
+  #
+  # PUT は 1 回 100 件までなので、先頭 100 件を PUT し、残りを 100 件ずつ POST で足す。
+  # **PUT が後に来ると先に足した分が消える。** 順序を誤ると破壊的なので、
+  # controller とサービスで実装を分けず、このクラスに閉じ込めている。
+  class PlaylistTrackWriter
+    MAX_ITEMS_PER_REQUEST = 100
+
+    class << self
+      def call(...)
+        new(...).call
+      end
+    end
+
+    # @param source [String] SpotifyRetry がレート制限を記録するときの呼び出し元名
+    # @return [Integer] 書き込んだトラック数
+    def initialize(session:, playlist_id:, spotify_tracks:, source:)
+      @session = session
+      @playlist_id = playlist_id
+      @uris = spotify_tracks.map { |track| "spotify:track:#{track.spotify_id}" }
+      @source = source
+    end
+
+    def call
+      # 空配列でも PUT する。中身を空にする（全消し）操作になる。
+      with_retry { SpotifyApi::Playlist.replace_items(session, playlist_id, uris.first(MAX_ITEMS_PER_REQUEST)) }
+
+      uris.drop(MAX_ITEMS_PER_REQUEST).each_slice(MAX_ITEMS_PER_REQUEST) do |batch|
+        with_retry { SpotifyApi::Playlist.add_items(session, playlist_id, batch) }
+      end
+
+      uris.size
+    end
+
+    private
+
+    attr_reader :session, :playlist_id, :uris, :source
+
+    def with_retry
+      SpotifyRetry.with_retry(source:) { yield }
+    end
+  end
+end
+```
+
+- [ ] **Step 4: テストが通ることを確認する**
+
+Run: `devbox run -- bin/rails test test/services/spotify/playlist_track_writer_test.rb`
+
+Expected: 3 runs, 0 failures。
+
+- [ ] **Step 5: sync_single の失敗するテストを書く**
 
 `test/controllers/spotify/playlists_controller_test.rb` のクラス内に追加する。
 
@@ -1461,13 +1610,13 @@ git commit -m "index と clear_cache を SpotifyApi へ移行しセッション�
 `Album` / `Track` / `TracksOriginalSong` / `SpotifyTrack` の必須カラムが上記と異なる場合は、
 `devbox run -- bin/rails runner 'puts Album.column_names.inspect'` 等で確認して補うこと。
 
-- [ ] **Step 2: テストが失敗することを確認する**
+- [ ] **Step 6: テストが失敗することを確認する**
 
 Run: `devbox run -- bin/rails test test/controllers/spotify/playlists_controller_test.rb -n /sync_single/`
 
 Expected: FAIL。
 
-- [ ] **Step 3: sync_single を差し替える**
+- [ ] **Step 7: sync_single を差し替える**
 
 `app/controllers/spotify/playlists_controller.rb` の `sync_single`（61-121 行目）を次に置き換える。
 
@@ -1504,7 +1653,9 @@ Expected: FAIL。
         return
       end
 
-      replace_playlist_tracks(playlist_id, spotify_tracks)
+      PlaylistTrackWriter.call(session: spotify_session, playlist_id:,
+                               spotify_tracks:,
+                               source: 'Spotify::PlaylistsController#sync_single')
 
       spotify_playlist = SpotifyPlaylist.find_by(spotify_id: playlist_id)
       spotify_playlist&.update(total: spotify_tracks.size, synced_at: Time.current)
@@ -1530,46 +1681,30 @@ private の `find_user_playlist`（396-411 行目）を次に置き換える。
     end
 ```
 
-private セクションの先頭付近に、書き込み処理を追加する。
+トラックの書き込みは `Spotify::PlaylistTrackWriter`（Step 3 で作成）に任せるため、
+コントローラ側に書き込み用の private メソッドは作らない。
 
-```ruby
-    # 全消し → 全追加を PUT 1 回（+ 100 件超の分だけ POST）に置き換える。
-    # PUT /playlists/{id}/tracks は uris で中身を丸ごと差し替えるため、
-    # 先頭 100 件を PUT した後に残りを 100 件ずつ POST で足す。順序が入れ替わると
-    # 先に足した分が消えるので、PUT を必ず先に実行すること。
-    def replace_playlist_tracks(playlist_id, spotify_tracks)
-      uris = spotify_tracks.map { |track| "spotify:track:#{track.spotify_id}" }
+- [ ] **Step 8: テストが通ることを確認する**
 
-      SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#sync_single') do
-        SpotifyApi::Playlist.replace_items(spotify_session, playlist_id, uris.first(100))
-      end
-
-      uris.drop(100).each_slice(100) do |batch|
-        SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#sync_single') do
-          SpotifyApi::Playlist.add_items(spotify_session, playlist_id, batch)
-        end
-      end
-    end
-```
-
-- [ ] **Step 4: テストが通ることを確認する**
-
-Run: `devbox run -- bin/rails test test/controllers/spotify/playlists_controller_test.rb`
+Run: `devbox run -- bin/rails test test/controllers/spotify/playlists_controller_test.rb test/services/spotify/playlist_track_writer_test.rb`
 
 Expected: 全 test pass。
 
-- [ ] **Step 5: RuboCop を通してコミット**
+- [ ] **Step 9: RuboCop を通してコミット**
 
 Run: `make rubocop`
 
 ```bash
-git add app/controllers/spotify/playlists_controller.rb test/controllers/spotify/playlists_controller_test.rb
+git add app/services/spotify/playlist_track_writer.rb app/controllers/spotify/playlists_controller.rb test/services/spotify/playlist_track_writer_test.rb test/controllers/spotify/playlists_controller_test.rb
 git commit -m "sync_single を SpotifyApi へ移行し原曲名をサーバ側で再検証する
 
 - playlist_id は外部から渡されるため、破壊的操作の前に
   「原曲名に一致する」「ユーザー自身のプレイリストである」
   「実際の名前が指定名と一致する」の3点を検証する
-- 全消し→全追加のループを replace_items 1回 + 100件ずつの add_items に置き換える
+- 全消し→全追加のループを PlaylistTrackWriter に置き換える
+  （PUT で先頭100件を差し替え、残りを100件ずつ POST で追加）
+- 順序を誤ると先に足したトラックが消えるため、順序と件数上限は
+  PlaylistTrackWriter に閉じ込め、サービス層とも共有する
 - RSpotify::Track.find を廃止し URI を文字列組み立てにする"
 ```
 
@@ -1862,13 +1997,26 @@ Run: `devbox run -- bin/rails test test/controllers/spotify/playlists_controller
 
 Expected: 全 test pass。
 
-- [ ] **Step 5: コントローラから RSpotify の参照が消えたことを確認する**
+- [ ] **Step 5: 未使用になった MAX_RETRIES を削除する**
+
+`refresh_counts`（Task 9）と `original_songs`（本タスク）の差し替えで、
+`MAX_RETRIES` の参照が全て消える。クラス冒頭の定義を削除する。
+
+```ruby
+    MAX_RETRIES = 3
+```
+
+Run: `grep -n 'MAX_RETRIES' app/controllers/spotify/playlists_controller.rb`
+
+Expected: 出力なし（exit 1）。残っている参照があれば削除せず報告する。
+
+- [ ] **Step 6: コントローラから RSpotify の参照が消えたことを確認する**
 
 Run: `grep -n 'RSpotify' app/controllers/spotify/playlists_controller.rb`
 
 Expected: 出力なし（exit 1）。
 
-- [ ] **Step 6: RuboCop を通してコミット**
+- [ ] **Step 7: RuboCop を通してコミット**
 
 Run: `make rubocop`
 
@@ -1877,6 +2025,7 @@ git add app/controllers/spotify/playlists_controller.rb test/controllers/spotify
 git commit -m "original_songs を SpotifyApi へ移行する
 
 - 独自のリトライループを SpotifyRetry.with_retry に置き換える
+- 参照が消えた MAX_RETRIES を削除する
 - これで playlists_controller から RSpotify の参照が消えた"
 ```
 
@@ -1892,7 +2041,8 @@ git commit -m "original_songs を SpotifyApi へ移行する
 - Test: `test/services/spotify/playlist_update_service_test.rb`（新規）
 
 **Interfaces:**
-- Consumes: `SpotifyApi::Playlist.all_mine`、`.create(session, name:)`、`.replace_items`、`.add_items`
+- Consumes: `SpotifyApi::Playlist.all_mine`、`.create(session, name:)`、
+  `Spotify::PlaylistTrackWriter.call(session:, playlist_id:, spotify_tracks:, source:)`（Task 8 で作成済み）
 - Produces: `Spotify::PlaylistUpdateService.call(update_type:, spotify_session:, user_id:) -> void`
   （**`spotify_user:` から `spotify_session:` にキーワードが変わる**）
 
@@ -2058,17 +2208,6 @@ Expected: FAIL（`unknown keyword: :spotify_session`）。
     end
 ```
 
-`update_playlist_for_song`（124-130 行目）:
-
-```ruby
-    def update_playlist_for_song(original_song, spotify_tracks)
-      playlist = find_or_create_playlist(original_song.title)
-      return unless playlist
-
-      replace_playlist_tracks(playlist['id'], spotify_tracks)
-    end
-```
-
 `find_or_create_playlist`（132-141 行目）:
 
 ```ruby
@@ -2105,25 +2244,20 @@ Expected: FAIL（`unknown keyword: :spotify_session`）。
     end
 ```
 
-`clear_playlist_tracks`（193-200 行目）と `add_tracks_to_playlist`（202-209 行目）を
-次の 1 メソッドに置き換える。
+`clear_playlist_tracks`（193-200 行目）と `add_tracks_to_playlist`（202-209 行目）を削除し、
+Task 8 で作成した `Spotify::PlaylistTrackWriter` を使う。**ここに同等の実装を書かないこと**
+（PUT → POST の順序を誤るとトラックが消えるため、実装は 1 箇所に閉じ込めてある）。
+
+`update_playlist_for_song` から次のように呼ぶ。
 
 ```ruby
-    # 全消し（tracks を取得して remove を繰り返す）→ 全追加のループを
-    # PUT 1 回（+ 100 件超の分だけ POST）に置き換える。
-    # PUT は中身を丸ごと差し替えるため、必ず PUT を先に実行すること。
-    def replace_playlist_tracks(playlist_id, spotify_tracks)
-      uris = spotify_tracks.map { |track| "spotify:track:#{track.spotify_id}" }
+    def update_playlist_for_song(original_song, spotify_tracks)
+      playlist = find_or_create_playlist(original_song.title)
+      return unless playlist
 
-      SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#replace_items') do
-        SpotifyApi::Playlist.replace_items(spotify_session, playlist_id, uris.first(100))
-      end
-
-      uris.drop(100).each_slice(100) do |batch|
-        SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#add_items') do
-          SpotifyApi::Playlist.add_items(spotify_session, playlist_id, batch)
-        end
-      end
+      PlaylistTrackWriter.call(session: spotify_session, playlist_id: playlist['id'],
+                               spotify_tracks:,
+                               source: 'Spotify::PlaylistUpdateService')
     end
 ```
 
@@ -2200,13 +2334,18 @@ git commit -m "PlaylistUpdateService を SpotifyApi へ移行する
 
 ---
 
-### Task 12: Redis キーに prefix と TTL を付ける
+### Task 12: Redis キーに prefix と TTL を付け、OAuth scope を絞る
 
-**目的:** auth_hash が `user.id` の生値で進捗キーと同一名前空間に混在し、無期限に平文の refresh_token を保持している状態を解消する。
+**目的:** auth_hash が `user.id` の生値で進捗キーと同一名前空間に混在し、無期限に平文の refresh_token を保持している状態を解消する。あわせて未使用の OAuth 権限を手放す。
+
+**この 2 つを 1 タスクにまとめている理由:** どちらも「ユーザーに再ログインしてもらう」という
+同じ結果を生む変更だから。分けても再ログインの回数は減らず、いつ再認可が必要になったのかが
+分かりにくくなるだけ。ここが本 PR で唯一「再ログインが必要」なコミットになる。
 
 **Files:**
 - Modify: `lib/spotify_api/user_session.rb`
 - Modify: `app/controllers/sessions_controller.rb`
+- Modify: `config/initializers/omniauth.rb`
 - Test: `test/lib/spotify_api/user_session_test.rb`
 - Test: `test/controllers/sessions_controller_test.rb`
 
@@ -2217,7 +2356,7 @@ git commit -m "PlaylistUpdateService を SpotifyApi へ移行する
 **前提:** Task 7〜11 で auth_hash を読むのは `SpotifyApi::UserSession.find` だけになっている。
 このタスクで書き手（`sessions_controller`）と読み手（`UserSession`）を同時に変える。
 **既存の Redis 上の auth_hash は旧キーのまま残るため、この変更後は 1 回の再ログインが必要になる。**
-Task 5 の scope 変更でどのみち再認可が必要なので、ここでまとめて済ませる。
+scope 変更（Step 6）も同じく再認可を要求するため、両方をこのタスクにまとめてある。
 
 - [ ] **Step 1: 失敗するテストを書く**
 
@@ -2416,25 +2555,50 @@ end
 `r.set(@user.id, ...)` / `r.del(@user.id, ...)` を使っている箇所を
 `SpotifyApi::UserSession.redis_key(@user.id)` に変更する。
 
-- [ ] **Step 6: 全テストが通ることを確認する**
+- [ ] **Step 6: OAuth scope を絞る**
+
+`config/initializers/omniauth.rb` の `provider :spotify, ...` を次に置き換える。
+
+```ruby
+# scope は必要最小限にする。
+# - user-read-email: users.email に使用（GET /me は 2026-07 時点でも email を返す）
+# - playlist-modify-public: プレイリストの作成・差し替えに必要
+# 以前指定していた user-library-read / user-library-modify は保存済みライブラリ
+# (GET /me/albums 等) の権限で、本アプリでは一度も使っていないため外した。
+# playlist-read-private は対象プレイリストが全件 public のため付けない。
+Rails.application.config.middleware.use OmniAuth::Builder do
+  provider :spotify,
+           ENV.fetch('SPOTIFY_CLIENT_ID', nil),
+           ENV.fetch('SPOTIFY_CLIENT_SECRET', nil),
+           scope: 'user-read-email playlist-modify-public'
+end
+```
+
+Run: `grep -n 'user-library' config/initializers/omniauth.rb`
+
+Expected: 出力なし（exit 1）。
+
+- [ ] **Step 7: 全テストが通ることを確認する**
 
 Run: `make minitest`
 
 Expected: 全 test pass。
 
-- [ ] **Step 7: RuboCop を通してコミット**
+- [ ] **Step 8: RuboCop を通してコミット**
 
 Run: `make rubocop`
 
 ```bash
-git add lib/spotify_api/user_session.rb app/controllers/sessions_controller.rb test/lib/spotify_api/user_session_test.rb test/controllers/sessions_controller_test.rb test/controllers/spotify/playlists_controller_test.rb
-git commit -m "auth_hash の Redis キーに prefix と TTL を付ける
+git add lib/spotify_api/user_session.rb app/controllers/sessions_controller.rb config/initializers/omniauth.rb test/lib/spotify_api/user_session_test.rb test/controllers/sessions_controller_test.rb test/controllers/spotify/playlists_controller_test.rb
+git commit -m "auth_hash の保存方法を見直し OAuth scope を絞る
 
 - キーを user.id の生値から spotify:auth:<user_id> に変更する
   （進捗キー playlist_update:* / refresh_counts:* と同じ名前空間に混在していた）
 - TTL 90日を設定する。refresh_token は revoke されるまで失効しないため、
   無期限に平文で保持しない
-- リフレッシュ後の書き戻しでも TTL を維持する"
+- リフレッシュ後の書き戻しでも TTL を維持する
+- scope から未使用の user-library-read / user-library-modify を削除する
+- 再認可が必要になる変更をこのコミットにまとめている"
 ```
 
 **注意:** この変更後、既存の Redis 上の auth_hash（旧キー）は読まれなくなる。動作確認の前に
@@ -2597,7 +2761,7 @@ git commit -m "デッドコードと専用依存を撤去する
 **Files:**
 - Create: `$SCRATCH/after/`（リポジトリ外）
 
-**前提:** Task 5（scope 変更）と Task 12（Redis キー変更）により、**再ログインが必要**。
+**前提:** Task 12（Redis キー変更 + scope 変更）により、**再ログインが必要**。
 
 - [ ] **Step 1: アプリを起動する**
 
@@ -2732,7 +2896,7 @@ PR 本文は作成前にユーザーに提示して承認を得ること（`~/.c
 | 4. 機密情報の取り扱い | Task 2（gitignore・VCR filter）、Task 15 Step 8（検証） |
 | 5. Phase E 安全網 | Task 1（前スナップショット）、Task 2（webmock/VCR）、Task 15 Step 7（差分） |
 | 5.4 並列実行の衝突 | Task 7 / 11 / 12 の `parallelize(workers: 1)` |
-| 6.1 OmniAuth ストラテジ | Task 5 |
+| 6.1 OmniAuth ストラテジ | Task 5（実装の置換）、Task 12（scope の変更） |
 | 6.2 `app/models/user.rb` | Task 6 |
 | 6.3 `sessions_controller` / Redis キー・TTL | Task 12 |
 | 7.1 セッション取得の集約 | Task 7 |
@@ -2760,8 +2924,9 @@ Task 11 Step 1 には「テストが落ちた場合の代替」を明記して�
   `spotify_session:`（Task 11）で一貫。
 - `OriginalSong.playlist_titles` / `playlist_title?` / `playlist_code_for` / `playlist_code_map`
   は Task 3 で定義し、Task 7 / 8 / 9 で同名で使用。
-- `replace_playlist_tracks(playlist_id, spotify_tracks)` は controller（Task 8）と
-  service（Task 11）で同じシグネチャ。
+- `Spotify::PlaylistTrackWriter.call(session:, playlist_id:, spotify_tracks:, source:)` は
+  Task 8 で作成し、controller（Task 8）と service（Task 11）の両方から同じ呼び方で使う。
+  実装の重複を避けるため、サービス側に同等のメソッドを作らないことを Task 11 に明記した。
 - `SpotifyApi::UserSession.redis_key(user_id)` / `TTL` は Task 12 で定義し、
   `sessions_controller` とテスト（Task 12）、Task 15 で使用。
 - `SpotifyApiStubs` のメソッド名は Task 2 で定義し、Task 7 / 8 / 9 / 10 / 11 で使用。
