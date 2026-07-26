@@ -7,11 +7,22 @@ module YtMusic
         response = super(id, 'album')
         return nil if response['error'].present?
 
+        if extract_header(response).nil?
+          Rails.logger.warn "YtMusic::Album.find: browse_id=#{id} のアルバムのコンテンツが取得できませんでした (削除/視聴不可の可能性があります)"
+          return nil
+        end
+
         Album.new response
       end
 
       def search(query)
         super(query, 'albums')
+      end
+
+      # レスポンスからアルバムのヘッダー情報（タイトル・サブタイトル等）を取り出す。
+      # 削除/視聴不可のアルバムでは `contents` 自体が存在せず、この戻り値がnilになる。
+      def extract_header(response)
+        response.dig('contents', 'twoColumnBrowseResultsRenderer', 'tabs', 0, 'tabRenderer', 'content', 'sectionListRenderer', 'contents', 0, 'musicResponsiveHeaderRenderer')
       end
     end
 
@@ -20,7 +31,9 @@ module YtMusic
                 :tracks, :duration_seconds
 
     def initialize(response)
-      header = response.dig('contents', 'twoColumnBrowseResultsRenderer', 'tabs', 0, 'tabRenderer', 'content', 'sectionListRenderer', 'contents', 0, 'musicResponsiveHeaderRenderer')
+      header = self.class.extract_header(response)
+      raise ArgumentError, 'アルバムのコンテンツが取得できませんでした（削除/視聴不可の可能性があります）' if header.nil?
+
       @title = header.dig('title', 'runs', 0, 'text')
       subtitle = header.dig('subtitle', 'runs')
       @type = subtitle&.shift&.dig('text')

@@ -8,6 +8,8 @@ module Repair
   # 実装済みのため、ここでは「対象の抽出」「リトライしての再取得」「進捗集計」だけを担当する。
   #
   # 実行は既定でdry-run。`apply: true` を指定したときだけ実際にAPIを呼び直しDBを更新する。
+  # `all: true` を指定すると劣化の有無を問わず全アルバムを再取得対象にする（パーサ改修の恩恵を
+  # 既存payloadへ反映させたいとき用。回帰ガードにより既存payloadが悪化することはない）。
   class YtmusicAlbumPayloads
     DEFAULT_MAX_ATTEMPTS = 3
     DEFAULT_BASE_INTERVAL = 1.0
@@ -38,9 +40,11 @@ module Repair
             )
     SQL
 
-    # dry-run時の内訳集計用。相互排他な4分類（合計は必ず対象件数と一致する）。
+    # dry-run時の内訳集計用。相互排他な5分類（合計は必ず対象件数と一致する）。
     # CASEの分岐順は上から順に「tracks欠損」→「全トラックnull」→「一部null」→
-    # 「video_idは揃っているがtrack_number欠落」の優先度で判定する。
+    # 「video_idは揃っているがtrack_number欠落」の優先度で判定し、どれにも当てはまらない行を
+    # 'healthy' とする。劣化のみモードでは対象が必ず DEGRADED_CONDITION_SQL を満たすため
+    # 'healthy' には決して分類されず、全件モードのときだけ健全な行がここに入る。
     BREAKDOWN_CASE_SQL = <<~SQL.squish
       CASE
         WHEN jsonb_typeof(payload->'tracks') IS DISTINCT FROM 'array' OR jsonb_array_length(payload->'tracks') = 0
@@ -51,7 +55,10 @@ module Repair
         WHEN EXISTS (
           SELECT 1 FROM jsonb_array_elements(payload->'tracks') tr WHERE tr->>'video_id' IS NULL
         ) THEN 'partial_null'
-        ELSE 'missing_track_number'
+        WHEN EXISTS (
+          SELECT 1 FROM jsonb_array_elements(payload->'tracks') tr WHERE #{TRACK_NUMBER_MISSING_SQL}
+        ) THEN 'missing_track_number'
+        ELSE 'healthy'
       END
     SQL
 
@@ -59,19 +66,21 @@ module Repair
       'all_null' => '全トラックnull',
       'partial_null' => '一部null',
       'missing_tracks' => 'tracks欠損',
-      'missing_track_number' => 'track_number欠落'
+      'missing_track_number' => 'track_number欠落',
+      'healthy' => '劣化なし'
     }.freeze
 
     # rubocop:disable Metrics/ParameterLists -- 呼び出し側（rakeタスク・テスト）が個別に指定できる必要がある設定値のため、
     # オプションハッシュへの集約はせずキーワード引数のまま公開する。
     def initialize(apply: false, limit: nil, workers: :ytmusic, max_attempts: DEFAULT_MAX_ATTEMPTS,
-                   base_interval: DEFAULT_BASE_INTERVAL, sync_tracks: false, out: $stdout)
+                   base_interval: DEFAULT_BASE_INTERVAL, sync_tracks: false, all: false, out: $stdout)
       @apply = apply
       @limit = limit
       @workers = workers
       @max_attempts = max_attempts
       @base_interval = base_interval
       @sync_tracks = sync_tracks
+      @all = all
       @out = out
     end
     # rubocop:enable Metrics/ParameterLists
@@ -91,13 +100,15 @@ module Repair
 
     def apply? = @apply
     def sync_tracks? = @sync_tracks
+    def all? = @all
 
     # ------------------------------------------------------------------
     # 対象抽出（読み取り専用）
     # ------------------------------------------------------------------
 
     def target_ids
-      scope = YtmusicAlbum.unscoped.where(DEGRADED_CONDITION_SQL).order(:id)
+      scope = YtmusicAlbum.unscoped.order(:id)
+      scope = scope.where(DEGRADED_CONDITION_SQL) unless all?
       scope = scope.limit(limit) if limit
       scope.pluck(:id)
     end
@@ -152,6 +163,8 @@ module Repair
       ytmusic_album = YtmusicAlbum.unscoped.find_by(id:)
       return :not_found if ytmusic_album.nil?
 
+      # YtMusic::Album.findは、レスポンスにerrorがある場合だけでなく、YouTube上でアルバムが
+      # 削除/視聴不可になりcontentsが欠落している場合もnilを返す。いずれも再試行では回復しない。
       album = fetch_album(ytmusic_album.browse_id)
       return :not_found if album.nil?
 
@@ -216,7 +229,7 @@ module Repair
 
     def build_result(target_count:, applied:, counters: Hash.new(0), elapsed: 0.0, skipped_browse_ids: [])
       {
-        target_count:, applied:, elapsed:,
+        target_count:, applied:, all: all?, elapsed:,
         repaired: counters[:repaired], still_degraded: counters[:still_degraded],
         not_found: counters[:not_found], error: counters[:error],
         skipped_browse_ids:
@@ -230,6 +243,7 @@ module Repair
     def print_header(target_count)
       out.puts '=' * 90
       out.puts "YouTube Music アルバムpayloadの縮退修復 (#{apply? ? 'APPLY: 実行します' : 'DRY-RUN: 実行しません'})"
+      out.puts "対象モード: #{all? ? '全件（劣化の有無を問わない）' : '劣化のみ'}"
       out.puts "対象件数: #{target_count} 件"
       out.puts "ワーカー: #{workers.inspect}（ParallelRunner.effective_workers で解決。PARALLEL_WORKERSで上書き可）"
       out.puts "リトライ設定: max_attempts=#{max_attempts} / base_interval=#{base_interval}秒（指数バックオフ + ジッタ±30%）"

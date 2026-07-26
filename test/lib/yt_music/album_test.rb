@@ -91,7 +91,52 @@ module YtMusic
       assert_equal 'https://music.youtube.com/playlist?list=test', album.playlist_url
     end
 
+    test 'find returns nil without raising when the response has neither contents nor error (deleted/unwatchable album)' do
+      response = { 'responseContext' => {}, 'trackingParams' => 'xxx', 'microformat' => {} }
+
+      result = nil
+      with_stubbed_base_find(response) do
+        result = Album.find('MPREb_dummy')
+      end
+
+      assert_nil result
+    end
+
+    test 'find returns nil when the response has an error key' do
+      response = { 'error' => { 'code' => 404 } }
+
+      result = nil
+      with_stubbed_base_find(response) do
+        result = Album.find('MPREb_dummy')
+      end
+
+      assert_nil result
+    end
+
+    test 'find returns an Album instance for a normal response' do
+      response = build_response(artist_texts: ['Album Artist'], track_artist_texts: [nil, nil])
+
+      result = nil
+      with_stubbed_base_find(response) do
+        result = Album.find('MPREb_dummy')
+      end
+
+      assert_instance_of Album, result
+    end
+
     private
+
+    # YtMusic::Base.findの特異メソッドを一時的に差し替え、Album.find内部の`super(id, 'album')`が
+    # 任意のレスポンスを返すようにする。Album.findがsuperで呼ぶのはクラスメソッドのため、
+    # stub_constでBase定数自体を差し替えても継承チェーンには影響せず効かない。
+    def with_stubbed_base_find(response)
+      singleton_class = YtMusic::Base.singleton_class
+      original_method = singleton_class.instance_method(:find)
+      singleton_class.define_method(:find) { |*_args| response }
+      yield
+    ensure
+      singleton_class.define_method(:find, original_method)
+    end
 
     def build_album_with_tracks(tracks)
       Album.allocate.tap { it.instance_variable_set(:@tracks, tracks) }

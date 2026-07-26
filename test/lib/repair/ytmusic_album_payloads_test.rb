@@ -64,6 +64,32 @@ module Repair
       assert_equal 0, result[:target_count]
     end
 
+    test '対象抽出: all: trueのとき劣化していないアルバムも対象になる' do
+      create_ytmusic_album(payload: payload_with_tracks([complete_track(track_number: 1)]))
+      create_ytmusic_album(payload: payload_with_tracks([degraded_track(track_number: 1)]))
+
+      result = run_repair(apply: false, all: true)
+
+      assert_equal 2, result[:target_count]
+    end
+
+    test '対象抽出: all: false（既定）のとき劣化していないアルバムは対象にならない' do
+      create_ytmusic_album(payload: payload_with_tracks([complete_track(track_number: 1)]))
+      create_ytmusic_album(payload: payload_with_tracks([degraded_track(track_number: 1)]))
+
+      result = run_repair(apply: false)
+
+      assert_equal 1, result[:target_count]
+    end
+
+    test '対象抽出: all: true かつ limitを指定すると件数が制限される' do
+      3.times { create_ytmusic_album(payload: payload_with_tracks([complete_track(track_number: 1)])) }
+
+      result = run_repair(apply: false, all: true, limit: 2)
+
+      assert_equal 2, result[:target_count]
+    end
+
     test 'dry-runの内訳にtrack_number欠落の件数が表示される' do
       create_ytmusic_album(payload: payload_with_tracks([complete_track(track_number: 1), track_with_zero_track_number]))
       out = StringIO.new
@@ -71,6 +97,16 @@ module Repair
       Repair::YtmusicAlbumPayloads.new(apply: false, out:).run
 
       assert_match(/track_number欠落: 1 件/, out.string)
+    end
+
+    test 'dry-run(all: true)の内訳に劣化なしの件数が表示される' do
+      create_ytmusic_album(payload: payload_with_tracks([complete_track(track_number: 1)]))
+      create_ytmusic_album(payload: payload_with_tracks([degraded_track(track_number: 1)]))
+      out = StringIO.new
+
+      Repair::YtmusicAlbumPayloads.new(apply: false, all: true, out:).run
+
+      assert_match(/劣化なし: 1 件/, out.string)
     end
 
     test 'dry-runではpayloadを一切変更せずYtMusic::Album.findも呼ばない' do
@@ -135,6 +171,21 @@ module Repair
       result = nil
       stub_const(YtMusic, :Album, stub_find_client { |_browse_id| regressed_album }) do
         result = run_repair(apply: true, base_interval: 0)
+      end
+
+      assert_equal 1, result[:still_degraded]
+      assert_equal 0, result[:repaired]
+      assert_equal original_payload, ytmusic_album.reload.payload
+    end
+
+    test 'all: trueでも回帰ガードにより拒否されたアルバムはstill_degradedに計上される' do
+      original_payload = payload_with_two_playable_and_one_null_track
+      ytmusic_album = create_ytmusic_album(payload: original_payload)
+      regressed_album = build_regressed_album
+
+      result = nil
+      stub_const(YtMusic, :Album, stub_find_client { |_browse_id| regressed_album }) do
+        result = run_repair(apply: true, all: true, base_interval: 0)
       end
 
       assert_equal 1, result[:still_degraded]

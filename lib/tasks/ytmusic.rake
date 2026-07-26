@@ -118,13 +118,14 @@ namespace :ytmusic do
     end
   end
 
-  desc 'YouTube Music アルバムの劣化した payload を再取得して修復する（既定はdry-run。APPLY=1で実行。PARALLEL_WORKERSでワーカー数を上書き可能）'
+  desc 'YouTube Music アルバムの劣化した payload を再取得して修復する（既定はdry-run。APPLY=1で実行。PARALLEL_WORKERSでワーカー数を上書き可能。ALL=1で劣化の有無に関わらず全アルバムを再取得。回帰ガードにより既存payloadが悪化することはない）'
   task repair_degraded_album_payloads: :environment do
     Repair::YtmusicAlbumPayloads.new(
       apply: ENV['APPLY'] == '1',
       limit: ENV['LIMIT'].presence&.to_i,
       max_attempts: ENV.fetch('MAX_ATTEMPTS', Repair::YtmusicAlbumPayloads::DEFAULT_MAX_ATTEMPTS).to_i,
-      sync_tracks: ENV['SYNC_TRACKS'] == '1'
+      sync_tracks: ENV['SYNC_TRACKS'] == '1',
+      all: ENV['ALL'] == '1'
     ).run
   end
 end
