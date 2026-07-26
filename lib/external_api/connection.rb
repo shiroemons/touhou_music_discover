@@ -19,6 +19,8 @@ module ExternalApi
     #   尊重されるかどうかもこの指定に依存する。
     #   つまり retry_statuses を省略すると、429 のレート制限はリトライされず
     #   Retry-After も無視される。
+    #   この共通設定はプロファイル側の retry に同じキーを書くことで上書きできる
+    #   （build 内のマージ順が **SHARED_RETRY_OPTIONS, **profile[:retry] のため）。
     #
     # exceptions について:
     #   接続断・タイムアウト系は再送で回復する見込みがあるためリトライ対象に含める。
@@ -63,6 +65,34 @@ module ExternalApi
         open_timeout: 5,
         timeout: 30,
         retry: { max: 2, interval: 1.0, backoff_factor: 2, max_interval: 10, interval_randomness: 0.5, methods: %i[get] }
+      },
+      # spotify だけ retry_statuses から 429 を意図的に除外している。
+      #   Spotify は Development Mode のクォータ超過時に Retry-After: 64063（約17.8時間）のような
+      #   極端な値を返すことがあり、faraday-retry はその値ぶんスレッドをブロックして待機してしまう。
+      #   429 のハンドリングは既存の SpotifyRetry / SpotifyRateLimit（app/models 配下）に委ね、
+      #   Faraday 層では 5xx の一時的な障害だけをリトライ対象にする。
+      spotify: {
+        open_timeout: 5,
+        timeout: 15,
+        retry: {
+          max: 3, interval: 1.0, backoff_factor: 2, max_interval: 20,
+          interval_randomness: 0.3, methods: %i[get],
+          retry_statuses: [500, 502, 503, 504]
+        }
+      },
+      # accounts.spotify.com（トークン取得）専用。
+      #   POST しかないエンドポイントであり、client_credentials / refresh_token の取得は
+      #   何度実行しても副作用がないため :post をリトライ対象に含める。
+      #   API 本体（spotify プロファイル）の POST はプレイリストへの項目追加など
+      #   非冪等な操作を含むため、そちらでは :post をリトライしない。
+      spotify_accounts: {
+        open_timeout: 5,
+        timeout: 10,
+        retry: {
+          max: 3, interval: 1.0, backoff_factor: 2, max_interval: 20,
+          interval_randomness: 0.3, methods: %i[post],
+          retry_statuses: [500, 502, 503, 504]
+        }
       }
     }.freeze
 
@@ -81,7 +111,8 @@ module ExternalApi
         Faraday.new(url ? { url: } : {}) do |conn|
           conn.options.open_timeout = profile[:open_timeout]
           conn.options.timeout = profile[:timeout]
-          conn.request :retry, **profile[:retry], **SHARED_RETRY_OPTIONS
+          # プロファイル側の指定を後に展開し、共通設定を上書きできるようにする。
+          conn.request :retry, **SHARED_RETRY_OPTIONS, **profile[:retry]
           conn.response :logger, Rails.logger, headers: false, bodies: false if Rails.env.development?
 
           block&.call(conn)
