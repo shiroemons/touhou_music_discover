@@ -4,20 +4,4 @@ class SpotifyArtist < ApplicationRecord
   EXCLUDE_SPOTIFY_IDS = [
     '2XEx6N3gknSmtshM0PVuxu' # GUMI
   ].freeze
-
-  def self.save_artist(s_artist)
-    return nil if s_artist.blank?
-
-    spotify_artist = SpotifyArtist.find_or_create_by!(spotify_id: s_artist.id) do |record|
-      record.name = s_artist.name
-    end
-
-    spotify_artist.update!(
-      name: s_artist.name,
-      url: s_artist.external_urls['spotify'],
-      follower_count: s_artist.followers['total'],
-      payload: s_artist.as_json
-    )
-    spotify_artist
-  end
 end

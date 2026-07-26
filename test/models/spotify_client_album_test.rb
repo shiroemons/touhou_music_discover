@@ -49,10 +49,12 @@ module SpotifyClient
       end
 
       target_scope = ::Album.where(id: album.id).includes(:apple_music_album)
-      with_missing_spotify_album_scope(target_scope) do
-        stub_const(RSpotify, :Album, spotify_album_client) do
-          assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
-            @result = SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan(sleep_interval: 0)
+      with_rspotify_backend do
+        with_missing_spotify_album_scope(target_scope) do
+          stub_const(RSpotify, :Album, spotify_album_client) do
+            assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
+              @result = SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan(sleep_interval: 0)
+            end
           end
         end
       end
@@ -79,9 +81,11 @@ module SpotifyClient
         end
       end
 
-      with_spotify_album_processor(->(album) { processed_ids << album.id }) do
-        stub_const(RSpotify, :Album, spotify_album_client) do
-          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
+      with_rspotify_backend do
+        with_spotify_album_processor(->(album) { processed_ids << album.id }) do
+          stub_const(RSpotify, :Album, spotify_album_client) do
+            SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
+          end
         end
       end
 
@@ -136,6 +140,275 @@ module SpotifyClient
       assert_empty scope.where(id: album.id)
     end
 
+    # 検索結果の簡易オブジェクトには label / external_ids が無いため、そのまま保存すると
+    # レーベル判定と UPC 照合が壊れる。新規アルバムはフル取得してから保存すること。
+    test 'native backend fetches the full album for search results that lack label' do
+      jan_code = "native-full-#{SecureRandom.hex(4)}"
+      spotify_id = "album-#{jan_code}"
+      album_api, album_calls = fake_album_api(
+        find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: [simplified_track_body(1)]) },
+        search_page: page_body([simplified_album_body(spotify_id)])
+      )
+      track_api, track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
+              SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
+            end
+          end
+        end
+      end
+
+      spotify_album = SpotifyAlbum.unscoped.find_by!(spotify_id:)
+
+      assert_equal ::Album::TOUHOU_MUSIC_LABEL, spotify_album.label
+      assert_equal jan_code, spotify_album.album.jan_code
+      assert_equal [spotify_id], called_ids(album_calls[:find])
+      assert_equal %w[track-1], called_ids(track_calls)
+      assert_equal ['ISRC0001'], spotify_album.spotify_tracks.map(&:isrc)
+    end
+
+    # クォータ回帰テスト: 既存の SpotifyAlbum は API を叩き直さず再利用する。
+    test 'native backend does not refetch an album that is already saved' do
+      spotify_album = create_spotify_album(total_tracks: 1)
+      album_api, album_calls = fake_album_api(
+        tracks_pages: [page_body([simplified_track_body(1)])]
+      )
+      track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            SpotifyClient::Album.process_album(SpotifyApi::Response.build(simplified_album_body(spotify_album.spotify_id)))
+          end
+        end
+      end
+
+      assert_empty album_calls[:find]
+      assert_equal [spotify_album.spotify_id], called_ids(album_calls[:tracks])
+      assert_equal ['ISRC0001'], spotify_album.spotify_tracks.reload.map(&:isrc)
+    end
+
+    # クォータ回帰テスト: 既に保存済みのトラックはフル取得し直さない。
+    # 取得し直して上書きすると、簡易オブジェクトの payload で ISRC が失われる。
+    test 'native backend fetches only tracks that are not saved yet' do
+      spotify_album = create_spotify_album(total_tracks: 2)
+      create_spotify_track(spotify_album, 1)
+      album_api, _album_calls = fake_album_api(
+        tracks_pages: [page_body([simplified_track_body(1), simplified_track_body(2)])]
+      )
+      track_api, track_calls = fake_track_api({ 'track-2' => full_track_body(2) })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            assert_difference -> { SpotifyTrack.unscoped.count }, 1 do
+              SpotifyClient::Album.process_album(SpotifyApi::Response.build(simplified_album_body(spotify_album.spotify_id)))
+            end
+          end
+        end
+      end
+
+      assert_equal %w[track-2], called_ids(track_calls)
+    end
+
+    test 'native backend pages through albums with more than one page of tracks' do
+      jan_code = "native-paging-#{SecureRandom.hex(4)}"
+      spotify_id = "album-#{jan_code}"
+      first_page_tracks = (1..SpotifyClient::Album::LIMIT).map { |number| simplified_track_body(number) }
+      album_body = full_album_body(
+        spotify_id:,
+        jan_code:,
+        total_tracks: SpotifyClient::Album::LIMIT + 1,
+        tracks: first_page_tracks,
+        tracks_next: 'https://api.spotify.com/v1/albums/next'
+      )
+      album_api, album_calls = fake_album_api(
+        find_results: { spotify_id => album_body },
+        tracks_pages: [page_body([simplified_track_body(SpotifyClient::Album::LIMIT + 1)])]
+      )
+      track_api, _track_calls = fake_track_api(
+        (1..(SpotifyClient::Album::LIMIT + 1)).index_with { |number| full_track_body(number) }
+                                             .transform_keys { |number| "track-#{number}" }
+      )
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            SpotifyClient::Album.fetch_and_process_album(spotify_id)
+          end
+        end
+      end
+
+      spotify_album = SpotifyAlbum.unscoped.find_by!(spotify_id:)
+
+      assert_equal SpotifyClient::Album::LIMIT + 1, spotify_album.spotify_tracks.count
+      assert_equal(
+        [{ id: spotify_id, options: { limit: SpotifyClient::Album::LIMIT, offset: SpotifyClient::Album::LIMIT } }],
+        album_calls[:tracks]
+      )
+    end
+
+    # GET /albums/{id} のレスポンスに埋め込まれた tracks を再利用し、
+    # 1ページに収まるアルバムでは /albums/{id}/tracks を呼ばない。
+    test 'native backend reuses embedded tracks instead of calling the tracks endpoint' do
+      jan_code = "native-embedded-#{SecureRandom.hex(4)}"
+      spotify_id = "album-#{jan_code}"
+      album_api, album_calls = fake_album_api(
+        find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: [simplified_track_body(1)]) }
+      )
+      track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            SpotifyClient::Album.fetch_and_process_album(spotify_id)
+          end
+        end
+      end
+
+      assert_empty album_calls[:tracks]
+      assert_equal 1, SpotifyAlbum.unscoped.find_by!(spotify_id:).spotify_tracks.count
+    end
+
+    # クォータ回帰テスト: 既存の SpotifyAlbum でも GET /albums/{id} に埋め込まれた
+    # tracks を再利用し、/albums/{id}/tracks を呼び直さない。
+    test 'native backend reuses embedded tracks for an album that is already saved' do
+      spotify_album = create_spotify_album(total_tracks: 1)
+      spotify_id = spotify_album.spotify_id
+      album_api, album_calls = fake_album_api(
+        find_results: {
+          spotify_id => full_album_body(spotify_id:, jan_code: spotify_album.album.jan_code, tracks: [simplified_track_body(1)])
+        }
+      )
+      track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            SpotifyClient::Album.fetch_and_process_album(spotify_id)
+          end
+        end
+      end
+
+      assert_empty album_calls[:tracks]
+      assert_equal ['ISRC0001'], spotify_album.spotify_tracks.reload.map(&:isrc)
+    end
+
+    # next はあるのに items が空という異常応答でページングが止まることを保証する。
+    test 'native backend stops paging tracks when a page has no items' do
+      jan_code = "native-empty-page-#{SecureRandom.hex(4)}"
+      spotify_id = "album-#{jan_code}"
+      first_page_tracks = (1..SpotifyClient::Album::LIMIT).map { |number| simplified_track_body(number) }
+      album_api, album_calls = fake_album_api(
+        find_results: {
+          spotify_id => full_album_body(
+            spotify_id:,
+            jan_code:,
+            total_tracks: SpotifyClient::Album::LIMIT + 1,
+            tracks: first_page_tracks,
+            tracks_next: 'https://api.spotify.com/v1/albums/next'
+          )
+        },
+        tracks_pages: [
+          page_body([], next_url: 'https://api.spotify.com/v1/albums/next'),
+          page_body([], next_url: nil)
+        ]
+      )
+      track_api, _track_calls = fake_track_api(
+        (1..SpotifyClient::Album::LIMIT).index_with { |number| full_track_body(number) }
+                                        .transform_keys { |number| "track-#{number}" }
+      )
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          stub_const(SpotifyApi, :Track, track_api) do
+            SpotifyClient::Album.fetch_and_process_album(spotify_id)
+          end
+        end
+      end
+
+      assert_equal 1, album_calls[:tracks].size
+      assert_equal SpotifyClient::Album::LIMIT, SpotifyAlbum.unscoped.find_by!(spotify_id:).spotify_tracks.count
+    end
+
+    # 検索側も next はあるのに items が空という異常応答で止まる。
+    test 'native backend stops searching albums when a page has no items' do
+      calls = []
+      search_pages = [
+        page_body([], next_url: 'https://api.spotify.com/v1/search/next'),
+        page_body([], next_url: nil)
+      ]
+
+      album_api = Class.new do
+        define_singleton_method(:search) do |query, **options|
+          calls << { query:, options: }
+          SpotifyApi::Page.build(search_pages.shift)
+        end
+      end
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
+        end
+      end
+
+      assert_equal 1, calls.size
+    end
+
+    # #559 回帰テスト: market を渡すと available_markets が返らなくなり、
+    # 配信中のアルバムが「配信終了」と誤判定される。
+    test 'native backend never passes market to the album endpoints' do
+      jan_code = "native-market-#{SecureRandom.hex(4)}"
+      spotify_id = "album-#{jan_code}"
+      album_api, album_calls = fake_album_api(
+        find_results: { spotify_id => full_album_body(spotify_id:, jan_code:, tracks: []) },
+        search_page: page_body([simplified_album_body(spotify_id)])
+      )
+
+      with_native_backend do
+        stub_const(SpotifyApi, :Album, album_api) do
+          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
+        end
+      end
+
+      assert_equal [{}], called_options(album_calls[:find])
+      album_calls[:search].each do |call|
+        assert_not call.fetch(:options).key?(:market)
+      end
+    end
+
+    # upc: 検索の結果も簡易オブジェクトなので、候補をフル取得してから UPC を照合する。
+    test 'native backend matches JAN codes against fully fetched candidates' do
+      jan_code = "native-jan-#{SecureRandom.hex(4)}"
+      album = create_album_with_apple_music(jan_code:)
+      album_api, album_calls = fake_album_api(
+        find_results: {
+          'album-other' => full_album_body(spotify_id: 'album-other', jan_code: 'other-jan', total_tracks: 0, tracks: []),
+          'album-match' => full_album_body(spotify_id: 'album-match', jan_code:, total_tracks: 0, tracks: [])
+        },
+        search_page: page_body([simplified_album_body('album-other'), simplified_album_body('album-match')])
+      )
+
+      target_scope = ::Album.where(id: album.id).includes(:apple_music_album)
+      with_native_backend do
+        with_missing_spotify_album_scope(target_scope) do
+          stub_const(SpotifyApi, :Album, album_api) do
+            assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
+              @result = SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan(sleep_interval: 0)
+            end
+          end
+        end
+      end
+
+      assert_equal 1, @result[:created]
+      assert_equal 0, @result[:errors]
+      assert_equal "upc:#{jan_code}", album_calls[:search].last.fetch(:query)
+      assert_equal 'album-match', SpotifyAlbum.unscoped.find_by!(album:).spotify_id
+    end
+
     private
 
     def create_album_with_apple_music(jan_code:)
@@ -153,6 +426,37 @@ module SpotifyClient
       end
     end
 
+    def create_spotify_album(total_tracks:)
+      jan_code = "native-existing-#{SecureRandom.hex(4)}"
+      album = ::Album.create!(jan_code:)
+      SpotifyAlbum.create!(
+        album:,
+        spotify_id: "album-#{jan_code}",
+        album_type: 'album',
+        name: 'Existing Spotify Album',
+        label: ::Album::TOUHOU_MUSIC_LABEL,
+        total_tracks:,
+        payload: { 'available_markets' => ['JP'] }
+      )
+    end
+
+    def create_spotify_track(spotify_album, number)
+      track = ::Track.create!(jan_code: spotify_album.album.jan_code, isrc: format('ISRC%04d', number))
+      spotify_album.album.tracks << track
+      SpotifyTrack.create!(
+        album: spotify_album.album,
+        spotify_album:,
+        track:,
+        spotify_id: "track-#{number}",
+        name: "Track #{number}",
+        label: spotify_album.label,
+        disc_number: 1,
+        track_number: number,
+        duration_ms: 1000,
+        payload: {}
+      )
+    end
+
     def spotify_api_album(jan_code:)
       SpotifyApiAlbum.new(
         id: "spotify-#{jan_code}",
@@ -164,6 +468,122 @@ module SpotifyClient
         total_tracks: 0,
         release_date: '2026-01-01'
       )
+    end
+
+    # GET /search が返す簡易オブジェクト。label と external_ids を持たない。
+    def simplified_album_body(spotify_id)
+      {
+        'id' => spotify_id,
+        'album_type' => 'album',
+        'name' => 'Simplified Album',
+        'external_urls' => { 'spotify' => "https://open.spotify.com/album/#{spotify_id}" },
+        'total_tracks' => 1,
+        'release_date' => '2026-01-01',
+        'artists' => []
+      }
+    end
+
+    def full_album_body(spotify_id:, jan_code:, tracks:, total_tracks: 1, tracks_next: nil)
+      {
+        'id' => spotify_id,
+        'album_type' => 'album',
+        'name' => 'Full Album',
+        'label' => ::Album::TOUHOU_MUSIC_LABEL,
+        'external_ids' => { 'upc' => jan_code },
+        'external_urls' => { 'spotify' => "https://open.spotify.com/album/#{spotify_id}" },
+        'total_tracks' => total_tracks,
+        'release_date' => '2026-01-01',
+        'artists' => [],
+        'available_markets' => ['JP'],
+        'tracks' => page_body(tracks, next_url: tracks_next)
+      }
+    end
+
+    # GET /albums/{id}/tracks が返す簡易オブジェクト。external_ids (ISRC) を持たない。
+    def simplified_track_body(number)
+      {
+        'id' => "track-#{number}",
+        'name' => "Track #{number}",
+        'disc_number' => 1,
+        'track_number' => number,
+        'duration_ms' => 1000,
+        'external_urls' => { 'spotify' => "https://open.spotify.com/track/track-#{number}" }
+      }
+    end
+
+    def full_track_body(number)
+      simplified_track_body(number).merge('external_ids' => { 'isrc' => format('ISRC%04d', number) })
+    end
+
+    def page_body(items, next_url: nil)
+      {
+        'items' => items,
+        'total' => items.size,
+        'limit' => SpotifyClient::Album::LIMIT,
+        'offset' => 0,
+        'next' => next_url
+      }
+    end
+
+    def called_ids(calls)
+      calls.map { |call| call.fetch(:id) }
+    end
+
+    def called_options(calls)
+      calls.map { |call| call.fetch(:options) }
+    end
+
+    def fake_album_api(find_results: {}, search_page: nil, tracks_pages: [])
+      calls = { find: [], search: [], tracks: [] }
+      remaining_tracks_pages = tracks_pages.dup
+
+      klass = Class.new do
+        define_singleton_method(:find) do |id, **options|
+          calls[:find] << { id:, options: }
+          SpotifyApi::Response.build(find_results.fetch(id))
+        end
+
+        define_singleton_method(:search) do |query, **options|
+          calls[:search] << { query:, options: }
+          SpotifyApi::Page.build(search_page)
+        end
+
+        define_singleton_method(:tracks) do |id, **options|
+          calls[:tracks] << { id:, options: }
+          SpotifyApi::Page.build(remaining_tracks_pages.shift)
+        end
+      end
+
+      [klass, calls]
+    end
+
+    def fake_track_api(find_results)
+      calls = []
+
+      klass = Class.new do
+        define_singleton_method(:find) do |id, **options|
+          calls << { id:, options: }
+          SpotifyApi::Response.build(find_results.fetch(id))
+        end
+      end
+
+      [klass, calls]
+    end
+
+    def with_native_backend(&)
+      with_native_client_enabled(true, &)
+    end
+
+    def with_rspotify_backend(&)
+      with_native_client_enabled(false, &)
+    end
+
+    def with_native_client_enabled(enabled)
+      original = SpotifyApi.config.native_client_enabled
+      SpotifyApi.config.native_client_enabled = enabled
+      yield
+    ensure
+      SpotifyApi.config.native_client_enabled = original
     end
 
     def with_missing_spotify_album_scope(scope)
@@ -178,9 +598,12 @@ module SpotifyClient
       singleton_class.send(:private, :missing_spotify_albums_with_apple_music)
     end
 
+    # search_and_save_albums はバックエンド内の process_album を呼ぶため、
+    # 差し替え対象もバックエンド側になる。
     def with_spotify_album_processor(processor)
-      singleton_class = SpotifyClient::Album.singleton_class
-      original_method = SpotifyClient::Album.method(:process_album)
+      backend = SpotifyClient::Album::RspotifyBackend
+      singleton_class = backend.singleton_class
+      original_method = backend.method(:process_album)
 
       singleton_class.define_method(:process_album) { |album| processor.call(album) }
       yield
