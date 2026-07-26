@@ -17,6 +17,11 @@
 - Lint: `make rubocop`。**全タスクで 0 offenses を維持する**（pre-commit フックで自動実行される）。
 - コミットメッセージは**日本語**。`feat:` 等の英語プレフィックスは付けない（本リポジトリの既存慣習）。
 - コミットに `Generated with Claude Code` / `Co-Authored-By: Claude` を**含めない**。
+- **`git add -A` / `git add .` / `git add --all` / `git add -u` の使用を禁止する。**
+  ステージするファイルは必ずパスを個別に列挙する。削除は `git rm <path>` でパスを明示する。
+  コミット前に `git status --short` と `git diff --staged` で実際にステージされた内容を
+  確認すること。本タスク群では作業用ディレクトリ（`$SCRATCH`）にトークンを含むファイルを
+  置いているため、一括ステージは機密情報の混入経路になる。
 - ファイル作成は Write ツール、編集は Edit ツール、読み取りは Read ツールを使う（`cat` / `sed` / `echo` を使わない）。
 - **機密情報を git に入れない**: アクセストークン、リフレッシュトークン、実在のメールアドレス、`account_id`、実在のプレイリスト名。VCR カセットは `.gitignore` 対象。コミットする fixture は合成値のみ（トークンは `<REDACTED>`、メールは `test@example.com`、ユーザー ID は `test-user`）。
 - **原曲名に一致するプレイリストのみを読み書きする。** 判定は `OriginalSong` のクラスメソッド 1 箇所に集約し、読み取り経路と書き込み経路で同じ判定を使う。
@@ -2741,8 +2746,16 @@ Expected: 全 test pass、0 offenses。
 
 - [ ] **Step 7: コミット**
 
+ステージ内容を確認してからコミットする（削除は Step 2 の `git rm` で既にステージ済み）。
+
+Run: `git status --short`
+
+Expected: `D` が 3 ファイル（`spotify_web_api/client.rb` / そのテスト / `create.html.erb`）、
+`M` が 4 ファイル（`Gemfile` / `Gemfile.lock` / `spotify_playlist.rb` / `playlists_controller.rb`）。
+これ以外が出ていたら**コミットせずに報告する**。
+
 ```bash
-git add -A
+git add Gemfile Gemfile.lock app/models/spotify_playlist.rb app/controllers/spotify/playlists_controller.rb
 git commit -m "デッドコードと専用依存を撤去する
 
 - SpotifyWebApi::Client は自身のテスト以外から参照されていなかった
