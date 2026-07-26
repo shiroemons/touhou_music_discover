@@ -170,7 +170,181 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     assert_equal "YouTube Musicアルバム候補を処理しています: #{album.jan_code}", updates.last.fetch(:message)
   end
 
+  test 'recalculate_distribution!: Art Trackの最頻値が採用されdistributed_onが最頻値+1日になる' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    3.times { create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 29)) }
+    create_distribution_track(ytmusic_album:, album:, art_track: false, published_on: Date.new(2021, 10, 16))
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'art_track_mode', ytmusic_album.distribution_source
+    assert_equal Date.new(2026, 6, 29), ytmusic_album.youtube_published_on
+    assert_equal Date.new(2026, 6, 30), ytmusic_album.distributed_on
+    assert_equal 4, ytmusic_album.distribution_stats['total_tracks']
+    assert_equal 3, ytmusic_album.distribution_stats['art_tracks']
+  end
+
+  test 'recalculate_distribution!: Art Trackに混じった古いMVは集計から除外されexcluded_video_idsに記録される' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    2.times { create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 29)) }
+    old_mv = create_distribution_track(ytmusic_album:, album:, art_track: false, published_on: Date.new(2021, 10, 16))
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_includes ytmusic_album.distribution_stats['excluded_video_ids'], old_mv.video_id
+  end
+
+  test 'recalculate_distribution!: 最頻値が同数タイのとき古い方が選ばれtie_breakがtrueになる' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 7, 1))
+    create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 30))
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal Date.new(2026, 6, 30), ytmusic_album.youtube_published_on
+    assert_equal Date.new(2026, 7, 1), ytmusic_album.distributed_on
+    assert ytmusic_album.distribution_stats['tie_break']
+  end
+
+  test 'recalculate_distribution!: Art Trackが0件のとき全トラックへフォールバックしall_track_modeになる' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    2.times { create_distribution_track(ytmusic_album:, album:, art_track: false, published_on: Date.new(2026, 6, 29)) }
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'all_track_mode', ytmusic_album.distribution_source
+    assert_equal Date.new(2026, 6, 29), ytmusic_album.youtube_published_on
+  end
+
+  test 'recalculate_distribution!: 候補が1件のときsingle_trackになる' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 29))
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'single_track', ytmusic_album.distribution_source
+  end
+
+  test 'recalculate_distribution!: published_onが1件も無いときfailedになり日付カラムはnilのままだがstatsとfetched_atは記録される' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    create_distribution_track(ytmusic_album:, album:, art_track: false, published_on: nil)
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'failed', ytmusic_album.distribution_source
+    assert_nil ytmusic_album.distributed_on
+    assert_nil ytmusic_album.youtube_published_on
+    assert_nil ytmusic_album.original_released_on
+    assert_not_nil ytmusic_album.distribution_stats
+    assert_not_nil ytmusic_album.distribution_fetched_at
+  end
+
+  test 'recalculate_distribution!: original_released_onが候補トラックの最頻値ルールで算出される' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    2.times do
+      create_distribution_track(
+        ytmusic_album:, album:, art_track: true,
+        published_on: Date.new(2026, 6, 29), original_released_on: Date.new(2026, 5, 4)
+      )
+    end
+    create_distribution_track(
+      ytmusic_album:, album:, art_track: true,
+      published_on: Date.new(2026, 6, 29), original_released_on: Date.new(2021, 1, 1)
+    )
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal Date.new(2026, 5, 4), ytmusic_album.original_released_on
+  end
+
+  test 'recalculate_distribution!: distribution_track_metadataがあればtrack行が無くてもそれを集計元にできる（source_of_truth: payload）' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    ytmusic_album.update!(distribution_track_metadata: [
+                            distribution_metadata_entry(video_id: 'v1', art_track: true, published_on: Date.new(2026, 6, 29)),
+                            distribution_metadata_entry(video_id: 'v2', art_track: true, published_on: Date.new(2026, 6, 29))
+                          ])
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'art_track_mode', ytmusic_album.distribution_source
+    assert_equal Date.new(2026, 6, 29), ytmusic_album.youtube_published_on
+    assert_equal Date.new(2026, 6, 30), ytmusic_album.distributed_on
+    assert_equal 'payload', ytmusic_album.distribution_stats['source_of_truth']
+    assert_equal 2, ytmusic_album.distribution_stats['total_tracks']
+    assert_equal 0, ytmusic_album.ytmusic_tracks.count
+  end
+
+  test 'recalculate_distribution!: distribution_track_metadataが無ければtrack行から集計する（source_of_truth: track_rows、後方互換）' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 29))
+
+    ytmusic_album.recalculate_distribution!
+
+    assert_equal 'track_rows', ytmusic_album.distribution_stats['source_of_truth']
+  end
+
+  test 'distribution_missingスコープはdistributed_onがnilまたはdistribution_sourceがfailedの行を返す' do
+    not_recalculated = create_distribution_ytmusic_album(create_distribution_album)
+
+    failed_album = create_distribution_album
+    failed = create_distribution_ytmusic_album(failed_album)
+    create_distribution_track(ytmusic_album: failed, album: failed_album, art_track: false, published_on: nil)
+    failed.recalculate_distribution!
+
+    succeeded_album = create_distribution_album
+    succeeded = create_distribution_ytmusic_album(succeeded_album)
+    create_distribution_track(ytmusic_album: succeeded, album: succeeded_album, art_track: true, published_on: Date.new(2026, 6, 29))
+    succeeded.recalculate_distribution!
+
+    missing_ids = YtmusicAlbum.unscoped.distribution_missing.pluck(:id)
+
+    assert_includes missing_ids, not_recalculated.id
+    assert_includes missing_ids, failed.id
+    assert_not_includes missing_ids, succeeded.id
+  end
+
   private
+
+  def create_distribution_album
+    Album.create!(jan_code: "ytmusic-dist-#{SecureRandom.hex(4)}")
+  end
+
+  def create_distribution_ytmusic_album(album)
+    YtmusicAlbum.create!(album:, browse_id: "MPREb_dist_#{SecureRandom.hex(4)}", name: '配信日集計テスト用アルバム')
+  end
+
+  def create_distribution_track(ytmusic_album:, album:, art_track:, published_on:, original_released_on: nil)
+    track = Track.create!(jan_code: album.jan_code, isrc: "ISRC#{SecureRandom.hex(6)}")
+    YtmusicTrack.create!(
+      album:, ytmusic_album:, track:,
+      name: 'Track', video_id: "vid-#{SecureRandom.hex(4)}", playlist_id: "pl-#{SecureRandom.hex(4)}",
+      art_track:, published_on:, original_released_on:, video_fetched_at: Time.current
+    )
+  end
+
+  # distribution_track_metadataの1要素分のFake。DistributionDate::YtmusicCollectorが
+  # 実際に保存する形式（文字列キー、日付はISO8601文字列）に合わせている。
+  def distribution_metadata_entry(video_id:, art_track:, published_on:, track_number: 1, original_released_on: nil)
+    {
+      'video_id' => video_id,
+      'track_number' => track_number,
+      'published_on' => published_on&.iso8601,
+      'uploaded_on' => nil,
+      'original_released_on' => original_released_on&.iso8601,
+      'provided_by' => art_track ? 'Rightsscale' : nil,
+      'art_track' => art_track,
+      'fetched_at' => Time.current.iso8601
+    }
+  end
 
   def playable_tracks_payload(count)
     { 'tracks' => Array.new(count) { |i| { 'video_id' => "v#{i}", 'track_number' => i + 1 } } }

@@ -252,6 +252,18 @@ module Admin
       def finish_with_summary(message, errors:)
         errors.positive? ? warn(message) : succeed(message)
       end
+
+      # member アクション（1レコード単位で実行するアクション）の`handle(**args)`に渡ってくる
+      # argsの`fields`から対象のYtmusicAlbumを解決する。呼び出し側では
+      # `args[:models]&.first || ytmusic_album_from_fields(args)` の形で使う想定
+      # （`args[:models]`にレコードが積まれていればそちらを優先する）。
+      def ytmusic_album_from_fields(args)
+        fields = args.values_at(:fields).first || args[:fields]
+        resource_ids = fields&.dig('admin_resource_ids') || fields&.[]('admin_resource_ids')
+        return if resource_ids.blank?
+
+        YtmusicAlbum.find(Array(resource_ids).first)
+      end
     end
 
     class BulkRetrieval < BaseAction
@@ -756,6 +768,20 @@ module Admin
       end
     end
 
+    class FetchYtmusicDistributionDates < BaseAction
+      self.action_name = 'YouTube Music配信日を取得'
+
+      def handle(_args)
+        result = DistributionDate::YtmusicCollector.new(apply: true, out: StringIO.new, progress_callback: method(:record_progress)).run
+
+        message = "配信日取得完了: 対象 #{result[:target_count]}件 / 更新 #{result[:updated]}件 / " \
+                  "配信日算出失敗 #{result[:failed]}件 / 未検出 #{result[:not_found]}件 / エラー #{result[:error]}件 / " \
+                  "取得動画数 #{result[:fetched_videos]}件"
+
+        finish_with_summary(message, errors: result[:error] + result[:failed])
+      end
+    end
+
     class FetchYtmusicTrack < BaseAction
       self.action_name = 'YouTube Music トラックを取得'
 
@@ -1226,15 +1252,29 @@ module Admin
           error "更新中にエラーが発生しました: #{e.message}"
         end
       end
+    end
 
-      private
+    class FetchYtmusicAlbumDistributionDate < BaseAction
+      self.action_name = 'YouTube Music配信日を取得（対象アルバムのみ）'
 
-      def ytmusic_album_from_fields(args)
-        fields = args.values_at(:fields).first || args[:fields]
-        resource_ids = fields&.dig('admin_resource_ids') || fields&.[]('admin_resource_ids')
-        return if resource_ids.blank?
+      def handle(**args)
+        ytmusic_album = args[:models]&.first || ytmusic_album_from_fields(args)
+        return error("レコードが見つかりませんでした。args: #{args.keys}") if ytmusic_album.nil?
 
-        YtmusicAlbum.find(Array(resource_ids).first)
+        outcome = DistributionDate::YtmusicCollector.new(apply: true, only_missing: true, out: StringIO.new).collect_album(ytmusic_album.id)
+        ytmusic_album.reload
+
+        case outcome.status
+        when :updated
+          succeed "アルバム「#{ytmusic_album.name}」の配信日を #{ytmusic_album.distributed_on}" \
+                  "（#{ytmusic_album.distribution_source}）として算出しました（取得動画数: #{outcome.fetched_count}件）"
+        when :failed
+          warn "アルバム「#{ytmusic_album.name}」は配信日を算出できませんでした（distribution_source: #{ytmusic_album.distribution_source}）"
+        when :not_found
+          error 'YouTube Musicアルバムが見つかりませんでした'
+        else
+          error 'YouTube Music配信日の取得中にエラーが発生しました'
+        end
       end
     end
 

@@ -15,7 +15,7 @@ module Admin
       ]
     }.freeze
 
-    MEMBER_ACTIONS = %w[UpdateYtmusicAlbumPayload].freeze
+    MEMBER_ACTIONS = %w[UpdateYtmusicAlbumPayload FetchYtmusicAlbumDistributionDate].freeze
 
     attr_accessor :resource, :action_class_name
 

@@ -82,6 +82,18 @@ namespace :ytmusic do
         YtmusicTrack.save_track(album.id, am_track.track_id, ytm_album, ytm_track)
       end
     end
+
+    # トラック保存が成功した後の追加ステップとして、未取得の配信日メタデータだけを取得して集計する。
+    # 例外はここで握りつぶし、保存済みトラックには一切影響しないようにする。
+    # SKIP_DISTRIBUTION_DATES=1 で自動実行を無効化できる（大量バックフィル等でこのタスク自体を高速に流したい場合の逃げ道）。
+    unless ENV['SKIP_DISTRIBUTION_DATES'] == '1'
+      begin
+        DistributionDate::YtmusicCollector.new(apply: true, only_missing: true).run
+      rescue StandardError => e
+        Rails.logger.error "ytmusic:album_tracks_save: 配信日取得でエラーが発生しました: #{e.class}: #{e.message}"
+        warn "配信日取得でエラーが発生しました（トラック保存には影響しません）: #{e.class}: #{e.message}"
+      end
+    end
   end
 
   desc 'YouTube Music アルバム情報を取得'
@@ -127,5 +139,29 @@ namespace :ytmusic do
       sync_tracks: ENV['SYNC_TRACKS'] == '1',
       all: ENV['ALL'] == '1'
     ).run
+  end
+
+  desc 'YouTube Music の配信日を取得して集計する（既定はdry-run。APPLY=1で実行。PARALLEL_WORKERSでワーカー数を上書き可能。ALL=1で配信日確定済みのアルバムも含めて全件対象。ONLY_MISSING=0で取得済みトラックも再取得）'
+  task fetch_distribution_dates: :environment do
+    DistributionDate::YtmusicCollector.new(
+      apply: ENV['APPLY'] == '1',
+      limit: ENV['LIMIT'].presence&.to_i,
+      all: ENV['ALL'] == '1',
+      only_missing: ENV['ONLY_MISSING'] != '0',
+      max_attempts: ENV.fetch('MAX_ATTEMPTS', DistributionDate::YtmusicCollector::DEFAULT_MAX_ATTEMPTS).to_i
+    ).run
+  end
+
+  desc '保存済みのYouTube Musicトラックから配信日を再集計する（HTTPアクセスなし・高速。既定は配信日未確定のアルバムのみ、ALL=1で全アルバムを対象。集計ルールを変更した後、再取得せずに再集計したい場合に使う）'
+  task recalculate_distribution_dates: :environment do
+    scope = ENV['ALL'] == '1' ? YtmusicAlbum.unscoped : YtmusicAlbum.unscoped.distribution_missing
+    max_count = scope.count
+    count = 0
+    scope.find_each do |ytmusic_album|
+      count += 1
+      print "\rアルバム: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
+
+      ytmusic_album.recalculate_distribution!
+    end
   end
 end

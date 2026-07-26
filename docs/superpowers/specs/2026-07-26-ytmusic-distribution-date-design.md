@@ -71,6 +71,7 @@ YouTube 側の日付は UTC 基準のため、**日本の配信日 = `publishDat
 | `distribution_source` | string | 可 | 判定根拠。`art_track_mode` / `all_track_mode` / `single_track` / `failed` |
 | `distribution_stats` | jsonb | 可 | 監査用。日付ごとの件数分布、Art Track 数／総数、除外した video_id など |
 | `distribution_fetched_at` | datetime | 可 | 集計実行日時 |
+| `distribution_track_metadata` | jsonb | 可 | 動画1本ごとの取得結果の配列（`video_id` / `track_number` / `published_on` / `uploaded_on` / `original_released_on` / `provided_by` / `art_track` / `fetched_at`）。取得に失敗した動画も `published_on` 等を `null` にした要素として記録する。`ytmusic_tracks` の行の有無に依存せず配信日を集計・再取得できるようにするための一次データ |
 
 インデックス:
 
@@ -88,15 +89,34 @@ YouTube 側の日付は UTC 基準のため、**日本の配信日 = `publishDat
   "art_track_published_on_counts": { "2026-06-29": 10 },
   "original_released_on_counts": { "2026-05-04": 10 },
   "excluded_video_ids": ["xxxxxxxxxxx"],
-  "tie_break": false
+  "tie_break": false,
+  "source_of_truth": "payload"
 }
 ```
 
+`source_of_truth` は集計に使ったデータの出所を示す。`payload`（`distribution_track_metadata` から集計）
+と `track_rows`（`ytmusic_tracks` の行から集計。`distribution_track_metadata` 未保存時の後方互換パス）
+のいずれかが入る。
+
+## 集計元の決定（track 行の有無に依存しない）
+
+`ytmusic_tracks` の行は `ytmusic:album_tracks_save` が Spotify / Apple Music のトラックと突合して
+作るため、**アルバム取り込みより遅れて作られる**。そのため「配信日をまだ知らない、直近追加された
+アルバムほど track 行が無い/一部しか無い」という逆転が起きる（実データ検証: 3,742 アルバム中 23 件は
+track 行が 0 件、8 件は一部のみで、23 件中 22 件が直近追加されたアルバムだった）。
+
+これを避けるため、集計対象の動画（video_id）は常に `ytmusic_albums.payload['tracks']` を正とする。
+取得した動画メタデータは `ytmusic_albums.distribution_track_metadata` に必ず保存し（`ytmusic_tracks`
+の行が無くても保存できる）、`YtmusicAlbum#recalculate_distribution!` は `distribution_track_metadata`
+が存在すればそれを集計元にする。`payload['tracks']` 自体が縮退していて対象動画が取れない場合だけ、
+従来どおり `ytmusic_tracks` の行にフォールバックする。
+
 ## 集計ロジック
 
-`YtmusicAlbum#recalculate_distribution!`（HTTP を伴わず DB 上のトラックのみで完結）
+`YtmusicAlbum#recalculate_distribution!`（HTTP を伴わず DB 上のデータのみで完結。集計元が
+`distribution_track_metadata` か `ytmusic_tracks` の行かに関わらず、以下のロジック自体は同一）
 
-1. 対象アルバムの `ytmusic_tracks` のうち `art_track = true` かつ `published_on` が存在するものを集める
+1. 対象アルバムのトラック相当データのうち `art_track = true` かつ `published_on` が存在するものを集める
 2. `published_on` の**最頻値**を採る
 3. 同数タイの場合は**より古い日付**を採用する（初回配信を優先。再アップロードや後追い追加より初出を信頼する）
 4. Art Track が 0 件の場合は全トラックの `published_on` 最頻値にフォールバックし、`distribution_source = 'all_track_mode'` を記録する
@@ -122,15 +142,23 @@ YouTube 側の日付は UTC 基準のため、**日本の配信日 = `publishDat
 
 - キーワード引数: `apply: false`（既定 dry-run） / `limit:` / `only_missing: true` / `workers: :ytmusic` /
   `max_attempts:` / `base_interval:` / `out: $stdout`
-- 公開 API は `run` のみ。戻り値は集計結果のハッシュ
+- 公開 API は `run` / `collect_album` のみ。戻り値は集計結果のハッシュ（`run`）または `CollectOutcome`
+  （`collect_album`）
 - 対象抽出 → `ids.each_slice(SLICE_SIZE)` → `ParallelRunner.each(slice, workers:, finish:)` で並列処理
-- 1 アルバムの処理内で「未取得トラックの動画メタデータ取得 → 保存 → アルバム再集計」を完結させる
-- `only_missing: true` のときは `video_fetched_at` が nil のトラックだけを取得対象にする（差分取得）
+- 1 アルバムの処理内で「対象動画の決定 → 動画メタデータ取得 → `distribution_track_metadata` へ保存
+  （+ 一致する `ytmusic_tracks` 行があれば従来どおりそちらも更新） → アルバム再集計」を完結させる
+- 対象動画は `payload['tracks']` の `video_id` を正とし、`ytmusic_tracks` の行の有無には依存しない。
+  `payload['tracks']` が縮退していて動画が1件も取れない場合だけ `ytmusic_tracks` の行にフォールバックする
+- `only_missing: true` のときは `distribution_track_metadata` にその `video_id` の `fetched_at` が
+  未記録の動画だけを取得対象にする（差分取得。`ytmusic_tracks` の行が無いアルバムでも効く）
+- 取得結果は成功・失敗を問わず必ず `distribution_track_metadata` へ保存する
 - 進捗・サマリは `out.puts` に出力（`Rails.logger` はエラー専用）
 
-### `app/models/ytmusic_album.rb`（既存を拡張）
+### `app/models/ytmusic_album.rb` / `app/models/ytmusic_album/distribution_track_metadata_record.rb`（既存を拡張・新規）
 
-- `recalculate_distribution!` — DB 上のトラックから集計してカラムを更新する
+- `recalculate_distribution!` — `distribution_track_metadata` が存在すればそれを、無ければ
+  `ytmusic_tracks` の行を集計元として使う（`DistributionTrackMetadataRecord` が両者を
+  `DistributionCalculator` が期待する同一インターフェースへ変換する）
 - スコープ `distribution_missing` — `distributed_on` が nil または `distribution_source = 'failed'` の行
 
 ### `app/models/ytmusic_track.rb`（既存を拡張）
@@ -155,9 +183,10 @@ YouTube 側の日付は UTC 基準のため、**日本の配信日 = `publishDat
 
 `Repair::YtmusicAlbumPayloads` の規約に準拠する。
 
-- 1 動画の取得失敗は `rescue StandardError` で握り、該当トラックのみ nil のままにして残りで集計を続行する
+- 1 動画の取得失敗は `rescue StandardError` で握り、該当動画のみ `published_on` 等を `null` にした
+  `distribution_track_metadata` の要素として記録し（`fetched_at` は設定する）残りで集計を続行する
 - 取得は指数バックオフ + ジッタ（±30%）で `max_attempts` 回までリトライする
-- アルバム内の全トラックが失敗した場合は `distribution_source = 'failed'` を記録し、
+- アルバム内の全動画が失敗した場合は `distribution_source = 'failed'` を記録し、
   `ONLY_MISSING` の再試行対象として残す
 - 例外は `Rails.logger.error` に `album_id` / `video_id` / 例外クラス付きで記録する
 
@@ -167,10 +196,16 @@ minitest。外部 HTTP は Fake オブジェクトで置き換える（本リポ
 
 - `test/lib/yt_music/video_test.rb` — `provided_by` / `art_track?` / `metadata` のパース
 - `test/models/ytmusic_album_test.rb` — 集計ロジック（最頻値・タイブレーク・フォールバック・
-  `single_track`・`failed`・`distribution_stats` の内容）
+  `single_track`・`failed`・`distribution_stats` の内容）に加え、`distribution_track_metadata` が
+  あればそれを（`source_of_truth: payload`）、無ければ `ytmusic_tracks` の行を
+  （`source_of_truth: track_rows`）集計元にすること
 - `test/models/ytmusic_track_test.rb` — `update_video_metadata` の保存内容
 - `test/lib/distribution_date/ytmusic_collector_test.rb` — dry-run / apply / `only_missing` の差分取得 /
-  取得失敗時に他アルバムの処理が止まらないこと
+  取得失敗時に他アルバムの処理が止まらないこと に加え、`ytmusic_tracks` の行が1件も無い/一部しか無い
+  アルバムでも `payload['tracks']` の `video_id` から集計できること（回帰テスト）、取得結果
+  （成功・失敗とも）が `distribution_track_metadata` へ保存されること、`only_missing` が
+  `distribution_track_metadata` の `fetched_at` を見て差分取得すること、`payload['tracks']` が
+  無いアルバムは `ytmusic_tracks` の行にフォールバックすること
 
 ## 影響と移行
 
