@@ -84,5 +84,22 @@ module SpotifyApi
       assert_equal ALBUM_BODY, album.to_h
       assert_respond_to album, :name
     end
+
+    test 'dig walks nested hashes with string or symbol keys' do
+      response = Response.build({ 'tracks' => { 'total' => 12 }, 'name' => 'Playlist' })
+
+      assert_equal 12, response.dig('tracks', 'total')
+      assert_equal 12, response.dig(:tracks, :total)
+      # rubocop:disable Style/SingleArgumentDig -- dig の単一キー呼び出し自体を検証するテストのため [] には置き換えない
+      assert_equal 'Playlist', response.dig('name')
+      # rubocop:enable Style/SingleArgumentDig
+    end
+
+    test 'dig returns nil for missing keys instead of raising' do
+      response = Response.build({ 'tracks' => { 'total' => 12 } })
+
+      assert_nil response.dig('followers', 'total')
+      assert_nil response.dig('tracks', 'missing')
+    end
   end
 end

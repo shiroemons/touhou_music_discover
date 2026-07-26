@@ -36,6 +36,13 @@ module SpotifyApi
       data.key?(key.to_s)
     end
 
+    # ネストした値を辿る。Page#items は各要素を Response に包むため、
+    # playlist.dig('tracks', 'total') のような書き方が呼び出し側で必要になる。
+    # キーが無い場合は Hash#dig と同じく nil を返す。
+    def dig(*keys)
+      data.dig(*keys.map(&:to_s))
+    end
+
     def to_h
       data
     end
