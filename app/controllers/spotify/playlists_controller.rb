@@ -38,7 +38,7 @@ module Spotify
       return if @error.present?
 
       # 原曲名と一致するプレイリストのみ抽出するための処理
-      original_song_titles = OriginalSong.distinct.pluck(:title)
+      original_song_titles = OriginalSong.playlist_titles
       @playlists = @playlists.select { |p| p[:name].in?(original_song_titles) }
 
       # DBに保存
@@ -238,7 +238,7 @@ module Spotify
           end
 
           # 原曲名と一致するプレイリストのみ抽出
-          original_song_titles = OriginalSong.distinct.pluck(:title)
+          original_song_titles = OriginalSong.playlist_titles
           filtered_playlists = playlists.select { |p| p.name.in?(original_song_titles) }
 
           total = filtered_playlists.size
@@ -261,7 +261,7 @@ module Spotify
               total: playlist.total,
               followers: playlist.followers['total'] || 0,
               spotify_url: playlist.external_urls['spotify'],
-              original_song_code: find_original_song_code(playlist.name),
+              original_song_code: OriginalSong.playlist_code_for(playlist.name),
               position: index
             )
 
@@ -539,16 +539,10 @@ module Spotify
           p.total = playlist[:total]
           p.followers = playlist[:followers]
           p.spotify_url = playlist[:external_urls][:spotify] || playlist[:external_urls]['spotify']
-          p.original_song_code = find_original_song_code(playlist[:name])
+          p.original_song_code = OriginalSong.playlist_code_for(playlist[:name])
           p.position = index
         end
       end
-    end
-
-    def find_original_song_code(playlist_name)
-      # プレイリスト名から原曲コードを検索
-      original_song = OriginalSong.find_by(title: playlist_name, is_duplicate: false)
-      original_song&.code
     end
 
     def load_refresh_counts_info
