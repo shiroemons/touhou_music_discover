@@ -18,7 +18,9 @@ module Spotify
     end
 
     teardown do
-      RedisPool.with { |r| r.del(@user.id, "playlist_update:#{@user.id}", "refresh_counts:#{@user.id}") }
+      RedisPool.with do |r|
+        r.del(SpotifyApi::UserSession.redis_key(@user.id), "playlist_update:#{@user.id}", "refresh_counts:#{@user.id}")
+      end
     end
 
     def store_auth_hash(expires_at: 1.hour.from_now.to_i)
@@ -28,7 +30,7 @@ module Spotify
         'credentials' => { 'token' => 'USER_TOKEN', 'refresh_token' => 'REFRESH_TOKEN',
                            'expires_at' => expires_at, 'expires' => true }
       }
-      RedisPool.with { |r| r.set(@user.id, hash.to_json) }
+      RedisPool.with { |r| r.set(SpotifyApi::UserSession.redis_key(@user.id), hash.to_json) }
     end
 
     def log_in
@@ -99,7 +101,7 @@ module Spotify
 
     test 'index redirects to root when the session has no stored Spotify credentials' do
       log_in
-      RedisPool.with { |r| r.del(@user.id) }
+      RedisPool.with { |r| r.del(SpotifyApi::UserSession.redis_key(@user.id)) }
 
       get spotify_playlists_path
 
@@ -186,7 +188,7 @@ module Spotify
 
       assert_response :success
       assert_requested token_stub
-      stored = JSON.parse(RedisPool.with { |r| r.get(@user.id) })
+      stored = JSON.parse(RedisPool.with { |r| r.get(SpotifyApi::UserSession.redis_key(@user.id)) })
 
       assert_equal 'NEW_ACCESS_TOKEN', stored.dig('credentials', 'token')
     end

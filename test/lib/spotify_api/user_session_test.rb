@@ -17,7 +17,7 @@ module SpotifyApi
         @store[key]
       end
 
-      def set(key, value)
+      def set(key, value, **)
         @store[key] = value
       end
     end
@@ -94,7 +94,7 @@ module SpotifyApi
         session.access_token
       end
 
-      saved = JSON.parse(fake_redis.get('user-1'))
+      saved = JSON.parse(fake_redis.get(UserSession.redis_key('user-1')))
 
       assert_equal 'NEW', saved['credentials']['token']
     end
@@ -135,7 +135,7 @@ module SpotifyApi
 
     test 'find loads the auth_hash from Redis' do
       auth_json = build_auth_hash(token: 'STORED', expires_in: 3600).to_json
-      fake_redis = FakeRedis.new('user-1' => auth_json)
+      fake_redis = FakeRedis.new(UserSession.redis_key('user-1') => auth_json)
 
       session = stub_redis_pool(fake_redis) { UserSession.find('user-1', config: @config) }
 
@@ -148,11 +148,31 @@ module SpotifyApi
     # 操作してしまう事故につながる（rspotify/user.rb:66）。SpotifyApi::UserSession は
     # この挙動を絶対に引き継がず、見つからなければ nil を返すだけであることを確認する。
     test 'find returns nil instead of falling back to another user\'s credentials' do
-      fake_redis = FakeRedis.new('user-1' => build_auth_hash(token: 'STORED', expires_in: 3600).to_json)
+      auth_json = build_auth_hash(token: 'STORED', expires_in: 3600).to_json
+      fake_redis = FakeRedis.new(UserSession.redis_key('user-1') => auth_json)
 
       session = stub_redis_pool(fake_redis) { UserSession.find('user-2', config: @config) }
 
       assert_nil session
+    end
+
+    test 'redis_key namespaces the auth hash' do
+      assert_equal 'spotify:auth:abc-123', SpotifyApi::UserSession.redis_key('abc-123')
+    end
+
+    test 'find reads from the namespaced key' do
+      user_id = SecureRandom.uuid
+      hash = { 'uid' => 'test-user',
+               'credentials' => { 'token' => 'T', 'refresh_token' => 'R',
+                                  'expires_at' => 1.hour.from_now.to_i } }
+      RedisPool.with { |r| r.set(SpotifyApi::UserSession.redis_key(user_id), hash.to_json) }
+
+      session = SpotifyApi::UserSession.find(user_id)
+
+      assert_not_nil session
+      assert_equal 'test-user', session.spotify_user_id
+    ensure
+      RedisPool.with { |r| r.del(SpotifyApi::UserSession.redis_key(user_id)) }
     end
 
     test 'access_token refreshes only once when called from multiple threads' do
