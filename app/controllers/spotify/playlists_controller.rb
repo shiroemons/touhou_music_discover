@@ -5,7 +5,6 @@ module Spotify
     include SpotifyAuthentication
 
     LIMIT = 50
-    CACHE_TTL = 3.hours.to_i
 
     before_action :require_spotify_session,
                   only: %i[index clear_cache sync_single create refresh_counts original_songs]
@@ -337,20 +336,6 @@ module Spotify
       started_at = Time.zone.parse(@update_info['started_at'])
       completed_at = Time.zone.parse(@update_info['completed_at'])
       @processing_time = (completed_at - started_at).to_i
-    end
-
-    def format_seconds(seconds)
-      hours = seconds / 3600
-      minutes = (seconds % 3600) / 60
-      remaining_seconds = seconds % 60
-
-      if hours.positive?
-        "#{hours}時間#{minutes}分#{remaining_seconds}秒（#{seconds}秒）"
-      elsif minutes.positive?
-        "#{minutes}分#{remaining_seconds}秒（#{seconds}秒）"
-      else
-        "#{seconds}秒"
-      end
     end
 
     # 原曲名に一致するプレイリストだけを一覧用の Hash に詰め替えて返す。

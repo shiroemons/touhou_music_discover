@@ -12,5 +12,4 @@ class SpotifyPlaylist < ApplicationRecord
   validates :name, presence: true
 
   scope :for_user, ->(user_id) { where(spotify_user_id: user_id) }
-  scope :stale, -> { where(synced_at: nil).or(where(synced_at: ...24.hours.ago)) }
 end

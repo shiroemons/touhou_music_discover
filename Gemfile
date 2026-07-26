@@ -47,6 +47,5 @@ gem 'pagy'
 gem 'parallel'
 gem 'redis'
 gem 'rspotify'
-gem 'spotify-client', require: 'spotify/client'
 
 gem 'solid_queue', '~> 1.5'
