@@ -34,19 +34,32 @@ module Spotify
       assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
     end
 
-    test 'PUTs the first 100 then POSTs the remainder in batches of 100' do
-      put_stub = stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
-      post_stub = stub_spotify_post('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+    # 「PUT 1回 + POST 2回」だけを見る検証では、トラックの重複・欠落や
+    # PUT が POST の後に来る（= 先に足した分が消える）実装でもテストが通ってしまう。
+    # 呼び出し順・各リクエストの件数・全体の並びまで固定して、このクラスの
+    # 存在理由である「PUT が先、以降は POST」を壊せないようにする。
+    test 'PUTs the first 100 then POSTs the remainder in order, with no duplicates or gaps' do
+      calls = []
+      url = "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
+      stub_request(:put, url).to_return do |req|
+        calls << [:put, JSON.parse(req.body)['uris']]
+        { status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' } }
+      end
+      stub_request(:post, url).to_return do |req|
+        calls << [:post, JSON.parse(req.body)['uris']]
+        { status: 200, body: '{}', headers: { 'Content-Type' => 'application/json' } }
+      end
 
       written = PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
                                          spotify_tracks: tracks(250), source: 'test')
 
+      batch_sizes = calls.map { |(_, uris)| uris.size }
+      expected_uris = tracks(250).map { |track| "spotify:track:#{track.spotify_id}" }
+
       assert_equal 250, written
-      assert_requested put_stub, times: 1
-      assert_requested post_stub, times: 2
-      assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks" do |req|
-        JSON.parse(req.body)['uris'].size == 100
-      end
+      assert_equal %i[put post post], calls.map(&:first)
+      assert_equal [100, 100, 50], batch_sizes
+      assert_equal expected_uris, calls.flat_map(&:last)
     end
 
     test 'clears the playlist with an empty uris array when there are no tracks' do
@@ -59,6 +72,7 @@ module Spotify
       assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks" do |req|
         JSON.parse(req.body)['uris'] == []
       end
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
     end
   end
 end

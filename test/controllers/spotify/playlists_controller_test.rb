@@ -36,6 +36,15 @@ module Spotify
       spotify_fixture('me_playlists').gsub('PLAYLIST_TITLE_MATCHED', @song.title)
     end
 
+    # GET /playlists/{id} のレスポンス。sync_single は所有確認をこのエンドポイントで行うため、
+    # 名前と owner.id をテストごとに差し替えられるようにする。
+    def playlist_detail_body(id: 'PL_MATCHED', name: @song.title, owner_id: 'test-user')
+      spotify_fixture('playlist_detail')
+        .gsub('PLAYLIST_TITLE_MATCHED', name)
+        .gsub('PLAYLIST_OWNER_ID', owner_id)
+        .gsub('PLAYLIST_ID', id)
+    end
+
     # @song.code に紐づく SpotifyTrack を1件作る。Album は jan_code (unique, NOT NULL) のみ、
     # Track は album (jan_code経由) と isrc (jan_codeとの複合unique, NOT NULL) が必須、
     # SpotifyTrack は album/spotify_album/track の belongs_to と label が必須なため、
@@ -170,8 +179,9 @@ module Spotify
     test 'sync_single replaces playlist items with the original song tracks' do
       log_in
       create_spotify_track('TRACK1')
-      stub_spotify_get('me/playlists', body: me_playlists_body,
-                                       query: { 'limit' => '50', 'offset' => '0' })
+      playlist = SpotifyPlaylist.create!(spotify_id: 'PL_MATCHED', spotify_user_id: 'test-user',
+                                         name: @song.title, total: 7, position: 0)
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
       stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap3' })
 
       post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
@@ -182,16 +192,35 @@ module Spotify
       assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks" do |req|
         JSON.parse(req.body)['uris'] == ['spotify:track:TRACK1']
       end
+      # 1曲しかないので追加の POST は起きてはならない（起きていれば二重登録になる）。
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks"
+      playlist.reload
+
+      assert_equal 1, playlist.total
+      assert_not_nil playlist.synced_at
+    end
+
+    test 'sync_single does not scan every page of me/playlists' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+      stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap3' })
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_not_requested :get, %r{/me/playlists}
     end
 
     test 'sync_single refuses a playlist whose name is not an original song' do
       log_in
-      stub_spotify_get('me/playlists', body: me_playlists_body,
-                                       query: { 'limit' => '50', 'offset' => '0' })
 
       post spotify_playlist_sync_path(id: 'PL_UNMATCHED', name: '原曲名ではないプレイリスト')
 
       assert_redirected_to spotify_playlists_path
+      assert_equal '原曲が見つかりません: 原曲名ではないプレイリスト', flash[:alert]
+      # 原曲名でない時点で弾かれるため、Spotify への問い合わせ自体が起きない。
+      assert_not_requested :get, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED"
       assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
       assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
     end
@@ -199,25 +228,101 @@ module Spotify
     test 'sync_single refuses when the id does not belong to the user' do
       log_in
       create_spotify_track('TRACK1')
-      stub_spotify_get('me/playlists', body: me_playlists_body,
-                                       query: { 'limit' => '50', 'offset' => '0' })
+      stub_spotify_get('playlists/PL_SOMEONE_ELSE', status: 404,
+                                                    body: { error: { status: 404, message: 'Not found.' } })
 
       post spotify_playlist_sync_path(id: 'PL_SOMEONE_ELSE', name: @song.title)
 
       assert_redirected_to spotify_playlists_path
+      assert_equal "プレイリストが見つかりません: #{@song.title}", flash[:alert]
       assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_SOMEONE_ELSE/tracks"
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL_SOMEONE_ELSE/tracks"
     end
 
     test 'sync_single refuses when the id maps to a different playlist name' do
       log_in
       create_spotify_track('TRACK1')
-      stub_spotify_get('me/playlists', body: me_playlists_body,
-                                       query: { 'limit' => '50', 'offset' => '0' })
+      stub_spotify_get('playlists/PL_UNMATCHED',
+                       body: playlist_detail_body(id: 'PL_UNMATCHED', name: '原曲名ではないプレイリスト'))
 
       post spotify_playlist_sync_path(id: 'PL_UNMATCHED', name: @song.title)
 
       assert_redirected_to spotify_playlists_path
+      assert_equal "プレイリストが見つかりません: #{@song.title}", flash[:alert]
       assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
+    end
+
+    # GET /me/playlists にはフォロー中・共同編集のプレイリストも含まれるため、
+    # 「一覧に出る」ことは「自分が所有している」ことの証明にならない。原曲名と同名の
+    # 他人のプレイリストを差し替えてしまわないことを固定する。
+    test 'sync_single refuses a playlist owned by someone else' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body(owner_id: 'someone-else'))
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_equal "プレイリストが見つかりません: #{@song.title}", flash[:alert]
+      # 名前は一致しているので、拒否の理由は所有者不一致以外にありえない。
+      assert_requested :get, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED"
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks"
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks"
+    end
+
+    # PUT 済みの先頭100件だけが反映された「途中まで書けた」状態を、
+    # synced_at を落として記録する（PUT は冪等なので再同期で完全に復旧できる）。
+    test 'sync_single clears synced_at when a later batch write fails' do
+      log_in
+      101.times { |i| create_spotify_track(format('TRACK%03d', i)) }
+      playlist = SpotifyPlaylist.create!(spotify_id: 'PL_MATCHED', spotify_user_id: 'test-user',
+                                         name: @song.title, total: 7, synced_at: 1.day.ago, position: 0)
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+      stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap' })
+      # 403 は SpotifyRetry がリトライしない非リトライ 4xx なので、テストがスリープしない。
+      stub_spotify_post('playlists/PL_MATCHED/tracks', status: 403,
+                                                       body: { error: { status: 403, message: 'Forbidden.' } })
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_equal I18n.t('spotify.playlists.alerts.sync_failed'), flash[:alert]
+      assert_nil playlist.reload.synced_at
+    end
+
+    test 'sync_single reports a rate limit without leaking the raw error message' do
+      log_in
+      create_spotify_track('TRACK1')
+      playlist = SpotifyPlaylist.create!(spotify_id: 'PL_MATCHED', spotify_user_id: 'test-user',
+                                         name: @song.title, total: 7, synced_at: 1.day.ago, position: 0)
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+      # Retry-After が max_retry_after(60秒) を超えるため、待たずに即座に再送出される。
+      stub_spotify_rate_limited(:put, 'playlists/PL_MATCHED/tracks', retry_after: 3600)
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_equal I18n.t('spotify.playlists.alerts.rate_limited'), flash[:alert]
+      assert_nil playlist.reload.synced_at
+    end
+
+    test 'sync_single reports a quota exhaustion separately from a plain rate limit' do
+      log_in
+      create_spotify_track('TRACK1')
+      playlist = SpotifyPlaylist.create!(spotify_id: 'PL_MATCHED', spotify_user_id: 'test-user',
+                                         name: @song.title, total: 7, synced_at: 1.day.ago, position: 0)
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+      stub_request(:put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks")
+        .to_return(status: 429,
+                   body: { error: { status: 429, reason: 'QUOTA_EXCEEDED', message: 'quota' } }.to_json,
+                   headers: { 'Content-Type' => 'application/json', 'Retry-After' => '7200' })
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_equal I18n.t('spotify.playlists.alerts.quota_exceeded'), flash[:alert]
+      assert_nil playlist.reload.synced_at
     end
   end
 end

@@ -86,9 +86,22 @@ module Spotify
       spotify_playlist&.update(total: spotify_tracks.size, synced_at: Time.current)
 
       redirect_to spotify_playlists_path, notice: "#{playlist_name}を同期しました（#{spotify_tracks.size}曲）"
+    rescue SpotifyApi::QuotaExceededError => e
+      # クォータ超過は復旧まで数時間かかるため、通常のレート制限とは別メッセージにする。
+      # RateLimitError のサブクラスなので RateLimitError より先に rescue する必要がある。
+      Rails.logger.error("sync_single quota exceeded: #{e.message}")
+      mark_sync_incomplete(params[:id])
+      redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.quota_exceeded')
+    rescue SpotifyApi::RateLimitError => e
+      Rails.logger.error("sync_single rate limited: #{e.message}")
+      mark_sync_incomplete(params[:id])
+      redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.rate_limited')
     rescue StandardError => e
-      Rails.logger.error "sync_single error: #{e.class} - #{e.message}"
-      redirect_to spotify_playlists_path, alert: "同期エラー: #{e.message}"
+      # 例外メッセージをそのまま画面に出すと Spotify の生のエラー文が漏れるため、
+      # 詳細はログに残し、利用者には次にとるべき行動だけを伝える。
+      Rails.logger.error("sync_single error: #{e.class} - #{e.message}")
+      mark_sync_incomplete(params[:id])
+      redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.sync_failed')
     end
 
     def create
@@ -366,14 +379,39 @@ module Spotify
 
     # 指定 id がユーザー自身のプレイリストで、かつ名前が期待値と一致する場合だけ返す。
     # 名前の一致まで見るのは、外部から渡された id で別のプレイリストを壊さないため。
+    #
+    # 所有確認は GET /me/playlists ではなく GET /playlists/{id} で行う。
+    # /me/playlists にはフォロー中や共同編集(collaborative)のプレイリストも含まれるため、
+    # 「一覧に出る」ことは「自分が所有している」ことを意味しない。原曲名と同名の
+    # 共同編集プレイリストがあると、他人所有のプレイリストを丸ごと差し替えてしまう。
+    # 1 リクエストで済むので、613 件を全ページ辿る必要も無くなる。
     def find_user_playlist(playlist_id, expected_name)
       # sync_single と同じく対話的なリクエストなので、レート制限時は早めに諦める。
-      playlists = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#sync_single',
-                                          tries: 3, max_retry_after: 60) do
-        SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT)
+      playlist = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#sync_single',
+                                         tries: 3, max_retry_after: 60) do
+        SpotifyApi::Playlist.find(spotify_session, playlist_id)
       end
 
-      playlists.find { |p| p['id'] == playlist_id && p['name'] == expected_name }
+      return nil if playlist.nil?
+      return nil unless playlist['name'] == expected_name
+
+      owner_id = playlist.dig('owner', 'id')
+      if owner_id != spotify_user_id
+        # 他人のプレイリストへの破壊的書き込みを未然に止めた記録。運用上追跡できるようにする。
+        Rails.logger.warn("sync_single rejected a playlist owned by #{owner_id.inspect}: #{playlist_id}")
+        return nil
+      end
+
+      playlist
+    rescue SpotifyApi::NotFoundError
+      nil
+    end
+
+    # 書き込みの途中で失敗すると、PUT 済みの先頭 100 件だけが反映された状態が残りうる。
+    # synced_at を落として「このプレイリストは同期途中で失敗した」ことを記録する。
+    # PUT は冪等なので、再同期すれば完全に復旧できる。
+    def mark_sync_incomplete(playlist_id)
+      SpotifyPlaylist.find_by(spotify_id: playlist_id)&.update(synced_at: nil)
     end
 
     def load_progress_info
