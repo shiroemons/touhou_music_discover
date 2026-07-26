@@ -141,14 +141,15 @@ namespace :ytmusic do
     ).run
   end
 
-  desc 'YouTube Music の配信日を取得して集計する（既定はdry-run。APPLY=1で実行。PARALLEL_WORKERSでワーカー数を上書き可能。ALL=1で配信日確定済みのアルバムも含めて全件対象。ONLY_MISSING=0で取得済みトラックも再取得）'
+  desc 'YouTube Music の配信日を取得して集計する（既定はdry-run。APPLY=1で実行。PARALLEL_WORKERSでワーカー数を上書き可能（下げるとレート制御にもなる）。ALL=1で配信日確定済みのアルバムも含めて全件対象。ONLY_MISSING=0で取得済みトラックも再取得。REQUEST_INTERVALで1動画取得ごとのウェイト秒数を上書き可能（既定0.2秒。YouTube側が縮退レスポンスを返し始めるレートを避けるため)'
   task fetch_distribution_dates: :environment do
     DistributionDate::YtmusicCollector.new(
       apply: ENV['APPLY'] == '1',
       limit: ENV['LIMIT'].presence&.to_i,
       all: ENV['ALL'] == '1',
       only_missing: ENV['ONLY_MISSING'] != '0',
-      max_attempts: ENV.fetch('MAX_ATTEMPTS', DistributionDate::YtmusicCollector::DEFAULT_MAX_ATTEMPTS).to_i
+      max_attempts: ENV.fetch('MAX_ATTEMPTS', DistributionDate::YtmusicCollector::DEFAULT_MAX_ATTEMPTS).to_i,
+      request_interval: ENV.fetch('REQUEST_INTERVAL', DistributionDate::YtmusicCollector::DEFAULT_REQUEST_INTERVAL).to_f
     ).run
   end
 
@@ -163,5 +164,44 @@ namespace :ytmusic do
 
       ytmusic_album.recalculate_distribution!
     end
+  end
+
+  desc '縮退レスポンス等で配信日関連カラムが汚染されたときに、リセットして再取得できるようにする（既定はdry-run。APPLY=1で実行。元に戻せません）'
+  task reset_distribution_dates: :environment do
+    album_scope = YtmusicAlbum.unscoped.where(
+      'distributed_on IS NOT NULL OR youtube_published_on IS NOT NULL OR original_released_on IS NOT NULL OR ' \
+      'distribution_source IS NOT NULL OR distribution_stats IS NOT NULL OR distribution_fetched_at IS NOT NULL OR ' \
+      'distribution_track_metadata IS NOT NULL'
+    )
+    track_scope = YtmusicTrack.unscoped.where(
+      'published_on IS NOT NULL OR uploaded_on IS NOT NULL OR original_released_on IS NOT NULL OR ' \
+      'provided_by IS NOT NULL OR video_metadata IS NOT NULL OR video_fetched_at IS NOT NULL OR art_track = true'
+    )
+    album_count = album_scope.count
+    track_count = track_scope.count
+
+    puts "対象アルバム数: #{album_count} 件 / 対象トラック数: #{track_count} 件"
+
+    unless ENV['APPLY'] == '1'
+      puts 'dry-run のため何も変更していません。実行するには APPLY=1 を付けて再実行してください。'
+      next
+    end
+
+    puts 'リセットを実行します。この操作は元に戻せません（再取得が必要になります）。'
+
+    # rubocop:disable Rails/SkipsModelValidations -- 対象は数千行規模で、リセットするカラムに
+    # バリデーション・コールバックは無いため、find_each + save! ではなく update_all で一括更新する。
+    album_scope.update_all(
+      distributed_on: nil, youtube_published_on: nil, original_released_on: nil,
+      distribution_source: nil, distribution_stats: nil, distribution_fetched_at: nil,
+      distribution_track_metadata: nil
+    )
+    track_scope.update_all(
+      published_on: nil, uploaded_on: nil, original_released_on: nil,
+      provided_by: nil, video_metadata: nil, video_fetched_at: nil, art_track: false
+    )
+    # rubocop:enable Rails/SkipsModelValidations
+
+    puts "完了: アルバム #{album_count} 件 / トラック #{track_count} 件をリセットしました。"
   end
 end

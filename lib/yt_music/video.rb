@@ -44,6 +44,16 @@ module YtMusic
       provided_by.present?
     end
 
+    # 配信日集計に本当に必要な情報（microformat.publishDate）が取れているかを直接の判定基準にする。
+    # videoDetailsの有無を基準にしない理由: 自主アップロード動画は元々videoDetailsが薄い/一部欠けている
+    # ことがあり、それを縮退の基準にすると誤検知する。一方、YouTube側が縮退レスポンスを返すとmicroformat
+    # 自体（ひいてはpublishDate）が丸ごと欠落するため、publish_dateが取れているかどうかが正しい基準になる。
+    # microformatが無ければ publish_date も必然的にnilになる（@published_at = parse_time(microformat&.dig(...))
+    # のため）ので、判定はpublish_date.nil?の1行で両方のケースをカバーできる。
+    def degraded?
+      publish_date.nil?
+    end
+
     def metadata
       {
         video_id:,

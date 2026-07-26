@@ -128,5 +128,29 @@ module YtMusic
       assert_nil video.metadata[:video_id]
       assert_not video.metadata[:art_track]
     end
+
+    test 'degraded? is true when microformat is missing entirely' do
+      video = Video.new('videoDetails' => { 'videoId' => 'abc' })
+
+      assert_predicate video, :degraded?
+    end
+
+    test 'degraded? is true when microformat has no publishDate' do
+      video = Video.new(
+        'videoDetails' => { 'videoId' => 'abc' },
+        'microformat' => { 'playerMicroformatRenderer' => { 'uploadDate' => '2026-05-03T04:19:48-07:00' } }
+      )
+
+      assert_predicate video, :degraded?
+    end
+
+    test 'degraded? is false for a normal response with publishDate' do
+      video = Video.new(
+        'videoDetails' => { 'videoId' => 'abc' },
+        'microformat' => { 'playerMicroformatRenderer' => { 'publishDate' => '2026-05-03T04:19:48-07:00' } }
+      )
+
+      assert_not video.degraded?
+    end
   end
 end

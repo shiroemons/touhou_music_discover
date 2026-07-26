@@ -6,9 +6,13 @@ module DistributionDate
   class YtmusicCollectorTest < ActiveSupport::TestCase
     # YtMusic::Video相当のFake。本リポジトリはwebmock/vcrを使わないため、
     # HTTPを伴う実クラスの代わりにこのFakeでコレクタの保存・集計処理だけを検証する。
-    FakeVideo = Struct.new(:publish_date, :upload_date, :release_date, :provided_by, keyword_init: true) do
+    FakeVideo = Struct.new(:publish_date, :upload_date, :release_date, :provided_by, :degraded, keyword_init: true) do
       def art_track?
         provided_by.present?
+      end
+
+      def degraded?
+        !!degraded
       end
 
       def metadata
@@ -296,7 +300,7 @@ module DistributionDate
       progress_callback = ->(**kwargs) { calls << kwargs }
 
       stub_const(YtMusic, :Video, stub_find_client { |_video_id| video }) do
-        DistributionDate::YtmusicCollector.new(apply: true, base_interval: 0, out: StringIO.new, progress_callback:).run
+        DistributionDate::YtmusicCollector.new(apply: true, base_interval: 0, request_interval: 0, out: StringIO.new, progress_callback:).run
       end
 
       assert_equal 2, calls.size
@@ -328,7 +332,7 @@ module DistributionDate
 
       outcome = nil
       stub_const(YtMusic, :Video, stub_find_client { |_video_id| video }) do
-        collector = DistributionDate::YtmusicCollector.new(apply: true, base_interval: 0, out: StringIO.new)
+        collector = DistributionDate::YtmusicCollector.new(apply: true, base_interval: 0, request_interval: 0, out: StringIO.new)
         outcome = collector.collect_album(ytmusic_album.id)
       end
 
@@ -338,12 +342,116 @@ module DistributionDate
       assert_equal Date.new(2026, 6, 30), ytmusic_album.reload.distributed_on
     end
 
+    test '縮退したままの動画はmax_attempts回リトライされる' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      ytmusic_album.update!(payload: { 'tracks' => [payload_track(video_id: 'vid-degraded', track_number: 1)] })
+      call_count = 0
+
+      stub_const(YtMusic, :Video, stub_find_client do |_video_id|
+        call_count += 1
+        FakeVideo.new(publish_date: nil, upload_date: nil, release_date: nil, provided_by: nil, degraded: true)
+      end) do
+        run_collector(apply: true, max_attempts: 3)
+      end
+
+      assert_equal 3, call_count
+    end
+
+    test '縮退したままmax_attempts回に達した動画はfetched_atが記録されず、only_missing: trueの再実行で再取得される（回帰テスト）' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      ytmusic_album.update!(payload: { 'tracks' => [payload_track(video_id: 'vid-degraded-regression', track_number: 1)] })
+
+      stub_const(YtMusic, :Video, stub_find_client do |_video_id|
+        FakeVideo.new(publish_date: nil, upload_date: nil, release_date: nil, provided_by: nil, degraded: true)
+      end) do
+        run_collector(apply: true, max_attempts: 2)
+      end
+
+      entry = ytmusic_album.reload.distribution_track_metadata.first
+
+      assert entry['degraded']
+      assert_nil entry['fetched_at']
+
+      call_count = 0
+      healthy_video = FakeVideo.new(publish_date: Date.new(2026, 6, 29), upload_date: nil, release_date: nil, provided_by: nil)
+
+      stub_const(YtMusic, :Video, stub_find_client do |_video_id|
+        call_count += 1
+        healthy_video
+      end) do
+        run_collector(apply: true)
+      end
+
+      assert_equal 1, call_count
+      entry = ytmusic_album.reload.distribution_track_metadata.first
+
+      assert_not entry['degraded']
+      assert_not_nil entry['fetched_at']
+    end
+
+    test '縮退した動画はYtmusicTrack#update_video_metadataが呼ばれない' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      track = create_track_row(ytmusic_album:, album:)
+
+      stub_const(YtMusic, :Video, stub_find_client do |_video_id|
+        FakeVideo.new(publish_date: nil, upload_date: nil, release_date: nil, provided_by: nil, degraded: true)
+      end) do
+        run_collector(apply: true, max_attempts: 1)
+      end
+
+      assert_nil track.reload.video_fetched_at
+    end
+
+    test '縮退した動画が残ったアルバムはdegradedとして集計される' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      ytmusic_album.update!(payload: { 'tracks' => [payload_track(video_id: 'vid-degraded-outcome', track_number: 1)] })
+      video = FakeVideo.new(publish_date: nil, upload_date: nil, release_date: nil, provided_by: nil, degraded: true)
+
+      result = nil
+      stub_const(YtMusic, :Video, stub_find_client { |_video_id| video }) do
+        result = run_collector(apply: true, max_attempts: 1)
+      end
+
+      assert_equal 1, result[:degraded]
+
+      outcome = nil
+      stub_const(YtMusic, :Video, stub_find_client { |_video_id| video }) do
+        collector = DistributionDate::YtmusicCollector.new(apply: true, base_interval: 0, request_interval: 0, max_attempts: 1, out: StringIO.new)
+        outcome = collector.collect_album(ytmusic_album.id)
+      end
+
+      assert_equal :degraded, outcome.status
+    end
+
+    test 'request_intervalが動画取得ごとにsleepする' do
+      album = create_album
+      ytmusic_album = create_ytmusic_album(album:)
+      create_track_row(ytmusic_album:, album:)
+      create_track_row(ytmusic_album:, album:)
+      video = FakeVideo.new(publish_date: Date.new(2026, 6, 29), upload_date: nil, release_date: nil, provided_by: nil)
+
+      sleep_calls = []
+      collector = DistributionDate::YtmusicCollector.new(apply: true, request_interval: 0.05, base_interval: 0, out: StringIO.new)
+      collector.define_singleton_method(:sleep) { |seconds| sleep_calls << seconds }
+
+      stub_const(YtMusic, :Video, stub_find_client { |_video_id| video }) do
+        collector.run
+      end
+
+      assert_equal [0.05, 0.05], sleep_calls
+    end
+
     private
 
     # limit / workers / max_attempts / base_interval / all / only_missing は
     # DistributionDate::YtmusicCollectorのデフォルト値をそのまま使う。個別のテストで変えたい値だけを渡す。
-    def run_collector(apply:, **)
-      DistributionDate::YtmusicCollector.new(apply:, out: StringIO.new, **).run
+    # base_interval / request_interval は既定0にし、テストが実際にsleepしないようにする。
+    def run_collector(apply:, base_interval: 0, request_interval: 0, **)
+      DistributionDate::YtmusicCollector.new(apply:, base_interval:, request_interval:, out: StringIO.new, **).run
     end
 
     # `YtMusic::Video.find` が一度でも呼ばれたら失敗させ、dry-run時にAPI呼び出しがないことを検証するためのfake。

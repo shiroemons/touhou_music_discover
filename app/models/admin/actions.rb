@@ -775,7 +775,8 @@ module Admin
         result = DistributionDate::YtmusicCollector.new(apply: true, out: StringIO.new, progress_callback: method(:record_progress)).run
 
         message = "配信日取得完了: 対象 #{result[:target_count]}件 / 更新 #{result[:updated]}件 / " \
-                  "配信日算出失敗 #{result[:failed]}件 / 未検出 #{result[:not_found]}件 / エラー #{result[:error]}件 / " \
+                  "配信日算出失敗 #{result[:failed]}件 / 縮退残存 #{result[:degraded].to_i}件 / " \
+                  "未検出 #{result[:not_found]}件 / エラー #{result[:error]}件 / " \
                   "取得動画数 #{result[:fetched_videos]}件"
 
         finish_with_summary(message, errors: result[:error] + result[:failed])
@@ -1270,6 +1271,8 @@ module Admin
                   "（#{ytmusic_album.distribution_source}）として算出しました（取得動画数: #{outcome.fetched_count}件）"
         when :failed
           warn "アルバム「#{ytmusic_album.name}」は配信日を算出できませんでした（distribution_source: #{ytmusic_album.distribution_source}）"
+        when :degraded
+          warn "アルバム「#{ytmusic_album.name}」は一部の動画取得が縮退したままのため、再実行が必要です（取得動画数: #{outcome.fetched_count}件）"
         when :not_found
           error 'YouTube Musicアルバムが見つかりませんでした'
         else

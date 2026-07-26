@@ -11,15 +11,20 @@ class YtmusicTaskTest < ActiveSupport::TestCase
     Rake::Task['ytmusic:fetch_distribution_dates'].reenable
     Rake::Task['ytmusic:recalculate_distribution_dates'].reenable
     Rake::Task['ytmusic:album_tracks_save'].reenable
+    Rake::Task['ytmusic:reset_distribution_dates'].reenable
   end
 
-  test 'fetch_distribution_dates: ENV未指定のときデフォルト値でコレクタが呼ばれる' do
+  test 'fetch_distribution_dates: ENV未指定のときデフォルト値でコレクタが渡る' do
     captured_kwargs = with_captured_collector_kwargs do
       Rake::Task['ytmusic:fetch_distribution_dates'].invoke
     end
 
     assert_equal(
-      { apply: false, limit: nil, all: false, only_missing: true, max_attempts: DistributionDate::YtmusicCollector::DEFAULT_MAX_ATTEMPTS },
+      {
+        apply: false, limit: nil, all: false, only_missing: true,
+        max_attempts: DistributionDate::YtmusicCollector::DEFAULT_MAX_ATTEMPTS,
+        request_interval: DistributionDate::YtmusicCollector::DEFAULT_REQUEST_INTERVAL
+      },
       captured_kwargs
     )
   end
@@ -62,6 +67,14 @@ class YtmusicTaskTest < ActiveSupport::TestCase
     end
 
     assert_equal 7, captured_kwargs[:max_attempts]
+  end
+
+  test 'fetch_distribution_dates: REQUEST_INTERVAL=0.5でrequest_interval: 0.5が渡る' do
+    captured_kwargs = with_env('REQUEST_INTERVAL' => '0.5') do
+      with_captured_collector_kwargs { Rake::Task['ytmusic:fetch_distribution_dates'].invoke }
+    end
+
+    assert_equal 0.5, captured_kwargs[:request_interval]
   end
 
   test 'recalculate_distribution_dates: ENV未指定では配信日未確定のアルバムだけ再集計される' do
@@ -140,6 +153,62 @@ class YtmusicTaskTest < ActiveSupport::TestCase
     end
 
     assert_not called
+  end
+
+  test 'reset_distribution_dates: dry-runでは対象件数を表示するだけで何も変更しない' do
+    album = create_album
+    ytmusic_album = create_ytmusic_album(album:)
+    ytmusic_album.update!(distributed_on: Date.new(2026, 6, 30), distribution_source: 'art_track_mode', distribution_fetched_at: Time.current)
+    track = create_track_row(ytmusic_album:, album:)
+    track.update!(published_on: Date.new(2026, 6, 29), video_fetched_at: Time.current, art_track: true)
+
+    out, = capture_io { Rake::Task['ytmusic:reset_distribution_dates'].invoke }
+
+    assert_match(/対象アルバム数: 1 件/, out)
+    assert_match(/対象トラック数: 1 件/, out)
+    assert_not_nil ytmusic_album.reload.distributed_on
+    assert_not_nil track.reload.video_fetched_at
+  end
+
+  test 'reset_distribution_dates: APPLY=1で対象カラムがすべて初期化される（art_trackはfalse）' do
+    album = create_album
+    ytmusic_album = create_ytmusic_album(album:)
+    ytmusic_album.update!(
+      distributed_on: Date.new(2026, 6, 30), youtube_published_on: Date.new(2026, 6, 29),
+      original_released_on: Date.new(2026, 5, 4), distribution_source: 'art_track_mode',
+      distribution_stats: { 'total_tracks' => 1 }, distribution_fetched_at: Time.current,
+      distribution_track_metadata: [{ 'video_id' => 'v1' }]
+    )
+    track = create_track_row(ytmusic_album:, album:)
+    track.update!(
+      published_on: Date.new(2026, 6, 29), uploaded_on: Date.new(2026, 6, 28),
+      original_released_on: Date.new(2026, 5, 4), provided_by: 'Rightsscale',
+      video_metadata: { 'a' => 1 }, video_fetched_at: Time.current, art_track: true
+    )
+
+    with_env('APPLY' => '1') do
+      capture_io { Rake::Task['ytmusic:reset_distribution_dates'].invoke }
+    end
+
+    ytmusic_album.reload
+
+    assert_nil ytmusic_album.distributed_on
+    assert_nil ytmusic_album.youtube_published_on
+    assert_nil ytmusic_album.original_released_on
+    assert_nil ytmusic_album.distribution_source
+    assert_nil ytmusic_album.distribution_stats
+    assert_nil ytmusic_album.distribution_fetched_at
+    assert_nil ytmusic_album.distribution_track_metadata
+
+    track.reload
+
+    assert_nil track.published_on
+    assert_nil track.uploaded_on
+    assert_nil track.original_released_on
+    assert_nil track.provided_by
+    assert_nil track.video_metadata
+    assert_nil track.video_fetched_at
+    assert_not track.art_track
   end
 
   private

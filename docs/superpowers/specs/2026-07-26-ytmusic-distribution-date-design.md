@@ -172,6 +172,7 @@ track 行が 0 件、8 件は一部のみで、23 件中 22 件が直近追加�
 | --- | --- |
 | `rake ytmusic:fetch_distribution_dates` | `APPLY=1` / `LIMIT` / `ONLY_MISSING=1`（既定 1） / `ALL=1` / `MAX_ATTEMPTS` / `PARALLEL_WORKERS` |
 | `rake ytmusic:recalculate_distribution_dates` | 保存済みトラックから再集計のみ（HTTP なし・高速） |
+| `rake ytmusic:reset_distribution_dates` | 縮退レスポンス混入時など、配信日関連カラムをリセットして取得し直したいときに使う。既定は dry-run。`APPLY=1` で実行（元に戻せません） |
 | `Admin::Actions::FetchYtmusicDistributionDates` | 管理画面から全件実行。`Admin::ActionProgress` で進捗表示 |
 | `Admin::Actions::FetchYtmusicAlbumDistributionDate` | member アクション（1 アルバム単位の再取得） |
 | `ytmusic:album_tracks_save` への統合 | トラック保存後、`video_fetched_at` が nil のトラックだけ自動取得して集計する |
@@ -189,6 +190,39 @@ track 行が 0 件、8 件は一部のみで、23 件中 22 件が直近追加�
 - アルバム内の全動画が失敗した場合は `distribution_source = 'failed'` を記録し、
   `ONLY_MISSING` の再試行対象として残す
 - 例外は `Rails.logger.error` に `album_id` / `video_id` / 例外クラス付きで記録する
+- リクエストは `request_interval`（既定 0.2 秒）だけ間隔を空けて送る。高頻度アクセスが YouTube 側の
+  縮退レスポンスを誘発するため、1 動画取得ごとに待機してレートを抑える。`REQUEST_INTERVAL` 環境変数で
+  上書きできる
+
+## 縮退レスポンスへの対処
+
+500 アルバムを対象にバックフィルを実行したところ、133 アルバム（26.6%）が `distribution_source = 'failed'`
+になった。診断の結果、失敗した 133 アルバムの動画 943 件すべてで `fetched_at` は記録されているのに
+`published_on` が null だった。原因は YouTube 側の負荷制御で、秒間約 35 リクエスト（4,893 動画 / 138 秒、
+7 ワーカー並列）という高頻度アクセスに対し `microformat`（`publishDate` を含む）を欠いた**縮退レスポンス**
+を返し始めたためと判明した。同じ `video_id` を再取得すると `microformat` が正常に返ってくることも確認できた
+（動画自体は問題なく、レスポンスだけが劣化していた）。
+
+`YtMusic::Video.find` は `error` キーが無ければ縮退レスポンスもそのまま `new(response.body)` として返す
+ため、`Video#degraded?` を追加し配信日集計に本当に必要な情報（`publishDate` ＝ `publish_date` が
+取れているか）を直接の判定基準にした（`videoDetails` の有無を基準にしないのは、自主アップロード動画は
+元々 `videoDetails` が薄いことがあり誤検知するため）。`DistributionDate::YtmusicCollector#fetch_video`
+のリトライ条件は「`nil` のとき」だけでなく「`nil` または縮退のとき」に広げた（`Repair::YtmusicAlbumPayloads
+#fetch_album` が `Album#degraded?` でリトライしているのと同じ設計）。
+
+`max_attempts` 回試しても縮退したままの動画は、`distribution_track_metadata` の該当要素に
+`'degraded' => true` を立てたうえで `fetched_at` を **null のままにする**。これにより
+`only_missing: true`（既定）の再実行時、この動画は「取得済み」とみなされず必ず再取得対象になる。
+`fetched_at` を立ててしまうと、実際には取得できていないのに `only_missing` の差分抽出から除外されて
+しまい、今回発生した「縮退したデータがそのまま永続化され、二度と再取得されない」という欠陥を再発させる。
+`fetched_at` の有無で「取得を試みたが縮退していた（要再取得）」と「取得できて公開日が無かった（自主アップ
+動画で `microformat` が本当に無い等・再取得しても直らない）」を区別する。
+
+対象動画のうち 1 件でも縮退したまま残ったアルバムは、`collect_album` の `CollectOutcome#status` を
+`:degraded` として報告する（`distribution_source` が結果的に `failed` になっていても `:degraded` を
+優先する。縮退は再実行で直る可能性が高く、単なる `:failed` より具体的で actionable な情報のため）。
+`run` のサマリ・進捗表示にも縮退件数を出力し、「`ONLY_MISSING=1`（既定）で再実行すると再取得される」旨を
+明記する。
 
 ## テスト
 
