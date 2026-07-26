@@ -326,6 +326,11 @@ module Spotify
                    'プレイリストの更新が完了しました'
                  end
 
+      # 失敗した曲は例外を握りつぶして次へ進むため、completed でも1曲も書けていないことがある。
+      # 完了メッセージに失敗数を添えて、実態が伝わるようにする。
+      failed = @update_info['failed_count'].to_i
+      @message = "#{@message}（#{failed}曲の更新に失敗しました）" if failed.positive?
+
       # 処理時間を計算
       return unless @update_info['started_at'].present? && @update_info['completed_at'].present?
 

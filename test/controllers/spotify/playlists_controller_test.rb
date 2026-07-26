@@ -278,9 +278,35 @@ module Spotify
 
       assert_redirected_to spotify_playlists_progress_path
       assert_equal 'completed', wait_for_playlist_update['status']
+      # リクエスト元のユーザーのトークンで書き込まれること（アプリトークンではない）も確認する。
       assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks" do |req|
-        JSON.parse(req.body)['uris'] == ['spotify:track:TRACK1']
+        JSON.parse(req.body)['uris'] == ['spotify:track:TRACK1'] &&
+          req.headers['Authorization'] == 'Bearer USER_TOKEN'
       end
+    end
+
+    # 全曲の書き込みが失敗しても run は completed で終わるため、完了カードの文言だけでは
+    # 「何も書けていない」ことが伝わらない。進捗画面に失敗数が出ることを固定する。
+    test 'progress reports the number of failed songs on a completed run' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+      # 403 は SpotifyRetry がリトライしない非リトライ 4xx なので、テストがスリープしない。
+      stub_spotify_put('playlists/PL_MATCHED/tracks', status: 403,
+                                                      body: { error: { status: 403, message: 'Forbidden.' } })
+
+      post spotify_playlists_create_path, params: { update_type: 'windows' }
+
+      info = wait_for_playlist_update
+
+      assert_equal 'completed', info['status']
+      assert_equal 1, info['failed_count']
+
+      get spotify_playlists_progress_path
+
+      assert_response :success
+      assert_match '1曲の更新に失敗しました', @response.body
     end
 
     test 'create redirects to the list without touching Spotify when update_type is missing' do

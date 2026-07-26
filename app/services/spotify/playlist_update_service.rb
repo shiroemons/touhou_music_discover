@@ -23,6 +23,8 @@ module Spotify
       @redis = RedisPool.get
       @progress_key = "playlist_update:#{user_id}"
       @playlists_cache = nil
+      @failed_count = 0
+      @last_error_message = nil
       @progress_info = load_progress_info
     end
 
@@ -33,6 +35,10 @@ module Spotify
       total_count = count_total_songs(originals)
       update_progress(total: total_count)
 
+      # プレイリスト一覧は曲ごとに遅延ロードせず、ここで一度だけ取得する。
+      # 遅延ロードだと GET /me/playlists が恒常的に失敗したときに全曲分リトライを繰り返し、
+      # 何も書き込めないまま completed として報告してしまう。ここで失敗させて run 全体を error にする。
+      load_playlists_cache
       process_originals(originals)
 
       mark_completed(total_count)
@@ -97,7 +103,12 @@ module Spotify
     end
 
     def process_original_song(original_song, current_count)
-      spotify_tracks = original_song.spotify_tracks
+      # spotify_tracks は has_many :through の CollectionProxy なので、そのまま扱うと
+      # empty? / size / map がそれぞれ別のクエリを別の時点で発行する。空判定と
+      # PlaylistTrackWriter の間には find_or_create_playlist のネットワーク I/O が挟まるため、
+      # その間に SpotifyTrack が消えると writer だけが空集合を見て全消し PUT を撃つ。
+      # ここで一度だけ配列に実体化し、以降の判定と書き込みが同じ集合を見るようにする。
+      spotify_tracks = original_song.spotify_tracks.to_a
       return current_count if spotify_tracks.empty?
 
       update_progress(
@@ -113,17 +124,22 @@ module Spotify
       # クォータ超過は待っても回復しないため、握りつぶさず処理全体を止める。
       raise
     rescue StandardError => e
+      # 1曲の失敗で全体は止めないが、握りつぶすと全曲失敗しても completed と報告されてしまう。
+      # 失敗数と直近のエラーを記録し、mark_completed で進捗情報に残す。
       Rails.logger.error("Error processing song #{original_song.title}: #{e.class} - #{e.message}")
+      @failed_count += 1
+      @last_error_message = "#{e.class}: #{e.message}"
       current_count + 1
     end
 
     # spotify_tracks が空のまま PlaylistTrackWriter を呼ぶと PUT {"uris": []} が飛び、
-    # 既存プレイリストを全消しする破壊的操作になる。呼び出し元 (process_original_song) の
-    # `return current_count if spotify_tracks.empty?` が唯一の防波堤なので、
-    # このメソッドを他の経路から呼ばないこと。
+    # 既存プレイリストを全消しする破壊的操作になる。渡される配列は呼び出し元
+    # (process_original_song) が空判定より前に実体化済みなので、writer が別集合を
+    # 見ることはない。このメソッドを他の経路から呼ばないこと。
     def update_playlist_for_song(original_song, spotify_tracks)
       playlist = find_or_create_playlist(original_song.title)
-      return unless playlist
+      # id が無いレスポンスをそのまま渡すと playlists//tracks へ PUT してしまう。
+      return unless playlist&.[]('id')
 
       PlaylistTrackWriter.call(session: spotify_session, playlist_id: playlist['id'],
                                spotify_tracks:,
@@ -136,14 +152,19 @@ module Spotify
       playlist = find_playlist(title)
       return playlist if playlist
 
-      SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#create_playlist') do
+      # POST /me/playlists は非冪等で、成功後にレスポンスがタイムアウトすると同名の空プレイリストが
+      # 増えるため、リトライしない。
+      created = SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#create_playlist', tries: 1) do
         SpotifyApi::Playlist.create(spotify_session, name: title)
       end
+
+      # OriginalSong.title の一意性は DB 制約で保証されていないため、作成したものも
+      # キャッシュに載せて同一実行内での二重作成を防ぐ。
+      @playlists_cache << created if created
+      created
     end
 
     def find_playlist(playlist_name)
-      load_playlists_cache if @playlists_cache.nil?
-
       @playlists_cache.find { |playlist| playlist['name'] == playlist_name }
     end
 
@@ -182,6 +203,9 @@ module Spotify
       @progress_info['status'] = 'completed'
       @progress_info['completed_at'] = Time.current.to_s
       @progress_info['current'] = total_count
+      # 完了扱いでも実際には書けていない曲がありうるため、失敗の実態を進捗情報に残す。
+      @progress_info['failed_count'] = @failed_count
+      @progress_info['last_error_message'] = @last_error_message if @last_error_message
       flush_progress
     end
 
