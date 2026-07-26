@@ -26,17 +26,25 @@ class SpotifyRetry
 
   DEFAULT_SLEEPER = ->(seconds) { Kernel.sleep(seconds) }
 
-  # 429 (レート制限)。Retry-After ヘッダーに従って待機する
-  RATE_LIMIT_ERROR = RestClient::TooManyRequests
+  # 429 (レート制限)。Retry-After ヘッダーに従って待機する。
+  # rspotify (rest-client) と SpotifyApi (Faraday) の両経路が並存する間は両方を受ける。
+  RATE_LIMIT_ERRORS = [
+    RestClient::TooManyRequests, # #563 で削除
+    SpotifyApi::RateLimitError
+  ].freeze
 
   # 一時的なサーバーエラー・タイムアウト系。指数バックオフ + ジッターで再試行する
   TRANSIENT_ERRORS = [
-    RestClient::InternalServerError,
-    RestClient::BadGateway,
-    RestClient::ServiceUnavailable,
-    RestClient::GatewayTimeout,
-    RestClient::Exceptions::OpenTimeout,
-    RestClient::Exceptions::ReadTimeout,
+    RestClient::InternalServerError,     # #563 で削除
+    RestClient::BadGateway,              # #563 で削除
+    RestClient::ServiceUnavailable,      # #563 で削除
+    RestClient::GatewayTimeout,          # #563 で削除
+    RestClient::Exceptions::OpenTimeout, # #563 で削除
+    RestClient::Exceptions::ReadTimeout, # #563 で削除
+    SpotifyApi::ServerError,
+    Faraday::TimeoutError,
+    Faraday::ConnectionFailed,
+    Faraday::SSLError,
     Net::OpenTimeout,
     Net::ReadTimeout
   ].freeze
@@ -54,7 +62,13 @@ class SpotifyRetry
 
       loop do
         return yield(attempt, exception)
-      rescue RATE_LIMIT_ERROR => e
+      rescue SpotifyApi::QuotaExceededError => e
+        # クォータ超過は Retry-After が数時間規模になり待っても回復しないため、
+        # 管理画面バナー用の記録だけ行い、リトライせず即座に再送出する。
+        # RateLimitError のサブクラスなので RATE_LIMIT_ERRORS より前に置く必要がある。
+        SpotifyRateLimit.record!(retry_after: retry_after_seconds(e), source:)
+        raise
+      rescue *RATE_LIMIT_ERRORS => e
         attempt += 1
         exception = e
         sleeper.call(rate_limit_delay(e, source:, tries:, attempt:, max_retry_after:))
@@ -69,8 +83,12 @@ class SpotifyRetry
 
     private
 
+    def retry_after_seconds(error)
+      SpotifyRateLimit.retry_after_seconds(error) || DEFAULT_RETRY_AFTER
+    end
+
     def rate_limit_delay(error, source:, tries:, attempt:, max_retry_after:)
-      retry_after = SpotifyRateLimit.retry_after_seconds(error) || DEFAULT_RETRY_AFTER
+      retry_after = retry_after_seconds(error)
       # 管理画面のバナーに反映するため、待機するかどうかに関わらず必ず記録する
       SpotifyRateLimit.record!(retry_after:, source:)
 

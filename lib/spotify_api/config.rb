@@ -22,7 +22,12 @@ module SpotifyApi
       # Development Mode では検索の取得件数上限が下がるため、定数ではなく設定値にする。
       @search_limit = ENV.fetch('SPOTIFY_SEARCH_LIMIT', 50).to_i
       @adapter = :net_http
-      @native_client_enabled = truthy?(ENV.fetch('SPOTIFY_NATIVE_CLIENT', nil))
+      # 既定は true（SpotifyApi のネイティブ経路）。SPOTIFY_NATIVE_CLIENT=0 / false / no / off で
+      # 旧 rspotify 経路に戻せる。ENV.fetch の既定値が使われるのはキーが「未設定」のときだけで、
+      # 空文字はそのまま渡り TRUTHY_VALUES に含まれないため false になる。
+      # つまり SPOTIFY_NATIVE_CLIENT=（空文字）は「未設定」ではなく明示的な opt-out として扱う。
+      # これは不具合ではなく意図した挙動（設計書「設定変更」参照）。
+      @native_client_enabled = truthy?(ENV.fetch('SPOTIFY_NATIVE_CLIENT', 'true'))
       # 2026年2月に /playlists/{id}/tracks → /playlists/{id}/items へのリネームが
       # 告知されたが、2026年3月9日に既存インテグレーション向けの適用は延期された。
       # 動作実績があるのは /tracks のため、既定はそちらにする（詳細は Playlist 参照）。
