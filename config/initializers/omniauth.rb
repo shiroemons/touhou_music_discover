@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'omniauth'
-require 'rspotify/oauth'
+require Rails.root.join('lib/omniauth/strategies/spotify')
 
 # OmniAuth 2.0以降のCSRF対策設定
 OmniAuth.config.allowed_request_methods = %i[post]

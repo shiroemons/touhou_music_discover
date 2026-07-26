@@ -12,6 +12,7 @@ gem 'rails', '~> 8.1.0'
 
 gem 'cssbundling-rails'
 gem 'jsbundling-rails'
+gem 'omniauth-oauth2', '~> 1.9'
 gem 'omniauth-rails_csrf_protection', '~> 2.0'
 gem 'propshaft'
 gem 'stimulus-rails'
