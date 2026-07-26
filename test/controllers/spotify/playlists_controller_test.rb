@@ -328,6 +328,20 @@ module Spotify
       assert_not_requested :get, %r{/me/playlists}
     end
 
+    # playlists/create は副作用（バックグラウンドでのプレイリスト更新）を起こすため、
+    # GET では起動できないよう POST 限定にした。誤って via: %i[get post] に戻ると
+    # このテストが失敗する。
+    #
+    # テスト環境は config.action_dispatch.show_exceptions = :rescuable のため、
+    # `get spotify_playlists_create_path` は ActionController::RoutingError を
+    # 送出させず 404 レスポンスとして揉み消してしまう。ルーティング層そのものを
+    # 検証するため、recognize_path を直接呼び出す。
+    test 'create is not routable via GET' do
+      assert_raises(ActionController::RoutingError) do
+        Rails.application.routes.recognize_path(spotify_playlists_create_path, method: :get)
+      end
+    end
+
     test 'sync_single replaces playlist items with the original song tracks' do
       log_in
       create_spotify_track('TRACK1')
