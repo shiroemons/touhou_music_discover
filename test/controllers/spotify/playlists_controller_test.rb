@@ -4,8 +4,8 @@ require 'test_helper'
 
 module Spotify
   class PlaylistsControllerTest < ActionDispatch::IntegrationTest
-    # refresh_counts の進捗キーが取りうる終了状態。
-    REFRESH_FINISHED_STATUSES = %w[completed error].freeze
+    # refresh_counts / create の進捗キーが取りうる終了状態。
+    FINISHED_STATUSES = %w[completed error].freeze
 
     setup do
       @original = Original.create!(code: 'TEST_ORIG_PC', title: 'テスト作品', short_title: 'テスト作品',
@@ -55,18 +55,26 @@ module Spotify
       detail.to_json
     end
 
-    # refresh_counts は Thread.new で非同期実行されるため、Redis の進捗キーが
+    # refresh_counts / create は Thread.new で非同期実行されるため、Redis の進捗キーが
     # 終了状態になるまでポーリングして待つ。
-    def wait_for_refresh_counts(timeout: 5)
+    def wait_for_progress(key, timeout: 5)
       deadline = Time.current + timeout
       loop do
-        raw = RedisPool.with { |r| r.get("refresh_counts:#{@user.id}") }
+        raw = RedisPool.with { |r| r.get(key) }
         info = raw.present? ? JSON.parse(raw) : {}
-        return info if REFRESH_FINISHED_STATUSES.include?(info['status'])
-        raise "refresh_counts did not finish within #{timeout}s: #{info.inspect}" if Time.current > deadline
+        return info if FINISHED_STATUSES.include?(info['status'])
+        raise "#{key} did not finish within #{timeout}s: #{info.inspect}" if Time.current > deadline
 
         sleep 0.05
       end
+    end
+
+    def wait_for_refresh_counts(timeout: 5)
+      wait_for_progress("refresh_counts:#{@user.id}", timeout:)
+    end
+
+    def wait_for_playlist_update(timeout: 5)
+      wait_for_progress("playlist_update:#{@user.id}", timeout:)
     end
 
     # @song.code に紐づく SpotifyTrack を1件作る。Album は jan_code (unique, NOT NULL) のみ、
@@ -254,6 +262,39 @@ module Spotify
 
     test 'refresh_counts redirects to root when not logged in' do
       post spotify_playlists_refresh_counts_path
+
+      assert_redirected_to root_url
+      assert_not_requested :get, %r{/me/playlists}
+    end
+
+    test 'create runs the update in the background with the requesting user session' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+      stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap' })
+
+      post spotify_playlists_create_path, params: { update_type: 'windows' }
+
+      assert_redirected_to spotify_playlists_progress_path
+      assert_equal 'completed', wait_for_playlist_update['status']
+      assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks" do |req|
+        JSON.parse(req.body)['uris'] == ['spotify:track:TRACK1']
+      end
+    end
+
+    test 'create redirects to the list without touching Spotify when update_type is missing' do
+      log_in
+
+      post spotify_playlists_create_path
+
+      assert_redirected_to spotify_playlists_path
+      assert_not_requested :get, %r{/me/playlists}
+      assert_nil(RedisPool.with { |r| r.get("playlist_update:#{@user.id}") })
+    end
+
+    test 'create redirects to root when not logged in' do
+      post spotify_playlists_create_path, params: { update_type: 'windows' }
 
       assert_redirected_to root_url
       assert_not_requested :get, %r{/me/playlists}

@@ -104,59 +104,37 @@ module Spotify
     end
 
     def create
-      redirect_to root_url unless session[:user_id]
-
-      redis = RedisPool.get
-      auth_hash = JSON.parse(redis.get(session[:user_id]))
-      spotify_user = RSpotify::User.new(auth_hash)
-
       update_type = params[:update_type]
 
-      if update_type.present?
-        # 進捗状況をRedisに保存するためのキー
-        progress_key = "playlist_update:#{session[:user_id]}"
-
-        # 更新処理開始前にRedisを初期化
-        update_info = {
-          update_type: update_type,
-          total: 0,
-          current: 0,
-          current_song: '',
-          current_original: '',
-          songs_in_original: 0,
-          arrangement_count: 0,
-          status: 'processing',
-          started_at: Time.current.to_s,
-          completed_at: nil
-        }
-        redis.set(progress_key, update_info.to_json)
-
-        # 非同期処理を開始（Service Objectを使用）
-        user_id = session[:user_id]
-        Thread.new do
-          PlaylistUpdateService.call(
-            update_type: update_type,
-            spotify_user: spotify_user,
-            user_id: user_id
-          )
-        rescue StandardError => e
-          Rails.logger.error("プレイリスト更新エラー: #{e.message}")
-          Rails.logger.error(e.backtrace.join("\n"))
-          redis_conn = RedisPool.get
-          error_info = JSON.parse(redis_conn.get(progress_key))
-          error_info['status'] = 'error'
-          error_info['error_message'] = e.message
-          redis_conn.set(progress_key, error_info.to_json)
-        ensure
-          ActiveRecord::Base.connection_pool.release_connection
-        end
-
-        # 進捗確認ページにリダイレクト
-        redirect_to spotify_playlists_progress_path
-      else
-        # 一覧表示にリダイレクト
+      if update_type.blank?
         redirect_to spotify_playlists_path
+        return
       end
+
+      progress_key = "playlist_update:#{session[:user_id]}"
+      redis = RedisPool.get
+      redis.set(progress_key, {
+        update_type:, total: 0, current: 0, current_song: '', current_original: '',
+        songs_in_original: 0, arrangement_count: 0, status: 'processing',
+        started_at: Time.current.to_s, completed_at: nil
+      }.to_json)
+
+      # スレッドにはリクエストのコンテキストが無いため、セッションとユーザーIDは
+      # Thread.new の前にローカル変数へ取り出しておく。
+      user_id = session[:user_id]
+      session_for_thread = spotify_session
+      Thread.new do
+        # 進捗キーへの error 書き込みは PlaylistUpdateService#mark_error が行うため、
+        # ここではログを残すだけにする（以前は二重に書いていた）。
+        PlaylistUpdateService.call(update_type:, spotify_session: session_for_thread, user_id:)
+      rescue StandardError => e
+        Rails.logger.error("プレイリスト更新エラー: #{e.class} - #{e.message}")
+        Rails.logger.error(e.backtrace.join("\n"))
+      ensure
+        ActiveRecord::Base.connection_pool.release_connection
+      end
+
+      redirect_to spotify_playlists_progress_path
     end
 
     def progress
@@ -373,8 +351,8 @@ module Spotify
     # 原曲名に一致するプレイリストだけを一覧用の Hash に詰め替えて返す。
     #
     # follower 数は GET /me/playlists のレスポンスに含まれないため、以前は
-    # RSpotify の method_missing が 1 件ごとに GET /playlists/{id} を暗黙に
-    # 発火させていた（実測で 613 件中 612 件が対象 = 一覧表示 1 回あたり
+    # 1 件ごとに GET /playlists/{id} が暗黙に発火していた
+    # （実測で 613 件中 612 件が対象 = 一覧表示 1 回あたり
     # 625 リクエスト）。follower の最新化は明示的な「曲数を更新」ボタン
     # (refresh_counts) の責務にして、一覧では DB の既存値を表示する。
     def fetch_playlists_from_spotify
