@@ -18,6 +18,7 @@ class SessionsControllerTest < ActionDispatch::IntegrationTest
 
   teardown do
     OmniAuth.config.test_mode = false
+    OmniAuth.config.mock_auth[:spotify] = nil
     User.where(provider: 'spotify', uid: 'test-user').each do |u|
       RedisPool.with { |r| r.del(SpotifyApi::UserSession.redis_key(u.id)) }
     end

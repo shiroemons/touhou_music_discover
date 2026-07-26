@@ -9,16 +9,21 @@ module SpotifyApi
     # RedisPool をスタブするための最小限の Redis 互換オブジェクト。
     # 実 Redis には一切依存しない。
     class FakeRedis
+      attr_reader :store, :ttls
+
       def initialize(store = {})
         @store = store
+        @ttls = {}
       end
 
       def get(key)
         @store[key]
       end
 
-      def set(key, value, **)
+      # ex: は実 Redis クライアント（redis gem）の SET オプション名に合わせている。
+      def set(key, value, ex: nil) # rubocop:disable Naming/MethodParameterName
         @store[key] = value
+        @ttls[key] = ex
       end
     end
 
@@ -97,6 +102,7 @@ module SpotifyApi
       saved = JSON.parse(fake_redis.get(UserSession.redis_key('user-1')))
 
       assert_equal 'NEW', saved['credentials']['token']
+      assert_equal UserSession::TTL.to_i, fake_redis.ttls[UserSession.redis_key('user-1')]
     end
 
     test 'does not write back to Redis when user_id is unknown' do
@@ -173,6 +179,32 @@ module SpotifyApi
       assert_equal 'test-user', session.spotify_user_id
     ensure
       RedisPool.with { |r| r.del(SpotifyApi::UserSession.redis_key(user_id)) }
+    end
+
+    # FakeRedis は「persist! が ex: を渡す意図」しか検証できない。実 Redis 上で
+    # SET を ex: 無しで発行すると既存の TTL が消える仕様があるため、実際にリフレッシュを
+    # 発生させて TTL が維持されることまで確認する。
+    test 'the TTL is renewed rather than dropped when the token is refreshed' do
+      user_id = SecureRandom.uuid
+      key = SpotifyApi::UserSession.redis_key(user_id)
+      hash = { 'uid' => 'test-user',
+               'credentials' => { 'token' => 'OLD', 'refresh_token' => 'R',
+                                  'expires_at' => 1.hour.ago.to_i } }
+      RedisPool.with { |r| r.set(key, hash.to_json, ex: SpotifyApi::UserSession::TTL.to_i) }
+      stub_spotify_token_refresh
+
+      SpotifyApi::UserSession.find(user_id).access_token
+
+      stored = JSON.parse(RedisPool.with { |r| r.get(key) })
+
+      assert_equal 'NEW_ACCESS_TOKEN', stored.dig('credentials', 'token')
+
+      ttl = RedisPool.with { |r| r.ttl(key) }
+
+      assert_operator ttl, :>, 0
+      assert_operator ttl, :<=, SpotifyApi::UserSession::TTL.to_i
+    ensure
+      RedisPool.with { |r| r.del(key) }
     end
 
     test 'access_token refreshes only once when called from multiple threads' do
