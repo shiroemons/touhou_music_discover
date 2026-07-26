@@ -15,6 +15,15 @@ class YtmusicAlbum < ApplicationRecord
   scope :is_touhou, -> { eager_load(:album).where(albums: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
   scope :browse_id, ->(browse_id) { find_by(browse_id:) }
+  # distributed_onが未確定、前回の集計がfailedだった行に加え、distribution_track_metadataに
+  # 縮退した動画（degraded: true）が1件でも残っている行も対象にする。縮退が一部だけのアルバムは
+  # distributed_onが算出済みでも、不完全なデータから算出した配信日が固定化されてしまうため。
+  scope :distribution_missing, lambda {
+    where(
+      "distributed_on IS NULL OR distribution_source = 'failed' OR " \
+      "distribution_track_metadata @> '[{\"degraded\": true}]'"
+    )
+  }
 
   # 検索で見つけにくいアルバム
   # コメントアウトしているアルバムは、YouTubeMusicで配信されていないアルバム
@@ -193,6 +202,24 @@ class YtmusicAlbum < ApplicationRecord
     )
   end
 
+  # 配信日を集計し直す。HTTPは行わず、DB上に保存済みのデータのみで完結する。
+  # distribution_track_metadataが保存されていればそれを正として使う（ytmusic_tracksの行は
+  # アルバム取り込みより遅れて作られるため、行が無い/一部しか無いアルバムでも集計できるようにするため）。
+  # 保存されていなければ従来どおりytmusic_tracksの行から集計する（後方互換）。
+  def recalculate_distribution!
+    tracks, source_of_truth = distribution_tracks_for_calculation
+    result = DistributionCalculator.new(tracks, source_of_truth:).call
+
+    update!(
+      distributed_on: result.distributed_on,
+      youtube_published_on: result.youtube_published_on,
+      original_released_on: result.original_released_on,
+      distribution_source: result.distribution_source,
+      distribution_stats: result.distribution_stats,
+      distribution_fetched_at: Time.current
+    )
+  end
+
   def artist_name
     payload&.dig('artists')&.map { it['name'] }&.join(' / ')
   end
@@ -350,6 +377,15 @@ class YtmusicAlbum < ApplicationRecord
   end
 
   private
+
+  # recalculate_distribution!が集計対象にするトラック相当のオブジェクト一覧と、その集計元を返す。
+  def distribution_tracks_for_calculation
+    if distribution_track_metadata.present?
+      [DistributionTrackMetadataRecord.from_metadata(distribution_track_metadata), 'payload']
+    else
+      [YtmusicTrack.unscoped.where(ytmusic_album_id: id).to_a, 'track_rows']
+    end
+  end
 
   # 既存payload中の「video_idが非nilかつtrack_numberが正の整数」であるトラック数。
   # 既存payloadが無い/tracksが空の場合は0を返す（回帰ガードは0件からの改善を常に許可するため）。

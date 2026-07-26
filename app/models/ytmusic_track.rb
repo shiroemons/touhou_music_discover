@@ -15,6 +15,7 @@ class YtmusicTrack < ApplicationRecord
   scope :album_browse_id, ->(browse_id) { eager_load(:ytmusic_album).where(ytmusic_album: { browse_id: }) }
   scope :is_touhou, -> { eager_load(:track).where(tracks: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:track).where(tracks: { is_touhou: false }) }
+  scope :video_metadata_missing, -> { where(video_fetched_at: nil) }
 
   def self.fetch_tracks(progress_callback: nil)
     album_ids = Album.pluck(:id)
@@ -131,7 +132,32 @@ class YtmusicTrack < ApplicationRecord
     )
   end
 
+  # YtMusic::Videoから取得した動画メタデータをトラックへ保存する。HTTPはこのメソッドの外で完結させる。
+  def update_video_metadata(video)
+    update(
+      published_on: video.publish_date,
+      uploaded_on: video.upload_date,
+      original_released_on: video.release_date,
+      provided_by: video.provided_by,
+      art_track: video.art_track?,
+      video_metadata: video.metadata,
+      video_fetched_at: Time.current
+    )
+  end
+
   def artist_name
     payload['artists']&.map { it['name'] }&.join(' / ')
   end
+
+  # rubocop:disable Naming/PredicateMethod -- DistributionTrackMetadataRecord#degraded（Structのメンバ）と
+  # 同じ名前・同じ呼び出し方（track.degraded）で揃えるため、あえて`?`を付けない。
+  # ytmusic_tracksの行は縮退した動画の取得結果を保持しない
+  # (縮退時はcollect_videosがupdate_video_metadataを呼ばないため)。
+  # distribution_track_metadataが無い場合のフォールバック集計(source_of_truth: track_rows)で
+  # DistributionCalculatorがtrack.degradedを呼べるよう、DistributionTrackMetadataRecordと
+  # インターフェースを合わせるための読み取り専用メソッド。常にfalseを返す。
+  def degraded
+    false
+  end
+  # rubocop:enable Naming/PredicateMethod
 end

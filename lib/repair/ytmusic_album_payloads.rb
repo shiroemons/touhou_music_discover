@@ -17,9 +17,6 @@ module Repair
     # 一度のAPPLYで ParallelRunner.each に渡すスライスサイズ。
     SLICE_SIZE = 1000
 
-    # バックオフ間隔に掛けるジッタの振れ幅（±30%）。
-    JITTER_RANGE = -30..30
-
     # trackのtrack_numberが「欠落 / 空文字 / 0 / 数値として解釈できない値」であるかどうかの判定式。
     # 数値形式(-?[0-9]+)であることを正規表現で確認してから::intへキャストすることで、
     # 想定外の文字列が入っていてもキャスト例外を起こさず「track_number欠落」として扱う。
@@ -193,11 +190,7 @@ module Repair
     end
 
     def backoff_interval(attempt)
-      base_interval * (2**(attempt - 1)) * jitter_factor
-    end
-
-    def jitter_factor
-      1 + (rand(JITTER_RANGE) / 100.0)
+      RetryBackoff.interval(attempt, base_interval:)
     end
 
     # 修復済みのpayloadを元に、track_numberで突き合わせて YtmusicTrack も同期する。

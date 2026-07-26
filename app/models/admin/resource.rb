@@ -800,6 +800,8 @@ module Admin
               UpdateYtmusicAlbumTrack
               UpdateYtmusicAlbumPayload
               UpdateAllYtmusicAlbumPayloads
+              FetchYtmusicDistributionDates
+              FetchYtmusicAlbumDistributionDate
             ]
           ),
           new(

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_26_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -280,33 +280,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_120000) do
     t.uuid "album_id", null: false
     t.string "browse_id", null: false
     t.datetime "created_at", null: false
+    t.date "distributed_on"
+    t.datetime "distribution_fetched_at"
+    t.string "distribution_source"
+    t.jsonb "distribution_stats"
+    t.jsonb "distribution_track_metadata"
     t.string "name", null: false
+    t.date "original_released_on"
     t.jsonb "payload"
     t.string "playlist_url"
     t.string "release_year"
     t.integer "total_tracks"
     t.datetime "updated_at", null: false
     t.string "url"
+    t.date "youtube_published_on"
     t.index ["album_id", "browse_id"], name: "index_ytmusic_albums_on_album_id_and_browse_id", unique: true
     t.index ["album_id"], name: "index_ytmusic_albums_on_album_id"
     t.index ["browse_id"], name: "index_ytmusic_albums_on_browse_id"
+    t.index ["distributed_on"], name: "index_ytmusic_albums_on_distributed_on"
+    t.index ["distribution_fetched_at"], name: "index_ytmusic_albums_on_distribution_fetched_at"
   end
 
   create_table "ytmusic_tracks", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
     t.uuid "album_id"
+    t.boolean "art_track", default: false, null: false
     t.datetime "created_at", null: false
     t.string "name", null: false
+    t.date "original_released_on"
     t.jsonb "payload"
     t.string "playlist_id", null: false
+    t.string "provided_by"
+    t.date "published_on"
     t.uuid "track_id", null: false
     t.integer "track_number"
     t.datetime "updated_at", null: false
+    t.date "uploaded_on"
     t.string "url", default: "", null: false
+    t.datetime "video_fetched_at"
     t.string "video_id", null: false
+    t.jsonb "video_metadata"
     t.uuid "ytmusic_album_id", null: false
     t.index ["album_id"], name: "index_ytmusic_tracks_on_album_id"
     t.index ["track_id"], name: "index_ytmusic_tracks_on_track_id"
+    t.index ["video_fetched_at"], name: "index_ytmusic_tracks_on_video_fetched_at"
     t.index ["video_id"], name: "index_ytmusic_tracks_on_video_id"
+    t.index ["ytmusic_album_id", "published_on"], name: "index_ytmusic_tracks_on_ytmusic_album_id_and_published_on"
     t.index ["ytmusic_album_id", "track_id"], name: "index_ytmusic_tracks_on_ytmusic_album_id_and_track_id", unique: true
     t.index ["ytmusic_album_id"], name: "index_ytmusic_tracks_on_ytmusic_album_id"
   end

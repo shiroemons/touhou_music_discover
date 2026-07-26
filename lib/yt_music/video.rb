@@ -16,12 +16,13 @@ module YtMusic
 
     attr_reader :video_id, :title, :channel_id, :channel_name, :view_count,
                 :publish_date, :published_at, :upload_date, :uploaded_at,
-                :release_date, :payload
+                :release_date, :provided_by, :length_seconds, :category, :payload
 
     def initialize(response)
       @payload = response
       video_details = response['videoDetails']
       microformat = response.dig('microformat', 'playerMicroformatRenderer')
+      @description = video_details&.dig('shortDescription') || microformat&.dig('description', 'simpleText')
 
       @video_id = video_details&.dig('videoId') || microformat&.dig('externalVideoId')
       @title = video_details&.dig('title') || microformat&.dig('title', 'simpleText')
@@ -32,8 +33,43 @@ module YtMusic
       @publish_date = @published_at&.to_date
       @uploaded_at = parse_time(microformat&.dig('uploadDate'))
       @upload_date = @uploaded_at&.to_date
-      @release_date = extract_release_date(video_details&.dig('shortDescription') || microformat&.dig('description', 'simpleText'))
+      @release_date = extract_release_date(@description)
+      @provided_by = extract_provided_by(@description)
+      @length_seconds = video_details&.dig('lengthSeconds')&.to_i
+      @category = microformat&.dig('category')
       super()
+    end
+
+    def art_track?
+      provided_by.present?
+    end
+
+    # 配信日集計に本当に必要な情報（microformat.publishDate）が取れているかを直接の判定基準にする。
+    # videoDetailsの有無を基準にしない理由: 自主アップロード動画は元々videoDetailsが薄い/一部欠けている
+    # ことがあり、それを縮退の基準にすると誤検知する。一方、YouTube側が縮退レスポンスを返すとmicroformat
+    # 自体（ひいてはpublishDate）が丸ごと欠落するため、publish_dateが取れているかどうかが正しい基準になる。
+    # microformatが無ければ publish_date も必然的にnilになる（@published_at = parse_time(microformat&.dig(...))
+    # のため）ので、判定はpublish_date.nil?の1行で両方のケースをカバーできる。
+    def degraded?
+      publish_date.nil?
+    end
+
+    def metadata
+      {
+        video_id:,
+        title:,
+        channel_id:,
+        channel_name:,
+        view_count:,
+        publish_date: publish_date&.iso8601,
+        upload_date: upload_date&.iso8601,
+        release_date: release_date&.iso8601,
+        provided_by:,
+        art_track: art_track?,
+        length_seconds:,
+        category:,
+        description_head:
+      }
     end
 
     private
@@ -49,6 +85,17 @@ module YtMusic
       return nil unless match
 
       Date.iso8601(match[1])
+    end
+
+    def extract_provided_by(description)
+      match = description&.match(/^Provided to YouTube by (.+)$/)
+      return nil unless match
+
+      match[1].strip.presence
+    end
+
+    def description_head
+      @description&.each_line(chomp: true)&.first(5)
     end
   end
 end
