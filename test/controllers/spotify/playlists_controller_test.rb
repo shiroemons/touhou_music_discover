@@ -36,6 +36,20 @@ module Spotify
       spotify_fixture('me_playlists').gsub('PLAYLIST_TITLE_MATCHED', @song.title)
     end
 
+    # @song.code に紐づく SpotifyTrack を1件作る。Album は jan_code (unique, NOT NULL) のみ、
+    # Track は album (jan_code経由) と isrc (jan_codeとの複合unique, NOT NULL) が必須、
+    # SpotifyTrack は album/spotify_album/track の belongs_to と label が必須なため、
+    # sync_single が実際にたどる through 関連を素通りできるよう最小限のレコードを組み立てる。
+    def create_spotify_track(spotify_id)
+      album = Album.create!(jan_code: "JAN-#{spotify_id}")
+      spotify_album = SpotifyAlbum.create!(album:, spotify_id: "SALBUM-#{spotify_id}", album_type: 'album',
+                                           name: "テストアルバム #{spotify_id}", label: Album::TOUHOU_MUSIC_LABEL)
+      track = Track.create!(album:, isrc: "ISRC-#{spotify_id}")
+      TracksOriginalSong.create!(track:, original_song_code: @song.code)
+      SpotifyTrack.create!(track:, album:, spotify_album:, spotify_id:, name: "テスト曲 #{spotify_id}",
+                           label: Album::TOUHOU_MUSIC_LABEL)
+    end
+
     test 'index redirects to root when not logged in' do
       get spotify_playlists_path
 
@@ -151,6 +165,59 @@ module Spotify
       delete spotify_clear_playlists_cache_path
 
       assert_redirected_to root_url
+    end
+
+    test 'sync_single replaces playlist items with the original song tracks' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+      stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap3' })
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      # このWebMockのバージョンでは assert_requested(stub) { ... } はブロックを受け付けないため、
+      # メソッド+URLの形式でリクエストボディを検証する。
+      assert_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks" do |req|
+        JSON.parse(req.body)['uris'] == ['spotify:track:TRACK1']
+      end
+    end
+
+    test 'sync_single refuses a playlist whose name is not an original song' do
+      log_in
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+
+      post spotify_playlist_sync_path(id: 'PL_UNMATCHED', name: '原曲名ではないプレイリスト')
+
+      assert_redirected_to spotify_playlists_path
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
+      assert_not_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
+    end
+
+    test 'sync_single refuses when the id does not belong to the user' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+
+      post spotify_playlist_sync_path(id: 'PL_SOMEONE_ELSE', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_SOMEONE_ELSE/tracks"
+    end
+
+    test 'sync_single refuses when the id maps to a different playlist name' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+
+      post spotify_playlist_sync_path(id: 'PL_UNMATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_UNMATCHED/tracks"
     end
   end
 end

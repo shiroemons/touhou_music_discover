@@ -44,27 +44,21 @@ module Spotify
     end
 
     def sync_single
-      redirect_to root_url unless session[:user_id]
-
-      redis = RedisPool.get
-      auth_hash = JSON.parse(redis.get(session[:user_id]))
-      spotify_user = RSpotify::User.new(auth_hash)
-
       playlist_id = params[:id]
       playlist_name = params[:name]
 
-      # ユーザーのプレイリストから対象を検索（認証コンテキストを保持するため）
-      playlist = find_user_playlist(spotify_user, playlist_id)
-      if playlist.nil?
-        redirect_to spotify_playlists_path, alert: "プレイリストが見つかりません: #{playlist_name}"
+      # このアプリが書き込んでよいのは原曲名のプレイリストだけ。
+      # playlist_id は外部から渡されるため、破壊的操作の前にサーバ側で必ず検証する。
+      original_song = OriginalSong.non_duplicated.find_by(title: playlist_name)
+      if original_song.nil?
+        redirect_to spotify_playlists_path, alert: "原曲が見つかりません: #{playlist_name}"
         return
       end
 
-      # 原曲を名前で検索
-      original_song = OriginalSong.find_by(title: playlist_name, is_duplicate: false)
-
-      if original_song.nil?
-        redirect_to spotify_playlists_path, alert: "原曲が見つかりません: #{playlist_name}"
+      # id がユーザー自身のプレイリストであり、かつ実際の名前が原曲名と一致することを確認する。
+      playlist = find_user_playlist(playlist_id, playlist_name)
+      if playlist.nil?
+        redirect_to spotify_playlists_path, alert: "プレイリストが見つかりません: #{playlist_name}"
         return
       end
 
@@ -81,21 +75,13 @@ module Spotify
         return
       end
 
-      # クリアしてトラックを追加
-      loop do
-        tracks = playlist.tracks
-        break if tracks.empty?
+      # 対話的なリクエスト（ユーザーが同期ボタンを押して待っている）なので、
+      # レート制限時は長く待たず早めに諦める。デフォルト（tries: 5, max_retry_after: 900）は
+      # バックグラウンド処理向け。
+      Spotify::PlaylistTrackWriter.call(session: spotify_session, playlist_id:,
+                                        spotify_tracks:, tries: 3, max_retry_after: 60,
+                                        source: 'Spotify::PlaylistsController#sync_single')
 
-        playlist.remove_tracks!(tracks)
-      end
-
-      spotify_track_ids = spotify_tracks.map(&:spotify_id)
-      spotify_track_ids.each_slice(50) do |ids|
-        tracks = RSpotify::Track.find(ids)
-        playlist.add_tracks!(tracks) if tracks.any?
-      end
-
-      # SpotifyPlaylistレコードを更新
       spotify_playlist = SpotifyPlaylist.find_by(spotify_id: playlist_id)
       spotify_playlist&.update(total: spotify_tracks.size, synced_at: Time.current)
 
@@ -378,21 +364,16 @@ module Spotify
 
     private
 
-    def find_user_playlist(spotify_user, playlist_id)
-      offset = 0
-      loop do
-        playlists = spotify_user.playlists(limit: LIMIT, offset: offset)
-        break if playlists.empty?
-
-        found = playlists.find { |p| p.id == playlist_id }
-        return found if found
-
-        offset += LIMIT
-        break if playlists.count < LIMIT
-
-        sleep 0.5
+    # 指定 id がユーザー自身のプレイリストで、かつ名前が期待値と一致する場合だけ返す。
+    # 名前の一致まで見るのは、外部から渡された id で別のプレイリストを壊さないため。
+    def find_user_playlist(playlist_id, expected_name)
+      # sync_single と同じく対話的なリクエストなので、レート制限時は早めに諦める。
+      playlists = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#sync_single',
+                                          tries: 3, max_retry_after: 60) do
+        SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT)
       end
-      nil
+
+      playlists.find { |p| p['id'] == playlist_id && p['name'] == expected_name }
     end
 
     def load_progress_info
