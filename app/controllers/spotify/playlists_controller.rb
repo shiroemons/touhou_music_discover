@@ -5,7 +5,6 @@ module Spotify
     include SpotifyAuthentication
 
     LIMIT = 50
-    MAX_RETRIES = 3
     CACHE_TTL = 3.hours.to_i
 
     before_action :require_spotify_session,
@@ -211,30 +210,15 @@ module Spotify
     end
 
     def original_songs
-      return redirect_to root_url unless session[:user_id]
-
-      redis = RedisPool.get
-      auth_hash = JSON.parse(redis.get(session[:user_id]))
-      @spotify_user = RSpotify::User.new(auth_hash)
-
-      # すべてのユーザープレイリストを取得
-      @playlists ||= []
-      offset = 0
-      retry_count = 0
-      loop do
-        playlists = @spotify_user.playlists(limit: LIMIT, offset:)
-        @playlists.push(*playlists)
-        offset += LIMIT
-        break if playlists.count < LIMIT
-
-        sleep 1
-      rescue RestClient::TooManyRequests
-        retry_count += 1
-        break unless retry_count <= MAX_RETRIES
-
-        wait_time = 2**retry_count
-        sleep wait_time
-        retry
+      # 対話的なリクエスト（ユーザーがJSONのダウンロードを待っている）なので、
+      # レート制限時は長く待たず早めに諦める。デフォルト（tries: 5, max_retry_after: 900）は
+      # バックグラウンド処理向け。
+      #
+      # GET /me/playlists はまれに items に null 要素を含めて返すため、compact してから扱う
+      # （nil['name'] は NoMethodError になる）。
+      @playlists = SpotifyRetry.with_retry(source: 'Spotify::PlaylistsController#original_songs',
+                                           tries: 3, max_retry_after: 60) do
+        SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT).compact
       end
 
       # 原曲データ構造を構築
@@ -253,8 +237,8 @@ module Spotify
 
           original_songs = non_duplicated_songs.filter_map do |song|
             # プレイリストを検索
-            playlist = @playlists.find { |p| p.name == song.title }
-            playlist_url = playlist&.external_urls&.dig('spotify')
+            playlist = @playlists.find { |p| p['name'] == song.title }
+            playlist_url = playlist&.dig('external_urls', 'spotify')
 
             # プレイリストURLがある場合のみ含める
             if playlist_url

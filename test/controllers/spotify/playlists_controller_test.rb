@@ -407,5 +407,28 @@ module Spotify
       assert_equal I18n.t('spotify.playlists.alerts.quota_exceeded'), flash[:alert]
       assert_nil playlist.reload.synced_at
     end
+
+    test 'original_songs exports playlist urls for matched original songs' do
+      log_in
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+
+      get spotify_playlists_original_songs_path
+
+      assert_response :success
+      data = response.parsed_body
+      songs = data.values.flatten.flat_map { |o| o['original_songs'] }
+
+      assert_includes songs.map { |s| s['name'] }, @song.title
+      assert_includes songs.map { |s| s['playlist_url'] },
+                      'https://open.spotify.com/playlist/PL_MATCHED'
+      assert_not_includes songs.map { |s| s['name'] }, '原曲名ではないプレイリスト'
+    end
+
+    test 'original_songs redirects to root when not logged in' do
+      get spotify_playlists_original_songs_path
+
+      assert_redirected_to root_url
+    end
   end
 end
