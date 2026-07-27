@@ -149,9 +149,9 @@ module SpotifyApi
       assert_equal 'spotify-uid', session.spotify_user_id
     end
 
-    # rspotify の RSpotify::User は該当ユーザーの認証情報が見つからないと
+    # 旧 rspotify 経由の実装 (RSpotify::User) は、該当ユーザーの認証情報が見つからないと
     # 「最初に登録されたユーザーのトークン」にフォールバックし、別人のアカウントを
-    # 操作してしまう事故につながる（rspotify/user.rb:66）。SpotifyApi::UserSession は
+    # 操作してしまう事故につながる仕様だった。SpotifyApi::UserSession は
     # この挙動を絶対に引き継がず、見つからなければ nil を返すだけであることを確認する。
     test 'find returns nil instead of falling back to another user\'s credentials' do
       auth_json = build_auth_hash(token: 'STORED', expires_in: 3600).to_json

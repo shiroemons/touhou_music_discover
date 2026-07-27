@@ -63,9 +63,9 @@ module SpotifyApi
 
     # 取得済みのレスポンスをそのまま返すだけで、追加の HTTP リクエストは一切行わない。
     #
-    # RSpotify::Base#method_missing は未取得の属性にアクセスされると裏で API を叩き直す。
-    # この暗黙のリクエストが Development Mode のクォータ枯渇の主因になっているため、
-    # SpotifyApi では同様の仕組みを絶対に実装しない。
+    # 削除済みの旧 rspotify 経路（RSpotify::Base#method_missing）は、未取得の属性に
+    # アクセスされると裏で API を叩き直していた。この暗黙のリクエストが Development Mode の
+    # クォータ枯渇の主因だったため、SpotifyApi では同様の仕組みを絶対に実装しない。
     def handle_response(response)
       status = response.status
       return response.body if status.between?(200, 299)

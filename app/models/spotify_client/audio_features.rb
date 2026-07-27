@@ -7,7 +7,7 @@ module SpotifyClient
     end
 
     def self.backend
-      SpotifyApi.native_client_enabled? ? NativeBackend : RspotifyBackend
+      NativeBackend
     end
     private_class_method :backend
   end

@@ -24,12 +24,6 @@ class SpotifyRateLimitTest < ActiveSupport::TestCase
     end
   end
 
-  test 'extracts retry after seconds from RestClient style headers' do
-    error = Struct.new(:http_headers).new({ retry_after: '3267' })
-
-    assert_equal 3267, SpotifyRateLimit.retry_after_seconds(error)
-  end
-
   test 'prefers the SpotifyApi::ApiError retry_after over header values' do
     error = api_error_with_headers(retry_after: 42, header_retry_after: '3267')
 
@@ -63,11 +57,10 @@ class SpotifyRateLimitTest < ActiveSupport::TestCase
 
   private
 
-  # retry_after と rest-client 形式のヘッダーの両方を持つ例外。優先順位の検証に使う。
+  # retry_after 属性と Faraday レスポンスヘッダーの両方を持つ例外。優先順位の検証に使う。
   def api_error_with_headers(retry_after:, header_retry_after:)
-    error = SpotifyApi::RateLimitError.new('429 Too Many Requests', status: 429, retry_after:)
-    error.define_singleton_method(:http_headers) { { retry_after: header_retry_after } }
-    error
+    response = Struct.new(:headers).new({ 'retry-after' => header_retry_after })
+    SpotifyApi::RateLimitError.new('429 Too Many Requests', status: 429, retry_after:, response:)
   end
 
   def with_spotify_rate_limit_cache(cache)

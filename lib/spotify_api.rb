@@ -26,11 +26,5 @@ module SpotifyApi
     def configure
       yield(config)
     end
-
-    # NOTE: rspotify からの移行用フィーチャーフラグ。移行完了後（Issue #563）に
-    #       このフラグと旧経路の分岐をまとめて削除する。
-    def native_client_enabled?
-      config.native_client_enabled
-    end
   end
 end

@@ -10,11 +10,9 @@ module SpotifyClient
       spotify_track = create_spotify_track
       audio_features_api, requested_ids = fake_audio_features_api(audio_features_body(spotify_track.spotify_id))
 
-      with_native_backend do
-        stub_const(SpotifyApi, :AudioFeatures, audio_features_api) do
-          assert_difference -> { SpotifyTrackAudioFeature.count }, 1 do
-            SpotifyClient::AudioFeatures.fetch_by_spotify_tracks([spotify_track])
-          end
+      stub_const(SpotifyApi, :AudioFeatures, audio_features_api) do
+        assert_difference -> { SpotifyTrackAudioFeature.count }, 1 do
+          SpotifyClient::AudioFeatures.fetch_by_spotify_tracks([spotify_track])
         end
       end
 
@@ -43,11 +41,9 @@ module SpotifyClient
       spotify_track = create_spotify_track
       audio_features_api, _requested_ids = fake_audio_features_api(audio_features_body('unknown-track'))
 
-      with_native_backend do
-        stub_const(SpotifyApi, :AudioFeatures, audio_features_api) do
-          assert_no_difference -> { SpotifyTrackAudioFeature.count } do
-            SpotifyClient::AudioFeatures.fetch_by_spotify_tracks([spotify_track])
-          end
+      stub_const(SpotifyApi, :AudioFeatures, audio_features_api) do
+        assert_no_difference -> { SpotifyTrackAudioFeature.count } do
+          SpotifyClient::AudioFeatures.fetch_by_spotify_tracks([spotify_track])
         end
       end
     end
@@ -57,11 +53,9 @@ module SpotifyClient
       spotify_track = create_spotify_track
       audio_features_api, _requested_ids = fake_audio_features_api(nil, audio_features_body(spotify_track.spotify_id))
 
-      with_native_backend do
-        stub_const(SpotifyApi, :AudioFeatures, audio_features_api) do
-          assert_difference -> { SpotifyTrackAudioFeature.count }, 1 do
-            SpotifyClient::AudioFeatures.fetch_by_spotify_tracks([spotify_track])
-          end
+      stub_const(SpotifyApi, :AudioFeatures, audio_features_api) do
+        assert_difference -> { SpotifyTrackAudioFeature.count }, 1 do
+          SpotifyClient::AudioFeatures.fetch_by_spotify_tracks([spotify_track])
         end
       end
 
@@ -129,14 +123,6 @@ module SpotifyClient
       end
 
       [klass, requested_ids]
-    end
-
-    def with_native_backend
-      original = SpotifyApi.config.native_client_enabled
-      SpotifyApi.config.native_client_enabled = true
-      yield
-    ensure
-      SpotifyApi.config.native_client_enabled = original
     end
   end
 end

@@ -117,29 +117,6 @@ module SpotifyApi
       assert_equal 1, calls.value
     end
 
-    test 'native_client_enabled is true only for truthy environment values' do
-      %w[1 true TRUE yes On].each do |value|
-        with_native_client_env(value) do
-          assert Config.new.native_client_enabled, "#{value.inspect} は true として扱われるべきです"
-        end
-      end
-    end
-
-    test 'native_client_enabled defaults to true when the env var is unset' do
-      with_native_client_env(nil) do
-        assert_nil ENV.fetch('SPOTIFY_NATIVE_CLIENT', nil), 'nil の代入で ENV からキーが削除されていること'
-        assert Config.new.native_client_enabled, '未設定のときはネイティブ経路が既定になるべきです'
-      end
-    end
-
-    test 'native_client_enabled is false for explicit falsy environment values, including an empty string' do
-      ['false', '', '0', 'no', 'off'].each do |value|
-        with_native_client_env(value) do
-          assert_not Config.new.native_client_enabled, "#{value.inspect} は false として扱われるべきです"
-        end
-      end
-    end
-
     private
 
     # トークンエンドポイントをスタブし、呼び出し回数を数えるカウンタを返す。
@@ -157,14 +134,6 @@ module SpotifyApi
       end
 
       calls
-    end
-
-    def with_native_client_env(value)
-      original = ENV.fetch('SPOTIFY_NATIVE_CLIENT', nil)
-      ENV['SPOTIFY_NATIVE_CLIENT'] = value
-      yield
-    ensure
-      ENV['SPOTIFY_NATIVE_CLIENT'] = original
     end
   end
 end

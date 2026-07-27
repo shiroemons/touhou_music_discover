@@ -75,7 +75,7 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
-    addressable (2.8.10)
+    addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     amatch (0.7.0)
       mize
@@ -108,7 +108,6 @@ GEM
     debug (1.11.1)
       irb (~> 1.10)
       reline (>= 0.3.8)
-    domain_name (0.6.20240107)
     dotenv (3.2.0)
     dotenv-rails (3.2.0)
       dotenv (= 3.2.0)
@@ -137,8 +136,6 @@ GEM
     hashdiff (1.2.1)
     hashie (5.1.0)
       logger
-    http-cookie (1.1.6)
-      domain_name (~> 0.5)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     io-console (0.8.2)
@@ -169,10 +166,6 @@ GEM
       net-pop
       net-smtp
     marcel (1.2.1)
-    mime-types (3.7.0)
-      logger
-      mime-types-data (~> 3.2025, >= 3.2025.0507)
-    mime-types-data (3.2026.0414)
     mini_mime (1.1.5)
     minitest (6.0.6)
       drb (~> 2.0)
@@ -192,7 +185,6 @@ GEM
       timeout
     net-smtp (0.5.1)
       net-protocol
-    netrc (0.11.0)
     nio4r (2.7.5)
     nokogiri (1.19.4-arm64-darwin)
       racc (~> 1.4)
@@ -311,15 +303,7 @@ GEM
     regexp_parser (2.12.0)
     reline (0.6.3)
       io-console (~> 0.5)
-    rest-client (2.0.2)
-      http-cookie (>= 1.0.2, < 2.0)
-      mime-types (>= 1.16, < 4.0)
-      netrc (~> 0.8)
     rexml (3.4.4)
-    rspotify (2.12.4)
-      addressable (~> 2.8.0)
-      omniauth-oauth2 (>= 1.6)
-      rest-client (~> 2.0.2)
     rubocop (1.88.2)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -426,7 +410,6 @@ DEPENDENCIES
   puma (~> 8.0)
   rails (~> 8.1.0)
   redis
-  rspotify
   rubocop
   rubocop-minitest
   rubocop-performance

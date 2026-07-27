@@ -69,7 +69,9 @@ make docker-migrate   # Dockerでマイグレーション
 ## API Integration Notes
 
 ### Spotify
-- Uses OAuth authentication via `rspotify` gem
+- Custom 3-layer client in `lib/spotify_api/`: auth (`Config` for the Client Credentials app token, `UserSession` for Redis-backed user tokens with auto-refresh) → HTTP (`Client`, Faraday-based, maps status codes to error classes) → resources (`Album` / `Track` / `Playlist` / `AudioFeatures`, with `Response` / `Page` wrapping JSON and paging)
+- OAuth login (linking a user's Spotify account) is handled by `lib/omniauth/strategies/spotify.rb` (an `OmniAuth::Strategies::OAuth2` subclass)
+- `app/models/spotify_client/` (Album / Track / AudioFeatures + their `native_backend.rb`) is the app layer that calls `SpotifyApi` to bulk-fetch and persist, and is used from `Admin::Actions::*`
 - Fetches audio features (tempo, energy, etc.)
 - Primary source: "東方同人音楽流通" label
 

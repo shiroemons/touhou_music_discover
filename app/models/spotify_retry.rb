@@ -27,20 +27,12 @@ class SpotifyRetry
   DEFAULT_SLEEPER = ->(seconds) { Kernel.sleep(seconds) }
 
   # 429 (レート制限)。Retry-After ヘッダーに従って待機する。
-  # rspotify (rest-client) と SpotifyApi (Faraday) の両経路が並存する間は両方を受ける。
   RATE_LIMIT_ERRORS = [
-    RestClient::TooManyRequests, # #563 で削除
     SpotifyApi::RateLimitError
   ].freeze
 
   # 一時的なサーバーエラー・タイムアウト系。指数バックオフ + ジッターで再試行する
   TRANSIENT_ERRORS = [
-    RestClient::InternalServerError,     # #563 で削除
-    RestClient::BadGateway,              # #563 で削除
-    RestClient::ServiceUnavailable,      # #563 で削除
-    RestClient::GatewayTimeout,          # #563 で削除
-    RestClient::Exceptions::OpenTimeout, # #563 で削除
-    RestClient::Exceptions::ReadTimeout, # #563 で削除
     SpotifyApi::ServerError,
     Faraday::TimeoutError,
     Faraday::ConnectionFailed,
