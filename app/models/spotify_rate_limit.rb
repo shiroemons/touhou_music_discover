@@ -64,10 +64,7 @@ class SpotifyRateLimit
       from_api_error = api_error_retry_after(error)
       return from_api_error if from_api_error
 
-      # rest-client 形式（http_headers）の分岐は #563 まで残す
-      headers = error.http_headers if error.respond_to?(:http_headers)
-      retry_after = headers&.[](:retry_after) || headers&.[]('retry-after')
-      retry_after ||= error.response&.headers&.dig(:retry_after)
+      retry_after = error.response&.headers&.dig(:retry_after)
       retry_after ||= error.response&.headers&.dig('retry-after')
       retry_after&.to_i
     end

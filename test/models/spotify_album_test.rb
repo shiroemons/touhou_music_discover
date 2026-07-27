@@ -3,7 +3,7 @@
 require 'test_helper'
 
 class SpotifyAlbumTest < ActiveSupport::TestCase
-  # save_album に渡す SpotifyApi::Response / RSpotify::Album のダブル。
+  # save_album に渡す SpotifyApi::Response のダブル。
   # available_markets が nil のときは as_json からキーごと落とし、Spotify がフィールド自体を
   # 返さなくなった縮退レスポンスを再現する。
   SpotifyApiAlbumDouble = Struct.new(

@@ -46,6 +46,5 @@ gem 'ostruct'
 gem 'pagy'
 gem 'parallel'
 gem 'redis'
-gem 'rspotify'
 
 gem 'solid_queue', '~> 1.5'

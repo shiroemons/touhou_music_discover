@@ -4,89 +4,25 @@ require 'test_helper'
 
 module SpotifyClient
   class AlbumTest < ActiveSupport::TestCase
-    SpotifyApiAlbum = Struct.new(
-      :id,
-      :album_type,
-      :name,
-      :label,
-      :external_ids,
-      :external_urls,
-      :total_tracks,
-      :release_date,
-      :available_markets,
-      keyword_init: true
-    ) do
-      def tracks
-        []
-      end
-
-      def as_json(*)
-        {
-          'id' => id,
-          'album_type' => album_type,
-          'name' => name,
-          'label' => label,
-          'external_ids' => external_ids,
-          'external_urls' => external_urls,
-          'total_tracks' => total_tracks,
-          'release_date' => release_date,
-          'artists' => [],
-          'available_markets' => available_markets
-        }
-      end
-    end
-
-    test 'creates Spotify album by Apple Music JAN' do
-      jan_code = "spotify-jan-search-#{SecureRandom.hex(4)}"
-      album = create_album_with_apple_music(jan_code:)
-      api_album = spotify_api_album(jan_code:)
-      queries = []
-
-      spotify_album_client = Class.new do
-        define_singleton_method(:search) do |query, **_options|
-          queries << query
-          [api_album]
-        end
-      end
-
-      target_scope = ::Album.where(id: album.id).includes(:apple_music_album)
-      with_rspotify_backend do
-        with_missing_spotify_album_scope(target_scope) do
-          stub_const(RSpotify, :Album, spotify_album_client) do
-            assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
-              @result = SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan(sleep_interval: 0)
-            end
-          end
-        end
-      end
-
-      spotify_album = SpotifyAlbum.unscoped.find_by!(album:)
-
-      assert_equal "spotify-#{jan_code}", spotify_album.spotify_id
-      assert_equal 'Spotify JAN Album', spotify_album.name
-      assert_equal "upc:#{jan_code}", queries.last
-      assert_equal 1, @result[:created]
-      assert_equal 0, @result[:errors]
-    end
-
     test 'searches albums with Spotify search limit and paginates by returned size' do
       calls = []
       processed_ids = []
-      first_page = Array.new(SpotifyClient::Album::SEARCH_LIMIT) { |index| spotify_api_album(jan_code: "search-page-1-#{index}") }
-      second_page = [spotify_api_album(jan_code: 'search-page-2-0')]
+      first_page = page_body(
+        Array.new(SpotifyClient::Album::SEARCH_LIMIT) { |index| simplified_album_body("search-page-1-#{index}") },
+        next_url: 'https://api.spotify.com/v1/search/next'
+      )
+      second_page = page_body([simplified_album_body('search-page-2-0')])
 
-      spotify_album_client = Class.new do
+      album_api = Class.new do
         define_singleton_method(:search) do |_query, **options|
           calls << options
-          options.fetch(:offset).zero? ? first_page : second_page
+          SpotifyApi::Page.build(options.fetch(:offset).zero? ? first_page : second_page)
         end
       end
 
-      with_rspotify_backend do
-        with_spotify_album_processor(->(album) { processed_ids << album.id }) do
-          stub_const(RSpotify, :Album, spotify_album_client) do
-            SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
-          end
+      with_spotify_album_processor(->(album) { processed_ids << album.id }) do
+        stub_const(SpotifyApi, :Album, album_api) do
+          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
         end
       end
 
@@ -98,7 +34,10 @@ module SpotifyClient
         [0, SpotifyClient::Album::SEARCH_LIMIT],
         calls.map { |call| call.fetch(:offset) }
       )
-      assert_equal first_page.concat(second_page).map(&:id), processed_ids
+      assert_equal(
+        (first_page['items'] + second_page['items']).map { |item| item['id'] },
+        processed_ids
+      )
     end
 
     test 'reports progress while fetching Touhou albums by year' do
@@ -153,12 +92,10 @@ module SpotifyClient
       )
       track_api, track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
-              SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
-            end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
+            SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
           end
         end
       end
@@ -180,11 +117,9 @@ module SpotifyClient
       )
       track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            SpotifyClient::Album.process_album(SpotifyApi::Response.build(simplified_album_body(spotify_album.spotify_id)))
-          end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          SpotifyClient::Album.process_album(SpotifyApi::Response.build(simplified_album_body(spotify_album.spotify_id)))
         end
       end
 
@@ -203,12 +138,10 @@ module SpotifyClient
       )
       track_api, track_calls = fake_track_api({ 'track-2' => full_track_body(2) })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            assert_difference -> { SpotifyTrack.unscoped.count }, 1 do
-              SpotifyClient::Album.process_album(SpotifyApi::Response.build(simplified_album_body(spotify_album.spotify_id)))
-            end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          assert_difference -> { SpotifyTrack.unscoped.count }, 1 do
+            SpotifyClient::Album.process_album(SpotifyApi::Response.build(simplified_album_body(spotify_album.spotify_id)))
           end
         end
       end
@@ -239,11 +172,9 @@ module SpotifyClient
                                              .transform_keys { |number| "track-#{number}" }
       )
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            SpotifyClient::Album.fetch_and_process_album(spotify_id)
-          end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          SpotifyClient::Album.fetch_and_process_album(spotify_id)
         end
       end
 
@@ -270,11 +201,9 @@ module SpotifyClient
       )
       track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            SpotifyClient::Album.fetch_and_process_album(spotify_id)
-          end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          SpotifyClient::Album.fetch_and_process_album(spotify_id)
         end
       end
 
@@ -295,11 +224,9 @@ module SpotifyClient
       )
       track_api, _track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            SpotifyClient::Album.fetch_and_process_album(spotify_id)
-          end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          SpotifyClient::Album.fetch_and_process_album(spotify_id)
         end
       end
 
@@ -323,11 +250,9 @@ module SpotifyClient
       )
       track_api, track_calls = fake_track_api({ 'track-1' => full_track_body(1) })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            SpotifyClient::Album.fetch_and_process_album(spotify_id)
-          end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          SpotifyClient::Album.fetch_and_process_album(spotify_id)
         end
       end
 
@@ -363,11 +288,9 @@ module SpotifyClient
                                         .transform_keys { |number| "track-#{number}" }
       )
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          stub_const(SpotifyApi, :Track, track_api) do
-            SpotifyClient::Album.fetch_and_process_album(spotify_id)
-          end
+      stub_const(SpotifyApi, :Album, album_api) do
+        stub_const(SpotifyApi, :Track, track_api) do
+          SpotifyClient::Album.fetch_and_process_album(spotify_id)
         end
       end
 
@@ -390,10 +313,8 @@ module SpotifyClient
         end
       end
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
-        end
+      stub_const(SpotifyApi, :Album, album_api) do
+        SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
       end
 
       assert_equal 1, calls.size
@@ -409,10 +330,8 @@ module SpotifyClient
         search_page: page_body([simplified_album_body(spotify_id)])
       )
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
-        end
+      stub_const(SpotifyApi, :Album, album_api) do
+        SpotifyClient::Album.search_and_save_albums('label:test year:2026', 2026)
       end
 
       assert_equal [{}], called_options(album_calls[:find])
@@ -434,12 +353,10 @@ module SpotifyClient
       )
 
       target_scope = ::Album.where(id: album.id).includes(:apple_music_album)
-      with_native_backend do
-        with_missing_spotify_album_scope(target_scope) do
-          stub_const(SpotifyApi, :Album, album_api) do
-            assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
-              @result = SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan(sleep_interval: 0)
-            end
+      with_missing_spotify_album_scope(target_scope) do
+        stub_const(SpotifyApi, :Album, album_api) do
+          assert_difference -> { SpotifyAlbum.unscoped.count }, 1 do
+            @result = SpotifyClient::Album.fetch_missing_albums_by_apple_music_jan(sleep_interval: 0)
           end
         end
       end
@@ -459,44 +376,12 @@ module SpotifyClient
       degraded_body = full_album_body(spotify_id:, jan_code: spotify_album.album.jan_code, tracks: []).except('available_markets')
       album_api, _album_calls = fake_album_api(find_results: { spotify_id => degraded_body })
 
-      with_native_backend do
-        stub_const(SpotifyApi, :Album, album_api) do
-          SpotifyClient::Album.update_albums([spotify_album])
-        end
+      stub_const(SpotifyApi, :Album, album_api) do
+        SpotifyClient::Album.update_albums([spotify_album])
       end
 
       assert_equal %w[JP US], spotify_album.reload.payload['available_markets']
       assert_equal 'Full Album', spotify_album.payload['name']
-      assert_predicate spotify_album, :jp_available?
-    end
-
-    # 旧経路でも同じガードが効くことを保証する（#563 で rspotify を削除するまでの間の回帰防止）。
-    test 'rspotify backend keeps existing available_markets when the fetched album has none' do
-      spotify_album = create_spotify_album(total_tracks: 1, payload: { 'available_markets' => %w[JP US] })
-      api_album = SpotifyApiAlbum.new(
-        id: spotify_album.spotify_id,
-        album_type: 'album',
-        name: 'Updated Spotify Album',
-        label: ::Album::TOUHOU_MUSIC_LABEL,
-        external_ids: { 'upc' => spotify_album.album.jan_code },
-        external_urls: { 'spotify' => 'https://open.spotify.com/album/test' },
-        total_tracks: 1,
-        release_date: '2026-01-01',
-        available_markets: []
-      )
-
-      spotify_album_client = Class.new do
-        define_singleton_method(:find) { |_ids| [api_album] }
-      end
-
-      with_rspotify_backend do
-        stub_const(RSpotify, :Album, spotify_album_client) do
-          SpotifyClient::Album.update_albums([spotify_album])
-        end
-      end
-
-      assert_equal %w[JP US], spotify_album.reload.payload['available_markets']
-      assert_equal 'Updated Spotify Album', spotify_album.payload['name']
       assert_predicate spotify_album, :jp_available?
     end
 
@@ -545,20 +430,6 @@ module SpotifyClient
         track_number: number,
         duration_ms: 1000,
         payload: {}
-      )
-    end
-
-    def spotify_api_album(jan_code:, available_markets: ['JP'])
-      SpotifyApiAlbum.new(
-        id: "spotify-#{jan_code}",
-        album_type: 'album',
-        name: 'Spotify JAN Album',
-        label: ::Album::TOUHOU_MUSIC_LABEL,
-        external_ids: { 'upc' => jan_code },
-        external_urls: { 'spotify' => 'https://open.spotify.com/album/test' },
-        total_tracks: 0,
-        release_date: '2026-01-01',
-        available_markets:
       )
     end
 
@@ -666,22 +537,6 @@ module SpotifyClient
       [klass, calls]
     end
 
-    def with_native_backend(&)
-      with_native_client_enabled(true, &)
-    end
-
-    def with_rspotify_backend(&)
-      with_native_client_enabled(false, &)
-    end
-
-    def with_native_client_enabled(enabled)
-      original = SpotifyApi.config.native_client_enabled
-      SpotifyApi.config.native_client_enabled = enabled
-      yield
-    ensure
-      SpotifyApi.config.native_client_enabled = original
-    end
-
     def with_missing_spotify_album_scope(scope)
       singleton_class = SpotifyClient::Album.singleton_class
       original_method = SpotifyClient::Album.method(:missing_spotify_albums_with_apple_music)
@@ -697,7 +552,7 @@ module SpotifyClient
     # search_and_save_albums はバックエンド内の process_album を呼ぶため、
     # 差し替え対象もバックエンド側になる。
     def with_spotify_album_processor(processor)
-      backend = SpotifyClient::Album::RspotifyBackend
+      backend = SpotifyClient::Album::NativeBackend
       singleton_class = backend.singleton_class
       original_method = backend.method(:process_album)
 
