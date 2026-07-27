@@ -7,8 +7,8 @@ module OmniAuth
     # Spotify の Authorization Code フロー用 OmniAuth ストラテジ。
     #
     # 以前は rspotify gem 同梱の 'rspotify/oauth' を使っていたが、rspotify は
-    # Issue #563 で削除予定であり、また RSpotify::User がトークンをプロセス
-    # グローバルなクラス変数に持つ設計を引き継ぎたくないため自前で実装する。
+    # Issue #563 で削除済みであり、また RSpotify::User がトークンをプロセス
+    # グローバルなクラス変数に持つ設計を引き継ぎたくなかったため自前で実装した。
     #
     # info のキー構造は app/models/user.rb が読む形（display_name / id / email /
     # images の配列）を保つこと。ここを変えると既存ユーザーの取り込みが壊れる。

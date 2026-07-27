@@ -63,9 +63,9 @@ module SpotifyApi
 
     # 未定義のキーは nil を返すだけ。
     #
-    # RSpotify::Base#method_missing は未取得の属性にアクセスされると裏で API を
-    # 叩き直す。この暗黙のリクエストが Development Mode のクォータ枯渇の主因のため、
-    # 同様の仕組みは絶対に実装しない。
+    # 削除済みの旧 rspotify 経路（RSpotify::Base#method_missing）は、未取得の属性に
+    # アクセスされると裏で API を叩き直していた。この暗黙のリクエストが Development Mode の
+    # クォータ枯渇の主因だったため、同様の仕組みは絶対に実装しない。
     def method_missing(name, *args)
       return super unless args.empty?
 

@@ -31,8 +31,8 @@ module SpotifyApi
     # Client Credentials フローで取得したアクセストークン。有効期限まで再利用する。
     #
     # トークン取得は起動時ではなく最初の API 呼び出し時に行う（遅延取得）。
-    # config/initializers/rspotify.rb は after_initialize で先に認証しているが、
-    # その方式でも Spotify 側の障害時には起動が重くなるため、SpotifyApi では
+    # 削除済みの旧 config/initializers/rspotify.rb は after_initialize で先に認証していたが、
+    # その方式では Spotify 側の障害時に起動が重くなるため、SpotifyApi では
     # 初期化時にネットワークI/Oを一切走らせない方針をとる。
     def access_token
       @token_mutex.synchronize do

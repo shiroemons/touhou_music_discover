@@ -29,10 +29,10 @@ module SpotifyApi
 
       # Redis から auth_hash を読み込んで UserSession を組み立てる。該当キーが無ければ nil を返す。
       #
-      # rspotify の RSpotify::User は該当ユーザーの認証情報が見つからないと
-      # 「最初に登録されたユーザーのトークン」にフォールバックする（rspotify/user.rb:66）。
+      # 削除済みの旧 rspotify 経路（RSpotify::User）は、該当ユーザーの認証情報が
+      # 見つからないと「最初に登録されたユーザーのトークン」にフォールバックする仕様だった。
       # マルチユーザー環境では別人のアカウントにプレイリストを書き込む事故につながるため、
-      # SpotifyApi ではこの挙動を絶対に引き継がない。見つからなければ黙って nil を返すだけにする。
+      # SpotifyApi ではこの挙動を引き継がず、見つからなければ黙って nil を返すだけにする。
       def find(user_id, config: SpotifyApi.config)
         json = RedisPool.with { |redis| redis.get(redis_key(user_id)) }
         return nil if json.blank?
@@ -72,9 +72,9 @@ module SpotifyApi
 
     # 有効なアクセストークンを返す。期限切れ間近なら事前にリフレッシュしてから返す。
     #
-    # rspotify は 401 が返ってきてからエラーメッセージの文字列マッチでリフレッシュしており
-    # （RSpotify::Base#method_missing 経由）、そのぶん毎回1往復を無駄にしている。
-    # ここでは期限を先読みしてリフレッシュすることで、その無駄な往復を無くす。
+    # 削除済みの旧 rspotify 経路は、401 が返ってきてからエラーメッセージの文字列マッチで
+    # リフレッシュしており（RSpotify::Base#method_missing 経由）、そのぶん毎回1往復を
+    # 無駄にしていた。ここでは期限を先読みしてリフレッシュすることで、その往復を無くしている。
     def access_token
       @mutex.synchronize do
         perform_refresh! if expired?
