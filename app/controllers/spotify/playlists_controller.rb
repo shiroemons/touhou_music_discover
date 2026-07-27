@@ -455,8 +455,9 @@ module Spotify
 
       # index (fetch_playlists_from_spotify) と同じ並びにしてから position を振る。
       # index は matched を reverse した順に position 0,1,2... を振り、ビューは
-      # order(position: :desc) で描画する。ここで API 順のまま振ると、ボタンを
-      # 押した瞬間に一覧の並びが上下反転してしまう。
+      # order(position: :asc) で描画する（position 0 が最も古く作成されたプレイリスト
+      # = 原曲順の先頭になる）。ここで API 順のまま振ると、ボタンを押した瞬間に
+      # 一覧の並びが上下反転してしまう。
       #
       # index と同じ理由で owner.id によるフィルタも必須。これが無いと、他人が所有する
       # 同名プレイリストに GET /playlists/{id} を発行してしまう（403 の原因にもなる）。

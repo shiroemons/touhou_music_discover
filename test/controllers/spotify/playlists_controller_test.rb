@@ -283,7 +283,7 @@ module Spotify
     end
 
     # position の付け方は index (fetch_playlists_from_spotify + save_playlists_to_db) と
-    # 完全に一致していなければならない。ビューが order(position: :desc) で描画するため、
+    # 完全に一致していなければならない。ビューが order(position: :asc) で描画するため、
     # 片方だけ API 順のまま position を振ると「曲数を更新」を押した瞬間に一覧の並びが
     # 上下反転してしまう。同じ入力に対して両経路が同じ position を保存することを固定する。
     test 'refresh_counts assigns the same positions as index so the display order does not flip' do
