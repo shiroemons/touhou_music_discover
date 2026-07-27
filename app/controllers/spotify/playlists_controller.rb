@@ -21,7 +21,10 @@ module Spotify
 
       db_playlists = SpotifyPlaylist.for_user(spotify_user_id)
       if db_playlists.exists?
-        @playlists = db_playlists.order(position: :desc).map do |playlist|
+        # position は fetch_playlists_from_spotify が API 順を反転してから振っているため、
+        # position 0 が最も古く作成されたプレイリスト = 原曲順の先頭（赤より紅い夢）になる。
+        # 昇順で並べると画面が原曲順になる。
+        @playlists = db_playlists.order(position: :asc).map do |playlist|
           {
             id: playlist.spotify_id,
             name: playlist.name,

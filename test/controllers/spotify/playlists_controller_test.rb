@@ -178,6 +178,23 @@ module Spotify
       assert_not_requested :get, %r{/me/playlists}
     end
 
+    # position は fetch_playlists_from_spotify が API 順を反転してから振っているため、
+    # position 0 が原曲順の先頭になる。画面がその原曲順で表示されることを固定する
+    # （このテストは DB キャッシュがヒットして早期リターンする経路なので、
+    # /me/playlists への Spotify リクエストは発生しない）。
+    test 'index renders db-cached playlists in ascending position order' do
+      log_in
+      SpotifyPlaylist.create!(spotify_id: 'PL_POS0', spotify_user_id: 'test-user',
+                              name: '赤より紅い夢', position: 0)
+      SpotifyPlaylist.create!(spotify_id: 'PL_POS1', spotify_user_id: 'test-user',
+                              name: '生と死のある世界へ', position: 1)
+
+      get spotify_playlists_path
+
+      assert_response :success
+      assert_operator @response.body.index('赤より紅い夢'), :<, @response.body.index('生と死のある世界へ')
+    end
+
     test 'save_playlists_to_db updates an existing row instead of leaving it stale' do
       log_in
       SpotifyPlaylist.create!(spotify_id: 'PL_MATCHED', spotify_user_id: 'other-user',
