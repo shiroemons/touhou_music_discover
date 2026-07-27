@@ -84,5 +84,33 @@ module SpotifyApi
       assert_equal ALBUM_BODY, album.to_h
       assert_respond_to album, :name
     end
+
+    test 'dig walks nested hashes with string or symbol keys' do
+      response = Response.build({ 'tracks' => { 'total' => 12 }, 'name' => 'Playlist' })
+
+      assert_equal 12, response.dig('tracks', 'total')
+      assert_equal 12, response.dig(:tracks, :total)
+      # rubocop:disable Style/SingleArgumentDig -- dig の単一キー呼び出し自体を検証するテストのため [] には置き換えない
+      assert_equal 'Playlist', response.dig('name')
+      # rubocop:enable Style/SingleArgumentDig
+    end
+
+    test 'dig returns nil for missing keys instead of raising' do
+      response = Response.build({ 'tracks' => { 'total' => 12 } })
+
+      assert_nil response.dig('followers', 'total')
+      assert_nil response.dig('tracks', 'missing')
+    end
+
+    # 整数キーを to_s すると Array#dig に '0' を渡すことになり、常に nil が返ってしまう。
+    # 配列の要素は添字（整数）でしか辿れないことを固定する。
+    test 'dig walks into an array element by integer index' do
+      response = Response.build({ 'images' => [{ 'url' => 'https://example.test/1.png' },
+                                               { 'url' => 'https://example.test/2.png' }] })
+
+      assert_equal 'https://example.test/1.png', response.dig('images', 0, 'url')
+      assert_equal 'https://example.test/2.png', response.dig('images', 1, 'url')
+      assert_nil response.dig('images', 5, 'url')
+    end
   end
 end

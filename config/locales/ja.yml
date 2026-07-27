@@ -12,4 +12,11 @@ ja:
   spotify:
     playlists:
       alerts:
+        original_song_not_found: "原曲が見つかりません: %{name}"
+        playlist_not_found: "プレイリストが見つかりません: %{name}"
         tracks_not_found: "Spotifyトラックが見つかりません"
+        # 書き込みの途中で失敗した場合、先頭100件だけが反映された状態が残りうるため、
+        # 「再同期すれば直る」ことを必ず伝える（PUT は冪等なので再実行で完全に復旧する）。
+        quota_exceeded: "Spotify API の利用枠を使い切りました。一部だけ反映された可能性があるため、復旧後にもう一度同期してください。"
+        rate_limited: "Spotify API のレート制限に達しました。一部だけ反映された可能性があるため、しばらく経ってからもう一度同期してください。"
+        sync_failed: "同期に失敗しました。一部だけ反映された可能性があるため、もう一度お試しください。"

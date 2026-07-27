@@ -16,4 +16,24 @@ class OriginalSong < ApplicationRecord
   delegate :title, :short_title, :original_type, :series_order, to: :original, allow_nil: true, prefix: true
 
   scope :non_duplicated, -> { where(is_duplicate: false) }
+
+  class << self
+    # このアプリが読み書きするプレイリストは「名前が原曲名に一致するもの」だけ。
+    # 判定基準をここに集約し、読み取り経路と書き込み経路で必ず同じ基準を使う。
+    # 重複曲 (is_duplicate) は原曲別プレイリストの対象にしないため除外する。
+    def playlist_titles
+      non_duplicated.distinct.pluck(:title)
+    end
+
+    def playlist_code_for(title)
+      return nil if title.blank?
+
+      non_duplicated.find_by(title:)&.code
+    end
+
+    # プレイリストを一括処理するときに 1 件ずつ引かないための title => code マップ。
+    def playlist_code_map
+      non_duplicated.pluck(:title, :code).to_h
+    end
+  end
 end

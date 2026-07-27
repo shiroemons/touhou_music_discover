@@ -41,7 +41,7 @@ Rails.application.routes.draw do
 
   namespace :spotify do
     get 'playlists', to: 'playlists#index'
-    match 'playlists/create', to: 'playlists#create', via: %i[get post]
+    post 'playlists/create', to: 'playlists#create'
     get 'playlists/progress', to: 'playlists#progress'
     get 'playlists/progress_stream', to: 'playlists#progress_stream'
     get 'playlists/original_songs', to: 'playlists#original_songs'
@@ -49,5 +49,14 @@ Rails.application.routes.draw do
     post 'playlists/:id/sync', to: 'playlists#sync_single', as: :playlist_sync
     post 'playlists/refresh_counts', to: 'playlists#refresh_counts'
     get 'playlists/refresh_counts_stream', to: 'playlists#refresh_counts_stream'
+  end
+
+  # 統合テストから session[:user_id] を設定するためのルート。test 環境限定。
+  if Rails.env.test?
+    post '/test_login', to: lambda { |env|
+      req = ActionDispatch::Request.new(env)
+      req.session[:user_id] = req.params[:user_id]
+      [302, { 'location' => '/' }, []]
+    }
   end
 end

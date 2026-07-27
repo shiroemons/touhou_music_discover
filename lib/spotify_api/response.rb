@@ -36,6 +36,17 @@ module SpotifyApi
       data.key?(key.to_s)
     end
 
+    # ネストした値を辿る。Page#items は各要素を Response に包むため、
+    # playlist.dig('tracks', 'total') のような書き方が呼び出し側で必要になる。
+    # キーが無い場合は Hash#dig と同じく nil を返す。
+    #
+    # 整数キーは to_s で文字列化しない。配列の要素は文字列キーではなく添字で
+    # 辿る必要があるため（例: dig('images', 0, 'url')）、ここを to_s してしまうと
+    # Array#dig に '0' を渡すことになり、常に nil が返って要素を取得できなくなる。
+    def dig(*keys)
+      data.dig(*keys.map { |key| key.is_a?(Integer) ? key : key.to_s })
+    end
+
     def to_h
       data
     end

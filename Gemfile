@@ -12,6 +12,7 @@ gem 'rails', '~> 8.1.0'
 
 gem 'cssbundling-rails'
 gem 'jsbundling-rails'
+gem 'omniauth-oauth2', '~> 1.9'
 gem 'omniauth-rails_csrf_protection', '~> 2.0'
 gem 'propshaft'
 gem 'stimulus-rails'
@@ -23,6 +24,8 @@ group :development, :test do
   gem 'debug'
   gem 'dotenv-rails'
   gem 'minitest', '~> 6.0'
+  gem 'vcr', require: false
+  gem 'webmock', require: false
 end
 
 group :development do
@@ -44,6 +47,5 @@ gem 'pagy'
 gem 'parallel'
 gem 'redis'
 gem 'rspotify'
-gem 'spotify-client', require: 'spotify/client'
 
 gem 'solid_queue', '~> 1.5'

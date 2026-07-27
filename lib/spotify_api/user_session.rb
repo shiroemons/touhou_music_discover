@@ -8,13 +8,25 @@ module SpotifyApi
   # 扱う SpotifyApi::Config とは別物。
   #
   # app/controllers/sessions_controller.rb が OmniAuth の auth_hash を
-  # redis.set(user.id, auth_hash.to_json) で保存しているため、find はその値を
-  # 読み込んで UserSession を組み立てる。auth_hash は JSON 経由なのでキーは
-  # 文字列である点に注意（credentials['token'] のようにアクセスする）。
+  # SpotifyApi::UserSession.redis_key(user.id) をキーに保存しているため、
+  # find はその値を読み込んで UserSession を組み立てる。auth_hash は JSON 経由
+  # なのでキーは文字列である点に注意（credentials['token'] のようにアクセスする）。
   class UserSession
     REFRESH_MARGIN = 60.seconds # 期限切れ前に再取得を始めるマージン（SpotifyApi::Config と同じ考え方）
 
+    # auth_hash の Redis キーの接頭辞。以前は user.id の生値をキーにしていたため、
+    # playlist_update:* / refresh_counts:* と同じ名前空間に混在していた。
+    KEY_PREFIX = 'spotify:auth:'
+
+    # refresh_token は revoke されるまで失効しないため、無期限に平文で保持しない。
+    # TTL 経過後はログインし直してもらう。
+    TTL = 90.days
+
     class << self
+      def redis_key(user_id)
+        "#{KEY_PREFIX}#{user_id}"
+      end
+
       # Redis から auth_hash を読み込んで UserSession を組み立てる。該当キーが無ければ nil を返す。
       #
       # rspotify の RSpotify::User は該当ユーザーの認証情報が見つからないと
@@ -22,7 +34,7 @@ module SpotifyApi
       # マルチユーザー環境では別人のアカウントにプレイリストを書き込む事故につながるため、
       # SpotifyApi ではこの挙動を絶対に引き継がない。見つからなければ黙って nil を返すだけにする。
       def find(user_id, config: SpotifyApi.config)
-        json = RedisPool.with { |redis| redis.get(user_id) }
+        json = RedisPool.with { |redis| redis.get(redis_key(user_id)) }
         return nil if json.blank?
 
         new(JSON.parse(json), user_id:, config:)
@@ -118,7 +130,9 @@ module SpotifyApi
     def persist!
       return if user_id.blank?
 
-      RedisPool.with { |redis| redis.set(user_id, auth_hash.to_json) }
+      RedisPool.with do |redis|
+        redis.set(self.class.redis_key(user_id), auth_hash.to_json, ex: TTL.to_i)
+      end
     rescue StandardError => e
       Rails.logger.warn("SpotifyApi::UserSession#persist!: failed to write back to Redis (#{e.class}: #{e.message})")
     end

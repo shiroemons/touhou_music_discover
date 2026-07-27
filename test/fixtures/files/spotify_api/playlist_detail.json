@@ -1,0 +1,17 @@
+{
+  "collaborative": false,
+  "description": "",
+  "external_urls": { "spotify": "https://open.spotify.com/playlist/PLAYLIST_ID" },
+  "followers": { "href": null, "total": 42 },
+  "href": "https://api.spotify.com/v1/playlists/PLAYLIST_ID",
+  "id": "PLAYLIST_ID",
+  "images": [],
+  "name": "PLAYLIST_TITLE_MATCHED",
+  "owner": { "id": "PLAYLIST_OWNER_ID", "type": "user", "display_name": "Test User" },
+  "primary_color": null,
+  "public": true,
+  "snapshot_id": "snap1",
+  "tracks": { "href": "https://api.spotify.com/v1/playlists/PLAYLIST_ID/tracks", "total": 7 },
+  "type": "playlist",
+  "uri": "spotify:playlist:PLAYLIST_ID"
+}

@@ -7,7 +7,6 @@ module Spotify
   # Redis更新はバッチ処理で最適化されている。
   class PlaylistUpdateService
     LIMIT = 50
-    MAX_RETRIES = 3
     # 進捗情報をRedisに書き込む間隔（曲数）
     PROGRESS_UPDATE_INTERVAL = 5
 
@@ -17,13 +16,15 @@ module Spotify
       end
     end
 
-    def initialize(update_type:, spotify_user:, user_id:)
+    def initialize(update_type:, spotify_session:, user_id:)
       @update_type = update_type
-      @spotify_user = spotify_user
+      @spotify_session = spotify_session
       @user_id = user_id
       @redis = RedisPool.get
       @progress_key = "playlist_update:#{user_id}"
-      @playlists_cache = []
+      @playlists_cache = nil
+      @failed_count = 0
+      @last_error_message = nil
       @progress_info = load_progress_info
     end
 
@@ -34,6 +35,10 @@ module Spotify
       total_count = count_total_songs(originals)
       update_progress(total: total_count)
 
+      # プレイリスト一覧は曲ごとに遅延ロードせず、ここで一度だけ取得する。
+      # 遅延ロードだと GET /me/playlists が恒常的に失敗したときに全曲分リトライを繰り返し、
+      # 何も書き込めないまま completed として報告してしまう。ここで失敗させて run 全体を error にする。
+      load_playlists_cache
       process_originals(originals)
 
       mark_completed(total_count)
@@ -46,7 +51,7 @@ module Spotify
 
     private
 
-    attr_reader :update_type, :spotify_user, :user_id, :redis, :progress_key, :progress_info
+    attr_reader :update_type, :spotify_session, :user_id, :redis, :progress_key, :progress_info
 
     def load_progress_info
       data = redis.get(progress_key)
@@ -98,7 +103,12 @@ module Spotify
     end
 
     def process_original_song(original_song, current_count)
-      spotify_tracks = original_song.spotify_tracks
+      # spotify_tracks は has_many :through の CollectionProxy なので、そのまま扱うと
+      # empty? / size / map がそれぞれ別のクエリを別の時点で発行する。空判定と
+      # PlaylistTrackWriter の間には find_or_create_playlist のネットワーク I/O が挟まるため、
+      # その間に SpotifyTrack が消えると writer だけが空集合を見て全消し PUT を撃つ。
+      # ここで一度だけ配列に実体化し、以降の判定と書き込みが同じ集合を見るようにする。
+      spotify_tracks = original_song.spotify_tracks.to_a
       return current_count if spotify_tracks.empty?
 
       update_progress(
@@ -110,141 +120,71 @@ module Spotify
       update_playlist_for_song(original_song, spotify_tracks)
 
       current_count + 1
-    rescue OpenSSL::SSL::SSLError => e
-      handle_ssl_error(e, original_song)
-      current_count + 1
-    rescue RestClient::TooManyRequests => e
-      handle_rate_limit_error(e)
-      current_count + 1
+    rescue SpotifyApi::QuotaExceededError
+      # クォータ超過は待っても回復しないため、握りつぶさず処理全体を止める。
+      raise
     rescue StandardError => e
-      Rails.logger.error("Error processing song #{original_song.title}: #{e.message}")
+      # 1曲の失敗で全体は止めないが、握りつぶすと全曲失敗しても completed と報告されてしまう。
+      # 失敗数と直近のエラーを記録し、mark_completed で進捗情報に残す。
+      Rails.logger.error("Error processing song #{original_song.title}: #{e.class} - #{e.message}")
+      @failed_count += 1
+      @last_error_message = "#{e.class}: #{e.message}"
       current_count + 1
     end
 
+    # spotify_tracks が空のまま PlaylistTrackWriter を呼ぶと PUT {"uris": []} が飛び、
+    # 既存プレイリストを全消しする破壊的操作になる。渡される配列は呼び出し元
+    # (process_original_song) が空判定より前に実体化済みなので、writer が別集合を
+    # 見ることはない。このメソッドを他の経路から呼ばないこと。
     def update_playlist_for_song(original_song, spotify_tracks)
       playlist = find_or_create_playlist(original_song.title)
-      return unless playlist
+      # id が無いレスポンスをそのまま渡すと playlists//tracks へ PUT してしまう。
+      return unless playlist&.[]('id')
 
-      clear_playlist_tracks(playlist)
-      add_tracks_to_playlist(playlist, spotify_tracks)
+      PlaylistTrackWriter.call(session: spotify_session, playlist_id: playlist['id'],
+                               spotify_tracks:,
+                               source: 'Spotify::PlaylistUpdateService')
     end
 
+    # 作成直後に GET /playlists/{id} で取り直していたが、
+    # POST /me/playlists のレスポンスがそのまま使えるため 1 往復を削る。
     def find_or_create_playlist(title)
       playlist = find_playlist(title)
+      return playlist if playlist
 
-      if playlist.nil?
-        new_playlist = spotify_user.create_playlist!(title)
-        playlist = RSpotify::Playlist.find_by_id(new_playlist.id)
+      # POST /me/playlists は非冪等で、成功後にレスポンスがタイムアウトすると同名の空プレイリストが
+      # 増えるため、リトライしない。
+      created = SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#create_playlist', tries: 1) do
+        SpotifyApi::Playlist.create(spotify_session, name: title)
       end
 
-      playlist
+      # OriginalSong.title の一意性は DB 制約で保証されていないため、作成したものも
+      # キャッシュに載せて同一実行内での二重作成を防ぐ。
+      @playlists_cache << created if created
+      created
     end
 
     def find_playlist(playlist_name)
-      load_playlists_cache if @playlists_cache.empty?
-
-      @playlists_cache.find do |p|
-        if p.is_a?(Hash) || p.is_a?(ActiveSupport::HashWithIndifferentAccess)
-          p[:name] == playlist_name
-        else
-          p.name == playlist_name
-        end
-      end
+      @playlists_cache.find { |playlist| playlist['name'] == playlist_name }
     end
 
+    # GET /me/playlists はまれに items に null 要素を含めて返すため、compact してから扱う
+    # （nil['name'] は NoMethodError になる）。
+    #
+    # /me/playlists にはフォロー中や共同編集のプレイリストも含まれるため、
+    # 「一覧に出る」ことは「自分が所有している」ことを意味しない。owner.id で絞らないと、
+    # find_playlist が他人所有の同名プレイリストを「既存プレイリスト」として誤認し、
+    # 自分用のプレイリストを作らないまま書き込みが 403 で永久に失敗し続ける。
+    #
+    # Thread.new の中から呼ばれるバックグラウンド処理なので、SpotifyRetry は既定値
+    # （tries: 5, max_retry_after: 900）のまま使う。待たせる相手が居ないため、
+    # index や sync_single のように早く諦める必要が無い。
     def load_playlists_cache
-      offset = 0
-
-      loop do
-        playlists = spotify_user.playlists(limit: LIMIT, offset: offset)
-        @playlists_cache.push(*playlists)
-        offset += LIMIT
-        break if playlists.count < LIMIT
-
-        sleep 1
-      rescue RestClient::TooManyRequests => e
-        rate_limit_retry_allowed?(e) || break
-      end
-    end
-
-    def rate_limit_retry_allowed?(error)
-      Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{error.http_code}")
-
-      retry_after = error.respond_to?(:http_headers) && error.http_headers[:retry_after].to_i
-      if retry_after && retry_after > 60
-        Rails.logger.error("APIレート制限の待機時間が長すぎます: #{retry_after}秒")
-        return false
+      fetched = SpotifyRetry.with_retry(source: 'Spotify::PlaylistUpdateService#load_playlists') do
+        SpotifyApi::Playlist.all_mine(spotify_session, limit: LIMIT).compact
       end
 
-      @cache_load_retry_count ||= 0
-      @cache_load_retry_count += 1
-
-      if @cache_load_retry_count <= MAX_RETRIES
-        wait_time = 2**@cache_load_retry_count
-        Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします")
-        sleep wait_time
-        true # retry
-      else
-        Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
-        false
-      end
-    end
-
-    def clear_playlist_tracks(playlist)
-      loop do
-        tracks = playlist.tracks
-        break if tracks.empty?
-
-        playlist.remove_tracks!(tracks)
-      end
-    end
-
-    def add_tracks_to_playlist(playlist, spotify_tracks)
-      spotify_track_ids = spotify_tracks.map(&:spotify_id)
-
-      spotify_track_ids.each_slice(50) do |ids|
-        tracks = RSpotify::Track.find(ids)
-        playlist.add_tracks!(tracks) if tracks.any?
-      end
-    end
-
-    def handle_ssl_error(error, original_song)
-      Rails.logger.warn("SSL Error for #{original_song.title}: #{error.message}")
-
-      @ssl_retry_count ||= 0
-      @ssl_retry_count += 1
-
-      if @ssl_retry_count < 3
-        sleep 1
-        raise error # retry via caller
-      end
-
-      @ssl_retry_count = 0
-    end
-
-    def handle_rate_limit_error(error)
-      Rails.logger.error("APIレート制限エラー詳細: ステータスコード=#{error.http_code}")
-      Rails.logger.error("レスポンス本文: #{error.http_body}") if error.respond_to?(:http_body)
-
-      retry_after = error.respond_to?(:http_headers) && error.http_headers[:retry_after].to_i
-      if retry_after && retry_after > 60
-        formatted_time = format_seconds(retry_after)
-        mark_error("APIレート制限に達しました。サーバーが #{formatted_time} の待機を要求しています。")
-        return
-      end
-
-      @rate_limit_retry_count ||= 0
-      @rate_limit_retry_count += 1
-
-      if @rate_limit_retry_count <= MAX_RETRIES
-        wait_time = 2**@rate_limit_retry_count
-        Rails.logger.warn("APIレート制限到達: #{wait_time}秒待機してリトライします (#{@rate_limit_retry_count}/#{MAX_RETRIES})")
-        sleep wait_time
-        raise error # retry via caller
-      else
-        Rails.logger.error('APIレート制限エラー: 最大リトライ回数に達しました')
-        @rate_limit_retry_count = 0
-      end
+      @playlists_cache = fetched.select { |p| p.dig('owner', 'id') == spotify_session.spotify_user_id }
     end
 
     # 進捗情報をメモリ上で更新し、一定間隔でRedisに書き込む
@@ -270,6 +210,9 @@ module Spotify
       @progress_info['status'] = 'completed'
       @progress_info['completed_at'] = Time.current.to_s
       @progress_info['current'] = total_count
+      # 完了扱いでも実際には書けていない曲がありうるため、失敗の実態を進捗情報に残す。
+      @progress_info['failed_count'] = @failed_count
+      @progress_info['last_error_message'] = @last_error_message if @last_error_message
       flush_progress
     end
 
@@ -277,20 +220,6 @@ module Spotify
       @progress_info['status'] = 'error'
       @progress_info['error_message'] = message
       flush_progress
-    end
-
-    def format_seconds(seconds)
-      hours = seconds / 3600
-      minutes = (seconds % 3600) / 60
-      remaining_seconds = seconds % 60
-
-      if hours.positive?
-        "#{hours}時間#{minutes}分#{remaining_seconds}秒（#{seconds}秒）"
-      elsif minutes.positive?
-        "#{minutes}分#{remaining_seconds}秒（#{seconds}秒）"
-      else
-        "#{seconds}秒"
-      end
     end
   end
 end
