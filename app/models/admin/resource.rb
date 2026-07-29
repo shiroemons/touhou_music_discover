@@ -755,7 +755,14 @@ module Admin
               )
             },
             filter_definitions: [track_status_filter.call(:line_music_tracks), touhou_filter.call],
-            includes: [:line_music_tracks, { album: album_preview_includes + [:tracks] }],
+            includes: [
+              :line_music_tracks,
+              {
+                album: album_preview_includes + [
+                  { tracks: %i[apple_music_tracks spotify_tracks ytmusic_tracks] }
+                ]
+              }
+            ],
             action_class_names: %w[FetchLineMusicAlbum UpdateLineMusicAlbum ProcessLineMusicJanToAlbumIds]
           ),
           new(

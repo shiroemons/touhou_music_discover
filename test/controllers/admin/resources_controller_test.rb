@@ -83,6 +83,65 @@ module Admin
         total_tracks: 2,
         payload: {}
       )
+      apple_music_album = AppleMusicAlbum.create!(
+        album:,
+        apple_music_id: 'apple-music-admin-shortage-detail',
+        name: 'Admin Apple Music Shortage Detail',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 3,
+        payload: {}
+      )
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'spotify-admin-shortage-detail',
+        album_type: 'album',
+        name: 'Admin Spotify Shortage Detail',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 3,
+        payload: {}
+      )
+      ytmusic_album = YtmusicAlbum.create!(
+        album:,
+        browse_id: 'ytmusic-admin-shortage-detail',
+        name: 'Admin YouTube Music Shortage Detail',
+        total_tracks: 3,
+        payload: {}
+      )
+      AppleMusicTrack.create!(
+        album:,
+        track: unavailable_track,
+        apple_music_album:,
+        apple_music_id: 'apple-music-admin-unavailable-track',
+        name: '語り ～ 再会、そして――',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        url: '',
+        disc_number: 1,
+        track_number: 2,
+        payload: {}
+      )
+      YtmusicTrack.create!(
+        album:,
+        track: unavailable_track,
+        ytmusic_album:,
+        video_id: 'ytmusic-admin-unavailable-track',
+        playlist_id: 'ytmusic-admin-unavailable-playlist',
+        name: '語り ～ 再会、そして――',
+        url: '',
+        track_number: 2,
+        payload: {}
+      )
+      SpotifyTrack.create!(
+        album:,
+        track: unavailable_track,
+        spotify_album:,
+        spotify_id: 'spotify-admin-unavailable-track',
+        name: 'Narrative - Reunite, and......',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        url: '',
+        disc_number: 1,
+        track_number: 2,
+        payload: {}
+      )
       [first_available_track, second_available_track].each_with_index do |track, index|
         LineMusicTrack.create!(
           album:,
@@ -104,7 +163,19 @@ module Admin
       assert_select '.admin-catalog-availability-counts', text: 'LINE MUSIC 2曲 / カタログ 3曲'
       assert_select '.admin-catalog-availability .badge-warning', text: '1曲未配信'
       assert_select 'th', text: 'LINE MUSIC未配信楽曲'
-      assert_select '.admin-unavailable-track-list a[href=?]', admin_resource_path('tracks', unavailable_track), text: unavailable_track.isrc
+      assert_select '.admin-unavailable-track-panel[aria-labelledby]'
+      assert_select '.admin-unavailable-track-heading', text: 'LINE MUSICで確認できない楽曲'
+      assert_select '.admin-unavailable-track-summary', text: 'カタログ3曲のうち2曲をLINE MUSICで確認しました。下記の楽曲はLINE MUSICのアルバムに含まれていません。'
+      assert_select '.admin-unavailable-track-item' do
+        assert_select '.admin-unavailable-track-source', text: 'Apple Music表記'
+        assert_select '.admin-unavailable-track-title', text: '語り ～ 再会、そして――'
+        assert_select '.admin-unavailable-track-alternate-titles dt', text: 'YouTube Music表記', count: 0
+        assert_select '.admin-unavailable-track-alternate-titles dt', text: 'Spotify表記'
+        assert_select '.admin-unavailable-track-alternate-titles dd', text: 'Narrative - Reunite, and......'
+        assert_select '.admin-unavailable-track-metadata', text: %r{ディスク1 / トラック2}
+        assert_select '.admin-unavailable-track-metadata', text: /ISRC: JPABC260102/
+        assert_select 'a[href=?]', admin_resource_path('tracks', unavailable_track), text: '楽曲詳細を見る'
+      end
     end
 
     test 'searches albums by streaming service album names' do

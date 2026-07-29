@@ -72,42 +72,6 @@ module Admin
 
         tag.span(label, class: "badge #{badge_class}")
       end
-
-      def admin_line_music_unavailable_tracks_value(record)
-        return tag.span(t('admin.shared.blank'), class: 'admin-muted-text') unless record.is_a?(LineMusicAlbum)
-        return tag.span(t('admin.line_music_availability.none'), class: 'admin-muted-text') unless record.catalog_availability_status == :shortage
-
-        unless record.track_sync_complete?
-          return tag.span(
-            t(
-              'admin.line_music_availability.pending',
-              fetched_count: record.line_music_tracks.size,
-              line_count: record.total_tracks.to_i
-            ),
-            class: 'admin-muted-text'
-          )
-        end
-
-        unavailable_tracks = record.unavailable_catalog_tracks
-        return tag.span(t('admin.line_music_availability.ambiguous'), class: 'badge badge-warning') unless unavailable_tracks.size == record.unavailable_track_count
-
-        tag.ul(class: 'admin-unavailable-track-list') do
-          safe_join(unavailable_tracks.map { |track| admin_line_music_unavailable_track_item(track) })
-        end
-      end
-
-      def admin_line_music_unavailable_track_item(track)
-        label = track.name.presence || track.isrc
-        link_label = label == track.isrc ? label : "#{label} (#{track.isrc})"
-
-        tag.li do
-          link_to(
-            link_label,
-            admin_resource_path('tracks', track),
-            class: 'admin-unavailable-track-link'
-          )
-        end
-      end
     end
   end
 end

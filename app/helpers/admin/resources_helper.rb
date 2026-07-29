@@ -6,6 +6,8 @@ module Admin
     include Resources::ExternalLinksHelper
     include Resources::FormHelper
     include Resources::LineMusicAvailabilityHelper
+    include Resources::LineMusicUnavailableTrackItemHelper
+    include Resources::LineMusicUnavailableTracksHelper
     include Resources::NavigationHelper
     include Resources::PaginationHelper
     include Resources::RelationHelper
