@@ -70,6 +70,36 @@ module YtMusic
       assert_yt_music_profile Client.send(:youtube_client)
     end
 
+    test 'raises a request error with the HTTP status for a failed response' do
+      response = Faraday::Response.new(status: 403, response_body: 'Forbidden')
+
+      error = assert_raises(RequestError) { Client.send(:validate_response, response) }
+
+      assert_equal 403, error.status
+      assert_equal 'YouTube Music API request failed (HTTP 403)', error.message
+    end
+
+    test 'raises a request error when a successful response is not a JSON object' do
+      response = Faraday::Response.new(status: 200, response_body: '<html>unexpected</html>')
+
+      error = assert_raises(RequestError) { Client.send(:validate_response, response) }
+
+      assert_equal 200, error.status
+      assert_match(/expected a JSON object/, error.message)
+    end
+
+    test 'converts an exhausted retriable response into a request error' do
+      response = Faraday::Response.new(status: 403, response_body: 'Forbidden')
+      retriable_error = Faraday::RetriableResponse.new(nil, response)
+
+      error = assert_raises(RequestError) do
+        Client.send(:execute_request) { raise retriable_error }
+      end
+
+      assert_equal 403, error.status
+      assert_equal 'YouTube Music API request failed (HTTP 403)', error.message
+    end
+
     private
 
     def assert_yt_music_profile(conn)

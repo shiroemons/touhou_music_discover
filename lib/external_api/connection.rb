@@ -49,7 +49,13 @@ module ExternalApi
       yt_music: {
         open_timeout: 5,
         timeout: 15,
-        retry: { max: 3, interval: 0.5, backoff_factor: 2, max_interval: 10, interval_randomness: 0.3, methods: %i[get post] }
+        # YouTube Musicは短時間に検索が続くと、一時的なアクセス制限を403で返すことがある。
+        # 認証切れ等の恒久的な403は最大3回で打ち切り、呼び出し側へ明示的なエラーとして返す。
+        retry: {
+          max: 3, interval: 0.5, backoff_factor: 2, max_interval: 10,
+          interval_randomness: 0.3, methods: %i[get post],
+          retry_statuses: [403, 429, 500, 502, 503, 504]
+        }
       },
       line_music: {
         open_timeout: 5,

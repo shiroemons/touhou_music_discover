@@ -12,6 +12,8 @@ module YtMusic
 
     def parser(response)
       result = {}
+      raise ArgumentError, "YouTube Music response must be a Hash, got #{response.class}" unless response.is_a?(Hash)
+
       contents = response.dig('contents', 'tabbedSearchResultsRenderer', 'tabs', 0, 'tabRenderer', 'content', 'sectionListRenderer', 'contents')
       return result if contents.blank?
 
@@ -21,8 +23,16 @@ module YtMusic
 
         category = ctx.dig('title', 'runs', 0, 'text')
         case category
-        when 'アルバム'
-          result[:albums] = ctx['contents'].map { SimpleAlbum.new it['musicResponsiveListItemRenderer'] }
+        when 'アルバム', 'Albums'
+          result[:albums] = Array(ctx['contents']).filter_map do |item|
+            renderer = item['musicResponsiveListItemRenderer']
+            SimpleAlbum.new(renderer) if renderer
+          end
+        when '曲', 'Songs'
+          result[:songs] = Array(ctx['contents']).filter_map do |item|
+            renderer = item['musicResponsiveListItemRenderer']
+            SimpleSong.new(renderer) if renderer
+          end
         end
       end
       result

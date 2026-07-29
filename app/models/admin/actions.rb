@@ -760,9 +760,20 @@ module Admin
       self.action_name = 'YouTube Music アルバムを取得'
 
       def handle(_args)
-        YtmusicAlbum.fetch_albums(progress_callback: method(:record_progress))
+        stats = YtmusicAlbum.fetch_albums(progress_callback: method(:record_progress))
+        message = [
+          'YouTube Musicアルバム取得',
+          "- 対象: #{stats[:target_albums]}件",
+          "- 取得: #{stats[:acquired_albums]}件",
+          "- 未検出: #{stats[:not_found_albums]}件",
+          "- エラー: #{stats[:errors]}件"
+        ]
+        if stats[:error_examples].present?
+          message << '- エラー一覧:'
+          message.concat(stats[:error_examples].map { |example| "  - #{example}" })
+        end
 
-        succeed 'Done!'
+        finish_with_summary(message.join("\n"), errors: stats[:errors])
       end
     end
 

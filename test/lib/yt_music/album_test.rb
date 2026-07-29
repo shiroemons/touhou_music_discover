@@ -124,7 +124,31 @@ module YtMusic
       assert_instance_of Album, result
     end
 
+    test 'search_songs delegates to the base search with the songs filter' do
+      calls = []
+      result = Object.new
+      search = lambda do |query, filter|
+        calls << [query, filter]
+        result
+      end
+
+      with_stubbed_base_method(:search, search) do
+        assert_same result, Album.search_songs('sine nomine 東方LostWord')
+      end
+
+      assert_equal [['sine nomine 東方LostWord', 'songs']], calls
+    end
+
     private
+
+    def with_stubbed_base_method(method_name, replacement)
+      singleton_class = YtMusic::Base.singleton_class
+      original_method = singleton_class.instance_method(method_name)
+      singleton_class.define_method(method_name, replacement)
+      yield
+    ensure
+      singleton_class.define_method(method_name, original_method)
+    end
 
     # YtMusic::Base.findの特異メソッドを一時的に差し替え、Album.find内部の`super(id, 'album')`が
     # 任意のレスポンスを返すようにする。Album.findがsuperで呼ぶのはクラスメソッドのため、

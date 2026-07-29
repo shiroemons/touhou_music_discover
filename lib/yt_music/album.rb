@@ -19,6 +19,10 @@ module YtMusic
         super(query, 'albums')
       end
 
+      def search_songs(query)
+        Base.search(query, 'songs')
+      end
+
       # レスポンスからアルバムのヘッダー情報（タイトル・サブタイトル等）を取り出す。
       # 削除/視聴不可のアルバムでは `contents` 自体が存在せず、この戻り値がnilになる。
       def extract_header(response)

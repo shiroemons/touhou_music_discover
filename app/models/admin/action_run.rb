@@ -46,7 +46,7 @@ module Admin
         update!(
           run_id,
           status:,
-          current: completion_current(run_id),
+          current: completion_current(run_id, result),
           message: result.message,
           result_message: result.message,
           result_status: result.status.to_s,
@@ -67,8 +67,10 @@ module Admin
 
       private
 
-      def completion_current(run_id)
+      def completion_current(run_id, result)
         data = find!(run_id)
+        return data['current'].to_i if result.status.to_sym == :error
+
         total = data['total'].to_i
         total.positive? ? total : data['current'].to_i
       end

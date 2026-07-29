@@ -29,6 +29,23 @@ module YtMusic
       assert_equal({}, response.data)
     end
 
+    test 'collects songs with their album browse IDs from a song shelf' do
+      response = Response.new(build_raw_response([build_song_shelf]))
+      song = response.data[:songs].first
+
+      assert_equal 'sine nomine（feat. Annabel、凋叶棕）', song.title
+      assert_equal 'T7SbAuozdZQ', song.video_id
+      assert_equal 'MPREb_Jj8jX1CpWxn', song.album_browse_id
+      assert_equal 'sine nomine', song.album_title
+      assert_equal ['東方LostWord'], song.artists.map(&:name)
+    end
+
+    test 'raises a clear error when the response is not a JSON object' do
+      error = assert_raises(ArgumentError) { Response.new('Forbidden') }
+
+      assert_equal 'YouTube Music response must be a Hash, got String', error.message
+    end
+
     private
 
     def build_raw_response(contents)
@@ -72,6 +89,50 @@ module YtMusic
             }
           }
         ]
+      }
+    end
+
+    def build_song_shelf
+      {
+        'musicShelfRenderer' => {
+          'title' => { 'runs' => [{ 'text' => '曲' }] },
+          'contents' => [
+            {
+              'musicResponsiveListItemRenderer' => {
+                'flexColumns' => [
+                  {
+                    'musicResponsiveListItemFlexColumnRenderer' => {
+                      'text' => { 'runs' => [{ 'text' => 'sine nomine（feat. Annabel、凋叶棕）' }] }
+                    }
+                  },
+                  {
+                    'musicResponsiveListItemFlexColumnRenderer' => {
+                      'text' => {
+                        'runs' => [
+                          artist_run('東方LostWord', 'UCasN8o_lLTIBGRZJKHF0sUQ'),
+                          { 'text' => ' • ' },
+                          artist_run('sine nomine', 'MPREb_Jj8jX1CpWxn'),
+                          { 'text' => ' • ' },
+                          { 'text' => '4:41' }
+                        ]
+                      }
+                    }
+                  }
+                ],
+                'playlistItemData' => { 'videoId' => 'T7SbAuozdZQ' }
+              }
+            }
+          ]
+        }
+      }
+    end
+
+    def artist_run(text, browse_id)
+      {
+        'text' => text,
+        'navigationEndpoint' => {
+          'browseEndpoint' => { 'browseId' => browse_id }
+        }
       }
     end
   end

@@ -155,7 +155,12 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     with_ytmusic_album_processors(->(processed_album) { processed_albums << processed_album }) do
       with_ytmusic_album_url_updater do
         Album.unscoped.where(id: album.id).scoping do
-          YtmusicAlbum.fetch_albums(progress_callback: ->(**attrs) { updates << attrs })
+          result = YtmusicAlbum.fetch_albums(progress_callback: ->(**attrs) { updates << attrs })
+
+          assert_equal 1, result[:target_albums]
+          assert_equal 0, result[:acquired_albums]
+          assert_equal 1, result[:not_found_albums]
+          assert_equal 0, result[:errors]
         end
       end
     end
@@ -167,7 +172,81 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     )
     assert_equal 1, updates.last.fetch(:current)
     assert_equal 1, updates.last.fetch(:total)
-    assert_equal "YouTube Musicアルバム候補を処理しています: #{album.jan_code}", updates.last.fetch(:message)
+    assert_includes updates.last.fetch(:message), "YouTube Musicアルバム候補: 1/1 #{album.jan_code} 未検出"
+  end
+
+  test 'continues fetching and reports progress when one YouTube Music album fails' do
+    first_album = Album.create!(jan_code: "ytmusic-error-a-#{SecureRandom.hex(4)}")
+    second_album = Album.create!(jan_code: "ytmusic-error-b-#{SecureRandom.hex(4)}")
+    updates = []
+    processed_albums = []
+    processor = lambda do |album|
+      processed_albums << album
+      raise YtMusic::RequestError.new(status: 403) if album.id == first_album.id
+    end
+
+    result = nil
+    with_ytmusic_album_processors(processor) do
+      with_ytmusic_album_url_updater do
+        Album.unscoped.where(id: [first_album.id, second_album.id]).scoping do
+          result = YtmusicAlbum.fetch_albums(progress_callback: ->(**attrs) { updates << attrs })
+        end
+      end
+    end
+
+    assert_equal [first_album.id, second_album.id].sort, processed_albums.map(&:id).sort
+    assert_equal 2, result[:target_albums]
+    assert_equal 0, result[:acquired_albums]
+    assert_equal 1, result[:not_found_albums]
+    assert_equal 1, result[:errors]
+    assert_includes result[:error_examples].first, 'HTTP 403'
+    assert_equal 2, updates.last.fetch(:current)
+    assert_equal 2, updates.last.fetch(:total)
+    assert_includes updates.last.fetch(:message), 'エラー1件'
+  end
+
+  test 'finds a single through song search when YouTube Music album search omits it' do
+    source_track = Struct.new(:name, :payload, :artist_name).new(
+      'sine nomine',
+      { 'artists' => [{ 'name' => '東方LostWord' }, { 'name' => 'Annabel' }] },
+      '東方LostWord / Annabel'
+    )
+    source_album = Struct.new(:name, :artist_name, :spotify_tracks).new(
+      'sine nomine',
+      '東方LostWord',
+      [source_track]
+    )
+    song_artist = Struct.new(:name).new('東方LostWord')
+    song = Struct.new(:title, :album_title, :album_browse_id, :artists).new(
+      'sine nomine（feat. Annabel、凋叶棕）',
+      'sine nomine',
+      'MPREb_Jj8jX1CpWxn',
+      [song_artist]
+    )
+    response = Struct.new(:data).new({ songs: [song] })
+    queries = []
+    saved_browse_ids = []
+    saved_albums = []
+
+    search = lambda do |query|
+      queries << query
+      response
+    end
+    save = lambda do |browse_id, album|
+      saved_browse_ids << browse_id
+      saved_albums << album
+      true
+    end
+
+    with_singleton_method(YtMusic::Album, :search_songs, search) do
+      with_singleton_method(YtmusicAlbum, :find_and_save, save) do
+        assert YtmusicAlbum.search_songs_and_save(source_album)
+      end
+    end
+
+    assert_equal ['sine nomine 東方LostWord'], queries
+    assert_equal ['MPREb_Jj8jX1CpWxn'], saved_browse_ids
+    assert_equal [source_album], saved_albums
   end
 
   test 'recalculate_distribution!: Art Trackの最頻値が採用されdistributed_onが最頻値+1日になる' do
@@ -355,6 +434,14 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
   end
 
   private
+
+  def with_singleton_method(object, method_name, replacement)
+    original_method = object.method(method_name)
+    object.define_singleton_method(method_name, replacement)
+    yield
+  ensure
+    object.define_singleton_method(method_name, original_method)
+  end
 
   def create_distribution_album
     Album.create!(jan_code: "ytmusic-dist-#{SecureRandom.hex(4)}")

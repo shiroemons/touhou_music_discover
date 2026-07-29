@@ -164,6 +164,7 @@ class YtmusicAlbum < ApplicationRecord
   def self.find_and_save(browse_id, album)
     ytmusic_album = YtMusic::Album.find(browse_id)
     return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
+    return false if album.release_date && ytmusic_album.year.present? && album.release_date.year.to_s != ytmusic_album.year
 
     save_album(album.album_id, browse_id, ytmusic_album).present?
   end
@@ -231,6 +232,13 @@ class YtmusicAlbum < ApplicationRecord
   def self.fetch_albums(progress_callback: nil)
     albums = Album.includes(:spotify_album, :apple_music_album).missing_ytmusic_album.order(:jan_code)
     total_count = albums.count
+    stats = {
+      target_albums: total_count,
+      acquired_albums: 0,
+      not_found_albums: 0,
+      errors: 0,
+      error_examples: []
+    }
     progress_callback&.call(
       current: 0,
       total: total_count,
@@ -238,20 +246,44 @@ class YtmusicAlbum < ApplicationRecord
       reset: true
     )
 
-    processed_count = 0
-    albums.find_each do |album|
+    albums.find_each.with_index(1) do |album, index|
       sleep(0.2) # API呼び出し等のレート制限に配慮
-      process_album_with_spotify(album)
-      process_album_with_apple_music(album) if album.apple_music_album.present?
-      processed_count += 1
       progress_callback&.call(
-        current: processed_count,
+        current: index - 1,
         total: total_count,
-        message: "YouTube Musicアルバム候補を処理しています: #{album.jan_code}"
+        message: "YouTube Musicアルバム候補を処理中: #{index}/#{total_count} #{album.jan_code}"
+      )
+
+      outcome = begin
+        process_album_with_spotify(album)
+        process_album_with_apple_music(album) if album.apple_music_album.present? && !unscoped.exists?(album_id: album.id)
+
+        if unscoped.exists?(album_id: album.id)
+          stats[:acquired_albums] += 1
+          '取得'
+        else
+          stats[:not_found_albums] += 1
+          '未検出'
+        end
+      rescue StandardError => e
+        stats[:errors] += 1
+        stats[:error_examples] << "#{album.jan_code}: #{e.message}"
+        Rails.logger.error(
+          "[YtmusicAlbum] album fetch failed for JAN #{album.jan_code}: #{e.class} - #{e.message}"
+        )
+        "エラー (#{e.class})"
+      end
+
+      progress_callback&.call(
+        current: index,
+        total: total_count,
+        message: "YouTube Musicアルバム候補: #{index}/#{total_count} #{album.jan_code} #{outcome} " \
+                 "(取得#{stats[:acquired_albums]}件 / 未検出#{stats[:not_found_albums]}件 / エラー#{stats[:errors]}件)"
       )
     end
 
     update_ytmusic_album_urls(progress_callback:)
+    stats
   end
 
   def self.process_jan_to_album_browse_ids
@@ -319,6 +351,8 @@ class YtmusicAlbum < ApplicationRecord
     [am_album_name, am_album_name.sub(/ [(|\[].*[)|\]]\z/, ''), am_album.name, am_album.name.sub(' - EP', '').sub(' - Single', '')].each do |q|
       return if search_and_save(q, am_album)
     end
+
+    search_songs_and_save(am_album)
   end
 
   def self.normalize_and_search_ytmusic(s_album, artist_names)
@@ -340,6 +374,76 @@ class YtmusicAlbum < ApplicationRecord
       Rails.logger.debug { "Query: #{query}" }
       return if search_and_save(query, s_album)
     end
+
+    search_songs_and_save(s_album)
+  end
+
+  # YouTube Musicではシングルがアーティストページの「シングルと EP」や曲検索には出る一方、
+  # albumsフィルター付き検索に返らないことがある。曲検索のメタデータに含まれるアルバムbrowse IDを
+  # たどり、リリース年・曲数をfind_and_saveで再検証してから保存する。
+  # rubocop:disable Naming/PredicateMethod
+  def self.search_songs_and_save(source_album)
+    source_tracks(source_album).first(3).each do |source_track|
+      song_search_queries(source_album, source_track).each do |query|
+        Rails.logger.debug { "Song Query: #{query}" }
+        songs = YtMusic::Album.search_songs(query).data[:songs]
+        Array(songs).each do |song|
+          next if song.album_browse_id.blank?
+          next unless matching_source_song?(song, source_album, source_track)
+
+          return true if find_and_save(song.album_browse_id, source_album)
+        end
+      end
+    end
+
+    false
+  end
+  # rubocop:enable Naming/PredicateMethod
+
+  def self.source_tracks(source_album)
+    return source_album.spotify_tracks if source_album.respond_to?(:spotify_tracks)
+    return source_album.apple_music_tracks if source_album.respond_to?(:apple_music_tracks)
+
+    []
+  end
+
+  def self.song_search_queries(source_album, source_track)
+    base_title = normalized_ytmusic_title(source_track.name)
+    artist_names = [source_album.artist_name, *source_track_artist_names(source_track)].compact_blank
+
+    [
+      *artist_names.map { |artist_name| "#{base_title} #{artist_name}" },
+      base_title
+    ].uniq
+  end
+
+  def self.matching_source_song?(song, source_album, source_track)
+    title_matches = normalized_ytmusic_title(song.title) == normalized_ytmusic_title(source_track.name)
+    return false unless title_matches
+
+    album_title_matches = normalized_ytmusic_title(song.album_title) == normalized_ytmusic_title(source_album.name)
+    source_artists = [source_album.artist_name, *source_track_artist_names(source_track)]
+                     .compact_blank
+                     .map { normalize_ytmusic_text(it) }
+    song_artists = song.artists.map { normalize_ytmusic_text(it.name) }
+
+    album_title_matches || source_artists.intersect?(song_artists)
+  end
+
+  def self.source_track_artist_names(source_track)
+    payload_artists = Array(source_track.payload&.fetch('artists', nil)).filter_map { it['name'] }
+    [*payload_artists, source_track.try(:artist_name)].compact_blank
+  end
+
+  def self.normalized_ytmusic_title(title)
+    normalize_ytmusic_text(title)
+      .sub(/\s*[-–—]\s*(?:single|ep)\z/i, '')
+      .sub(/\s*[(（]\s*feat\..*[)）]\s*\z/i, '')
+      .strip
+  end
+
+  def self.normalize_ytmusic_text(text)
+    text.to_s.unicode_normalize(:nfkc).downcase.strip
   end
 
   def self.update_ytmusic_album_urls(progress_callback: nil)

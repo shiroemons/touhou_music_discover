@@ -43,14 +43,14 @@ module YtMusic
         path = "#{endpoint}#{YTM_PARAMS}"
         body ||= generate_body(options)
 
-        client.post(path, body.to_json, headers)
+        execute_request { client.post(path, body.to_json, headers) }
       end
 
       def send_youtube_request(endpoint, body: nil)
         path = "#{endpoint}#{YTM_PARAMS}"
         body ||= youtube_context
 
-        youtube_client.post(path, body.to_json, youtube_headers)
+        execute_request { youtube_client.post(path, body.to_json, youtube_headers) }
       end
 
       def generate_youtube_body(video_id:)
@@ -58,6 +58,19 @@ module YtMusic
       end
 
       private
+
+      def execute_request
+        validate_response(yield)
+      rescue Faraday::RetriableResponse => e
+        raise RequestError.new(status: e.response_status)
+      end
+
+      def validate_response(response)
+        raise RequestError.new(status: response.status) unless response.success?
+        raise RequestError.new(status: response.status, invalid_body: true) unless response.body.is_a?(Hash)
+
+        response
+      end
 
       def client
         CLIENT_MUTEX.synchronize do

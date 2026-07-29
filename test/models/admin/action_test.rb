@@ -157,6 +157,27 @@ module Admin
       assert_includes result.message, 'YouTube Missing Source Track'
     end
 
+    test 'summarizes partial YouTube Music album fetch results' do
+      stats = {
+        target_albums: 3,
+        acquired_albums: 2,
+        not_found_albums: 0,
+        errors: 1,
+        error_examples: ['4582736139200: YouTube Music API request failed (HTTP 403)']
+      }
+      result = nil
+
+      with_singleton_method(YtmusicAlbum, :fetch_albums, ->(**_kwargs) { stats }) do
+        result = Admin::Resource.find!('ytmusic_albums').action_for!('fetch_ytmusic_album').run
+      end
+
+      assert_equal :warning, result.status
+      assert_includes result.message, '- 対象: 3件'
+      assert_includes result.message, '- 取得: 2件'
+      assert_includes result.message, '- エラー: 1件'
+      assert_includes result.message, '4582736139200: YouTube Music API request failed (HTTP 403)'
+    end
+
     test 'fetches only Spotify albums that have missing tracks' do
       target_album = create_album('4777777777831')
       create_track(target_album, 'JPABC260731')

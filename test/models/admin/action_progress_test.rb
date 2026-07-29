@@ -32,6 +32,21 @@ module Admin
       assert_equal 'warning', update_attrs.fetch(:result_status)
     end
 
+    test 'preserves actual progress when an action ends with an error' do
+      update_attrs = nil
+      result = Admin::ActionResult.new(status: :error, message: 'request failed')
+
+      with_action_run_method(:find!, ->(_run_id) { { 'total' => 10, 'current' => 8 } }) do
+        with_action_run_method(:update!, ->(_run_id, attrs) { update_attrs = attrs }) do
+          Admin::ActionRun.complete!('run-id', result)
+        end
+      end
+
+      assert_equal 'error', update_attrs.fetch(:status)
+      assert_equal 8, update_attrs.fetch(:current)
+      assert_equal 'error', update_attrs.fetch(:result_status)
+    end
+
     private
 
     def with_action_run_method(method_name, replacement)

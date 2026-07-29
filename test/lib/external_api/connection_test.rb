@@ -53,13 +53,20 @@ module ExternalApi
       assert_match(/unknown_service/, error.message)
     end
 
-    # spotify / spotify_accounts は 429 を意図的に除外しているため、この共通アサーションの対象外にする。
-    test 'every profile except spotify and spotify_accounts retries on rate limit and server error statuses' do
-      (Connection::PROFILES.keys - %i[spotify spotify_accounts]).each do |service|
+    # yt_music は一時的なアクセス制限として返る403も再試行し、
+    # spotify / spotify_accounts は429を意図的に除外しているため、この共通アサーションの対象外にする。
+    test 'standard profiles retry on rate limit and server error statuses' do
+      (Connection::PROFILES.keys - %i[yt_music spotify spotify_accounts]).each do |service|
         conn = Connection.build(service, url: 'https://example.com')
 
         assert_equal [429, 500, 502, 503, 504], retry_options(conn)[:retry_statuses], "#{service} の retry_statuses が想定と異なります"
       end
+    end
+
+    test 'yt_music profile also retries transient forbidden responses' do
+      conn = Connection.build(:yt_music, url: 'https://example.com')
+
+      assert_equal [403, 429, 500, 502, 503, 504], retry_options(conn)[:retry_statuses]
     end
 
     test 'spotify profile excludes 429 from the retry statuses' do
