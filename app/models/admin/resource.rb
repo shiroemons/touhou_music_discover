@@ -157,6 +157,14 @@ module Admin
 
       def build_resources
         album_preview_includes = %i[circles spotify_album apple_music_album ytmusic_album line_music_album]
+        album_index_includes = [
+          :circles,
+          :tracks,
+          :spotify_album,
+          :apple_music_album,
+          :ytmusic_album,
+          { line_music_album: :line_music_tracks }
+        ]
         touhou_filter = lambda {
           {
             key: 'touhou',
@@ -509,7 +517,7 @@ module Admin
               album_circle_filter,
               album_original_songs_filter
             ],
-            includes: album_preview_includes,
+            includes: album_index_includes,
             action_class_names: %w[BulkRetrieval ChangeTouhouFlag SetCircles]
           ),
           new(
@@ -727,7 +735,11 @@ module Admin
           new(
             key: 'line_music_albums',
             model_class_name: 'LineMusicAlbum',
-            index_attributes: %i[name circle_name album_id release_date tracks_status total_tracks line_music_id],
+            index_attributes: %i[name circle_name album_id release_date tracks_status catalog_availability line_music_id],
+            detail_attributes: %i[
+              id name circle_name album_id release_date tracks_status catalog_availability
+              unavailable_catalog_tracks total_tracks line_music_id url payload created_at updated_at
+            ],
             form_attributes: %i[album_id line_music_id name url release_date total_tracks payload],
             search_scope: lambda { |scope, query|
               Admin::Resource.associated_search(
@@ -743,7 +755,7 @@ module Admin
               )
             },
             filter_definitions: [track_status_filter.call(:line_music_tracks), touhou_filter.call],
-            includes: [:line_music_tracks, { album: album_preview_includes }],
+            includes: [:line_music_tracks, { album: album_preview_includes + [:tracks] }],
             action_class_names: %w[FetchLineMusicAlbum UpdateLineMusicAlbum ProcessLineMusicJanToAlbumIds]
           ),
           new(

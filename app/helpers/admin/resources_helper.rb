@@ -5,6 +5,7 @@ module Admin
     include Resources::DisplayHelper
     include Resources::ExternalLinksHelper
     include Resources::FormHelper
+    include Resources::LineMusicAvailabilityHelper
     include Resources::NavigationHelper
     include Resources::PaginationHelper
     include Resources::RelationHelper

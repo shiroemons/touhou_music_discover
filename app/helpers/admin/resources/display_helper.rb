@@ -13,6 +13,8 @@ module Admin
       def admin_display_value(resource_config, record, attribute)
         return admin_tracks_status_value(record) if attribute.to_s == 'tracks_status'
         return admin_streaming_tracks_status_value(record) if attribute.to_s == 'streaming_tracks_status'
+        return admin_line_music_catalog_availability_value(record) if attribute.to_s == 'catalog_availability'
+        return admin_line_music_unavailable_tracks_value(record) if attribute.to_s == 'unavailable_catalog_tracks'
 
         value = resource_config.value_for(record, attribute)
         reference_record = admin_reference_record(record, attribute, value)
@@ -38,6 +40,8 @@ module Admin
         value = resource_config.value_for(record, attribute)
         associated_record = admin_index_attribute_record(resource_config, record, attribute)
         if associated_record.present?
+          return admin_line_music_album_index_value(associated_record, value) if attribute.to_s == 'line_music_album_name'
+
           content = admin_record_image_url(associated_record).present? ? admin_value_with_thumbnail(associated_record, value) : value.to_s
           associated_resource = Admin::Resource.find_by_model_class(associated_record.class)
           return link_to(content, admin_resource_path(associated_resource.key, associated_record), class: 'admin-index-record-link') if associated_resource.present?

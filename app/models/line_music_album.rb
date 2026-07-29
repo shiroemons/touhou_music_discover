@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class LineMusicAlbum < ApplicationRecord
+  MAX_STRICT_TRACK_COUNT_DIFFERENCE = 1
+
   default_scope { includes(:album).order('albums.jan_code desc') }
 
   has_many :line_music_tracks,
@@ -80,14 +82,16 @@ class LineMusicAlbum < ApplicationRecord
     line_album_id = JAN_TO_ALBUM_IDS[s_album.album.jan_code]
     if line_album_id.present?
       Rails.logger.info "JAN_TO_ALBUM_IDSに一致するLINE MUSIC IDが見つかりました: #{line_album_id}"
-      find_and_save(line_album_id, s_album)
-      return
+      return if find_and_save(line_album_id, s_album)
+
+      Rails.logger.warn "JAN_TO_ALBUM_IDSの候補が一致条件を満たさないため、通常検索を続行します: #{line_album_id}"
     end
 
     # 最も正確な検索クエリから順番に試す
+    artist_names = Array(s_album.payload&.fetch('artists', nil)).filter_map { it['name'].presence }.sort
     search_queries = [
-      "#{s_album.name} #{s_album.payload['artists'].map { it['name'] }.sort.join(' ')}", # アーティスト名を空白区切りで結合
-      "#{s_album.name} #{s_album.payload['artists'].first['name']}", # 最初のアーティスト名のみ使用
+      [s_album.name, artist_names.join(' ')].compact_blank.join(' '), # アーティスト名を空白区切りで結合
+      [s_album.name, artist_names.first].compact_blank.join(' '), # 最初のアーティスト名のみ使用
       s_album.name # アルバム名のみ
     ]
 
@@ -107,11 +111,11 @@ class LineMusicAlbum < ApplicationRecord
     Rails.logger.info "Apple Musicアルバム処理: #{am_album.name}"
 
     # 最も正確な検索クエリから順番に試す
-    artist_name = am_album.payload.dig('attributes', 'artist_name')
+    artist_name = am_album.artist_name
     album_name = am_album.name.sub(' - EP', '') # EPの表記を削除
 
     search_queries = [
-      "#{album_name} #{artist_name}", # アルバム名とアーティスト名
+      [album_name, artist_name].compact_blank.join(' '), # アルバム名とアーティスト名
       am_album.name # 元のアルバム名
     ]
 
@@ -284,12 +288,35 @@ class LineMusicAlbum < ApplicationRecord
 
   # アルバムがマッチするかどうかを判定するヘルパーメソッド
   def self.matches_album?(line_album, album)
-    track_count_match = line_album.track_total_count == album.total_tracks
+    if track_counts_match?(line_album, album)
+      return (
+        (title_matches?(line_album.album_title, album.name) && album_identity_matches?(line_album, album)) ||
+        (release_date_matches?(line_album, album) && artist_matches?(line_album, album))
+      )
+    end
 
-    track_count_match && (
-      (title_matches?(line_album.album_title, album.name) && album_identity_matches?(line_album, album)) ||
-      (release_date_matches?(line_album, album) && artist_matches?(line_album, album))
-    )
+    strict_cross_catalog_match?(line_album, album)
+  end
+
+  def self.track_counts_match?(line_album, album)
+    track_count_difference(line_album, album).zero?
+  end
+
+  def self.track_count_difference(line_album, album)
+    line_track_count = line_album.track_total_count
+    source_track_count = album.total_tracks
+    return Float::INFINITY if line_track_count.blank? || source_track_count.blank?
+
+    (line_track_count - source_track_count).abs
+  end
+
+  def self.strict_cross_catalog_match?(line_album, album)
+    difference = track_count_difference(line_album, album)
+    return false unless difference.between?(1, MAX_STRICT_TRACK_COUNT_DIFFERENCE)
+
+    strict_title_matches?(line_album.album_title, album.name) &&
+      release_date_difference(line_album, album).zero? &&
+      strict_artist_matches?(line_album, album)
   end
 
   def self.album_identity_matches?(line_album, album)
@@ -301,6 +328,8 @@ class LineMusicAlbum < ApplicationRecord
   end
 
   def self.release_date_difference(line_album, album)
+    return Float::INFINITY if line_album.release_date.blank? || album.release_date.blank?
+
     (line_album.release_date - album.release_date).abs
   end
 
@@ -310,6 +339,13 @@ class LineMusicAlbum < ApplicationRecord
     return false if line_artist_tokens.empty? || expected_artist_tokens.empty?
 
     line_artist_tokens.intersect?(expected_artist_tokens)
+  end
+
+  def self.strict_artist_matches?(line_album, album)
+    line_artist_name = normalize_text(line_album.artists&.map(&:artist_name)&.join(' '))
+    expected_artist_names = expected_artist_names(album).map { |name| normalize_text(name) }
+
+    line_artist_name.present? && expected_artist_names.include?(line_artist_name)
   end
 
   def self.expected_artist_names(album)
@@ -333,6 +369,13 @@ class LineMusicAlbum < ApplicationRecord
     line == album || line.include?(album) || album.include?(line)
   end
 
+  def self.strict_title_matches?(line_title, album_title)
+    line = normalize_title(line_title)
+    album = normalize_title(album_title)
+
+    line.present? && line == album
+  end
+
   def self.normalize_title(value)
     normalize_text(value).delete_suffix(' single').delete_suffix(' ep')
   end
@@ -353,13 +396,14 @@ class LineMusicAlbum < ApplicationRecord
 
       Rails.logger.info "LINE MUSIC アルバム取得成功: #{line_album.album_title}"
 
-      # リリース日の差を1日まで許容する
-      release_date_difference = (line_album.release_date - album.release_date).abs
-      track_count_match = line_album.track_total_count == album.total_tracks
+      Rails.logger.info(
+        "一致判定: リリース日差=#{release_date_difference(line_album, album)}日, " \
+        "トラック数=#{line_album.track_total_count} vs #{album.total_tracks}, " \
+        "タイトル一致=#{title_matches?(line_album.album_title, album.name)}, " \
+        "アーティスト一致=#{artist_matches?(line_album, album)}"
+      )
 
-      Rails.logger.info "リリース日の差: #{release_date_difference}日, トラック数: #{line_album.track_total_count} vs #{album.total_tracks}"
-
-      if release_date_difference <= 1 && track_count_match
+      if matches_album?(line_album, album)
         Rails.logger.info 'アルバム情報が一致しました'
         LineMusicAlbum.save_album(album.album_id, line_album)
         return true
@@ -414,6 +458,42 @@ class LineMusicAlbum < ApplicationRecord
 
   def artist_name
     payload['artists']&.map { it['artist_name'] }&.join(' / ')
+  end
+
+  def catalog_track_count
+    album&.tracks&.size.to_i
+  end
+
+  def catalog_track_difference
+    line_track_count = total_tracks.to_i
+    local_track_count = catalog_track_count
+    return nil unless line_track_count.positive? && local_track_count.positive?
+
+    local_track_count - line_track_count
+  end
+
+  def catalog_availability_status
+    difference = catalog_track_difference
+    return :unknown if difference.nil?
+    return :shortage if difference.positive?
+    return :excess if difference.negative?
+
+    :complete
+  end
+
+  def unavailable_track_count
+    [catalog_track_difference.to_i, 0].max
+  end
+
+  def track_sync_complete?
+    total_tracks.to_i.positive? && line_music_tracks.size >= total_tracks.to_i
+  end
+
+  def unavailable_catalog_tracks
+    return [] unless catalog_availability_status == :shortage && track_sync_complete?
+
+    mapped_track_ids = line_music_tracks.index_by(&:track_id)
+    album.tracks.reject { |track| mapped_track_ids.key?(track.id) }
   end
 
   def image_url

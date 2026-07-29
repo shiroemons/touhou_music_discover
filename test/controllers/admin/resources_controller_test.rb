@@ -53,6 +53,60 @@ module Admin
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
 
+    test 'shows a LINE MUSIC catalog shortage beside the album name' do
+      album = Album.create!(jan_code: '9777777777765')
+      3.times { |index| Track.create!(album:, isrc: "JPABC2601#{index}") }
+      LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'line-music-admin-shortage',
+        name: 'Admin LINE MUSIC Shortage Album',
+        total_tracks: 2,
+        payload: {}
+      )
+
+      get admin_resources_url('albums'), params: { q: album.jan_code }
+
+      assert_response :success
+      assert_select '.admin-line-music-album-value .admin-index-record-link', text: 'Admin LINE MUSIC Shortage Album'
+      assert_select '.admin-line-music-album-value .badge-warning', text: '1曲未配信'
+    end
+
+    test 'shows the unavailable catalog track on a LINE MUSIC album detail page' do
+      album = Album.create!(jan_code: '9777777777764')
+      first_available_track = Track.create!(album:, isrc: 'JPABC260101')
+      unavailable_track = Track.create!(album:, isrc: 'JPABC260102')
+      second_available_track = Track.create!(album:, isrc: 'JPABC260103')
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'line-music-admin-shortage-detail',
+        name: 'Admin LINE MUSIC Shortage Detail',
+        total_tracks: 2,
+        payload: {}
+      )
+      [first_available_track, second_available_track].each_with_index do |track, index|
+        LineMusicTrack.create!(
+          album:,
+          track:,
+          line_music_album:,
+          line_music_id: "line-music-admin-shortage-track-#{index}",
+          name: "Available LINE Track #{index}",
+          url: '',
+          disc_number: 1,
+          track_number: index + 1,
+          payload: {}
+        )
+      end
+
+      get admin_resource_url('line_music_albums', line_music_album)
+
+      assert_response :success
+      assert_select 'th', text: 'LINE MUSIC配信差分'
+      assert_select '.admin-catalog-availability-counts', text: 'LINE MUSIC 2曲 / カタログ 3曲'
+      assert_select '.admin-catalog-availability .badge-warning', text: '1曲未配信'
+      assert_select 'th', text: 'LINE MUSIC未配信楽曲'
+      assert_select '.admin-unavailable-track-list a[href=?]', admin_resource_path('tracks', unavailable_track), text: unavailable_track.isrc
+    end
+
     test 'searches albums by streaming service album names' do
       matching_album = Album.create!(jan_code: '9777777777768')
       other_album = Album.create!(jan_code: '9777777777769')

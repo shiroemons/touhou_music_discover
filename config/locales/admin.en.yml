@@ -120,6 +120,15 @@ en:
     streaming_status:
       complete: "Complete"
       missing: "%{service} missing"
+    line_music_availability:
+      counts: "LINE MUSIC %{line_count} / catalog %{catalog_count}"
+      shortage: "%{count} unavailable"
+      complete: "No catalog difference"
+      excess: "Review LINE MUSIC track count"
+      unknown: "Track count unknown"
+      none: "No unavailable catalog tracks."
+      pending: "Unavailable tracks will be shown after LINE MUSIC retrieval completes (%{fetched_count} / %{line_count})."
+      ambiguous: "Unavailable tracks could not be identified safely"
     form:
       save_failed: "Could not save the record."
       association_search_placeholder: "Search options"
@@ -252,6 +261,8 @@ en:
         release_date: "Release date"
         release_year: "Release year"
         tracks_status: "Track retrieval"
+        catalog_availability: "LINE MUSIC availability"
+        unavailable_catalog_tracks: "Tracks unavailable on LINE MUSIC"
         total_tracks: "Total tracks"
         active: "Active"
         artist_name: "Artist name"

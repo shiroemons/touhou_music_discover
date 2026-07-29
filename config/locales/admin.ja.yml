@@ -155,6 +155,15 @@ ja:
     streaming_status:
       complete: "取得済み"
       missing: "%{service}未取得"
+    line_music_availability:
+      counts: "LINE MUSIC %{line_count}曲 / カタログ %{catalog_count}曲"
+      shortage: "%{count}曲未配信"
+      complete: "配信差分なし"
+      excess: "LINE MUSIC曲数を要確認"
+      unknown: "曲数未判定"
+      none: "未配信の差分はありません。"
+      pending: "LINE MUSIC楽曲の取得完了後に未配信曲を表示します（取得 %{fetched_count} / %{line_count}）。"
+      ambiguous: "未配信曲を安全に特定できません"
     form:
       save_failed: "保存できませんでした。"
       association_search_placeholder: "選択肢を検索"
@@ -287,6 +296,8 @@ ja:
         release_date: "リリース日"
         release_year: "リリース年"
         tracks_status: "楽曲取得"
+        catalog_availability: "LINE MUSIC配信差分"
+        unavailable_catalog_tracks: "LINE MUSIC未配信楽曲"
         total_tracks: "総トラック数"
         active: "有効"
         artist_name: "アーティスト名"

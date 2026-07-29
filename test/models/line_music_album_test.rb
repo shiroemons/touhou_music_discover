@@ -178,6 +178,118 @@ class LineMusicAlbumTest < ActiveSupport::TestCase
     assert LineMusicAlbum.matches_album?(line_music_album, streaming_album)
   end
 
+  test 'matches a one-track catalog difference only with exact title release date and artist' do
+    source_album = Album.create!(jan_code: "line-music-catalog-gap-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: '幻宴Project ～ オーケストラとスクリーンで甦る幻想郷の歴史絵巻',
+      artist_name: '針の音楽',
+      release_date: Date.new(2026, 5, 4),
+      total_tracks: 29
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: '幻宴Project ～ オーケストラとスクリーンで甦る幻想郷の歴史絵巻',
+      artist_names: ['針の音楽'],
+      release_date: Date.new(2026, 5, 4),
+      track_total_count: 28
+    )
+
+    assert LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'does not match a catalog difference when the title is only a partial match' do
+    source_album = Album.create!(jan_code: "line-music-partial-title-gap-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: '同名アルバム 完全版',
+      artist_name: '同じアーティスト',
+      release_date: Date.new(2026, 5, 4),
+      total_tracks: 10
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: '同名アルバム',
+      artist_names: ['同じアーティスト'],
+      release_date: Date.new(2026, 5, 4),
+      track_total_count: 9
+    )
+
+    assert_not LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'does not match a catalog difference when release date or artist differs' do
+    source_album = Album.create!(jan_code: "line-music-identity-gap-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: 'Strict Identity',
+      artist_name: 'Expected Artist',
+      release_date: Date.new(2026, 5, 4),
+      total_tracks: 10
+    )
+    wrong_date = build_line_music_api_album(
+      album_title: 'Strict Identity',
+      artist_names: ['Expected Artist'],
+      release_date: Date.new(2026, 5, 5),
+      track_total_count: 9
+    )
+    wrong_artist = build_line_music_api_album(
+      album_title: 'Strict Identity',
+      artist_names: ['Other Artist'],
+      release_date: Date.new(2026, 5, 4),
+      track_total_count: 9
+    )
+
+    assert_not LineMusicAlbum.matches_album?(wrong_date, streaming_album)
+    assert_not LineMusicAlbum.matches_album?(wrong_artist, streaming_album)
+  end
+
+  test 'does not match when the catalog difference exceeds one track' do
+    source_album = Album.create!(jan_code: "line-music-large-gap-#{SecureRandom.hex(4)}")
+    streaming_album = build_streaming_album(
+      source_album:,
+      name: 'Strict Identity',
+      artist_name: 'Expected Artist',
+      release_date: Date.new(2026, 5, 4),
+      total_tracks: 10
+    )
+    line_music_album = build_line_music_api_album(
+      album_title: 'Strict Identity',
+      artist_names: ['Expected Artist'],
+      release_date: Date.new(2026, 5, 4),
+      track_total_count: 8
+    )
+
+    assert_not LineMusicAlbum.matches_album?(line_music_album, streaming_album)
+  end
+
+  test 'reports catalog shortage and unavailable tracks after track sync completes' do
+    album = Album.create!(jan_code: "line-music-availability-#{SecureRandom.hex(4)}")
+    available_track = Track.create!(album:, isrc: "ISRC#{SecureRandom.hex(4)}")
+    unavailable_track = Track.create!(album:, isrc: "ISRC#{SecureRandom.hex(4)}")
+    line_music_album = LineMusicAlbum.create!(
+      album:,
+      line_music_id: "lm-availability-#{SecureRandom.hex(4)}",
+      name: 'Availability Album',
+      total_tracks: 1,
+      payload: {}
+    )
+    LineMusicTrack.create!(
+      album:,
+      track: available_track,
+      line_music_album:,
+      line_music_id: "lm-availability-track-#{SecureRandom.hex(4)}",
+      name: 'Available Track',
+      url: '',
+      disc_number: 1,
+      track_number: 1,
+      payload: {}
+    )
+
+    assert_equal :shortage, line_music_album.catalog_availability_status
+    assert_equal 1, line_music_album.unavailable_track_count
+    assert_predicate line_music_album, :track_sync_complete?
+    assert_equal [unavailable_track], line_music_album.unavailable_catalog_tracks
+  end
+
   private
 
   def build_line_music_api_album(artist_names: [], **)

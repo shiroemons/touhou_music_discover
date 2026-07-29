@@ -42,7 +42,11 @@ class LineMusicTrack < ApplicationRecord
         )
       end
 
-      Album.includes(:spotify_album, :apple_music_album, :line_music_album).where(id: ids).then do |records|
+      Album.includes(
+        { spotify_album: :spotify_tracks },
+        { apple_music_album: :apple_music_tracks },
+        { line_music_album: :line_music_tracks }
+      ).where(id: ids).then do |records|
         ParallelRunner.each(records, workers: :line_music, finish: finish_callback) do |r|
           process_album(r)
         end
@@ -70,67 +74,185 @@ class LineMusicTrack < ApplicationRecord
 
     Rails.logger.info "トラック処理開始: #{lm_album.name} (現在: #{lm_album.line_music_tracks.size}/#{lm_album.total_tracks})"
 
-    if album.spotify_album.present?
-      Rails.logger.info "Spotifyアルバムからトラックを処理します: #{album.spotify_album.name}"
-      match_and_save_tracks_for_spotify(album.spotify_album, lm_album)
-    elsif album.apple_music_album.present?
-      Rails.logger.info "Apple Musicアルバムからトラックを処理します: #{album.apple_music_album.name}"
-      match_and_save_tracks_for_apple_music(album.apple_music_album, lm_album)
+    source_track_sets = source_track_sets_for(album)
+    if source_track_sets.empty?
+      Rails.logger.warn "照合元のSpotify / Apple Musicトラックが存在しないためスキップします: #{lm_album.name}"
+      return
     end
 
+    fetch_match_and_save_tracks(source_track_sets, lm_album)
     Rails.logger.info "トラック処理完了: #{lm_album.name} (現在: #{lm_album.line_music_tracks.reload.size}/#{lm_album.total_tracks})"
   end
 
   def self.match_and_save_tracks_for_spotify(spotify_album, line_music_album)
-    Rails.logger.info "LINE MUSIC トラック取得: アルバムID #{line_music_album.line_music_id}"
-
-    with_retry(max_attempts: 3) do
-      lm_tracks = LineMusic::Album.tracks(line_music_album.line_music_id)
-      Rails.logger.info "LINE MUSIC トラック取得成功: #{lm_tracks.size}件"
-
-      matched_count = 0
-      spotify_album.spotify_tracks.each do |s_track|
-        Rails.logger.info "Spotifyトラック処理: #{s_track.name} (Disc: #{s_track.disc_number}, Track: #{s_track.track_number})"
-
-        lm_track = lm_tracks.find { |lm| lm.disc_number == s_track.disc_number && lm.track_number == s_track.track_number }
-
-        if lm_track
-          Rails.logger.info "一致するLINE MUSICトラックが見つかりました: #{lm_track.track_title}"
-          save_track(s_track.album_id, s_track.track_id, line_music_album, lm_track)
-          matched_count += 1
-        else
-          Rails.logger.info '一致するLINE MUSICトラックが見つかりませんでした'
-        end
-      end
-
-      Rails.logger.info "マッチング完了: #{matched_count}/#{spotify_album.spotify_tracks.size}件のトラックを処理しました"
-    end
+    source_track_set = build_source_track_set(:spotify, spotify_album, spotify_album.spotify_tracks)
+    fetch_match_and_save_tracks([source_track_set], line_music_album)
   end
 
   def self.match_and_save_tracks_for_apple_music(apple_music_album, line_music_album)
+    source_track_set = build_source_track_set(:apple_music, apple_music_album, apple_music_album.apple_music_tracks)
+    fetch_match_and_save_tracks([source_track_set], line_music_album)
+  end
+
+  def self.source_track_sets_for(album)
+    [
+      build_source_track_set(:spotify, album.spotify_album, album.spotify_album&.spotify_tracks),
+      build_source_track_set(:apple_music, album.apple_music_album, album.apple_music_album&.apple_music_tracks)
+    ].compact
+  end
+
+  def self.build_source_track_set(service, streaming_album, tracks)
+    return if streaming_album.blank?
+
+    {
+      service:,
+      tracks: tracks.to_a,
+      declared_total: streaming_album.total_tracks.to_i,
+      fallback_priority: service == :spotify ? 1 : 0
+    }
+  end
+
+  def self.fetch_match_and_save_tracks(source_track_sets, line_music_album)
     Rails.logger.info "LINE MUSIC トラック取得: アルバムID #{line_music_album.line_music_id}"
 
     with_retry(max_attempts: 3) do
       lm_tracks = LineMusic::Album.tracks(line_music_album.line_music_id)
       Rails.logger.info "LINE MUSIC トラック取得成功: #{lm_tracks.size}件"
 
-      matched_count = 0
-      apple_music_album.apple_music_tracks.each do |am_track|
-        Rails.logger.info "Apple Musicトラック処理: #{am_track.name} (Disc: #{am_track.disc_number}, Track: #{am_track.track_number})"
+      unless lm_tracks.size == line_music_album.total_tracks.to_i
+        Rails.logger.warn(
+          'LINE MUSIC APIのトラック件数がアルバム情報と一致しないため保存を中止します: ' \
+          "#{lm_tracks.size} vs #{line_music_album.total_tracks}"
+        )
+        return
+      end
 
-        lm_track = lm_tracks.find { |lm| lm.disc_number == am_track.disc_number && lm.track_number == am_track.track_number }
-
-        if lm_track
-          Rails.logger.info "一致するLINE MUSICトラックが見つかりました: #{lm_track.track_title}"
-          save_track(am_track.album_id, am_track.track_id, line_music_album, lm_track)
-          matched_count += 1
-        else
-          Rails.logger.info '一致するLINE MUSICトラックが見つかりませんでした'
+      mappings = build_track_mappings(source_track_sets, lm_tracks)
+      LineMusicTrack.transaction do
+        mappings.each do |mapping|
+          source_track = mapping.fetch(:source)
+          line_track = mapping.fetch(:line)
+          Rails.logger.info(
+            "LINE MUSICトラック一致 (#{mapping.fetch(:strategy)}): " \
+            "#{source_track.name} → #{line_track.track_title}"
+          )
+          save_track(source_track.album_id, source_track.track_id, line_music_album, line_track)
         end
       end
 
-      Rails.logger.info "マッチング完了: #{matched_count}/#{apple_music_album.apple_music_tracks.size}件のトラックを処理しました"
+      mapped_line_ids = mappings.to_h { |mapping| [mapping.fetch(:line).track_id, true] }
+      unmatched_line_tracks = lm_tracks.reject { |line_track| mapped_line_ids[line_track.track_id] }
+      if unmatched_line_tracks.any?
+        Rails.logger.warn(
+          '誤紐付け防止のため保存しなかったLINE MUSICトラック: ' \
+          "#{unmatched_line_tracks.map(&:track_title).join(' / ')}"
+        )
+      end
+
+      Rails.logger.info "安全なマッチング完了: #{mappings.size}/#{lm_tracks.size}件"
     end
+  end
+
+  def self.build_track_mappings(source_track_sets, line_tracks)
+    mappings = unique_title_mappings(source_track_sets, line_tracks)
+    fallback_source = positional_fallback_source(source_track_sets, line_tracks)
+    return mappings.sort_by { |mapping| track_position(mapping.fetch(:line)) } if fallback_source.blank?
+
+    mapped_line_ids = mappings.to_h { |mapping| [mapping.fetch(:line).track_id, true] }
+    mapped_source_ids = mappings.to_h { |mapping| [mapping.fetch(:source).track_id, true] }
+    sources_by_position = unique_tracks_by_position(fallback_source.fetch(:tracks))
+
+    line_tracks.each do |line_track|
+      next if mapped_line_ids[line_track.track_id]
+
+      source_track = sources_by_position[track_position(line_track)]
+      next if source_track.blank? || mapped_source_ids[source_track.track_id]
+
+      mappings << { source: source_track, line: line_track, strategy: :position }
+      mapped_line_ids[line_track.track_id] = true
+      mapped_source_ids[source_track.track_id] = true
+    end
+
+    mappings.sort_by { |mapping| track_position(mapping.fetch(:line)) }
+  end
+
+  def self.unique_title_mappings(source_track_sets, line_tracks)
+    sources_by_title = source_track_sets
+                       .flat_map { it.fetch(:tracks) }
+                       .group_by { |track| normalized_track_title(track.name) }
+    lines_by_title = line_tracks.group_by { |track| normalized_track_title(track.track_title) }
+
+    (sources_by_title.keys & lines_by_title.keys).filter_map do |title|
+      next if title.blank? || lines_by_title.fetch(title).size != 1
+
+      source_tracks = sources_by_title.fetch(title).uniq(&:track_id)
+      next if source_tracks.size != 1
+
+      {
+        source: source_tracks.first,
+        line: lines_by_title.fetch(title).first,
+        strategy: :title
+      }
+    end
+  end
+
+  def self.positional_fallback_source(source_track_sets, line_tracks)
+    eligible_sources = source_track_sets.select do |source|
+      tracks = source.fetch(:tracks)
+      tracks.size == line_tracks.size &&
+        source.fetch(:declared_total) == tracks.size &&
+        positional_catalog_consistent?(tracks, line_tracks)
+    end
+
+    eligible_sources.max_by do |source|
+      [
+        positional_title_match_count(source.fetch(:tracks), line_tracks),
+        source.fetch(:fallback_priority)
+      ]
+    end
+  end
+
+  def self.positional_catalog_consistent?(source_tracks, line_tracks)
+    source_positions = source_tracks
+                       .group_by { |track| normalized_track_title(track.name) }
+                       .filter_map do |title, tracks|
+                         [title, track_position(tracks.first)] if title.present? && tracks.one?
+                       end
+                       .to_h
+    line_positions = line_tracks
+                     .group_by { |track| normalized_track_title(track.track_title) }
+                     .filter_map do |title, tracks|
+                       [title, track_position(tracks.first)] if title.present? && tracks.one?
+                     end
+                     .to_h
+
+    (source_positions.keys & line_positions.keys).all? do |title|
+      source_positions.fetch(title) == line_positions.fetch(title)
+    end
+  end
+
+  def self.positional_title_match_count(source_tracks, line_tracks)
+    lines_by_position = unique_tracks_by_position(line_tracks)
+
+    source_tracks.count do |source_track|
+      line_track = lines_by_position[track_position(source_track)]
+      line_track.present? && normalized_track_title(source_track.name) == normalized_track_title(line_track.track_title)
+    end
+  end
+
+  def self.unique_tracks_by_position(tracks)
+    tracks
+      .group_by { |track| track_position(track) }
+      .filter_map { |position, grouped_tracks| [position, grouped_tracks.first] if grouped_tracks.one? }
+      .to_h
+  end
+
+  def self.track_position(track)
+    [track.disc_number.to_i, track.track_number.to_i]
+  end
+
+  def self.normalized_track_title(title)
+    LineMusicAlbum.normalize_text(title)
   end
 
   def self.save_track(album_id, track_id, lm_album, lm_track)
@@ -146,7 +268,7 @@ class LineMusicTrack < ApplicationRecord
       record.name = lm_track.track_title
     end
 
-    line_music_track.update(
+    line_music_track.update!(
       album_id:,
       track_id:,
       name: lm_track.track_title,

@@ -1706,6 +1706,49 @@
   padding-inline: 0.55rem;
 }
 
+.admin-line-music-album-value {
+  display: grid;
+  gap: 0.38rem;
+  min-width: 12rem;
+}
+
+.admin-line-music-album-value > .badge {
+  justify-self: start;
+}
+
+.admin-catalog-availability {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 10rem;
+}
+
+.admin-catalog-availability-counts {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-unavailable-track-list {
+  display: grid;
+  gap: 0.38rem;
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.admin-unavailable-track-link {
+  color: var(--admin-text);
+  overflow-wrap: anywhere;
+  text-underline-offset: 0.18rem;
+}
+
+.admin-unavailable-track-link:hover,
+.admin-unavailable-track-link:focus {
+  color: var(--admin-primary);
+}
+
 .admin-streaming-status {
   display: flex;
   flex-wrap: wrap;
