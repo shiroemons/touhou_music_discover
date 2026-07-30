@@ -33,6 +33,10 @@ module Admin
 
     def progress
       load_action_run
+      response.set_header(
+        'X-Admin-Action-Polling',
+        Admin::ActionRun.active_status?(@action_run.fetch('status', nil)).to_s
+      )
 
       respond_to do |format|
         format.turbo_stream

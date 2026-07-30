@@ -7,10 +7,8 @@ export default class extends Controller {
   }
 
   connect() {
+    this.polling = true
     this.fetchProgress()
-    this.timer = setInterval(() => {
-      this.fetchProgress()
-    }, this.intervalValue)
   }
 
   disconnect() {
@@ -18,8 +16,15 @@ export default class extends Controller {
   }
 
   async fetchProgress() {
+    if (!this.polling || this.fetching) {
+      return
+    }
+
+    this.fetching = true
+
     try {
       const response = await fetch(this.urlValue, {
+        cache: "no-store",
         headers: {
           Accept: "text/vnd.turbo-stream.html"
         }
@@ -32,18 +37,33 @@ export default class extends Controller {
       const html = await response.text()
       Turbo.renderStreamMessage(html)
 
-      const progressCard = document.querySelector("#admin-action-progress")
-      if (progressCard?.dataset.polling !== "true") {
+      if (response.headers.get("X-Admin-Action-Polling") === "false") {
         this.stopPolling()
       }
     } catch (error) {
       console.error("Admin action progress fetch error:", error)
+    } finally {
+      this.fetching = false
+      this.scheduleNext()
     }
   }
 
+  scheduleNext() {
+    if (!this.polling || this.timer) {
+      return
+    }
+
+    this.timer = setTimeout(() => {
+      this.timer = null
+      this.fetchProgress()
+    }, this.intervalValue)
+  }
+
   stopPolling() {
+    this.polling = false
+
     if (this.timer) {
-      clearInterval(this.timer)
+      clearTimeout(this.timer)
       this.timer = null
     }
   }

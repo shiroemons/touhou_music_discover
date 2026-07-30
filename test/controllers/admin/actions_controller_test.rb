@@ -59,6 +59,26 @@ module Admin
       RedisPool.get.del("admin:action_runs:#{run_id}") if run_id
     end
 
+    test 'progress response explicitly reports whether polling should continue' do
+      run_id = create_action_run
+
+      get admin_resource_action_run_progress_url('albums', 'change_touhou_flag', run_id),
+          headers: { 'Accept' => Mime[:turbo_stream].to_s }
+
+      assert_response :success
+      assert_equal 'true', response.headers['X-Admin-Action-Polling']
+
+      Admin::ActionRun.update!(run_id, status: 'completed')
+
+      get admin_resource_action_run_progress_url('albums', 'change_touhou_flag', run_id),
+          headers: { 'Accept' => Mime[:turbo_stream].to_s }
+
+      assert_response :success
+      assert_equal 'false', response.headers['X-Admin-Action-Polling']
+    ensure
+      RedisPool.get.del("admin:action_runs:#{run_id}") if run_id
+    end
+
     private
 
     def create_action_run
