@@ -298,6 +298,7 @@ ja:
         spotify_album_name: "Spotifyアルバム名"
         apple_music_album_name: "Apple Musicアルバム名"
         ytmusic_album_name: "YouTube Musicアルバム名"
+        ytmusic_album_distributed_on: "YouTube Music配信日"
         line_music_album_name: "LINE MUSICアルバム名"
         album_type: "アルバム種別"
         label: "レーベル"

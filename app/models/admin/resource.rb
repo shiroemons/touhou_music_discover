@@ -472,7 +472,8 @@ module Admin
           new(
             key: 'albums',
             model_class_name: 'Album',
-            index_attributes: %i[jan_code circle_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name is_touhou],
+            index_attributes: %i[ytmusic_album_distributed_on jan_code circle_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name is_touhou],
+            detail_attributes: %i[id ytmusic_album_distributed_on jan_code is_touhou created_at updated_at],
             form_attributes: %i[jan_code is_touhou],
             search_scope: lambda { |scope, query|
               Admin::Resource.associated_search(
@@ -523,8 +524,8 @@ module Admin
           new(
             key: 'tracks',
             model_class_name: 'Track',
-            index_attributes: %i[name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count],
-            detail_attributes: %i[id name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count created_at updated_at],
+            index_attributes: %i[ytmusic_album_distributed_on name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count],
+            detail_attributes: %i[id ytmusic_album_distributed_on name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count created_at updated_at],
             form_attributes: %i[jan_code isrc is_touhou],
             search_attributes: %i[jan_code isrc],
             filter_definitions: [missing_streaming_track_filter, original_songs_count_filter, track_catalog_type_filter],
@@ -796,7 +797,7 @@ module Admin
           new(
             key: 'ytmusic_albums',
             model_class_name: 'YtmusicAlbum',
-            index_attributes: %i[name circle_name album_id release_year tracks_status total_tracks browse_id],
+            index_attributes: %i[distributed_on name circle_name album_id release_year tracks_status total_tracks browse_id],
             form_attributes: %i[album_id browse_id name url playlist_url release_year total_tracks payload],
             search_scope: lambda { |scope, query|
               Admin::Resource.associated_search(

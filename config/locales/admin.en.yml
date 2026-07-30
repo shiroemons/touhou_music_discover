@@ -263,6 +263,7 @@ en:
         spotify_album_name: "Spotify album name"
         apple_music_album_name: "Apple Music album name"
         ytmusic_album_name: "YouTube Music album name"
+        ytmusic_album_distributed_on: "YouTube Music distribution date"
         line_music_album_name: "LINE MUSIC album name"
         album_type: "Album type"
         label: "Label"

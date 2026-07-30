@@ -12,7 +12,7 @@ module Admin
       assert_select 'th', 'JANコード'
       assert_select 'th', '東方'
       assert_equal(
-        ['JANコード', 'サークル', 'Spotifyアルバム名', 'Apple Musicアルバム名', 'YouTube Musicアルバム名', 'LINE MUSICアルバム名', '東方', '操作'],
+        ['YouTube Music配信日', 'JANコード', 'サークル', 'Spotifyアルバム名', 'Apple Musicアルバム名', 'YouTube Musicアルバム名', 'LINE MUSICアルバム名', '東方', '操作'],
         css_select('thead th').map { it.text.squish }
       )
       assert_select '.admin-filter-field label', text: '未配信'
@@ -51,6 +51,51 @@ module Admin
       assert_select 'tr.admin-clickable-row[data-admin-clickable-row-href-value=?]', admin_resource_path('albums', album)
       assert_select 'td', text: 'Admin YouTube Music Album'
       assert_select 'td', text: 'Admin LINE MUSIC Album'
+    end
+
+    test 'shows youtube music distribution date on album and track screens' do
+      album = Album.create!(jan_code: '9777777777767')
+      track = Track.create!(album:, isrc: 'JPABC260767')
+      ytmusic_album = YtmusicAlbum.create!(
+        album:,
+        browse_id: 'ytmusic-admin-distribution-date-index',
+        name: 'Admin YouTube Music Distribution Date',
+        distributed_on: Date.new(2026, 7, 30),
+        payload: {}
+      )
+
+      get admin_resources_url('ytmusic_albums'), params: { q: ytmusic_album.browse_id }
+
+      assert_response :success
+      assert_equal(
+        ['配信日', '名前', 'サークル', 'JANコード', 'リリース年', '楽曲取得', '総トラック数', 'Browse ID', '操作'],
+        css_select('thead th').map { it.text.squish }
+      )
+      assert_select 'tbody td:first-child', text: '2026-07-30'
+
+      get admin_resources_url('albums'), params: { q: album.jan_code }
+
+      assert_response :success
+      assert_equal 'YouTube Music配信日', css_select('thead th').first.text.squish
+      assert_select 'tbody td:first-child', text: '2026-07-30'
+
+      get admin_resource_url('albums', album)
+
+      assert_response :success
+      assert_select '.admin-detail-table th', text: 'YouTube Music配信日'
+      assert_select '.admin-detail-table td', text: '2026-07-30'
+
+      get admin_resources_url('tracks'), params: { q: track.isrc }
+
+      assert_response :success
+      assert_equal 'YouTube Music配信日', css_select('thead th').first.text.squish
+      assert_select 'tbody td:first-child', text: '2026-07-30'
+
+      get admin_resource_url('tracks', track)
+
+      assert_response :success
+      assert_select '.admin-detail-table th', text: 'YouTube Music配信日'
+      assert_select '.admin-detail-table td', text: '2026-07-30'
     end
 
     test 'shows a LINE MUSIC catalog shortage beside the album name' do
@@ -460,7 +505,7 @@ module Admin
       assert_select 'select[name=?][onchange=?]', 'filters[original_songs_count]', 'this.form.requestSubmit()'
       assert_select 'select[name=?] option', 'filters[original_songs_count]', text: '0曲'
       assert_select 'th', text: '配信取得'
-      row_jan_codes = css_select('tbody tr').map { |row| row.css('td')[3].text.squish }
+      row_jan_codes = css_select('tbody tr').map { |row| row.css('td')[4].text.squish }
 
       assert_equal [newer_track.jan_code, older_track.jan_code], row_jan_codes
       assert_select 'a.admin-streaming-status-badge', text: 'Spotify未取得'

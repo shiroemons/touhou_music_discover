@@ -26,7 +26,7 @@ class Track < ApplicationRecord
   scope :jan, ->(jan) { where(jan_code: jan) }
   scope :isrc, ->(isrc) { find_by(isrc:) }
 
-  delegate :circle_name, to: :album
+  delegate :circle_name, :ytmusic_album_distributed_on, to: :album
 
   def album_name
     album.spotify_album&.name || album.apple_music_album&.name
