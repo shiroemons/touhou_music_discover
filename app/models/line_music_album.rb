@@ -457,7 +457,7 @@ class LineMusicAlbum < ApplicationRecord
   end
 
   def artist_name
-    payload['artists']&.map { it['artist_name'] }&.join(' / ')
+    payload&.fetch('artists', nil)&.map { it['artist_name'] }&.join(' / ')
   end
 
   def catalog_track_count

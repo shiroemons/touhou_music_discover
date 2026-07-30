@@ -931,8 +931,14 @@ module Admin
       self.action_name = 'サークルを設定'
 
       def handle(_args)
-        CircleAssignmentService.new.assign_missing
-        succeed 'Done!'
+        result = CircleAssignmentService.new.assign_missing
+        message = "処理完了: 対象#{result[:processed]}件、設定#{result[:assigned]}件、未設定#{result[:unassigned]}件"
+
+        if result[:unassigned].positive?
+          warn "#{message}。未設定アルバムは、配信サービスのアーティスト名またはJAN対応表を確認してください。"
+        else
+          succeed message
+        end
       end
     end
 

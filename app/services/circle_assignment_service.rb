@@ -1,12 +1,22 @@
 # frozen_string_literal: true
 
 class CircleAssignmentService
-  STREAMING_ALBUM_ASSOCIATIONS = %i[spotify_album apple_music_album].freeze
+  STREAMING_ALBUM_ASSOCIATIONS = %i[spotify_album apple_music_album line_music_album].freeze
 
   def assign_missing
+    processed_count = 0
+    assigned_count = 0
+
     Album.missing_circles.includes(STREAMING_ALBUM_ASSOCIATIONS).find_each do |album|
-      assign(album)
+      processed_count += 1
+      assigned_count += 1 if assign(album).positive?
     end
+
+    {
+      processed: processed_count,
+      assigned: assigned_count,
+      unassigned: processed_count - assigned_count
+    }
   end
 
   def assign(album)
@@ -15,6 +25,8 @@ class CircleAssignmentService
     end
 
     add_circle(album, Circle::JAN_TO_CIRCLE[album.jan_code]) if album.circles.empty?
+
+    album.circles.size
   end
 
   private
