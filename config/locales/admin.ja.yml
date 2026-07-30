@@ -328,6 +328,22 @@ ja:
         tempo: "テンポ"
         time_signature: "拍子"
         valence: "ポジティブ度"
+      ytmusic_album:
+        distributed_on: "配信日"
+        youtube_published_on: "YouTube公開日（UTC）"
+        original_released_on: "原盤リリース日"
+        distribution_source: "配信日判定方法"
+        distribution_stats: "配信日判定の集計情報"
+        distribution_fetched_at: "配信日取得日時"
+        distribution_track_metadata: "配信日判定用の楽曲情報"
+    values:
+      ytmusic_album:
+        distribution_source:
+          art_track_mode: "Art Trackの最頻公開日"
+          all_track_mode: "全楽曲の最頻公開日"
+          single_track: "単一楽曲の公開日"
+          degraded: "取得データ不完全"
+          failed: "判定不能"
     actions:
       heading: "アクション"
       primary: "主要操作"

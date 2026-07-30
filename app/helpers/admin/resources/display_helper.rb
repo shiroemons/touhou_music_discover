@@ -17,6 +17,8 @@ module Admin
         return admin_line_music_unavailable_tracks_value(record) if attribute.to_s == 'unavailable_catalog_tracks'
 
         value = resource_config.value_for(record, attribute)
+        return admin_ytmusic_distribution_source_value(value) if record.is_a?(YtmusicAlbum) && attribute.to_s == 'distribution_source'
+
         reference_record = admin_reference_record(record, attribute, value)
         return admin_reference_value(reference_record) if reference_record
 
@@ -77,6 +79,12 @@ module Admin
         JSON.pretty_generate(value)
       rescue JSON::GeneratorError
         value.to_s
+      end
+
+      def admin_ytmusic_distribution_source_value(value)
+        return tag.span(t('admin.shared.blank'), class: 'admin-muted-text') if value.blank?
+
+        t("admin.values.ytmusic_album.distribution_source.#{value}", default: value.to_s)
       end
 
       def admin_scalar_value(record, attribute, value)

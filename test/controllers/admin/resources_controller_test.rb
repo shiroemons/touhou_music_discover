@@ -653,6 +653,39 @@ module Admin
       assert_streaming_album_external_link('line_music_albums', line_music_album, 'LINE MUSICで開く', line_music_album.url)
     end
 
+    test 'shows youtube music distribution fields in Japanese' do
+      album = Album.create!(jan_code: '9777777777802')
+      ytmusic_album = YtmusicAlbum.create!(
+        album:,
+        browse_id: 'ytmusic-admin-distribution-fields',
+        name: 'Admin YouTube Music Distribution Fields',
+        distributed_on: Date.new(2026, 7, 30),
+        youtube_published_on: Date.new(2026, 7, 29),
+        original_released_on: Date.new(2026, 5, 4),
+        distribution_source: 'single_track',
+        distribution_stats: {},
+        distribution_fetched_at: Time.zone.local(2026, 7, 30, 12, 0),
+        distribution_track_metadata: [],
+        payload: {}
+      )
+
+      get admin_resource_url('ytmusic_albums', ytmusic_album)
+
+      assert_response :success
+      expected_labels = [
+        '配信日',
+        'YouTube公開日（UTC）',
+        '原盤リリース日',
+        '配信日判定方法',
+        '配信日判定の集計情報',
+        '配信日取得日時',
+        '配信日判定用の楽曲情報'
+      ]
+
+      expected_labels.each { |label| assert_select '.admin-detail-table th', text: label }
+      assert_select '.admin-detail-table td', text: '単一楽曲の公開日'
+    end
+
     test 'shows artwork and readable association labels instead of raw foreign keys' do
       circle = Circle.create!(name: 'Admin Circle')
       album = Album.create!(jan_code: '9888888888888')
