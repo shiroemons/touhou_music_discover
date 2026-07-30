@@ -4,10 +4,15 @@ module Admin
   class ActionRun
     TTL = 12.hours
     KEY_PREFIX = 'admin:action_runs'
+    ACTIVE_STATUSES = %w[queued processing].freeze
 
     class NotFound < StandardError; end
 
     class << self
+      def active_status?(status)
+        ACTIVE_STATUSES.include?(status.to_s)
+      end
+
       def create!(run_id:, resource_key:, action_key:, action_label:, redirect_path:)
         write(
           run_id,
@@ -17,15 +22,25 @@ module Admin
             'action_key' => action_key,
             'action_label' => action_label,
             'redirect_path' => redirect_path,
-            'status' => 'processing',
+            'status' => 'queued',
             'current' => 0,
             'total' => 0,
-            'message' => I18n.t('admin.actions.progress.started'),
+            'message' => I18n.t('admin.actions.progress.queued'),
             'result_message' => nil,
             'result_status' => nil,
-            'started_at' => Time.current.iso8601,
+            'enqueued_at' => Time.current.iso8601,
+            'started_at' => nil,
             'completed_at' => nil
           }
+        )
+      end
+
+      def start!(run_id)
+        update!(
+          run_id,
+          status: 'processing',
+          message: I18n.t('admin.actions.progress.started'),
+          started_at: Time.current.iso8601
         )
       end
 

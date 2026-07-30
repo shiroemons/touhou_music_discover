@@ -9,18 +9,22 @@ module Admin
       action = FakeAction.new(result)
       resource = FakeResource.new(action)
       completed = nil
+      started_run_id = nil
 
       with_admin_resource(resource) do
-        with_action_run_method(:complete!, ->(run_id, action_result) { completed = [run_id, action_result] }) do
-          Admin::ActionJob.perform_now(
-            run_id: 'run-1',
-            resource_key: 'albums',
-            action_key: 'fake_action',
-            fields: { 'name' => 'value' }
-          )
+        with_action_run_method(:start!, ->(run_id) { started_run_id = run_id }) do
+          with_action_run_method(:complete!, ->(run_id, action_result) { completed = [run_id, action_result] }) do
+            Admin::ActionJob.perform_now(
+              run_id: 'run-1',
+              resource_key: 'albums',
+              action_key: 'fake_action',
+              fields: { 'name' => 'value' }
+            )
+          end
         end
       end
 
+      assert_equal 'run-1', started_run_id
       assert_equal [{ fields: { 'name' => 'value' }, record: nil }], action.calls
       assert_equal ['run-1', result], completed
     end
@@ -36,13 +40,15 @@ module Admin
       )
 
       with_admin_resource(resource) do
-        with_action_run_method(:complete!, ->(_run_id, _action_result) {}) do
-          Admin::ActionJob.perform_now(
-            run_id: 'run-1',
-            resource_key: 'tracks',
-            action_key: 'import_tracks_with_original_songs',
-            fields: { 'tsv_file' => uploaded_file.as_job_argument }
-          )
+        with_action_run_method(:start!, ->(_run_id) {}) do
+          with_action_run_method(:complete!, ->(_run_id, _action_result) {}) do
+            Admin::ActionJob.perform_now(
+              run_id: 'run-1',
+              resource_key: 'tracks',
+              action_key: 'import_tracks_with_original_songs',
+              fields: { 'tsv_file' => uploaded_file.as_job_argument }
+            )
+          end
         end
       end
 
@@ -52,6 +58,20 @@ module Admin
       assert_equal uploaded_file.path, actual_file.path
       assert_equal uploaded_file.content_type, actual_file.content_type
       assert_equal uploaded_file.original_filename, actual_file.original_filename
+    end
+
+    test 'limits concurrent executions of the same action and target' do
+      first_job = build_job(action_key: 'fetch_albums')
+      duplicate_job = build_job(action_key: 'fetch_albums')
+      different_action_job = build_job(action_key: 'fetch_tracks')
+      different_record_job = build_job(action_key: 'fetch_albums', record_id: 'record-2')
+
+      assert_predicate first_job, :concurrency_limited?
+      assert_equal 1, first_job.class.concurrency_limit
+      assert_equal Admin::ActionRun::TTL, first_job.class.concurrency_duration
+      assert_equal first_job.concurrency_key, duplicate_job.concurrency_key
+      assert_not_equal first_job.concurrency_key, different_action_job.concurrency_key
+      assert_not_equal first_job.concurrency_key, different_record_job.concurrency_key
     end
 
     FakeResource = Data.define(:action) do
@@ -74,6 +94,16 @@ module Admin
         @calls << { fields:, record: }
         @result
       end
+    end
+
+    def build_job(action_key:, record_id: nil)
+      Admin::ActionJob.new(
+        run_id: SecureRandom.uuid,
+        resource_key: 'albums',
+        action_key:,
+        fields: {},
+        record_id:
+      )
     end
 
     def with_admin_resource(resource)

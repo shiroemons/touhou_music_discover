@@ -321,11 +321,13 @@ en:
         progress: "Shows processed targets, fetched items, missing records, and errors as they update."
         external_api: "May call external APIs, so rate limits or missing results can occur."
       progress:
-        description: "The action is running in the background. Progress updates automatically."
+        description: "Shows the background action state and progress. Updates automatically."
+        queued: "Waiting for the background action to start."
         started: "Action started."
         count: "%{current} / %{total}"
         return: "Return"
         statuses:
+          queued: "Waiting to start"
           processing: "Running"
           completed: "Completed"
           error: "Error"

@@ -33,7 +33,7 @@ export default class extends Controller {
       Turbo.renderStreamMessage(html)
 
       const progressCard = document.querySelector("#admin-action-progress")
-      if (progressCard?.dataset.status !== "processing") {
+      if (progressCard?.dataset.polling !== "true") {
         this.stopPolling()
       }
     } catch (error) {

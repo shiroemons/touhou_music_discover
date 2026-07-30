@@ -5,8 +5,15 @@ require 'fileutils'
 module Admin
   class ActionJob < ApplicationJob
     queue_as :admin_actions
+    limits_concurrency(
+      key: lambda do |job_args|
+        job_args.values_at(:resource_key, :action_key, :record_id).compact.join(':')
+      end,
+      duration: Admin::ActionRun::TTL
+    )
 
     def perform(run_id:, resource_key:, action_key:, fields:, record_id: nil)
+      Admin::ActionRun.start!(run_id)
       progress = Admin::ActionProgress.new(run_id)
       Admin::ActionProgress.with(progress) do
         resource_config = Admin::Resource.find!(resource_key)

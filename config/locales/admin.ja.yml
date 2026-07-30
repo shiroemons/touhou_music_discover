@@ -356,11 +356,13 @@ ja:
         progress: "処理中の対象、取得件数、未検出、エラー件数を順次表示します。"
         external_api: "外部APIへ通信するため、レート制限や未検出が発生する場合があります。"
       progress:
-        description: "アクションをバックグラウンドで実行しています。進捗は自動更新されます。"
+        description: "バックグラウンド処理の状態と進捗を表示しています。自動更新されます。"
+        queued: "バックグラウンド処理の開始を待っています。"
         started: "アクションを開始しました。"
         count: "%{current} / %{total}"
         return: "戻る"
         statuses:
+          queued: "実行待ち"
           processing: "実行中"
           completed: "完了"
           error: "エラー"
