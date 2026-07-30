@@ -310,6 +310,38 @@ module DistributionDate
       assert_not_nil calls.last[:message]
     end
 
+    test '並列完了コールバックでもprogress_callbackを処理件数順に呼ぶ' do
+      album_count = 5
+      album_count.times { create_ytmusic_album }
+      progress_currents = []
+      progress_mutex = Mutex.new
+      progress_callback = lambda do |current:, **_attrs|
+        sleep((album_count - current + 1) * 0.003) if current.positive?
+        progress_mutex.synchronize { progress_currents << current }
+      end
+      parallel_each = lambda do |records, workers:, finish:, **_options, &_work|
+        raise ArgumentError, "unexpected workers: #{workers.inspect}" unless workers == :ytmusic
+
+        records.each_with_index.map do |id, index|
+          Thread.new do
+            outcome = DistributionDate::YtmusicCollector::CollectOutcome.new(status: :updated, fetched_count: 1)
+            finish.call(id, index, outcome)
+          end
+        end.each(&:value)
+      end
+
+      with_singleton_method(ParallelRunner, :each, parallel_each) do
+        DistributionDate::YtmusicCollector.new(
+          apply: true,
+          request_interval: 0,
+          out: StringIO.new,
+          progress_callback:
+        ).run
+      end
+
+      assert_equal (0..album_count).to_a, progress_currents
+    end
+
     test 'apply: falseのときprogress_callbackは呼ばれない' do
       album = create_album
       ytmusic_album = create_ytmusic_album(album:)
@@ -520,6 +552,14 @@ module DistributionDate
     # base_interval / request_interval は既定0にし、テストが実際にsleepしないようにする。
     def run_collector(apply:, base_interval: 0, request_interval: 0, **)
       DistributionDate::YtmusicCollector.new(apply:, base_interval:, request_interval:, out: StringIO.new, **).run
+    end
+
+    def with_singleton_method(object, method_name, replacement)
+      original_method = object.method(method_name)
+      object.define_singleton_method(method_name, replacement)
+      yield
+    ensure
+      object.define_singleton_method(method_name, original_method)
     end
 
     # `YtMusic::Video.find` が一度でも呼ばれたら失敗させ、dry-run時にAPI呼び出しがないことを検証するためのfake。

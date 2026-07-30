@@ -4,6 +4,25 @@ require 'test_helper'
 
 module Admin
   class ActionTest < ActiveSupport::TestCase
+    ThreadedProgressCollector = Data.define(:progress_callback) do
+      def run
+        progress_callback.call(current: 0, total: 2, message: '集計を開始しています', reset: true)
+        Thread.new do
+          progress_callback.call(current: 1, total: 2, message: '処理中: 1/2')
+        end.join
+
+        {
+          target_count: 2,
+          updated: 1,
+          failed: 0,
+          degraded: 0,
+          not_found: 0,
+          error: 0,
+          fetched_videos: 1
+        }
+      end
+    end
+
     test 'resolves custom admin action classes' do
       Admin::Resource.all.each do |resource|
         resource.actions.each do |action|
@@ -178,6 +197,30 @@ module Admin
       assert_includes result.message, '4582736139200: YouTube Music API request failed (HTTP 403)'
     end
 
+    test 'records YouTube Music distribution date progress from a parallel callback thread' do
+      updates = []
+      updates_mutex = Mutex.new
+      progress = Admin::ActionProgress.new('run-id')
+      collector_factory = lambda do |**options|
+        ThreadedProgressCollector.new(options.fetch(:progress_callback))
+      end
+
+      with_singleton_method(DistributionDate::YtmusicCollector, :new, collector_factory) do
+        with_action_run_method(:update!, ->(_run_id, attrs) { updates_mutex.synchronize { updates << attrs } }) do
+          Admin::ActionProgress.with(progress) do
+            result = Admin::Resource
+                     .find!('ytmusic_albums')
+                     .action_for!('fetch_ytmusic_distribution_dates')
+                     .run
+
+            assert_predicate result, :success?
+          end
+        end
+      end
+
+      assert(updates.any? { |attrs| attrs[:current] == 1 && attrs[:total] == 2 && attrs[:message] == '処理中: 1/2' })
+    end
+
     test 'fetches only Spotify albums that have missing tracks' do
       target_album = create_album('4777777777831')
       create_track(target_album, 'JPABC260731')
@@ -256,6 +299,14 @@ module Admin
       yield
     ensure
       object.define_singleton_method(method_name, original_method)
+    end
+
+    def with_action_run_method(method_name, replacement)
+      original_method = Admin::ActionRun.method(method_name)
+      Admin::ActionRun.define_singleton_method(method_name, replacement)
+      yield
+    ensure
+      Admin::ActionRun.define_singleton_method(method_name, original_method)
     end
 
     # テスト環境の cache_store は null_store のため、記録内容を読み戻せるよう一時的に差し替える

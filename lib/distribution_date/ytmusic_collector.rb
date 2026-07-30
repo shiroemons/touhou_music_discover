@@ -178,17 +178,20 @@ module DistributionDate
       browse_id_by_id = YtmusicAlbum.unscoped.where(id: ids).pluck(:id, :browse_id).to_h
       processed = 0
       started_at = monotonic_now
+      progress_mutex = Mutex.new
 
       progress_callback&.call(current: 0, total: ids.size, message: 'YouTube Music 配信日集計を開始しています', reset: true)
 
       ids.each_slice(SLICE_SIZE) do |slice|
         finish_callback = lambda do |id, _index, outcome|
-          counters[outcome.status] += 1
-          fetched_videos += outcome.fetched_count
-          failed_album_browse_ids << browse_id_by_id[id] if outcome.status == :failed && failed_album_browse_ids.size < 10
-          processed += 1
-          print_progress(processed, ids.size, counters)
-          progress_callback&.call(current: processed, total: ids.size, message: progress_message(processed, ids.size, counters))
+          progress_mutex.synchronize do
+            counters[outcome.status] += 1
+            fetched_videos += outcome.fetched_count
+            failed_album_browse_ids << browse_id_by_id[id] if outcome.status == :failed && failed_album_browse_ids.size < 10
+            processed += 1
+            print_progress(processed, ids.size, counters)
+            progress_callback&.call(current: processed, total: ids.size, message: progress_message(processed, ids.size, counters))
+          end
         end
 
         ParallelRunner.each(slice, workers:, finish: finish_callback) { |id| collect_album(id) }

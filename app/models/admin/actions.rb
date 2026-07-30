@@ -10,6 +10,7 @@ module Admin
       end
 
       attr_reader :response
+      attr_writer :progress_recorder
 
       def initialize
         @response = { messages: [] }
@@ -35,6 +36,8 @@ module Admin
 
       private
 
+      attr_reader :progress_recorder
+
       def add_message(type, message)
         response[:messages] << { type:, body: message.to_s }
       end
@@ -47,9 +50,9 @@ module Admin
 
       def record_progress(current:, total:, message:, reset: false)
         if reset
-          Admin::ActionProgress.start(total:, message:)
+          progress_recorder&.start(total:, message:)
         else
-          Admin::ActionProgress.update(current:, total:, message:)
+          progress_recorder&.update(current:, total:, message:)
         end
       end
 

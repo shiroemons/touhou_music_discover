@@ -87,14 +87,17 @@ module Admin
     end
 
     def attach_progress_recorder(action)
-      return if Admin::ActionProgress.current.blank?
+      progress_recorder = Admin::ActionProgress.current
+      return if progress_recorder.blank?
+
+      action.progress_recorder = progress_recorder if action.respond_to?(:progress_recorder=)
 
       %i[inform succeed warn error].each do |method_name|
         next unless action.respond_to?(method_name)
 
         original_method = action.method(method_name)
         action.define_singleton_method(method_name) do |message = nil, *args, **kwargs, &block|
-          Admin::ActionProgress.current&.record_message(message)
+          progress_recorder.record_message(message)
           original_method.call(message, *args, **kwargs, &block)
         end
       end
