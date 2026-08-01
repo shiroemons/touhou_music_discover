@@ -12,3 +12,7 @@
 - `rails` が `Terminating` / `Pending` のまま残った場合は、まず `make recover` で `devbox services stop` から `devbox services up -b` まで実行して復旧する。
 - `devbox services ls` では未起動なのに `3000` / `5432` / `6379` が LISTEN している場合は、devbox管理外の孤児プロセスが残っている。`make recover-force` で孤児プロセスを停止してから `devbox services up -b` で復旧する。
 - RailsアプリのURLは `http://localhost:3000`。`localhost:5000` は macOS の `ControlCenter` が使うことがあるため、Rails確認には使わない。
+
+## Git運用
+- Conventional Commits形式を使用する（`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `chore:`）。
+- コミットメッセージの説明部分は明確な日本語で記述する（種別プレフィックスは英語のまま使用する）。
