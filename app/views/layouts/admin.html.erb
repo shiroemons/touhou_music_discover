@@ -59,6 +59,16 @@
                 <% end %>
               <% end %>
             </div>
+            <% if group_key == :master %>
+              <div class="admin-nav-group">
+                <div class="admin-nav-heading"><%= t('admin.navigation.groups.operations') %></div>
+                <%= link_to admin_track_original_song_assignments_path,
+                            class: "admin-nav-link #{'active' if current_page?(admin_track_original_song_assignments_path)}" do %>
+                  <%= admin_icon(:list_ordered) %>
+                  <span><%= t('admin.original_song_assignments.title') %></span>
+                <% end %>
+              </div>
+            <% end %>
           <% end %>
         </nav>
 

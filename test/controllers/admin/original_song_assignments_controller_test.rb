@@ -13,6 +13,8 @@ module Admin
 
       assert_response :success
       assert_select 'h1', '楽曲の原曲紐づけ'
+      assert_select 'nav.admin-nav a.admin-nav-link.active[href=?]', admin_track_original_song_assignments_path,
+                    text: '楽曲の原曲紐づけ'
       assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'
       assert_select 'input[name=?][type=?]', 'show_identifiers', 'checkbox', count: 1
       assert_select 'th', { text: 'JANコード', count: 0 }

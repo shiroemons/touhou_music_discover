@@ -56,6 +56,7 @@ ja:
     navigation:
       groups:
         master: "マスタ"
+        operations: "運用"
         catalog: "カタログ"
         streaming: "配信データ"
     titles:

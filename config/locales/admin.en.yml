@@ -21,6 +21,7 @@ en:
     navigation:
       groups:
         master: "Master"
+        operations: "Operations"
         catalog: "Catalog"
         streaming: "Streaming data"
     titles:

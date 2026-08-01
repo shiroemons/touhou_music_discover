@@ -10,6 +10,13 @@ module Admin
       assert_response :success
       assert_select 'h1', '管理画面'
       assert_select 'a[href=?]', '/avo', count: 0
+      nav_group_labels = css_select('.admin-nav .admin-nav-group').map do |group|
+        group.at_css('.admin-nav-heading').text.strip
+      end
+
+      assert_equal %w[マスタ 運用 カタログ 配信データ], nav_group_labels
+      assert_select 'nav.admin-nav a.admin-nav-link[href=?]', admin_track_original_song_assignments_path,
+                    text: '楽曲の原曲紐づけ'
       assert_select '.admin-theme-switcher[data-controller=?]', 'admin-theme'
       assert_select 'button[data-admin-theme-mode=?]', 'light', text: 'Light'
       assert_select 'button[data-admin-theme-mode=?]', 'dark', text: 'Dark'
