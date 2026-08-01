@@ -15,6 +15,8 @@ module Admin
       assert_select 'h1', '楽曲の原曲紐づけ'
       assert_select 'nav.admin-nav a.admin-nav-link.active[href=?]', admin_track_original_song_assignments_path,
                     text: '楽曲の原曲紐づけ'
+      assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'
+      assert_select '.admin-view-mode-link.is-active', text: '無限スクロール'
       assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'
       assert_select 'input[name=?][type=?]', 'show_identifiers', 'checkbox', count: 1
       assert_select 'th', { text: 'JANコード', count: 0 }
@@ -23,6 +25,44 @@ module Admin
       assert_select 'form[method=?]', 'post'
       assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]"
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
+    end
+
+    test 'supports pagination and infinite scroll display modes' do
+      (Admin::Resource::DEFAULT_ITEMS + 1).times do |index|
+        create_track(jan_code: format('977777777%04d', index), isrc: format('JPABC%07d', index))
+      end
+
+      get admin_track_original_song_assignments_url
+
+      assert_response :success
+      assert_select '.admin-original-song-assignment-panel[data-controller=?]', 'admin-infinite-scroll'
+      assert_select '.admin-original-song-assignment-panel[data-admin-infinite-scroll-next-url-value*=?]', 'scroll=infinite'
+      assert_select '.admin-original-song-assignment-panel[data-admin-infinite-scroll-next-url-value*=?]', 'page=2'
+      assert_select 'tbody[data-admin-infinite-scroll-target=?]', 'rows'
+      assert_select '.admin-infinite-scroll-status', text: '下までスクロールすると追加で読み込みます。'
+      assert_select '.admin-infinite-scroll-sentinel'
+      assert_select 'nav.admin-pagination', 0
+
+      get admin_track_original_song_assignments_url, params: { scroll: 'pagination' }
+
+      assert_response :success
+      assert_select '.admin-view-mode-link.is-active', text: 'ページ送り'
+      assert_select 'nav.admin-pagination[aria-label=?]', 'ページ送り'
+      assert_select '.admin-infinite-scroll-status', 0
+    end
+
+    test 'shows the streaming track number between album and name' do
+      track = create_track(jan_code: '9777777779141', isrc: 'JPABC269141')
+      spotify_album = create_spotify_album(album: track.album, spotify_id: 'assign-display-album')
+      create_spotify_track(album: track.album, track:, spotify_album:, spotify_id: 'assign-display-track', track_number: 7)
+
+      get admin_track_original_song_assignments_url
+
+      assert_response :success
+      headers = css_select('thead tr th').map { |header| header.text.strip }
+
+      assert_equal %w[サークル アルバム名 トラック番号 名前 原曲], headers
+      assert_select 'tbody tr td:nth-child(3)', text: '7'
     end
 
     test 'can show tracks that already have original songs' do

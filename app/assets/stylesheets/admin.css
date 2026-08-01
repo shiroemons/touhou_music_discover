@@ -1411,9 +1411,13 @@
 
 .admin-original-song-assignment-search-form .admin-list-controls {
   align-items: center;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  grid-template-columns: minmax(18rem, 36rem) auto;
+}
+
+.admin-original-song-assignment-search-form .admin-search-row {
+  flex: 1 1 28rem;
 }
 
 .admin-original-song-assignment-search-form .admin-search-row {
@@ -1440,14 +1444,25 @@
   white-space: nowrap;
 }
 
+.admin-original-song-assignment-search-form .admin-view-mode-bar {
+  margin-left: auto;
+}
+
 .admin-original-song-assignment-table {
   min-width: 76rem;
 }
 
-.admin-original-song-assignment-table td:last-child,
-.admin-original-song-assignment-table th:last-child {
+.admin-original-song-assignment-table td:last-child {
   min-width: 28rem;
   position: static;
+}
+
+/* Keep the editable original-song heading visible during both table scroll directions. */
+.admin-original-song-assignment-table thead th:last-child {
+  position: sticky;
+  right: 0;
+  top: 0;
+  z-index: var(--admin-z-table-actions-header);
 }
 
 .admin-original-song-missing-albums-search-form .admin-list-controls {
@@ -4772,6 +4787,10 @@ html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
     justify-self: stretch;
   }
 
+  .admin-original-song-assignment-search-form .admin-view-mode-bar {
+    margin-left: 0;
+  }
+
   .admin-search-input {
     max-width: none;
   }
@@ -5202,4 +5221,23 @@ html[data-admin-resolved-theme="light"] .admin-action-execution-panel .admin-act
   .admin-action-check-card .admin-panel-header {
     align-items: flex-start;
   }
+}
+
+/* Keep row scanning consistent across every admin table, including nested result tables. */
+.admin-shell .admin-table tbody tr:nth-child(even) > td,
+.admin-shell .admin-table tbody tr:nth-child(even) > th,
+.admin-shell .admin-detail-table tbody tr:nth-child(even) > td,
+.admin-shell .admin-detail-table tbody tr:nth-child(even) > th,
+.admin-shell .admin-action-result-detail-table tbody tr:nth-child(even) > td,
+.admin-shell .admin-action-result-detail-table tbody tr:nth-child(even) > th {
+  background: color-mix(in srgb, var(--admin-surface-muted) 55%, var(--admin-surface));
+}
+
+.admin-shell .admin-table tbody tr:hover > td,
+.admin-shell .admin-table tbody tr:hover > th,
+.admin-shell .admin-detail-table tbody tr:hover > td,
+.admin-shell .admin-detail-table tbody tr:hover > th,
+.admin-shell .admin-action-result-detail-table tbody tr:hover > td,
+.admin-shell .admin-action-result-detail-table tbody tr:hover > th {
+  background: color-mix(in srgb, var(--admin-surface-strong) 70%, var(--admin-surface));
 }

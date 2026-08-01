@@ -2,6 +2,8 @@
 
 module Admin
   class OriginalSongAssignmentsController < BaseController
+    helper Admin::OriginalSongAssignmentsHelper
+
     before_action :authenticate_admin_if_configured
 
     STATUS_OPTIONS = %w[missing present all].freeze
@@ -341,7 +343,7 @@ module Admin
     end
 
     def redirect_filter_params
-      params.permit(:q, :status, :show_identifiers).to_h.compact_blank
+      params.permit(:q, :status, :show_identifiers, :scroll).to_h.compact_blank
     end
   end
 end

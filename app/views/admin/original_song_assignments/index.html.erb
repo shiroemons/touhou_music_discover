@@ -15,6 +15,7 @@
 <%= form_with url: admin_track_original_song_assignments_path,
               method: :get,
               class: 'admin-search-form admin-original-song-assignment-search-form' do |form| %>
+  <%= form.hidden_field :scroll, value: 'infinite' if admin_infinite_scroll? %>
   <div class="admin-list-toolbar">
     <div class="admin-filter-bar">
       <div class="admin-filter-field">
@@ -47,7 +48,7 @@
             <span><%= t('admin.search.submit') %></span>
           <% end %>
           <% if @query.present? || @status != 'missing' || @show_identifiers %>
-            <%= link_to admin_track_original_song_assignments_path, class: 'btn admin-btn' do %>
+            <%= link_to admin_track_original_song_assignments_path(scroll: (admin_infinite_scroll? ? 'infinite' : 'pagination')), class: 'btn admin-btn' do %>
               <%= admin_icon(:x) %>
               <span><%= t('admin.search.clear') %></span>
             <% end %>
@@ -58,14 +59,34 @@
         <span><%= t('admin.table.current_results') %></span>
         <strong><%= admin_records_summary(@pagy) %></strong>
       </div>
+      <div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
+        <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
+        <div class="admin-view-mode-options">
+          <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'true' } do %>
+            <%= admin_icon(:list_ordered) %>
+            <span><%= t('admin.scroll_mode.pagination') %></span>
+          <% end %>
+          <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'true' : nil } do %>
+            <%= admin_icon(:arrow_down_circle) %>
+            <span><%= t('admin.scroll_mode.infinite') %></span>
+          <% end %>
+        </div>
+      </div>
     </div>
-  </div>
 <% end %>
 
-<%= form_with url: admin_track_original_song_assignments_path(q: @query, status: @status, show_identifiers: (@show_identifiers ? '1' : nil)),
+<%= form_with url: admin_track_original_song_assignments_path(
+                q: @query,
+                status: @status,
+                show_identifiers: (@show_identifiers ? '1' : nil),
+                scroll: (admin_infinite_scroll? ? 'infinite' : 'pagination')
+              ),
               method: :patch,
               class: 'admin-original-song-assignment-form' do %>
-  <div class="admin-panel admin-table-panel admin-original-song-assignment-panel">
+  <div class="admin-panel admin-table-panel admin-original-song-assignment-panel"
+       data-controller="<%= 'admin-infinite-scroll' if admin_infinite_scroll? %>"
+       data-admin-infinite-scroll-enabled-value="<%= admin_infinite_scroll? %>"
+       data-admin-infinite-scroll-next-url-value="<%= admin_infinite_scroll_next_url(@pagy) %>">
     <div class="admin-panel-header">
       <h2><%= t('admin.original_song_assignments.table_heading') %></h2>
       <%= button_tag type: :submit, class: 'btn admin-btn-primary' do %>
@@ -73,12 +94,13 @@
         <span><%= t('admin.original_song_assignments.save') %></span>
       <% end %>
     </div>
-    <div class="admin-table-scroll">
+    <div class="admin-table-scroll" data-admin-infinite-scroll-target="container">
       <table class="table admin-table admin-original-song-assignment-table">
         <thead>
           <tr>
             <th><%= t('admin.attributes.common.circle_name') %></th>
             <th><%= t('admin.attributes.common.album_name') %></th>
+            <th><%= t('admin.attributes.common.track_number') %></th>
             <th><%= t('admin.attributes.common.name') %></th>
             <% if @show_identifiers %>
               <th><%= t('admin.attributes.common.jan_code') %></th>
@@ -87,13 +109,14 @@
             <th><%= t('admin.original_song_assignments.original_songs') %></th>
           </tr>
         </thead>
-        <tbody>
+        <tbody data-admin-infinite-scroll-target="rows">
           <% @tracks.each do |track| %>
             <% selected_original_songs = track.original_songs.sort_by { |song| [song.original_code, song.track_number, song.code] } %>
             <% selected_options = selected_original_songs.map { |song| { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } } %>
             <tr>
               <td><%= admin_display_value(@track_resource, track, :circle_name) %></td>
               <td><%= admin_display_value(@track_resource, track, :album_name) %></td>
+              <td><%= admin_original_song_assignment_track_number(track) || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %></td>
               <td><%= admin_display_value(@track_resource, track, :name) %></td>
               <% if @show_identifiers %>
                 <td><%= track.jan_code %></td>
@@ -130,13 +153,30 @@
           <% end %>
           <% if @tracks.empty? %>
             <tr>
-              <td colspan="<%= @show_identifiers ? 6 : 4 %>" class="admin-table-empty"><%= t('admin.original_song_assignments.empty') %></td>
+              <td colspan="<%= @show_identifiers ? 7 : 5 %>" class="admin-table-empty"><%= t('admin.original_song_assignments.empty') %></td>
             </tr>
           <% end %>
         </tbody>
       </table>
+      <% if admin_infinite_scroll? && @pagy.next.present? %>
+        <div class="admin-infinite-scroll-sentinel" data-admin-infinite-scroll-target="sentinel" aria-hidden="true"></div>
+      <% end %>
     </div>
+    <% if admin_infinite_scroll? %>
+      <div class="admin-infinite-scroll-footer">
+        <div class="admin-infinite-scroll-status"
+             data-admin-infinite-scroll-target="status"
+             data-loading-text="<%= t('admin.scroll_mode.loading') %>"
+             data-ready-text="<%= t('admin.scroll_mode.ready') %>"
+             data-complete-text="<%= t('admin.scroll_mode.complete') %>"
+             data-error-text="<%= t('admin.scroll_mode.error') %>">
+          <%= @pagy.next.present? ? t('admin.scroll_mode.ready') : t('admin.scroll_mode.complete') %>
+        </div>
+      </div>
+    <% end %>
   </div>
 <% end %>
 
-<%= admin_pagination(@pagy) %>
+<% unless admin_infinite_scroll? %>
+  <%= admin_pagination(@pagy) %>
+<% end %>
