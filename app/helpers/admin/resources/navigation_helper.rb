@@ -3,20 +3,24 @@
 module Admin
   module Resources
     module NavigationHelper
-      def admin_active_filters?(resource_config, active_filters)
-        params[:q].present? || resource_config.non_default_filters?(active_filters)
+      def admin_active_filters?(resource_config, active_filters, filters: nil)
+        params[:q].present? || resource_config.non_default_filters?(active_filters, filters: filters || resource_config.filters)
       end
 
-      def admin_active_filter_chips(resource_config, active_filters)
+      def admin_active_filter_chips(resource_config, active_filters, filters: nil)
         chips = []
         chips << [t('admin.search.query'), params[:q]] if params[:q].present?
 
-        resource_config.filters.each do |filter|
+        (filters || resource_config.filters).each do |filter|
           value = active_filters[filter[:attribute]]
-          next if value.blank? || value == filter[:default]
+          values = filter[:multiple] ? Array(value).compact_blank : [value]
+          next if values.blank? || values == [filter[:default]]
 
-          option = filter[:options].find { |option_value, _label| option_value.to_s == value.to_s }
-          chips << [filter[:label], option&.second || value]
+          labels = values.map do |selected_value|
+            option = filter[:options].find { |option_value, _label| option_value.to_s == selected_value.to_s }
+            option&.second || selected_value
+          end
+          chips << [filter[:label], labels.join('、')]
         end
 
         chips

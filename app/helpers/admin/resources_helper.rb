@@ -4,6 +4,7 @@ module Admin
   module ResourcesHelper
     include Resources::DisplayHelper
     include Resources::ExternalLinksHelper
+    include Resources::FilterHelper
     include Resources::FormHelper
     include Resources::LineMusicAvailabilityHelper
     include Resources::LineMusicUnavailableTrackItemHelper

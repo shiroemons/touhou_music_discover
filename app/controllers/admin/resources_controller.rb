@@ -9,9 +9,9 @@ module Admin
     def index
       scope = @resource_config.apply_to(@resource_config.model_class.all)
       scope = @resource_config.search(scope, params.fetch(:q, nil).to_s.strip)
-      @active_filters = @resource_config.normalize_filters(params.fetch(:filters, {}))
       @filters = @resource_config.filters
-      scope = @resource_config.filter(scope, @active_filters)
+      @active_filters = @resource_config.normalize_filters(params.fetch(:filters, {}), filters: @filters)
+      scope = @resource_config.filter(scope, @active_filters, filters: @filters)
       scope = @resource_config.sort(scope, params[:sort], params[:direction])
       @pagy, @records = pagy(:offset, scope, limit: Admin::Resource::DEFAULT_ITEMS)
     end

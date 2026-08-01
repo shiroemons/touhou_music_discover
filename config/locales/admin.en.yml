@@ -77,6 +77,12 @@ en:
         label: "Original songs"
       tracks_original_songs:
         label: "Original songs"
+      original_type:
+        label: "Original type"
+      original:
+        label: "Original"
+      remove_selected: "Remove %{label}"
+      search_placeholder: "Search by code or name"
       circle_status:
         label: "Circle"
       catalog_type:
@@ -294,6 +300,8 @@ en:
         tempo: "Tempo"
         time_signature: "Time signature"
         valence: "Valence"
+      circle:
+        created_at: "Added at"
     actions:
       heading: "Actions"
       primary: "Primary actions"

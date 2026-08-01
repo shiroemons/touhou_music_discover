@@ -112,6 +112,12 @@ ja:
         label: "原曲数"
       tracks_original_songs:
         label: "原曲"
+      original_type:
+        label: "原作種別"
+      original:
+        label: "原作"
+      remove_selected: "%{label}を解除"
+      search_placeholder: "コード・名称で検索"
       circle_status:
         label: "サークル"
       catalog_type:
@@ -329,6 +335,8 @@ ja:
         tempo: "テンポ"
         time_signature: "拍子"
         valence: "ポジティブ度"
+      circle:
+        created_at: "追加日時"
       ytmusic_album:
         distributed_on: "配信日"
         youtube_published_on: "YouTube公開日（UTC）"

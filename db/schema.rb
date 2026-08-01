@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_26_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_01_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -76,6 +76,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_170000) do
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.datetime "updated_at", null: false
+    t.index ["created_at"], name: "index_circles_on_created_at"
     t.index ["name"], name: "index_circles_on_name", unique: true
   end
 
@@ -149,6 +150,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_26_170000) do
     t.string "short_title", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
+    t.index ["original_type"], name: "index_originals_on_original_type"
   end
 
   create_table "spotify_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|

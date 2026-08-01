@@ -44,12 +44,16 @@
         <% @filters.each do |filter| %>
           <div class="admin-filter-field">
             <%= form.label "filters_#{filter[:attribute]}", filter[:label], class: 'admin-label' %>
-            <%= form.select "filters[#{filter[:attribute]}]",
-                            options_for_select((filter[:include_blank] ? [[t('admin.filters.all'), '']] : []) + filter[:options].map { |value, label| [label, value] }, @active_filters[filter[:attribute]]),
-                            {},
-                            class: 'select admin-select',
-                            id: "filters_#{filter[:attribute]}",
-                            onchange: 'this.form.requestSubmit()' %>
+            <% if filter[:control] == :combobox %>
+              <%= admin_filter_combobox(filter, @active_filters[filter[:attribute]]) %>
+            <% else %>
+              <%= form.select "filters[#{filter[:attribute]}]",
+                              options_for_select((filter[:include_blank] ? [[t('admin.filters.all'), '']] : []) + filter[:options].map { |value, label| [label, value] }, @active_filters[filter[:attribute]]),
+                              {},
+                              class: 'select admin-select',
+                              id: "filters_#{filter[:attribute]}",
+                              onchange: 'this.form.requestSubmit()' %>
+            <% end %>
           </div>
         <% end %>
       </div>
@@ -66,7 +70,7 @@
             <%= admin_icon(:search) %>
             <span><%= t('admin.search.submit') %></span>
           <% end %>
-          <% if admin_active_filters?(@resource_config, @active_filters) %>
+          <% if admin_active_filters?(@resource_config, @active_filters, filters: @filters) %>
             <%= link_to admin_clear_filters_path(@resource_config), class: 'btn admin-btn' do %>
               <%= admin_icon(:x) %>
               <span><%= t('admin.search.clear') %></span>
@@ -93,7 +97,7 @@
       </div>
     </div>
 
-    <% active_filter_chips = admin_active_filter_chips(@resource_config, @active_filters) %>
+    <% active_filter_chips = admin_active_filter_chips(@resource_config, @active_filters, filters: @filters) %>
     <% if active_filter_chips.any? %>
       <div class="admin-active-filter-bar" aria-label="<%= t('admin.filters.active') %>">
         <% active_filter_chips.each do |label, value| %>

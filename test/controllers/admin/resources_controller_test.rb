@@ -555,6 +555,101 @@ module Admin
       assert_equal [upper_spotify_album.name, lower_spotify_album.name], row_names
     end
 
+    test 'lists original songs by code and filters them by original type and original' do
+      windows_original = Original.create!(
+        code: 'ADMIN-ORIGINAL-FILTER-WINDOWS',
+        title: 'Windows Original',
+        short_title: 'Windows',
+        original_type: 'windows',
+        series_order: 1.0
+      )
+      pc98_original = Original.create!(
+        code: 'ADMIN-ORIGINAL-FILTER-PC98',
+        title: 'PC-98 Original',
+        short_title: 'PC-98',
+        original_type: 'pc98',
+        series_order: 2.0
+      )
+      later_song = OriginalSong.create!(
+        code: 'ADMIN-ORIGINAL-FILTER-002',
+        original: windows_original,
+        title: 'Later Original Song',
+        composer: 'ZUN',
+        track_number: 2
+      )
+      earlier_song = OriginalSong.create!(
+        code: 'ADMIN-ORIGINAL-FILTER-001',
+        original: pc98_original,
+        title: 'Earlier Original Song',
+        composer: 'ZUN',
+        track_number: 1
+      )
+
+      get admin_resources_url('original_songs')
+
+      assert_response :success
+      row_codes = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+
+      assert_equal [earlier_song.code, later_song.code], row_codes
+      assert_select '.admin-filter-field label', text: '原作種別'
+      assert_select '.admin-filter-field label', text: '原作'
+      assert_select '.admin-filter-combobox[data-controller=?]', 'admin-association-select', count: 2
+      assert_select '[data-admin-association-select-multiple-value=?]', 'true', count: 2
+      assert_select 'input[type=search][role=?][id=?]', 'combobox', 'filters_original_type'
+      assert_select 'input[type=search][role=?][id=?]', 'combobox', 'filters_original'
+      original_filter = css_select('.admin-filter-combobox').find { |combobox| combobox.at_css('#filters_original') }
+      visible_children = original_filter.element_children.filter_map { |child| child['class'] }
+
+      assert_equal %w[admin-association-combobox-frame admin-association-selected], visible_children
+      assert_select '#filters_original_listbox [role=option][data-value=?][data-label=?]', windows_original.code, "#{windows_original.code} / #{windows_original.short_title}"
+      assert_select '#filters_original_type_listbox [role=option][data-value=?][data-label=?]', 'windows', Original::TYPE_LABELS.fetch(:windows)
+
+      group_labels = css_select('#filters_original_listbox [data-admin-association-select-option-group]').map { |group| group['aria-label'] }
+      expected_group_labels = Original.original_types.keys.filter_map do |original_type|
+        Original::TYPE_LABELS.fetch(original_type.to_sym) if Original.exists?(original_type:)
+      end
+
+      assert_equal expected_group_labels, group_labels
+      css_select('#filters_original_listbox [data-admin-association-select-option-group]').each do |group|
+        codes = group.css('[role=option]').map { |option| option['data-value'] }
+
+        assert_equal codes.sort, codes
+      end
+
+      get admin_resources_url('original_songs'), params: { filters: { original_type: %w[windows pc98] } }
+
+      assert_response :success
+      assert_select 'input[type=hidden][name=?][value=?]', 'filters[original_type][]', 'windows'
+      assert_select 'input[type=hidden][name=?][value=?]', 'filters[original_type][]', 'pc98'
+      assert_select 'td', text: later_song.code
+      assert_select 'td', text: earlier_song.code
+
+      get admin_resources_url('original_songs'), params: { filters: { original: [pc98_original.code, windows_original.code] } }
+
+      assert_response :success
+      assert_select 'input[type=hidden][name=?][value=?]', 'filters[original][]', pc98_original.code
+      assert_select 'input[type=hidden][name=?][value=?]', 'filters[original][]', windows_original.code
+      assert_select '.admin-filter-chip', text: %r{原作.*#{pc98_original.code} / #{pc98_original.short_title}.*#{windows_original.code} / #{windows_original.short_title}}
+      assert_select 'td', text: earlier_song.code
+      assert_select 'td', text: later_song.code
+    end
+
+    test 'sorts circles by added date descending with a stable tie breaker' do
+      older_time = Time.zone.local(2026, 1, 1, 12, 0, 0)
+      newer_time = Time.zone.local(2026, 2, 1, 12, 0, 0)
+      older_circle = Circle.create!(name: 'Admin Older Circle', created_at: older_time, updated_at: older_time)
+      newer_circle = Circle.create!(name: 'Admin Newer Circle', created_at: newer_time, updated_at: newer_time)
+
+      get admin_resources_url('circles'), params: { sort: 'created_at', direction: 'desc' }
+
+      assert_response :success
+      assert_select 'th', text: '追加日時'
+      assert_select 'a.admin-sort-link.is-active[aria-sort=?]', 'descending', text: '追加日時'
+      row_names = css_select('tbody tr').map { |row| row.css('td').first.text.squish }
+
+      assert_equal [newer_circle.name, older_circle.name], row_names
+    end
+
     test 'filters tracks by missing streaming service' do
       missing_album = Album.create!(jan_code: '9777777777911')
       delivered_album = Album.create!(jan_code: '9777777777912')

@@ -258,6 +258,46 @@ module Admin
             Admin::Resource.track_original_songs_count_scope(scope, value)
           }
         }
+        original_type_filter = {
+          key: 'original_type',
+          label_key: 'admin.filters.original_type.label',
+          control: :combobox,
+          include_blank: true,
+          multiple: true,
+          options: Original.original_types.keys.map { |type| [type, Original::TYPE_LABELS.fetch(type.to_sym)] },
+          apply: lambda { |scope, value|
+            values = Array(value).filter_map do |original_type|
+              original_type.to_s if Original.original_types.key?(original_type.to_s)
+            end.uniq
+            next scope if values.empty?
+
+            scope.joins(:original).where(originals: { original_type: values })
+          }
+        }
+        original_filter = {
+          key: 'original',
+          label_key: 'admin.filters.original.label',
+          control: :combobox,
+          include_blank: true,
+          multiple: true,
+          options: lambda {
+            originals_by_type = Original.order(:code).pluck(:code, :short_title, :original_type).group_by do |_code, _short_title, original_type|
+              original_type
+            end
+
+            Original.original_types.keys.flat_map do |original_type|
+              originals_by_type.fetch(original_type, []).map do |code, short_title, _type|
+                [code, [code, short_title].compact_blank.join(' / '), Original::TYPE_LABELS.fetch(original_type.to_sym)]
+              end
+            end
+          },
+          apply: lambda { |scope, value|
+            values = Array(value).map { |original_code| original_code.to_s.strip }.compact_blank.uniq
+            next scope if values.empty?
+
+            scope.where(original_code: Original.where(code: values).select(:code))
+          }
+        }
         track_catalog_type_filter = {
           key: 'catalog_type',
           label_key: 'admin.filters.catalog_type.label',
@@ -537,7 +577,7 @@ module Admin
           new(
             key: 'circles',
             model_class_name: 'Circle',
-            index_attributes: %i[name albums_count],
+            index_attributes: %i[name albums_count created_at],
             form_attributes: %i[name],
             search_attributes: %i[name]
           ),
@@ -554,7 +594,10 @@ module Admin
             index_attributes: %i[code original_code title composer track_number is_duplicate],
             form_attributes: %i[code original_code title composer track_number is_duplicate],
             search_attributes: %i[code original_code title composer],
-            hidden_relations: %i[tracks_original_songs]
+            filter_definitions: [original_type_filter, original_filter],
+            includes: :original,
+            hidden_relations: %i[tracks_original_songs],
+            default_order: ->(scope) { scope.order(code: :asc) }
           ),
           new(
             key: 'master_artists',
@@ -897,7 +940,14 @@ module Admin
       return scope unless sortable_attribute?(attribute)
 
       direction = sort_direction(direction)
-      scope.reorder(Arel.sql("#{quoted_table_name}.#{model_class.connection.quote_column_name(attribute)} #{direction.upcase} NULLS LAST"))
+      table = model_class.arel_table
+      orderings = [direction == 'desc' ? table[attribute.to_sym].desc.nulls_last : table[attribute.to_sym].asc.nulls_last]
+      primary_key = model_class.primary_key.to_sym
+      if attribute.to_s != primary_key.to_s
+        orderings << (direction == 'desc' ? table[primary_key].desc : table[primary_key].asc)
+      end
+
+      scope.reorder(*orderings)
     end
 
     def sort_direction(direction)
@@ -922,37 +972,48 @@ module Admin
       scope.where(search_where_clause, conditions)
     end
 
-    def filter(scope, params)
-      normalize_filters(params).reduce(scope) do |filtered_scope, (key, value)|
+    def filter(scope, params, filters: self.filters)
+      normalize_filters(params, filters:).reduce(scope) do |filtered_scope, (key, value)|
         filter_definition_for(key).fetch(:apply).call(filtered_scope, value)
       end
     end
 
-    def normalize_filters(params)
+    def normalize_filters(params, filters: self.filters)
       values = params.respond_to?(:to_unsafe_h) ? params.to_unsafe_h : params.to_h
 
-      normalized_filters = filters.to_h do |filter|
-        value = values.fetch(filter[:attribute], filter[:default]).to_s.strip
-        [filter[:attribute], value]
+      filters.each_with_object({}) do |filter, normalized|
+        value = values.fetch(filter[:attribute], filter[:default])
+        value = if filter[:multiple]
+                  Array(value).filter_map { |item| item.to_s.strip.presence }.uniq
+                else
+                  value.to_s.strip
+                end
+        normalized[filter[:attribute]] = value if value.present?
       end
-      normalized_filters.compact_blank
     end
 
     def filters
       Array(filter_definitions).map do |definition|
+        options = definition.fetch(:options)
+        options = options.call if options.respond_to?(:call)
+        multiple = definition.fetch(:multiple, false)
+        default = multiple ? Array(definition[:default]).map(&:to_s) : definition[:default].to_s
+
         {
           attribute: definition.fetch(:key).to_s,
           label: I18n.t(definition.fetch(:label_key)),
-          options: definition.fetch(:options),
+          options:,
+          control: definition.fetch(:control, :select),
           include_blank: definition.fetch(:include_blank, false),
-          default: definition[:default].to_s
+          multiple:,
+          default:
         }
       end
     end
 
-    def non_default_filters?(params)
-      normalize_filters(params).any? do |key, value|
-        value != filter_definition_for(key)[:default].to_s
+    def non_default_filters?(params, filters: self.filters)
+      normalize_filters(params, filters:).any? do |key, value|
+        value != filters.find { |filter| filter[:attribute] == key }.fetch(:default)
       end
     end
 

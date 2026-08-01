@@ -1,14 +1,7 @@
 # frozen_string_literal: true
 
 class AppleMusicAlbumsToAlgoliaPresenter < Presenter
-  ORIGINAL_TYPE = {
-    windows: '01. Windows作品',
-    pc98: '02. PC-98作品',
-    zuns_music_collection: "03. ZUN's Music Collection",
-    akyus_untouched_score: "04. 幺樂団の歴史　～ Akyu's Untouched Score",
-    commercial_books: '05. 商業書籍',
-    other: '06. その他'
-  }.freeze
+  ORIGINAL_TYPE = Original::TYPE_LABELS
 
   def as_json(*)
     @object&.filter_map { |o| album_object(o) } || []

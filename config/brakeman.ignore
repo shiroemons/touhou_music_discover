@@ -49,7 +49,7 @@
     {
       "warning_type": "SQL Injection",
       "warning_code": 0,
-      "fingerprint": "85841bd70a8daf5b2eb1623d3665287bc13735bb076821f8969843ee12f8f0fd",
+      "fingerprint": "8a95c92f9173f429b36e20c08dbe8804c82672df887e3c8174897cea4bcc1b20",
       "check_name": "SQL",
       "message": "Possible SQL injection",
       "file": "app/controllers/admin/original_song_assignments_controller.rb",
@@ -68,29 +68,6 @@
         89
       ],
       "note": "偽陽性。補間される normalized_term_sql はリテラルSQLと :normalized_term_<整数> 形式のプレースホルダ名のみで構成される。整数は each_with_index 由来。ユーザー入力は全て conditions ハッシュ経由の名前付きバインドパラメータとして渡され、各値は OriginalSong.sanitize_sql_like を通している。"
-    },
-    {
-      "warning_type": "SQL Injection",
-      "warning_code": 0,
-      "fingerprint": "8a95c92f9173f429b36e20c08dbe8804c82672df887e3c8174897cea4bcc1b20",
-      "check_name": "SQL",
-      "message": "Possible SQL injection",
-      "file": "app/models/admin/resource.rb",
-      "line": 878,
-      "link": "https://brakemanscanner.org/docs/warning_types/sql_injection/",
-      "code": "scope.reorder(Arel.sql(\"#{quoted_table_name}.#{model_class.connection.quote_column_name(attribute)} #{direction.upcase} NULLS LAST\"))",
-      "render_path": null,
-      "location": {
-        "type": "method",
-        "class": "Admin::Resource",
-        "method": "sort"
-      },
-      "user_input": "attribute",
-      "confidence": "Medium",
-      "cwe_id": [
-        89
-      ],
-      "note": "偽陽性。sortable_attribute? の allowlist を通らない属性は早期 return する。列名は quote_column_name でクォートされ、ソート方向は sort_direction が 'asc' / 'desc' のいずれかに正規化する。"
     }
   ],
   "updated": "2026-07-25 18:25:42 +0900",
