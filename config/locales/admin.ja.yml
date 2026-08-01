@@ -188,7 +188,7 @@ ja:
     original_song_assignments:
       title: "楽曲の原曲紐づけ"
       nav_label: "原曲を表で紐づけ"
-      description: "楽曲を一覧しながら、原曲を検索して複数紐づけできます。初期表示は原曲未設定の楽曲です。"
+      description: "楽曲を一覧しながら、原曲を検索して複数紐づけできます。初期表示は原曲未設定の楽曲です。アルバム名・曲名をクリックするとコピーできます。"
       table_heading: "紐づけ対象楽曲"
       status_label: "対象"
       status:
@@ -196,6 +196,9 @@ ja:
         present: "原曲設定済み"
         all: "すべて"
       original_songs: "原曲"
+      album_name: "アルバム名"
+      track_name: "曲名"
+      copy_value: "%{label}「%{value}」をコピー"
       show_identifiers: "JAN/ISRCを表示"
       search_placeholder: "原曲コード・曲名・原作で検索"
       save: "保存"

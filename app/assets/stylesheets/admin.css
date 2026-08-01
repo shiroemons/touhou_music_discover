@@ -26,6 +26,7 @@
   --admin-z-table-actions-header: 40;
   --admin-z-filter-surface: 50;
   --admin-z-popover: 60;
+  --admin-z-toast: 70;
 
   background: var(--admin-bg);
   color: var(--admin-text);
@@ -34,7 +35,9 @@
 
 .admin-layout {
   display: grid;
-  grid-template-columns: 17rem minmax(0, 1fr);
+  --admin-sidebar-half-width: 8.5rem;
+  --admin-sidebar-width: 17rem;
+  grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
 }
 
@@ -1490,6 +1493,70 @@
   min-width: 7rem;
 }
 
+.admin-original-song-assignment-copy-toast {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-primary);
+  border-radius: 999px;
+  box-shadow: var(--admin-shadow);
+  color: var(--admin-text);
+  left: calc(50% + var(--admin-sidebar-half-width));
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+  opacity: 0;
+  padding: 0.65rem 1rem;
+  pointer-events: none;
+  position: fixed;
+  text-align: center;
+  top: 0.5rem;
+  transform: translate(-50%, -0.75rem);
+  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
+  visibility: hidden;
+  white-space: normal;
+  z-index: var(--admin-z-toast);
+}
+
+.admin-original-song-assignment-copy-toast:not(:empty) {
+  opacity: 1;
+  transform: translate(-50%, 0);
+  visibility: visible;
+}
+
+.admin-copyable-value {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: inherit;
+  cursor: default;
+  display: inline-flex;
+  font: inherit;
+  line-height: inherit;
+  margin: -0.25rem -0.35rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 0.25rem 0.35rem;
+  text-align: left;
+}
+
+.admin-copyable-value:hover {
+  background: var(--admin-primary-soft);
+  color: var(--admin-primary-hover);
+}
+
+.admin-copyable-value:focus-visible {
+  background: var(--admin-primary-soft);
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 0.2rem rgba(31, 122, 104, 0.16);
+  color: var(--admin-primary-hover);
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-original-song-assignment-copy-toast {
+    transition: none;
+  }
+}
+
 .admin-original-song-picker {
   display: grid;
   gap: 0.5rem;
@@ -2634,7 +2701,9 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
 
 @media (max-width: 1199.98px) {
   .admin-layout {
-    grid-template-columns: 14.5rem minmax(0, 1fr);
+    --admin-sidebar-half-width: 7.25rem;
+    --admin-sidebar-width: 14.5rem;
+    grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
   }
 
   .admin-stat-grid,
@@ -2820,7 +2889,9 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
 }
 
 .admin-layout {
-  grid-template-columns: clamp(15.5rem, 16vw, 18.5rem) minmax(0, 1fr);
+  --admin-sidebar-half-width: clamp(7.75rem, 8vw, 9.25rem);
+  --admin-sidebar-width: clamp(15.5rem, 16vw, 18.5rem);
+  grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
 }
 
 .admin-sidebar {
@@ -3593,7 +3664,9 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
 
 @media (max-width: 1199.98px) {
   .admin-layout {
-    grid-template-columns: 14.5rem minmax(0, 1fr);
+    --admin-sidebar-half-width: 7.25rem;
+    --admin-sidebar-width: 14.5rem;
+    grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
   }
 
   .admin-catalog-health-grid,
@@ -3607,6 +3680,10 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
 }
 
 @media (max-width: 991.98px) {
+  .admin-original-song-assignment-copy-toast {
+    left: 50%;
+  }
+
   .admin-sidebar {
     min-height: auto;
   }

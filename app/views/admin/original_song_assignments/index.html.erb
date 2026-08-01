@@ -73,6 +73,7 @@
         </div>
       </div>
     </div>
+  </div>
 <% end %>
 
 <%= form_with url: admin_track_original_song_assignments_path(
@@ -82,7 +83,12 @@
                 scroll: (admin_infinite_scroll? ? 'infinite' : 'pagination')
               ),
               method: :patch,
-              class: 'admin-original-song-assignment-form' do %>
+              class: 'admin-original-song-assignment-form',
+              data: { controller: 'admin-clipboard' } do %>
+  <span class="admin-copy-status admin-original-song-assignment-copy-toast"
+        data-admin-clipboard-target="status"
+        aria-live="polite"
+        role="status"></span>
   <div class="admin-panel admin-table-panel admin-original-song-assignment-panel"
        data-controller="<%= 'admin-infinite-scroll' if admin_infinite_scroll? %>"
        data-admin-infinite-scroll-enabled-value="<%= admin_infinite_scroll? %>"
@@ -115,9 +121,11 @@
             <% selected_options = selected_original_songs.map { |song| { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } } %>
             <tr>
               <td><%= admin_display_value(@track_resource, track, :circle_name) %></td>
-              <td><%= admin_display_value(@track_resource, track, :album_name) %></td>
+              <td><%= admin_copyable_original_song_assignment_value(@track_resource, track, :album_name,
+                                                                     label: t('admin.original_song_assignments.album_name')) %></td>
               <td><%= admin_original_song_assignment_track_number(track) || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %></td>
-              <td><%= admin_display_value(@track_resource, track, :name) %></td>
+              <td><%= admin_copyable_original_song_assignment_value(@track_resource, track, :name,
+                                                                     label: t('admin.original_song_assignments.track_name')) %></td>
               <% if @show_identifiers %>
                 <td><%= track.jan_code %></td>
                 <td><%= track.isrc %></td>

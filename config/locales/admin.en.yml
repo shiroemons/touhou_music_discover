@@ -153,7 +153,7 @@ en:
     original_song_assignments:
       title: "Track Original Song Assignments"
       nav_label: "Assign original songs"
-      description: "Assign multiple original songs while reviewing tracks in a table. Tracks missing original songs are shown by default."
+      description: "Assign multiple original songs while reviewing tracks in a table. Tracks missing original songs are shown by default. Click an album or track name to copy it."
       table_heading: "Tracks to assign"
       status_label: "Target"
       status:
@@ -161,6 +161,9 @@ en:
         present: "Has original songs"
         all: "All"
       original_songs: "Original songs"
+      album_name: "Album name"
+      track_name: "Track name"
+      copy_value: "Copy %{label}: %{value}"
       show_identifiers: "Show JAN/ISRC"
       search_placeholder: "Search by code, song, or original work"
       save: "Save"

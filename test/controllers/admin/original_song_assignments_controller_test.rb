@@ -35,7 +35,7 @@ module Admin
       get admin_track_original_song_assignments_url
 
       assert_response :success
-      assert_select '.admin-original-song-assignment-panel[data-controller=?]', 'admin-infinite-scroll'
+      assert_select '.admin-original-song-assignment-panel[data-controller~=?]', 'admin-infinite-scroll'
       assert_select '.admin-original-song-assignment-panel[data-admin-infinite-scroll-next-url-value*=?]', 'scroll=infinite'
       assert_select '.admin-original-song-assignment-panel[data-admin-infinite-scroll-next-url-value*=?]', 'page=2'
       assert_select 'tbody[data-admin-infinite-scroll-target=?]', 'rows'
@@ -63,6 +63,22 @@ module Admin
 
       assert_equal %w[サークル アルバム名 トラック番号 名前 原曲], headers
       assert_select 'tbody tr td:nth-child(3)', text: '7'
+    end
+
+    test 'renders album and track names as copy buttons' do
+      track = create_track(jan_code: '9777777779142', isrc: 'JPABC269142')
+      spotify_album = create_spotify_album(album: track.album, spotify_id: 'assign-copy-album')
+      create_spotify_track(album: track.album, track:, spotify_album:, spotify_id: 'assign-copy-track', track_number: 1)
+
+      get admin_track_original_song_assignments_url
+
+      assert_response :success
+      assert_select 'form.admin-original-song-assignment-form[data-controller~=?]', 'admin-clipboard'
+      assert_select '.admin-copy-status[data-admin-clipboard-target=?][aria-live=?]', 'status', 'polite'
+      assert_select 'td:nth-child(2) button.admin-copyable-value[type=?][data-action=?][data-admin-clipboard-text-value=?]',
+                    'button', 'admin-clipboard#copy', 'assign-copy-album', text: 'assign-copy-album'
+      assert_select 'td:nth-child(4) button.admin-copyable-value[type=?][data-action=?][data-admin-clipboard-text-value=?]',
+                    'button', 'admin-clipboard#copy', 'assign-copy-track', text: 'assign-copy-track'
     end
 
     test 'can show tracks that already have original songs' do
