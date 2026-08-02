@@ -43,6 +43,7 @@
           <% end %>
         </div>
 
+        <% auto_assign_original_songs_active = params[:resource] == 'tracks' && params[:action_key] == 'auto_assign_original_songs' %>
         <nav class="admin-nav" aria-label="Admin navigation">
           <%= link_to admin_root_path, class: "admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
             <%= admin_icon(:dashboard) %>
@@ -53,7 +54,8 @@
             <div class="admin-nav-group">
               <div class="admin-nav-heading"><%= t("admin.navigation.groups.#{group_key}") %></div>
               <% resources.each do |resource| %>
-                <%= link_to admin_resources_path(resource.key), class: "admin-nav-link #{'active' if params[:resource] == resource.key}" do %>
+                <%= link_to admin_resources_path(resource.key),
+                            class: "admin-nav-link #{'active' if params[:resource] == resource.key && !auto_assign_original_songs_active}" do %>
                   <%= admin_icon(:collection) %>
                   <span><%= resource.label %></span>
                 <% end %>
@@ -66,6 +68,11 @@
                             class: "admin-nav-link #{'active' if current_page?(admin_track_original_song_assignments_path)}" do %>
                   <%= admin_icon(:list_ordered) %>
                   <span><%= t('admin.original_song_assignments.title') %></span>
+                <% end %>
+                <%= link_to admin_resource_action_path('tracks', 'auto_assign_original_songs'),
+                            class: "admin-nav-link #{'active' if auto_assign_original_songs_active}" do %>
+                  <%= admin_icon(:lightning) %>
+                  <span><%= t('admin.actions.auto_assign_original_songs.label') %></span>
                 <% end %>
               </div>
             <% end %>

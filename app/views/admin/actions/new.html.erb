@@ -1,4 +1,9 @@
-<div class="admin-action-page">
+<% action_runnable = @action.runnable?(@action_preview) %>
+<% action_run_label = @action.run_label(@action_preview) %>
+<% action_confirmation = @action.confirmation(@action_preview) %>
+<% action_button_class = @action.dangerous? ? 'admin-btn-danger' : 'admin-btn-primary' %>
+
+<div class="admin-action-page <%= 'admin-action-page-with-preview' if @action.preview_partial.present? %>">
   <div class="admin-page-header admin-action-header">
     <div class="admin-page-title">
       <span class="admin-kicker"><%= @resource_config.label %></span>
@@ -17,7 +22,7 @@
     <div class="admin-panel admin-form-panel admin-action-execution-panel">
       <div class="admin-panel-header">
         <h2><%= t('admin.actions.summary.heading') %></h2>
-        <span class="admin-action-status-pill"><%= t('admin.actions.summary.ready') %></span>
+        <span class="admin-action-status-pill"><%= t(action_runnable ? 'admin.actions.summary.ready' : 'admin.actions.summary.not_ready') %></span>
       </div>
       <div class="admin-form-body">
         <div class="admin-action-summary">
@@ -27,6 +32,10 @@
           </div>
           <p><%= @action.description %></p>
         </div>
+
+        <% if @action.preview_partial.present? %>
+          <%= render @action.preview_partial, preview: @action_preview %>
+        <% end %>
 
         <%= form_with scope: :fields,
                       url: @record.present? ? admin_member_resource_action_path(@resource_config.key, @record, @action.key) : admin_resource_action_path(@resource_config.key, @action.key),
@@ -55,9 +64,9 @@
           <% end %>
 
           <div class="admin-form-actions">
-            <%= form.button type: :submit, class: 'btn admin-btn-danger' do %>
+            <%= form.button type: :submit, class: "btn #{action_button_class}", disabled: !action_runnable do %>
               <%= admin_icon(:play) %>
-              <span><%= t('admin.actions.run') %></span>
+              <span><%= action_run_label %></span>
             <% end %>
             <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
               <%= admin_icon(:x) %>
@@ -74,7 +83,7 @@
                 </button>
               </div>
               <div class="admin-confirm-modal-body">
-                <p><%= t('admin.actions.confirmation') %></p>
+                <p><%= action_confirmation %></p>
                 <strong><%= @action.label %></strong>
                 <p class="admin-action-confirm-description"><%= @action.description %></p>
               </div>
@@ -83,9 +92,9 @@
                   <%= admin_icon(:x) %>
                   <span><%= t('admin.actions.cancel') %></span>
                 </button>
-                <button type="button" class="btn admin-btn-danger" data-action="admin-action-confirm#confirm">
+                <button type="button" class="btn <%= action_button_class %>" data-action="admin-action-confirm#confirm" <%= 'disabled' unless action_runnable %>>
                   <%= admin_icon(:play) %>
-                  <span><%= t('admin.actions.run') %></span>
+                  <span><%= action_run_label %></span>
                 </button>
               </div>
             </div>
@@ -98,9 +107,9 @@
     </div>
 
     <aside class="admin-action-side-panel">
-      <div class="alert alert-warning admin-action-warning" role="alert">
-        <%= admin_icon(:warning) %>
-        <span><%= t('admin.actions.confirmation') %></span>
+      <div class="alert <%= @action.dangerous? ? 'alert-warning admin-action-warning' : 'alert-info admin-action-notice' %>" role="status">
+        <%= admin_icon(@action.dangerous? ? :warning : :check_circle) %>
+        <span><%= action_confirmation %></span>
       </div>
       <div class="admin-panel admin-action-check-card">
         <div class="admin-panel-header">
@@ -115,10 +124,12 @@
             <%= admin_icon(:check_circle) %>
             <span><%= t('admin.actions.summary.progress') %></span>
           </li>
-          <li>
-            <%= admin_icon(:warning) %>
-            <span><%= t('admin.actions.summary.external_api') %></span>
-          </li>
+          <% if @action.uses_external_api? %>
+            <li class="is-warning">
+              <%= admin_icon(:warning) %>
+              <span><%= t('admin.actions.summary.external_api') %></span>
+            </li>
+          <% end %>
         </ul>
       </div>
       <% if @record.present? %>

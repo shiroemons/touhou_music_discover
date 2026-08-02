@@ -17,6 +17,9 @@ module Admin
       assert_equal %w[マスタ 運用 カタログ 配信データ], nav_group_labels
       assert_select 'nav.admin-nav a.admin-nav-link[href=?]', admin_track_original_song_assignments_path,
                     text: '楽曲の原曲紐づけ'
+      assert_select 'nav.admin-nav a.admin-nav-link[href=?]',
+                    admin_resource_action_path('tracks', 'auto_assign_original_songs'),
+                    text: '一致するアルバムから原曲を自動紐づけ'
       assert_select '.admin-theme-switcher[data-controller=?]', 'admin-theme'
       assert_select 'button[data-admin-theme-mode=?]', 'light', text: 'Light'
       assert_select 'button[data-admin-theme-mode=?]', 'dark', text: 'Dark'

@@ -1,0 +1,119 @@
+<section class="admin-transfer-preview" aria-labelledby="admin-transfer-preview-heading">
+  <div class="admin-transfer-preview-header">
+    <div>
+      <h3 id="admin-transfer-preview-heading"><%= t('admin.actions.auto_assign_original_songs.preview.heading') %></h3>
+      <p><%= t('admin.actions.auto_assign_original_songs.preview.description') %></p>
+    </div>
+    <span class="admin-action-status-pill"><%= t('admin.actions.auto_assign_original_songs.preview.read_only') %></span>
+  </div>
+
+  <dl class="admin-transfer-metrics">
+    <div>
+      <dt><%= t('admin.actions.auto_assign_original_songs.preview.target_tracks') %></dt>
+      <dd><%= preview.assignments.size %></dd>
+    </div>
+    <div>
+      <dt><%= t('admin.actions.auto_assign_original_songs.preview.links') %></dt>
+      <dd><%= preview.links_to_add %></dd>
+    </div>
+    <div>
+      <dt><%= t('admin.actions.auto_assign_original_songs.preview.matches') %></dt>
+      <dd><%= preview.matches.size %></dd>
+    </div>
+    <div>
+      <dt><%= t('admin.actions.auto_assign_original_songs.preview.conflicts') %></dt>
+      <dd><%= preview.conflicts.size %></dd>
+    </div>
+  </dl>
+
+  <% if preview.matches.any? %>
+    <div class="admin-transfer-match-list">
+      <% preview.matches.each do |match| %>
+        <% assignments_by_track_id = preview.assignments.select { |assignment| assignment.target_jan_code == match.target_jan_code && assignment.source_jan_code == match.source_jan_code }.index_by(&:target_track_id) %>
+        <details class="admin-transfer-match" open>
+          <summary>
+            <span>
+              <strong><%= match.album_name %></strong>
+              <small><%= match.circle_names.join(' / ') %></small>
+            </span>
+            <span class="admin-transfer-match-route">
+              <%= match.source_jan_code %>
+              <span aria-hidden="true">→</span>
+              <%= match.target_jan_code %>
+            </span>
+          </summary>
+          <div class="admin-transfer-match-meta">
+            <span><%= t('admin.actions.auto_assign_original_songs.preview.source_service', service: t("admin.actions.auto_assign_original_songs.services.#{match.source_service}")) %></span>
+            <span><%= t('admin.actions.auto_assign_original_songs.preview.target_service', service: t("admin.actions.auto_assign_original_songs.services.#{match.target_service}")) %></span>
+          </div>
+          <div class="admin-table-scroll admin-transfer-matrix-scroll">
+            <table class="table admin-table admin-transfer-matrix">
+              <caption><%= t('admin.actions.auto_assign_original_songs.preview.matrix_caption', album: match.album_name) %></caption>
+              <thead>
+                <tr>
+                  <th scope="col"><%= t('admin.actions.auto_assign_original_songs.preview.position') %></th>
+                  <th scope="col"><%= t('admin.actions.auto_assign_original_songs.preview.before') %></th>
+                  <th scope="col"><%= t('admin.actions.auto_assign_original_songs.preview.after') %></th>
+                  <th scope="col"><%= t('admin.actions.auto_assign_original_songs.preview.identity') %></th>
+                  <th scope="col"><%= t('admin.actions.auto_assign_original_songs.preview.operation') %></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% match.tracks.each do |comparison| %>
+                  <% assignment = assignments_by_track_id[comparison.target_track_id] %>
+                  <tr>
+                    <th scope="row"><%= [comparison.disc_number, comparison.track_number].join('-') %></th>
+                    <td>
+                      <strong><%= comparison.source_track_name %></strong>
+                      <small>ISRC: <%= comparison.source_isrc %></small>
+                    </td>
+                    <td>
+                      <strong><%= comparison.target_track_name %></strong>
+                      <small>ISRC: <%= comparison.target_isrc %></small>
+                    </td>
+                    <td>
+                      <span class="admin-transfer-status is-match"><%= t("admin.actions.auto_assign_original_songs.match_basis.#{comparison.match_basis}") %></span>
+                      <% if comparison.title_similarity_percent < 100 %>
+                        <div class="admin-transfer-similarity">
+                          <span><%= t('admin.actions.auto_assign_original_songs.preview.title_similarity', percent: comparison.title_similarity_percent) %></span>
+                          <meter min="0"
+                                 max="100"
+                                 value="<%= comparison.title_similarity_percent %>"
+                                 aria-label="<%= t('admin.actions.auto_assign_original_songs.preview.title_similarity', percent: comparison.title_similarity_percent) %>"></meter>
+                        </div>
+                      <% end %>
+                    </td>
+                    <td>
+                      <% if assignment.present? %>
+                        <span class="admin-transfer-status is-planned"><%= t('admin.actions.auto_assign_original_songs.preview.planned') %></span>
+                        <ul class="admin-transfer-originals">
+                          <% assignment.original_song_labels.each do |original_song| %>
+                            <li>
+                              <code><%= original_song.code %></code>
+                              <span><%= original_song.title %></span>
+                            </li>
+                          <% end %>
+                        </ul>
+                      <% else %>
+                        <span class="admin-transfer-status"><%= t('admin.actions.auto_assign_original_songs.preview.unchanged') %></span>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      <% end %>
+    </div>
+  <% else %>
+    <p class="admin-empty admin-transfer-empty"><%= t('admin.actions.auto_assign_original_songs.no_candidates') %></p>
+  <% end %>
+
+  <% if preview.conflicts.any? %>
+    <details class="admin-transfer-exclusions">
+      <summary><%= t('admin.actions.auto_assign_original_songs.preview.conflict_heading', count: preview.conflicts.size) %></summary>
+      <p><%= t('admin.actions.auto_assign_original_songs.preview.conflict_description', count: preview.conflicts.size) %></p>
+    </details>
+  <% end %>
+</section>

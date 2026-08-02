@@ -5,6 +5,10 @@
     <p><%= t('admin.original_song_assignments.description') %></p>
   </div>
   <div class="admin-page-actions">
+    <%= link_to admin_resource_action_path('tracks', 'auto_assign_original_songs'), class: 'btn admin-btn-primary' do %>
+      <%= admin_icon(:check_circle) %>
+      <span><%= t('admin.original_song_assignments.auto_preview') %></span>
+    <% end %>
     <%= link_to admin_resources_path('tracks'), class: 'btn admin-btn' do %>
       <%= admin_icon(:arrow_left) %>
       <span><%= t('admin.actions.back_to_index') %></span>

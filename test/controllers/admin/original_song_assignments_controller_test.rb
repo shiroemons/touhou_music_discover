@@ -15,6 +15,8 @@ module Admin
       assert_select 'h1', '楽曲の原曲紐づけ'
       assert_select 'nav.admin-nav a.admin-nav-link.active[href=?]', admin_track_original_song_assignments_path,
                     text: '楽曲の原曲紐づけ'
+      assert_select 'a[href=?]', admin_resource_action_path('tracks', 'auto_assign_original_songs'),
+                    text: '自動紐づけ候補を確認'
       assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'
       assert_select '.admin-view-mode-link.is-active', text: '無限スクロール'
       assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'

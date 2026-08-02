@@ -572,7 +572,7 @@ module Admin
             includes: track_preview_includes,
             hidden_relations: %i[tracks_original_songs],
             default_order: ->(scope) { scope.order(jan_code: :desc, id: :asc) },
-            action_class_names: %w[ExportMissingOriginalSongsTracks ImportTracksWithOriginalSongs ChangeTouhouFlag]
+            action_class_names: %w[AutoAssignOriginalSongs ExportMissingOriginalSongsTracks ImportTracksWithOriginalSongs ChangeTouhouFlag]
           ),
           new(
             key: 'circles',

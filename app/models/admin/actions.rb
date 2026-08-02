@@ -353,6 +353,59 @@ module Admin
       end
     end
 
+    class AutoAssignOriginalSongs < BaseAction
+      self.action_name = '一致するアルバムから原曲を自動紐づけ'
+
+      class << self
+        def preview
+          OriginalSongAssignments::Transfer.new.plan
+        end
+
+        def preview_partial
+          'admin/actions/auto_assign_original_songs_preview'
+        end
+
+        def runnable?(plan)
+          plan&.assignments&.any?
+        end
+
+        def dangerous?
+          false
+        end
+
+        def uses_external_api?
+          false
+        end
+
+        def run_label(plan)
+          I18n.t('admin.actions.auto_assign_original_songs.run_label', count: plan.assignments.size)
+        end
+
+        def confirmation(plan)
+          I18n.t(
+            'admin.actions.auto_assign_original_songs.confirmation',
+            tracks: plan.assignments.size,
+            links: plan.links_to_add
+          )
+        end
+      end
+
+      def handle(_args)
+        result = OriginalSongAssignments::Transfer.new.apply!(
+          progress_callback: lambda do |current:, total:, message: nil, reset: false|
+            record_progress(
+              current:,
+              total:,
+              message: message || '原曲の自動紐づけを開始しています',
+              reset:
+            )
+          end
+        )
+        message = "自動紐づけ完了: #{result.assigned_tracks}曲、#{result.created_links}件の原曲リンクを追加しました"
+        result.assigned_tracks.positive? ? succeed(message) : warn(message)
+      end
+    end
+
     class FetchAppleMusicAlbum < BaseAction
       self.action_name = 'Apple Musicアルバムを取得'
 

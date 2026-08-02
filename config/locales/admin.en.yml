@@ -151,6 +151,7 @@ en:
     confirm:
       destroy: "Delete this record?"
     original_song_assignments:
+      auto_preview: "Review auto-link candidates"
       title: "Track Original Song Assignments"
       nav_label: "Assign original songs"
       description: "Assign multiple original songs while reviewing tracks in a table. Tracks missing original songs are shown by default. Click an album or track name to copy it."
@@ -329,6 +330,7 @@ en:
         heading: "Action details"
         checkpoints: "Pre-run checks"
         ready: "Ready"
+        not_ready: "No candidates"
         target: "Target"
         background_job: "Runs in the background after confirmation; progress stays visible on this page."
         progress: "Shows processed targets, fetched items, missing records, and errors as they update."
@@ -355,6 +357,48 @@ en:
         label: "Fetch by Apple Music album ID"
       import_tracks_with_original_songs:
         label: "Import original-song links TSV"
+      auto_assign_original_songs:
+        label: "Auto-link originals from matching albums"
+        description: "After review, copies missing original-song links from an existing album only when album name and circle match and every track is verified by title or ISRC at the same position. Existing links are unchanged."
+        run_label: "Auto-link %{count} tracks"
+        confirmation: "Add %{links} original-song links to %{tracks} tracks. Existing links will not be overwritten or deleted."
+        no_candidates: "No candidates satisfy the safe auto-linking rules."
+        services:
+          spotify: "Spotify"
+          apple_music: "Apple Music"
+          line_music: "LINE MUSIC"
+          ytmusic: "YouTube Music"
+        reasons:
+          circle_missing: "Circle is missing"
+          circle_mismatch: "Circle does not match"
+          track_list_mismatch: "Complete track identity cannot be verified by title, ISRC, and position"
+        match_basis:
+          title_and_isrc: "Exact title and ISRC match"
+          normalized_title_and_isrc: "Normalized title and ISRC match"
+          title: "Exact title match (new ISRC)"
+          normalized_title: "Normalized title match (new ISRC)"
+          isrc: "ISRC match (different title)"
+        preview:
+          heading: "Before/after comparison"
+          description: "Every track in the selected streaming catalogs is compared by disc, track number, title, and ISRC."
+          read_only: "Preview (no changes)"
+          target_tracks: "Target tracks"
+          links: "Links to add"
+          matches: "Matching albums"
+          conflicts: "Conflicts"
+          source_service: "Source: %{service}"
+          target_service: "Target: %{service}"
+          matrix_caption: "Before/after track comparison for %{album}"
+          position: "Position"
+          before: "Before (existing JAN)"
+          after: "After (new JAN)"
+          identity: "Identity evidence"
+          title_similarity: "Title similarity: %{percent}%"
+          operation: "Original-song links"
+          planned: "Will be copied"
+          unchanged: "No change"
+          conflict_heading: "Conflicts requiring review (%{count})"
+          conflict_description: "%{count} tracks were excluded because source candidates disagree on original-song links."
     resources:
       albums:
         label: "Albums"

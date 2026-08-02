@@ -49,6 +49,44 @@ module Admin
       !member?
     end
 
+    def preview
+      action_class.preview if action_class.respond_to?(:preview)
+    end
+
+    def preview_partial
+      action_class.preview_partial if action_class.respond_to?(:preview_partial)
+    end
+
+    def runnable?(preview_data = nil)
+      return action_class.runnable?(preview_data) if action_class.respond_to?(:runnable?)
+
+      true
+    end
+
+    def dangerous?
+      return action_class.dangerous? if action_class.respond_to?(:dangerous?)
+
+      true
+    end
+
+    def uses_external_api?
+      return action_class.uses_external_api? if action_class.respond_to?(:uses_external_api?)
+
+      true
+    end
+
+    def run_label(preview_data = nil)
+      return action_class.run_label(preview_data) if action_class.respond_to?(:run_label)
+
+      I18n.t('admin.actions.run')
+    end
+
+    def confirmation(preview_data = nil)
+      return action_class.confirmation(preview_data) if action_class.respond_to?(:confirmation)
+
+      I18n.t('admin.actions.confirmation')
+    end
+
     def run(fields: {}, record: nil)
       action = action_class.new
       attach_progress_recorder(action)

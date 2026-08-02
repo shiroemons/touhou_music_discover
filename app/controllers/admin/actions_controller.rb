@@ -14,9 +14,17 @@ module Admin
       load_action_run
     end
 
-    def new; end
+    def new
+      @action_preview = @action.preview
+    end
 
     def create
+      action_preview = @action.preview
+      unless @action.runnable?(action_preview)
+        redirect_to action_entry_path, alert: t('admin.actions.auto_assign_original_songs.no_candidates')
+        return
+      end
+
       run_id = SecureRandom.uuid
       fields = prepare_action_fields(run_id)
       Admin::ActionRun.create!(
@@ -124,6 +132,12 @@ module Admin
       return admin_member_resource_action_run_progress_path(@resource_config.key, @record, @action.key, run_id) if @record.present?
 
       admin_resource_action_run_progress_path(@resource_config.key, @action.key, run_id)
+    end
+
+    def action_entry_path
+      return admin_member_resource_action_path(@resource_config.key, @record, @action.key) if @record.present?
+
+      admin_resource_action_path(@resource_config.key, @action.key)
     end
   end
 end

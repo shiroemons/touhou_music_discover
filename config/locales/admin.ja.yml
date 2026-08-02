@@ -186,6 +186,7 @@ ja:
     confirm:
       destroy: "削除しますか？"
     original_song_assignments:
+      auto_preview: "自動紐づけ候補を確認"
       title: "楽曲の原曲紐づけ"
       nav_label: "原曲を表で紐づけ"
       description: "楽曲を一覧しながら、原曲を検索して複数紐づけできます。初期表示は原曲未設定の楽曲です。アルバム名・曲名をクリックするとコピーできます。"
@@ -380,6 +381,7 @@ ja:
         heading: "実行内容"
         checkpoints: "実行前の確認"
         ready: "実行前"
+        not_ready: "対象なし"
         target: "対象"
         background_job: "実行後はバックグラウンドで処理し、この画面で進捗を確認できます。"
         progress: "処理中の対象、取得件数、未検出、エラー件数を順次表示します。"
@@ -421,6 +423,48 @@ ja:
         description: "Spotify楽曲のうちオーディオ特性が未取得のものだけを対象に取得します。"
       import_tracks_with_original_songs:
         label: "原曲紐づけTSVをインポート"
+      auto_assign_original_songs:
+        label: "一致するアルバムから原曲を自動紐づけ"
+        description: "同じアルバム名・サークルで、全曲を曲名またはISRCと位置で確認できる既存アルバムから、確認後に未設定の原曲紐づけだけを移行します。既存の紐づけは変更しません。"
+        run_label: "%{count}曲を自動紐づけ"
+        confirmation: "%{tracks}曲に%{links}件の原曲リンクを追加します。既存リンクの上書きや削除は行いません。"
+        no_candidates: "安全に自動紐づけできる候補はありません。"
+        services:
+          spotify: "Spotify"
+          apple_music: "Apple Music"
+          line_music: "LINE MUSIC"
+          ytmusic: "YouTube Music"
+        reasons:
+          circle_missing: "サークル未設定"
+          circle_mismatch: "サークル不一致"
+          track_list_mismatch: "全収録曲の同一性を曲名・ISRC・位置で確認できない"
+        match_basis:
+          title_and_isrc: "曲名完全一致・ISRC一致"
+          normalized_title_and_isrc: "曲名正規化後一致・ISRC一致"
+          title: "曲名完全一致（新ISRC）"
+          normalized_title: "曲名正規化後一致（新ISRC）"
+          isrc: "ISRC一致（表記違い）"
+        preview:
+          heading: "移行前後の比較"
+          description: "採用した配信カタログについて、全収録曲をディスク番号・トラック番号・曲名・ISRCで照合しています。"
+          read_only: "プレビュー（未更新）"
+          target_tracks: "移行対象曲"
+          links: "追加する原曲リンク"
+          matches: "一致アルバム"
+          conflicts: "競合"
+          source_service: "移行元: %{service}"
+          target_service: "移行先: %{service}"
+          matrix_caption: "%{album}の移行前後の収録曲比較"
+          position: "位置"
+          before: "移行前（既存JAN）"
+          after: "移行後（新JAN）"
+          identity: "同一曲の根拠"
+          title_similarity: "曲名一致度 %{percent}%"
+          operation: "原曲紐づけ"
+          planned: "移行予定"
+          unchanged: "変更なし"
+          conflict_heading: "要確認の競合（%{count}件）"
+          conflict_description: "%{count}曲は移行元候補間で原曲が一致しないため除外しました。"
     resources:
       albums:
         label: "アルバム"
