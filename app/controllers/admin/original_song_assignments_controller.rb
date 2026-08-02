@@ -7,14 +7,38 @@ module Admin
     before_action :authenticate_admin_if_configured
 
     STATUS_OPTIONS = %w[missing present all].freeze
+    VIEW_OPTIONS = %w[albums tracks].freeze
     PASTED_ORIGINAL_SONG_DELIMITER_PATTERN = %r{[,、，/／]+}
+
+    helper_method :album_view?
 
     def index
       @track_resource = Admin::Resource.find!('tracks')
       @query = params.fetch(:q, '').to_s.strip
       @status = normalized_status
       @show_identifiers = show_identifiers?
-      @pagy, @tracks = pagy(:offset, assignment_scope, limit: Admin::Resource::DEFAULT_ITEMS)
+      @view_mode = normalized_view_mode
+      if album_view?
+        @pagy, @albums = pagy(:offset, assignment_album_scope, limit: Admin::Resource::DEFAULT_ITEMS)
+        @album_track_counts = assignment_track_counts(@albums)
+        @assignment_track_count = filtered_assignment_scope.count
+      else
+        @pagy, @tracks = pagy(:offset, assignment_scope, limit: Admin::Resource::DEFAULT_ITEMS)
+      end
+    end
+
+    def album
+      @track_resource = Admin::Resource.find!('tracks')
+      @query = params.fetch(:q, '').to_s.strip
+      @status = normalized_status
+      @show_identifiers = show_identifiers?
+      return head :not_found unless @status == 'missing'
+
+      @tracks = assignment_scope.where(jan_code: params[:jan_code])
+      return head :not_found unless @tracks.exists?
+
+      render partial: 'admin/original_song_assignments/album_tracks',
+             locals: { tracks: @tracks, track_resource: @track_resource, show_identifiers: @show_identifiers }
     end
 
     def update
@@ -40,10 +64,29 @@ module Admin
     private
 
     def assignment_scope
+      order_assignment_scope(filtered_assignment_scope)
+    end
+
+    def filtered_assignment_scope
       scope = @track_resource.apply_to(Track.all).reorder(nil)
       scope = @track_resource.search(scope, @query)
-      scope = filter_by_status(scope)
-      order_assignment_scope(scope)
+      filter_by_status(scope)
+    end
+
+    def assignment_album_scope
+      Album
+        .where(jan_code: filtered_assignment_scope.select(:jan_code))
+        .includes(:circles, :spotify_album, :apple_music_album, :ytmusic_album, :line_music_album)
+        .order(jan_code: :desc)
+    end
+
+    def assignment_track_counts(albums)
+      return {} if albums.empty?
+
+      filtered_assignment_scope
+        .where(jan_code: albums.map(&:jan_code))
+        .group(:jan_code)
+        .count
     end
 
     def filter_by_status(scope)
@@ -119,6 +162,18 @@ module Admin
     def normalized_status
       status = params.fetch(:status, 'missing').to_s
       STATUS_OPTIONS.include?(status) ? status : 'missing'
+    end
+
+    def normalized_view_mode
+      view = params.fetch(:view, '').to_s
+      return 'albums' if @status == 'missing' && (view.blank? || view == 'albums')
+      return 'tracks' if VIEW_OPTIONS.include?(view)
+
+      'tracks'
+    end
+
+    def album_view?
+      @view_mode == 'albums'
     end
 
     def show_identifiers?
@@ -343,7 +398,7 @@ module Admin
     end
 
     def redirect_filter_params
-      params.permit(:q, :status, :show_identifiers, :scroll).to_h.compact_blank
+      params.permit(:q, :status, :show_identifiers, :scroll, :view).to_h.compact_blank
     end
   end
 end

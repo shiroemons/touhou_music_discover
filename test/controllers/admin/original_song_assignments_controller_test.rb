@@ -4,7 +4,7 @@ require 'test_helper'
 
 module Admin
   class OriginalSongAssignmentsControllerTest < ActionDispatch::IntegrationTest
-    test 'shows tracks missing original songs by default' do
+    test 'shows albums with missing tracks by default' do
       missing_track = create_track(jan_code: '9777777779101', isrc: 'JPABC269101')
       linked_track = create_track(jan_code: '9777777779102', isrc: 'JPABC269102')
       linked_track.original_songs << create_original_song(code: 'ASSIGN-DEFAULT-001', title: 'Assigned Default Song')
@@ -18,15 +18,46 @@ module Admin
       assert_select 'a[href=?]', admin_resource_action_path('tracks', 'auto_assign_original_songs'),
                     text: '自動紐づけ候補を確認'
       assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'
+      assert_select '.admin-view-mode-link.is-active', text: 'アルバム表示'
       assert_select '.admin-view-mode-link.is-active', text: '無限スクロール'
       assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'
       assert_select 'input[name=?][type=?]', 'show_identifiers', 'checkbox', count: 1
-      assert_select 'th', { text: 'JANコード', count: 0 }
-      assert_select 'th', { text: 'ISRC', count: 0 }
+      assert_select 'table.admin-original-song-assignment-table th', { text: 'JANコード', count: 0 }
+      assert_select 'table.admin-original-song-assignment-table th', { text: 'ISRC', count: 0 }
+      assert_select 'table.admin-original-song-album-table'
+      album_headers = css_select('table.admin-original-song-album-table thead th').map { |header| header.text.strip }
+
+      assert_equal %w[JANコード サークル アルバム 未設定楽曲数], album_headers
+      assert_select 'details[data-controller=?]', 'admin-original-song-album', count: 1
       assert_select 'td', { text: missing_track.isrc, count: 0 }
       assert_select 'form[method=?]', 'post'
+      assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]", count: 0
+      assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
+    end
+
+    test 'loads only the missing tracks when an album is expanded' do
+      album = Album.create!(jan_code: '9777777779103')
+      missing_track = Track.create!(album:, isrc: 'JPABC269103')
+      linked_track = Track.create!(album:, isrc: 'JPABC269104')
+      linked_track.original_songs << create_original_song(code: 'ASSIGN-ALBUM-001', title: 'Assigned Album Song')
+
+      get admin_track_original_song_assignment_album_url(album.jan_code)
+
+      assert_response :success
+      assert_select 'table.admin-original-song-album-track-table-inner'
       assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]"
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
+      assert_select 'td.admin-original-song-search-cell', count: 1
+    end
+
+    test 'does not expose the album track endpoint for non-missing status' do
+      album = Album.create!(jan_code: '9777777779104')
+      track = Track.create!(album:, isrc: 'JPABC269105')
+      track.original_songs << create_original_song(code: 'ASSIGN-ALBUM-002', title: 'Already Assigned Album Song')
+
+      get admin_track_original_song_assignment_album_url(album.jan_code), params: { status: 'present' }
+
+      assert_response :not_found
     end
 
     test 'supports pagination and infinite scroll display modes' do
@@ -34,7 +65,7 @@ module Admin
         create_track(jan_code: format('977777777%04d', index), isrc: format('JPABC%07d', index))
       end
 
-      get admin_track_original_song_assignments_url
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
 
       assert_response :success
       assert_select '.admin-original-song-assignment-panel[data-controller~=?]', 'admin-infinite-scroll'
@@ -45,7 +76,7 @@ module Admin
       assert_select '.admin-infinite-scroll-sentinel'
       assert_select 'nav.admin-pagination', 0
 
-      get admin_track_original_song_assignments_url, params: { scroll: 'pagination' }
+      get admin_track_original_song_assignments_url, params: { scroll: 'pagination', view: 'tracks' }
 
       assert_response :success
       assert_select '.admin-view-mode-link.is-active', text: 'ページ送り'
@@ -58,12 +89,12 @@ module Admin
       spotify_album = create_spotify_album(album: track.album, spotify_id: 'assign-display-album')
       create_spotify_track(album: track.album, track:, spotify_album:, spotify_id: 'assign-display-track', track_number: 7)
 
-      get admin_track_original_song_assignments_url
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
 
       assert_response :success
       headers = css_select('thead tr th').map { |header| header.text.strip }
 
-      assert_equal %w[サークル アルバム名 トラック番号 名前 原曲], headers
+      assert_equal %w[サークル アルバム名 トラック番号 名前 原曲検索 設定済み原曲], headers
       assert_select 'tbody tr td:nth-child(3)', text: '7'
     end
 
@@ -72,7 +103,7 @@ module Admin
       spotify_album = create_spotify_album(album: track.album, spotify_id: 'assign-copy-album')
       create_spotify_track(album: track.album, track:, spotify_album:, spotify_id: 'assign-copy-track', track_number: 1)
 
-      get admin_track_original_song_assignments_url
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
 
       assert_response :success
       assert_select 'form.admin-original-song-assignment-form[data-controller~=?]', 'admin-clipboard'
@@ -83,12 +114,39 @@ module Admin
                     'button', 'admin-clipboard#copy', 'assign-copy-track', text: 'assign-copy-track'
     end
 
+    test 'renders album names as copy buttons in album view' do
+      track = create_track(jan_code: '9777777779144', isrc: 'JPABC269144')
+      create_spotify_album(album: track.album, spotify_id: 'assign-copy-group-album')
+
+      get admin_track_original_song_assignments_url
+
+      assert_response :success
+      assert_select 'summary.admin-original-song-album-summary .admin-copyable-value[type=?][data-action=?][data-admin-clipboard-text-value=?]',
+                    'button', 'admin-clipboard#copy', 'assign-copy-group-album', text: 'assign-copy-group-album'
+    end
+
+    test 'shows the album thumbnail without adding it to the track name' do
+      track = create_track(jan_code: '9777777779143', isrc: 'JPABC269143')
+      spotify_album = create_spotify_album(
+        album: track.album,
+        spotify_id: 'assign-thumbnail-album',
+        image_url: 'https://example.test/assign-thumbnail.jpg'
+      )
+      create_spotify_track(album: track.album, track:, spotify_album:, spotify_id: 'assign-thumbnail-track', track_number: 1)
+
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
+
+      assert_response :success
+      assert_select 'td.admin-original-song-assignment-album-cell img.admin-record-thumb', count: 1
+      assert_select 'td.admin-original-song-assignment-track-name-cell img.admin-record-thumb', count: 0
+    end
+
     test 'can show tracks that already have original songs' do
       missing_track = create_track(jan_code: '9777777779111', isrc: 'JPABC269111')
       linked_track = create_track(jan_code: '9777777779112', isrc: 'JPABC269112')
       linked_track.original_songs << create_original_song(code: 'ASSIGN-PRESENT-001', title: 'Assigned Present Song')
 
-      get admin_track_original_song_assignments_url, params: { status: 'present' }
+      get admin_track_original_song_assignments_url, params: { status: 'present', view: 'tracks' }
 
       assert_response :success
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]"
@@ -98,7 +156,7 @@ module Admin
     test 'can show track identifiers when requested' do
       track = create_track(jan_code: '9777777779113', isrc: 'JPABC269113')
 
-      get admin_track_original_song_assignments_url, params: { show_identifiers: '1' }
+      get admin_track_original_song_assignments_url, params: { show_identifiers: '1', view: 'tracks' }
 
       assert_response :success
       assert_select 'input[name=?][type=?][checked=?]', 'show_identifiers', 'checkbox', 'checked'
@@ -116,7 +174,7 @@ module Admin
       create_spotify_track(album:, track: second_track, spotify_album:, spotify_id: 'assign-order-track-2', track_number: 2)
       create_spotify_track(album:, track: first_track, spotify_album:, spotify_id: 'assign-order-track-1', track_number: 1)
 
-      get admin_track_original_song_assignments_url, params: { q: album.jan_code }
+      get admin_track_original_song_assignments_url, params: { q: album.jan_code, view: 'tracks' }
 
       assert_response :success
       assert_operator response.body.index('assign-order-track-1'), :<, response.body.index('assign-order-track-2')
@@ -129,6 +187,8 @@ module Admin
 
       patch admin_track_original_song_assignments_url,
             params: {
+              view: 'tracks',
+              scroll: 'pagination',
               assignments: {
                 track.id => {
                   original_song_codes: "#{first_song.code},#{second_song.code}"
@@ -136,7 +196,7 @@ module Admin
               }
             }
 
-      assert_redirected_to admin_track_original_song_assignments_path
+      assert_redirected_to admin_track_original_song_assignments_path(view: 'tracks', scroll: 'pagination')
       assert_equal [first_song.code, second_song.code], track.reload.original_songs.order(:track_number).pluck(:code)
     end
 
@@ -307,7 +367,7 @@ module Admin
       Track.create!(album:, isrc:)
     end
 
-    def create_spotify_album(album:, spotify_id:)
+    def create_spotify_album(album:, spotify_id:, image_url: nil)
       SpotifyAlbum.create!(
         album:,
         spotify_id:,
@@ -315,7 +375,10 @@ module Admin
         name: spotify_id,
         label: Album::TOUHOU_MUSIC_LABEL,
         active: true,
-        payload: { 'available_markets' => ['JP'] }
+        payload: {
+          'available_markets' => ['JP'],
+          'images' => (image_url.present? ? [{ 'url' => image_url }] : [])
+        }
       )
     end
 

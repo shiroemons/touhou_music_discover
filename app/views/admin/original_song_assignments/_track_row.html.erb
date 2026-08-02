@@ -1,0 +1,53 @@
+<% compact = local_assigns.fetch(:compact, false) %>
+<% selected_original_songs = track.original_songs.sort_by { |song| [song.original_code, song.track_number, song.code] } %>
+<% selected_options = selected_original_songs.map do |song| %>
+  <% { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } %>
+<% end %>
+
+<tr data-controller="admin-original-song-picker"
+    data-admin-original-song-picker-url-value="<%= admin_track_original_song_assignment_options_path %>"
+    data-admin-original-song-picker-resolve-url-value="<%= admin_resolve_track_original_song_assignments_path %>"
+    data-admin-original-song-picker-initial-options-value="<%= json_escape(selected_options.to_json) %>">
+  <% unless compact %>
+    <td class="admin-original-song-assignment-circle-cell"><%= admin_display_value(track_resource, track, :circle_name) %></td>
+    <td class="admin-original-song-assignment-album-cell">
+      <%= admin_copyable_original_song_assignment_value(track_resource, track, :album_name,
+                                                        label: t('admin.original_song_assignments.album_name')) %>
+    </td>
+  <% end %>
+  <td class="admin-original-song-assignment-track-number-cell">
+    <%= admin_original_song_assignment_track_number(track) || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %>
+  </td>
+  <td class="admin-original-song-assignment-track-name-cell">
+    <%= admin_copyable_original_song_assignment_value(track_resource, track, :name,
+                                                      label: t('admin.original_song_assignments.track_name'),
+                                                      thumbnail: false) %>
+  </td>
+  <% if show_identifiers %>
+    <td class="admin-original-song-assignment-jan-cell"><%= track.jan_code %></td>
+    <td class="admin-original-song-assignment-isrc-cell"><%= track.isrc %></td>
+  <% end %>
+  <td class="admin-original-song-search-cell">
+    <div class="admin-original-song-search">
+      <%= admin_icon(:search) %>
+      <input type="search"
+             class="input admin-input admin-original-song-search-input"
+             placeholder="<%= t('admin.original_song_assignments.search_placeholder') %>"
+             autocomplete="off"
+             role="combobox"
+             aria-expanded="false"
+             data-admin-original-song-picker-target="input"
+             data-action="focus->admin-original-song-picker#focus input->admin-original-song-picker#filter keydown->admin-original-song-picker#keydown paste->admin-original-song-picker#paste blur->admin-original-song-picker#blur">
+      <div class="admin-original-song-listbox"
+           role="listbox"
+           hidden
+           data-admin-original-song-picker-target="listbox"></div>
+    </div>
+  </td>
+  <td class="admin-original-song-selected-cell">
+    <%= hidden_field_tag "assignments[#{track.id}][original_song_codes]",
+                         selected_original_songs.map(&:code).join(','),
+                         data: { admin_original_song_picker_target: 'hidden' } %>
+    <div class="admin-original-song-selected" data-admin-original-song-picker-target="selected"></div>
+  </td>
+</tr>

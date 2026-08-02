@@ -1,0 +1,36 @@
+<% if tracks.empty? %>
+  <div class="admin-original-song-album-empty"><%= t('admin.original_song_assignments.album_empty') %></div>
+<% else %>
+  <div class="admin-original-song-album-track-table">
+    <table class="table admin-table admin-original-song-assignment-table admin-original-song-album-track-table-inner">
+      <colgroup>
+        <col class="admin-original-song-column-track-number">
+        <col class="admin-original-song-column-track-name">
+        <% if show_identifiers %>
+          <col class="admin-original-song-column-jan">
+          <col class="admin-original-song-column-isrc">
+        <% end %>
+        <col class="admin-original-song-column-search">
+        <col class="admin-original-song-column-selected">
+      </colgroup>
+      <thead>
+        <tr>
+          <th><%= t('admin.attributes.common.track_number') %></th>
+          <th><%= t('admin.attributes.common.name') %></th>
+          <% if show_identifiers %>
+            <th><%= t('admin.attributes.common.jan_code') %></th>
+            <th><%= t('admin.attributes.common.isrc') %></th>
+          <% end %>
+          <th><%= t('admin.original_song_assignments.original_songs_search') %></th>
+          <th><%= t('admin.original_song_assignments.assigned_original_songs') %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%= render partial: 'admin/original_song_assignments/track_row',
+                   collection: tracks,
+                   as: :track,
+                   locals: { compact: true, track_resource:, show_identifiers: } %>
+      </tbody>
+    </table>
+  </div>
+<% end %>

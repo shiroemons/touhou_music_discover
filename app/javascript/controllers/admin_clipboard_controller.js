@@ -8,6 +8,7 @@ export default class extends Controller {
 
   async copy(event) {
     event?.preventDefault()
+    if (event?.currentTarget?.closest("summary")) event.stopPropagation()
     const text = this.textFor(event)
     if (!text) return
 

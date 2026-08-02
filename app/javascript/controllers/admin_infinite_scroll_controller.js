@@ -41,7 +41,7 @@ export default class extends Controller {
 
       const html = await response.text()
       const documentFragment = new DOMParser().parseFromString(html, "text/html")
-      const incomingRows = documentFragment.querySelectorAll("[data-admin-infinite-scroll-target='rows'] tr")
+      const incomingRows = documentFragment.querySelectorAll("[data-admin-infinite-scroll-target='rows'] > *")
       incomingRows.forEach((row) => this.rowsTarget.appendChild(row))
 
       const nextPanel = documentFragment.querySelector("[data-controller~='admin-infinite-scroll']")

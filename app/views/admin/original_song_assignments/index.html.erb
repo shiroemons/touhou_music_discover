@@ -1,3 +1,6 @@
+<% track_view_path = url_for(request.query_parameters.merge(view: 'tracks', page: nil)) %>
+<% album_view_path = url_for(request.query_parameters.merge(view: 'albums', page: nil)) %>
+
 <div class="admin-page-header">
   <div class="admin-page-title">
     <span class="admin-kicker"><%= t('admin.resources.tracks.label') %></span>
@@ -20,6 +23,7 @@
               method: :get,
               class: 'admin-search-form admin-original-song-assignment-search-form' do |form| %>
   <%= form.hidden_field :scroll, value: 'infinite' if admin_infinite_scroll? %>
+  <%= form.hidden_field :view, value: @view_mode %>
   <div class="admin-list-toolbar">
     <div class="admin-filter-bar">
       <div class="admin-filter-field">
@@ -52,7 +56,10 @@
             <span><%= t('admin.search.submit') %></span>
           <% end %>
           <% if @query.present? || @status != 'missing' || @show_identifiers %>
-            <%= link_to admin_track_original_song_assignments_path(scroll: (admin_infinite_scroll? ? 'infinite' : 'pagination')), class: 'btn admin-btn' do %>
+            <%= link_to admin_track_original_song_assignments_path(
+                          view: @view_mode,
+                          scroll: (admin_infinite_scroll? ? 'infinite' : 'pagination')
+                        ), class: 'btn admin-btn' do %>
               <%= admin_icon(:x) %>
               <span><%= t('admin.search.clear') %></span>
             <% end %>
@@ -60,20 +67,47 @@
         </div>
       </div>
       <div class="admin-record-count">
-        <span><%= t('admin.table.current_results') %></span>
-        <strong><%= admin_records_summary(@pagy) %></strong>
+        <% if album_view? %>
+          <span><%= t('admin.original_song_assignments.album_results') %></span>
+          <strong><%= admin_records_summary(@pagy) %></strong>
+          <small><%= t('admin.original_song_assignments.album_track_total', count: number_with_delimiter(@assignment_track_count)) %></small>
+        <% else %>
+          <span><%= t('admin.table.current_results') %></span>
+          <strong><%= admin_records_summary(@pagy) %></strong>
+        <% end %>
       </div>
-      <div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
-        <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
-        <div class="admin-view-mode-options">
-          <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'true' } do %>
-            <%= admin_icon(:list_ordered) %>
-            <span><%= t('admin.scroll_mode.pagination') %></span>
-          <% end %>
-          <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'true' : nil } do %>
-            <%= admin_icon(:arrow_down_circle) %>
-            <span><%= t('admin.scroll_mode.infinite') %></span>
-          <% end %>
+      <div class="admin-original-song-assignment-view-modes">
+        <div class="admin-view-mode-bar" aria-label="<%= t('admin.original_song_assignments.display_mode') %>">
+          <span class="admin-view-mode-label"><%= t('admin.original_song_assignments.display_mode') %></span>
+          <div class="admin-view-mode-options">
+            <% if @status == 'missing' %>
+              <%= link_to album_view_path,
+                          class: "admin-view-mode-link #{'is-active' if album_view?}",
+                          aria: { current: album_view? ? 'true' : nil } do %>
+                <%= admin_icon(:collection) %>
+                <span><%= t('admin.original_song_assignments.album_view') %></span>
+              <% end %>
+            <% end %>
+            <%= link_to track_view_path,
+                        class: "admin-view-mode-link #{'is-active' unless album_view?}",
+                        aria: { current: album_view? ? nil : 'true' } do %>
+              <%= admin_icon(:list_ordered) %>
+              <span><%= t('admin.original_song_assignments.track_view') %></span>
+            <% end %>
+          </div>
+        </div>
+        <div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
+          <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
+          <div class="admin-view-mode-options">
+            <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'true' } do %>
+              <%= admin_icon(:list_ordered) %>
+              <span><%= t('admin.scroll_mode.pagination') %></span>
+            <% end %>
+            <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'true' : nil } do %>
+              <%= admin_icon(:arrow_down_circle) %>
+              <span><%= t('admin.scroll_mode.infinite') %></span>
+            <% end %>
+          </div>
         </div>
       </div>
     </div>
@@ -84,6 +118,7 @@
                 q: @query,
                 status: @status,
                 show_identifiers: (@show_identifiers ? '1' : nil),
+                view: @view_mode,
                 scroll: (admin_infinite_scroll? ? 'infinite' : 'pagination')
               ),
               method: :patch,
@@ -105,71 +140,78 @@
       <% end %>
     </div>
     <div class="admin-table-scroll" data-admin-infinite-scroll-target="container">
-      <table class="table admin-table admin-original-song-assignment-table">
-        <thead>
-          <tr>
-            <th><%= t('admin.attributes.common.circle_name') %></th>
-            <th><%= t('admin.attributes.common.album_name') %></th>
-            <th><%= t('admin.attributes.common.track_number') %></th>
-            <th><%= t('admin.attributes.common.name') %></th>
-            <% if @show_identifiers %>
+      <% if album_view? %>
+        <table class="table admin-table admin-original-song-album-table">
+          <colgroup>
+            <col class="admin-original-song-album-column-jan">
+            <col class="admin-original-song-album-column-circle">
+            <col class="admin-original-song-album-column-name">
+            <col class="admin-original-song-album-column-count">
+          </colgroup>
+          <thead>
+            <tr>
               <th><%= t('admin.attributes.common.jan_code') %></th>
-              <th><%= t('admin.attributes.common.isrc') %></th>
+              <th><%= t('admin.attributes.common.circle_name') %></th>
+              <th><%= t('admin.original_song_missing_albums.album') %></th>
+              <th><%= t('admin.original_song_missing_albums.missing_tracks_count') %></th>
+            </tr>
+          </thead>
+          <tbody data-admin-infinite-scroll-target="rows">
+            <% @albums.each do |album| %>
+              <%= render 'admin/original_song_assignments/album_group',
+                         album:,
+                         track_count: @album_track_counts.fetch(album.jan_code, 0),
+                         query: @query,
+                         show_identifiers: @show_identifiers %>
             <% end %>
-            <th><%= t('admin.original_song_assignments.original_songs') %></th>
-          </tr>
-        </thead>
-        <tbody data-admin-infinite-scroll-target="rows">
-          <% @tracks.each do |track| %>
-            <% selected_original_songs = track.original_songs.sort_by { |song| [song.original_code, song.track_number, song.code] } %>
-            <% selected_options = selected_original_songs.map { |song| { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } } %>
+            <% if @albums.empty? %>
+              <tr>
+                <td colspan="4" class="admin-table-empty"><%= t('admin.original_song_assignments.empty') %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <table class="table admin-table admin-original-song-assignment-table">
+          <colgroup>
+            <col class="admin-original-song-column-circle">
+            <col class="admin-original-song-column-album">
+            <col class="admin-original-song-column-track-number">
+            <col class="admin-original-song-column-track-name">
+            <% if @show_identifiers %>
+              <col class="admin-original-song-column-jan">
+              <col class="admin-original-song-column-isrc">
+            <% end %>
+            <col class="admin-original-song-column-search">
+            <col class="admin-original-song-column-selected">
+          </colgroup>
+          <thead>
             <tr>
-              <td><%= admin_display_value(@track_resource, track, :circle_name) %></td>
-              <td><%= admin_copyable_original_song_assignment_value(@track_resource, track, :album_name,
-                                                                     label: t('admin.original_song_assignments.album_name')) %></td>
-              <td><%= admin_original_song_assignment_track_number(track) || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %></td>
-              <td><%= admin_copyable_original_song_assignment_value(@track_resource, track, :name,
-                                                                     label: t('admin.original_song_assignments.track_name')) %></td>
+              <th><%= t('admin.attributes.common.circle_name') %></th>
+              <th><%= t('admin.attributes.common.album_name') %></th>
+              <th><%= t('admin.attributes.common.track_number') %></th>
+              <th><%= t('admin.attributes.common.name') %></th>
               <% if @show_identifiers %>
-                <td><%= track.jan_code %></td>
-                <td><%= track.isrc %></td>
+                <th><%= t('admin.attributes.common.jan_code') %></th>
+                <th><%= t('admin.attributes.common.isrc') %></th>
               <% end %>
-              <td class="admin-original-song-picker-cell">
-                <div class="admin-original-song-picker"
-                     data-controller="admin-original-song-picker"
-                     data-admin-original-song-picker-url-value="<%= admin_track_original_song_assignment_options_path %>"
-                     data-admin-original-song-picker-resolve-url-value="<%= admin_resolve_track_original_song_assignments_path %>"
-                     data-admin-original-song-picker-initial-options-value="<%= json_escape(selected_options.to_json) %>">
-                  <%= hidden_field_tag "assignments[#{track.id}][original_song_codes]",
-                                       selected_original_songs.map(&:code).join(','),
-                                       data: { admin_original_song_picker_target: 'hidden' } %>
-                  <div class="admin-original-song-selected" data-admin-original-song-picker-target="selected"></div>
-                  <div class="admin-original-song-search">
-                    <%= admin_icon(:search) %>
-                    <input type="search"
-                           class="input admin-input admin-original-song-search-input"
-                           placeholder="<%= t('admin.original_song_assignments.search_placeholder') %>"
-                           autocomplete="off"
-                           role="combobox"
-                           aria-expanded="false"
-                           data-admin-original-song-picker-target="input"
-                           data-action="focus->admin-original-song-picker#focus input->admin-original-song-picker#filter keydown->admin-original-song-picker#keydown paste->admin-original-song-picker#paste blur->admin-original-song-picker#blur">
-                    <div class="admin-original-song-listbox"
-                         role="listbox"
-                         hidden
-                         data-admin-original-song-picker-target="listbox"></div>
-                  </div>
-                </div>
-              </td>
+              <th><%= t('admin.original_song_assignments.original_songs_search') %></th>
+              <th><%= t('admin.original_song_assignments.assigned_original_songs') %></th>
             </tr>
-          <% end %>
-          <% if @tracks.empty? %>
-            <tr>
-              <td colspan="<%= @show_identifiers ? 7 : 5 %>" class="admin-table-empty"><%= t('admin.original_song_assignments.empty') %></td>
-            </tr>
-          <% end %>
-        </tbody>
-      </table>
+          </thead>
+          <tbody data-admin-infinite-scroll-target="rows">
+            <%= render partial: 'admin/original_song_assignments/track_row',
+                       collection: @tracks,
+                       as: :track,
+                       locals: { compact: false, track_resource: @track_resource, show_identifiers: @show_identifiers } %>
+            <% if @tracks.empty? %>
+              <tr>
+                <td colspan="<%= @show_identifiers ? 8 : 6 %>" class="admin-table-empty"><%= t('admin.original_song_assignments.empty') %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
       <% if admin_infinite_scroll? && @pagy.next.present? %>
         <div class="admin-infinite-scroll-sentinel" data-admin-infinite-scroll-target="sentinel" aria-hidden="true"></div>
       <% end %>

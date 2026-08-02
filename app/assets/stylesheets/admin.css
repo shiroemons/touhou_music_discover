@@ -1447,17 +1447,75 @@
   white-space: nowrap;
 }
 
-.admin-original-song-assignment-search-form .admin-view-mode-bar {
+.admin-original-song-assignment-view-modes {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
   margin-left: auto;
 }
 
-.admin-original-song-assignment-table {
-  min-width: 76rem;
+.admin-original-song-assignment-search-form .admin-original-song-assignment-view-modes .admin-view-mode-bar {
+  margin-left: 0;
 }
 
-.admin-original-song-assignment-table td:last-child {
-  min-width: 28rem;
-  position: static;
+.admin-original-song-assignment-table {
+  min-width: 96rem;
+  table-layout: fixed;
+}
+
+.admin-original-song-assignment-table th,
+.admin-original-song-assignment-table td {
+  overflow-wrap: anywhere;
+  padding: 0.42rem 0.55rem;
+}
+
+.admin-original-song-assignment-table th {
+  white-space: nowrap;
+}
+
+.admin-original-song-assignment-table thead th,
+.admin-original-song-album-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--admin-z-table-header);
+}
+
+.admin-original-song-column-circle {
+  width: 9rem;
+}
+
+.admin-original-song-column-album {
+  width: 14rem;
+}
+
+.admin-original-song-column-track-number {
+  width: 5rem;
+}
+
+.admin-original-song-column-track-name {
+  width: 18rem;
+}
+
+.admin-original-song-column-jan,
+.admin-original-song-column-isrc {
+  width: 12rem;
+}
+
+.admin-original-song-column-search {
+  width: 22rem;
+}
+
+.admin-original-song-column-selected {
+  width: 28rem;
+}
+
+.admin-original-song-assignment-table .admin-original-song-search-cell {
+  overflow: visible;
+}
+
+.admin-original-song-assignment-table .admin-original-song-selected-cell {
+  min-width: 0;
 }
 
 /* Keep the editable original-song heading visible during both table scroll directions. */
@@ -1466,6 +1524,134 @@
   right: 0;
   top: 0;
   z-index: var(--admin-z-table-actions-header);
+}
+
+.admin-original-song-album-table {
+  min-width: 72rem;
+  table-layout: fixed;
+}
+
+.admin-original-song-album-column-name {
+  width: auto;
+}
+
+.admin-original-song-album-column-circle {
+  width: 22%;
+}
+
+.admin-original-song-album-column-jan {
+  width: 13rem;
+}
+
+.admin-original-song-album-column-count {
+  width: 11rem;
+}
+
+.admin-original-song-album-table .admin-original-song-album-cell {
+  background: inherit;
+  padding: 0;
+  position: static;
+}
+
+.admin-original-song-album-details {
+  display: block;
+}
+
+.admin-original-song-album-summary {
+  align-items: center;
+  cursor: pointer;
+  display: grid;
+  gap: 0;
+  grid-template-columns: 13rem 22% minmax(0, 1fr) 11rem;
+  list-style: none;
+  min-height: 3.25rem;
+  padding: 0;
+}
+
+.admin-original-song-album-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-original-song-album-summary > span {
+  min-width: 0;
+  padding: 0.42rem 0.85rem;
+}
+
+.admin-original-song-album-summary-name {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.admin-original-song-album-summary-name > .admin-icon {
+  flex: 0 0 auto;
+  height: 1rem;
+  transition: transform 160ms ease;
+  width: 1rem;
+}
+
+.admin-original-song-album-details[open] .admin-original-song-album-summary-name > .admin-icon {
+  transform: rotate(90deg);
+}
+
+.admin-original-song-album-summary-name .admin-value-with-thumb,
+.admin-original-song-album-summary-name .admin-value-label {
+  max-width: none;
+  min-width: 0;
+}
+
+.admin-original-song-album-summary-name .admin-copyable-value {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.admin-original-song-album-summary-circle,
+.admin-original-song-album-summary-jan,
+.admin-original-song-album-summary-count {
+  color: var(--admin-muted);
+  font-size: 0.84rem;
+}
+
+.admin-original-song-album-summary-jan,
+.admin-original-song-album-summary-count {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.admin-original-song-album-summary-count {
+  color: var(--admin-primary);
+  font-weight: 800;
+  text-align: right;
+}
+
+.admin-original-song-album-loading {
+  border-top: 1px solid var(--admin-border);
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  padding: 0.55rem 0.85rem;
+}
+
+.admin-original-song-album-retry {
+  margin: 0 0.85rem 0.65rem;
+}
+
+.admin-original-song-album-content {
+  border-top: 1px solid var(--admin-border);
+  padding: 0.65rem;
+}
+
+.admin-original-song-album-track-table-inner {
+  min-width: 72rem;
+}
+
+.admin-original-song-album-track-table-inner thead th {
+  position: static;
+}
+
+.admin-original-song-album-empty {
+  color: var(--admin-muted);
+  padding: 0.75rem;
 }
 
 .admin-original-song-missing-albums-search-form .admin-list-controls {
@@ -4841,6 +5027,18 @@ html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
 }
 
 @media (max-width: 767.98px) {
+  .admin-original-song-assignment-view-modes {
+    align-items: stretch;
+    flex-direction: column;
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .admin-original-song-assignment-view-modes .admin-view-mode-bar {
+    align-items: stretch;
+    justify-content: space-between;
+  }
+
   .admin-list-controls,
   .admin-search-row,
   .admin-filter-bar,

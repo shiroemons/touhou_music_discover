@@ -1,0 +1,56 @@
+<% album_name = admin_original_song_assignment_album_name(album) %>
+<% album_content = if admin_record_image_url(album).present?
+                     admin_value_with_thumbnail(album, album_name)
+                   else
+                     tag.span(album_name, class: 'admin-value-label')
+                   end %>
+<% album_content = admin_copyable_original_song_assignment_button(
+                     album_name,
+                     label: t('admin.original_song_assignments.album_name'),
+                     content: album_content
+                   ) %>
+<% album_url = admin_track_original_song_assignment_album_path(
+                 album.jan_code,
+                 q: query.presence,
+                 status: 'missing',
+                 show_identifiers: (show_identifiers ? '1' : nil)
+               ) %>
+
+<tr class="admin-original-song-album-row">
+  <td colspan="4" class="admin-original-song-album-cell">
+    <details class="admin-original-song-album-details"
+             data-controller="admin-original-song-album"
+             data-action="toggle->admin-original-song-album#toggle"
+             data-admin-original-song-album-url-value="<%= album_url %>"
+             data-admin-original-song-album-loading-text-value="<%= t('admin.original_song_assignments.album_loading') %>"
+             data-admin-original-song-album-error-text-value="<%= t('admin.original_song_assignments.album_load_error') %>"
+             data-admin-original-song-album-retry-text-value="<%= t('admin.original_song_assignments.album_retry') %>">
+      <summary class="admin-original-song-album-summary">
+        <span class="admin-original-song-album-summary-jan"><%= album.jan_code %></span>
+        <span class="admin-original-song-album-summary-circle">
+          <%= album.circle_name.presence || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %>
+        </span>
+        <span class="admin-original-song-album-summary-name">
+          <%= admin_icon(:chevron_right) %>
+          <%= album_content %>
+        </span>
+        <span class="admin-original-song-album-summary-count">
+          <%= t('admin.original_song_assignments.album_track_count', count: number_with_delimiter(track_count)) %>
+        </span>
+      </summary>
+      <div class="admin-original-song-album-loading" data-admin-original-song-album-target="status">
+        <%= t('admin.original_song_assignments.album_expand_hint') %>
+      </div>
+      <button type="button"
+              class="btn btn-sm admin-btn admin-original-song-album-retry"
+              hidden
+              data-admin-original-song-album-target="retry"
+              data-action="click->admin-original-song-album#retry">
+        <%= t('admin.original_song_assignments.album_retry') %>
+      </button>
+      <div class="admin-original-song-album-content"
+           hidden
+           data-admin-original-song-album-target="content"></div>
+    </details>
+  </td>
+</tr>

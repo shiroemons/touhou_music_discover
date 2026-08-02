@@ -2,13 +2,18 @@
 
 module Admin
   module OriginalSongAssignmentsHelper
-    def admin_copyable_original_song_assignment_value(resource_config, track, attribute, label:)
+    def admin_copyable_original_song_assignment_value(resource_config, track, attribute, label:, thumbnail: true)
       value = resource_config.value_for(track, attribute)
       return admin_display_value(resource_config, track, attribute) if value.blank?
 
+      display_value = thumbnail ? admin_display_value(resource_config, track, attribute) : value.to_s
+      admin_copyable_original_song_assignment_button(value, label:, content: display_value)
+    end
+
+    def admin_copyable_original_song_assignment_button(value, label:, content: value)
       copy_label = t('admin.original_song_assignments.copy_value', label:, value:)
       tag.button(
-        admin_display_value(resource_config, track, attribute),
+        content,
         type: 'button',
         class: 'admin-copyable-value',
         title: copy_label,
@@ -33,6 +38,14 @@ module Admin
         admin_minimum_track_number(track.ytmusic_tracks),
         admin_minimum_track_number(track.spotify_tracks)
       ].compact.first
+    end
+
+    def admin_original_song_assignment_album_name(album)
+      album.spotify_album_name ||
+        album.apple_music_album_name ||
+        album.ytmusic_album_name ||
+        album.line_music_album_name ||
+        album.jan_code
     end
 
     private

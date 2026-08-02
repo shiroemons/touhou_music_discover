@@ -78,7 +78,7 @@
             <td><%= @missing_track_counts.fetch(album.jan_code, 0) %></td>
             <td class="admin-table-actions-cell">
               <div class="admin-row-actions">
-                <%= link_to admin_track_original_song_assignments_path(q: album.jan_code), class: 'btn btn-sm admin-btn' do %>
+                <%= link_to admin_track_original_song_assignments_path(q: album.jan_code, view: 'albums'), class: 'btn btn-sm admin-btn' do %>
                   <%= admin_icon(:list_ordered) %>
                   <span><%= t('admin.original_song_missing_albums.assign') %></span>
                 <% end %>
