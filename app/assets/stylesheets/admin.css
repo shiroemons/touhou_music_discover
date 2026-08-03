@@ -1522,6 +1522,13 @@
   overflow: visible;
 }
 
+/* Keep an open picker above following rows, including nested album results. */
+.admin-original-song-assignment-table tbody > tr:has(.admin-original-song-listbox:not([hidden])),
+.admin-original-song-album-table tbody > tr:has(.admin-original-song-listbox:not([hidden])) {
+  position: relative;
+  z-index: var(--admin-z-popover);
+}
+
 .admin-original-song-assignment-table .admin-original-song-selected-cell {
   min-width: 0;
 }
