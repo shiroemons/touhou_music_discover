@@ -97,7 +97,7 @@ module Admin
       assert_equal %w[サークル アルバム名 トラック番号 名前 原曲検索 設定済み原曲], headers
       assert_select 'tbody tr td:nth-child(3)', text: '7'
       assert_select '.admin-original-song-paste-hint',
-                    text: '複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。'
+                    text: '複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。Ctrl/Cmd+Zで戻し、Ctrl/Cmd+Shift+Zでやり直せます。'
     end
 
     test 'renders album and track names as copy buttons' do

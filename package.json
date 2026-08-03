@@ -8,7 +8,8 @@
   },
   "scripts": {
     "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds",
-    "build:css": "tailwindcss -i ./app/assets/stylesheets/application.css -o ./app/assets/builds/application.css"
+    "build:css": "tailwindcss -i ./app/assets/stylesheets/application.css -o ./app/assets/builds/application.css",
+    "test:javascript": "node --test test/javascript/*.test.mjs"
   },
   "devDependencies": {
     "@tailwindcss/cli": "4.3.3",

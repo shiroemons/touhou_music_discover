@@ -1,6 +1,11 @@
 import { Controller } from "@hotwired/stimulus"
-
-const PASTED_ORIGINAL_SONG_DELIMITER_PATTERN = /[,、，\/／]/
+import {
+  cloneOriginalSongOptions,
+  isOriginalSongRedoShortcut,
+  isOriginalSongUndoShortcut,
+  originalSongAssignmentHistoryFor
+} from "./admin_original_song_assignment_history.mjs"
+import { shouldDistributePastedRows } from "./admin_original_song_paste.mjs"
 
 export default class extends Controller {
   static targets = ["hidden", "input", "listbox", "selected"]
@@ -15,6 +20,9 @@ export default class extends Controller {
     this.activeIndex = -1
     this.loadedQuery = null
     this.requestSequence = 0
+    this.shiftKeyDown = false
+    this.history = originalSongAssignmentHistoryFor(this.element)
+    this.history.register(this.element, this)
     this.resolveRowPasteHandler = (event) => this.resolvePastedRow(event)
     this.element.addEventListener("admin-original-song-picker:resolve-row", this.resolveRowPasteHandler)
     this.renderSelectedOptions()
@@ -26,6 +34,7 @@ export default class extends Controller {
     clearTimeout(this.searchTimer)
     clearTimeout(this.missingQueryTimer)
     this.element.removeEventListener("admin-original-song-picker:resolve-row", this.resolveRowPasteHandler)
+    this.history.unregister(this.element)
   }
 
   focus() {
@@ -42,6 +51,21 @@ export default class extends Controller {
   }
 
   keydown(event) {
+    if (event.key === "Shift") {
+      this.shiftKeyDown = true
+      return
+    }
+
+    if (this.inputTarget.value === "" && this.isRedoShortcut(event)) {
+      if (this.history.redo()) event.preventDefault()
+      return
+    }
+
+    if (this.inputTarget.value === "" && this.isUndoShortcut(event)) {
+      if (this.history.undo()) event.preventDefault()
+      return
+    }
+
     const visibleOptions = this.visibleOptions()
 
     if (event.key === "ArrowDown") {
@@ -62,7 +86,12 @@ export default class extends Controller {
     }
   }
 
+  keyup(event) {
+    if (event.key === "Shift") this.shiftKeyDown = false
+  }
+
   blur() {
+    this.shiftKeyDown = false
     setTimeout(() => {
       if (this.element.contains(document.activeElement)) return
 
@@ -108,7 +137,7 @@ export default class extends Controller {
     const rows = this.pastedRows(text)
     if (rows.length > 1) {
       const pastedText = rows.join("\n")
-      if (this.shouldDistributePastedRows(rows, event)) {
+      if (this.shouldDistributePastedRows(rows)) {
         this.resolvePastedRows(pastedText)
       } else {
         this.resolvePastedText(pastedText)
@@ -123,13 +152,20 @@ export default class extends Controller {
     const text = event.detail?.text?.trim()
     if (!text) return
 
-    this.resolvePastedText(text)
+    const historyEntry = event.detail?.historyEntry
+    const change = historyEntry?.changes.find((candidate) => candidate.element === this.element)
+    this.resolvePastedText(text, {
+      historyEntry,
+      beforeSnapshot: change?.before
+    })
   }
 
   remove(event) {
     event.preventDefault()
     const value = event.currentTarget.dataset.value
+    const beforeSnapshot = this.snapshotSelectedOptions()
     this.selectedOptions = this.selectedOptions.filter((option) => option.value !== value)
+    this.history.record(this.element, beforeSnapshot, this.selectedOptions)
     this.renderSelectedOptions()
     this.syncHiddenValue()
     this.renderOptions(this.currentOptions || [], { activateFirst: false })
@@ -147,8 +183,8 @@ export default class extends Controller {
     this.updateActiveOption()
   }
 
-  shouldDistributePastedRows(rows, event) {
-    return event.shiftKey || rows.some((row) => PASTED_ORIGINAL_SONG_DELIMITER_PATTERN.test(row))
+  shouldDistributePastedRows(rows) {
+    return shouldDistributePastedRows(rows, this.shiftKeyDown)
   }
 
   async loadOptions(query, { activateFirst }) {
@@ -190,7 +226,11 @@ export default class extends Controller {
     }
   }
 
-  async resolvePastedText(text) {
+  async resolvePastedText(text, { historyEntry = null, beforeSnapshot = null } = {}) {
+    const snapshot = beforeSnapshot ? cloneOriginalSongOptions(beforeSnapshot) : this.snapshotSelectedOptions()
+    const entry = historyEntry || this.history.begin([
+      { element: this.element, before: snapshot }
+    ], { pending: 1 })
     const requestId = this.requestSequence + 1
     this.requestSequence = requestId
     this.open()
@@ -208,11 +248,15 @@ export default class extends Controller {
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
       if (requestId !== this.requestSequence) return
+      if (entry.state === "undone") return
 
       const data = await response.json()
       this.inputTarget.value = ""
       this.loadedQuery = null
-      this.renderResolvedOptions(data.resolutions || [])
+      this.renderResolvedOptions(data.resolutions || [], {
+        historyEntry: entry,
+        beforeSnapshot: snapshot
+      })
     } catch (_error) {
       if (requestId === this.requestSequence) {
         this.renderOptions([], { activateFirst: false })
@@ -221,6 +265,7 @@ export default class extends Controller {
       if (requestId === this.requestSequence) {
         this.listboxTarget.removeAttribute("aria-busy")
       }
+      this.history.complete(entry)
     }
   }
 
@@ -268,10 +313,12 @@ export default class extends Controller {
   selectOption(optionElement) {
     if (!optionElement) return
 
-    this.addOption({
+    const beforeSnapshot = this.snapshotSelectedOptions()
+    const added = this.addOption({
       value: optionElement.dataset.value,
       label: optionElement.dataset.label
     })
+    if (added) this.history.record(this.element, beforeSnapshot, this.selectedOptions)
 
     this.inputTarget.value = ""
     this.loadedQuery = null
@@ -282,9 +329,10 @@ export default class extends Controller {
   }
 
   addOption(option) {
-    if (!option?.value || this.selectedOptions.some((selectedOption) => selectedOption.value === option.value)) return
+    if (!option?.value || this.selectedOptions.some((selectedOption) => selectedOption.value === option.value)) return false
 
     this.selectedOptions = [...this.selectedOptions, option]
+    return true
   }
 
   renderSelectedOptions() {
@@ -337,15 +385,17 @@ export default class extends Controller {
     this.updateActiveOption()
   }
 
-  renderResolvedOptions(resolutions) {
+  renderResolvedOptions(resolutions, { historyEntry = null, beforeSnapshot = null } = {}) {
+    const snapshot = beforeSnapshot ? cloneOriginalSongOptions(beforeSnapshot) : this.snapshotSelectedOptions()
     const ambiguousOptions = []
     const missingQueries = []
+    let changed = false
 
     resolutions.forEach((resolution) => {
       const options = resolution.options || []
 
       if (options.length === 1) {
-        this.addOption(options[0])
+        changed = this.addOption(options[0]) || changed
       } else if (options.length > 1) {
         options.forEach((option) => {
           ambiguousOptions.push({ ...option, groupLabel: resolution.query })
@@ -357,6 +407,13 @@ export default class extends Controller {
 
     this.renderSelectedOptions()
     this.syncHiddenValue()
+    if (changed) {
+      if (historyEntry) {
+        this.history.update(historyEntry, this.element, this.selectedOptions)
+      } else {
+        this.history.record(this.element, snapshot, this.selectedOptions)
+      }
+    }
 
     if (ambiguousOptions.length > 0 || missingQueries.length > 0) {
       this.renderResolvedChoiceList(ambiguousOptions, missingQueries)
@@ -456,21 +513,46 @@ export default class extends Controller {
   }
 
   resolvePastedRows(text) {
-    const rows = this.pastedRows(text)
-    const pickerElements = Array.from(document.querySelectorAll('[data-controller~="admin-original-song-picker"]'))
+    const rows = this.pastedRows(text).filter(Boolean)
+    const pickerElements = this.pickerElementsForDistribution()
     const startIndex = pickerElements.indexOf(this.element)
     if (startIndex < 0) return
 
-    rows.forEach((rowText, offset) => {
-      if (!rowText) return
-
+    const targets = rows.map((rowText, offset) => {
       const pickerElement = pickerElements[startIndex + offset]
-      if (!pickerElement) return
+      if (!pickerElement) return null
 
-      pickerElement.dispatchEvent(new CustomEvent("admin-original-song-picker:resolve-row", {
-        detail: { text: rowText }
+      const controller = this.history.controllerFor(pickerElement)
+      if (!controller) return null
+
+      return {
+        element: pickerElement,
+        controller,
+        text: rowText
+      }
+    }).filter(Boolean)
+    if (targets.length === 0) return
+
+    const historyEntry = this.history.begin(
+      targets.map(({ element, controller }) => ({
+        element,
+        before: controller.snapshotSelectedOptions()
+      })),
+      { pending: targets.length }
+    )
+
+    targets.forEach(({ element, text: rowText }) => {
+      element.dispatchEvent(new CustomEvent("admin-original-song-picker:resolve-row", {
+        detail: { text: rowText, historyEntry }
       }))
     })
+  }
+
+  pickerElementsForDistribution() {
+    const albumDetails = this.element.closest("details.admin-original-song-album-details")
+    const scope = albumDetails || this.element.closest("table") || this.element.closest("form") || document
+
+    return Array.from(scope.querySelectorAll('[data-controller~="admin-original-song-picker"]'))
   }
 
   pastedRows(text) {
@@ -503,6 +585,25 @@ export default class extends Controller {
     if (/^["'`]{3,}$/.test(trimmedValue)) return ""
 
     return trimmedValue.replace(/^原曲\s*[:：]\s*/, "").trim()
+  }
+
+  isUndoShortcut(event) {
+    return isOriginalSongUndoShortcut(event)
+  }
+
+  isRedoShortcut(event) {
+    return isOriginalSongRedoShortcut(event)
+  }
+
+  snapshotSelectedOptions() {
+    return cloneOriginalSongOptions(this.selectedOptions)
+  }
+
+  restoreSelectedOptions(options) {
+    this.selectedOptions = cloneOriginalSongOptions(options)
+    this.renderSelectedOptions()
+    this.syncHiddenValue()
+    this.renderOptions(this.currentOptions || [], { activateFirst: false })
   }
 
   missingQueryInputFor(element) {

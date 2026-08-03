@@ -180,7 +180,7 @@ en:
       copy_value: "Copy %{label}: %{value}"
       show_identifiers: "Show JAN/ISRC"
       search_placeholder: "Search by code, song, or original work"
-      paste_hint: "Multi-line paste with delimiters assigns one line per track. Without delimiters, all lines go to the current track. Hold Shift to assign one line per track."
+      paste_hint: "Multi-line paste with delimiters assigns one line per track. Without delimiters, all lines go to the current track. Hold Shift to assign one line per track. Use Ctrl/Cmd+Z to undo and Ctrl/Cmd+Shift+Z to redo."
       save: "Save"
       empty: "No tracks found."
       update_success: "Original song assignments were updated."

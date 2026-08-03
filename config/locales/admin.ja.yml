@@ -215,7 +215,7 @@ ja:
       copy_value: "%{label}「%{value}」をコピー"
       show_identifiers: "JAN/ISRCを表示"
       search_placeholder: "原曲コード・曲名・原作で検索"
-      paste_hint: "複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。"
+      paste_hint: "複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。Ctrl/Cmd+Zで戻し、Ctrl/Cmd+Shift+Zでやり直せます。"
       save: "保存"
       empty: "対象の楽曲はありません。"
       update_success: "原曲の紐づけを更新しました。"
