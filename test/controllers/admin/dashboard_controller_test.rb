@@ -24,6 +24,8 @@ module Admin
       assert_select 'button[data-admin-theme-mode=?]', 'light', text: 'Light'
       assert_select 'button[data-admin-theme-mode=?]', 'dark', text: 'Dark'
       assert_select 'button[data-admin-theme-mode=?]', 'system', text: 'System'
+      assert_select '.admin-toast-container[data-controller=?][aria-label=?]', 'admin-toast', '通知'
+      assert_select '.admin-toast-item', count: 0
       assert_select '.admin-stat-card', minimum: 4
       assert_select 'h2', 'カタログ整備状況'
       assert_select '.admin-catalog-metric-card', text: /サークル未設定アルバム/

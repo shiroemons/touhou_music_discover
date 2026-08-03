@@ -42,7 +42,9 @@
         <strong><%= admin_records_summary(@pagy) %></strong>
       </div>
       <div class="admin-original-song-missing-albums-copy"
-           data-controller="admin-clipboard">
+           data-controller="admin-clipboard"
+           data-admin-clipboard-success-message-value="<%= t('admin.toast.copy_success') %>"
+           data-admin-clipboard-failure-message-value="<%= t('admin.toast.copy_failure') %>">
         <textarea class="visually-hidden" data-admin-clipboard-target="source"><%= @copy_text %></textarea>
         <%= button_tag type: :button,
                        class: 'btn admin-btn',
@@ -51,7 +53,6 @@
           <%= admin_icon(:copy) %>
           <span><%= t('admin.original_song_missing_albums.copy') %></span>
         <% end %>
-        <span class="admin-copy-status" data-admin-clipboard-target="status" aria-live="polite"></span>
       </div>
     </div>
   </div>

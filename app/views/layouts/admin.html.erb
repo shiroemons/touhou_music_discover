@@ -30,6 +30,33 @@
 </head>
 
 <body class="admin-shell">
+  <div class="toast toast-top toast-center admin-toast-container"
+       data-controller="admin-toast"
+       data-admin-toast-default-duration-value="3200"
+       data-admin-toast-dismiss-label-value="<%= t('admin.toast.dismiss') %>"
+       aria-label="<%= t('admin.toast.region_label') %>">
+    <% flash.each do |type, message| %>
+      <% toast_variant = case type.to_s
+                         when 'notice', 'success' then 'success'
+                         when 'warning' then 'warning'
+                         when 'info' then 'info'
+                         else 'error'
+                         end %>
+      <% toast_role = %w[error warning].include?(toast_variant) ? 'alert' : 'status' %>
+      <div class="alert alert-<%= toast_variant %> admin-toast-item"
+           data-admin-toast-target="item"
+           data-admin-toast-variant="<%= toast_variant %>"
+           role="<%= toast_role %>"
+           aria-atomic="true">
+        <span class="admin-toast-message"><%= message %></span>
+        <button type="button"
+                class="btn btn-circle btn-xs admin-toast-dismiss"
+                data-action="admin-toast#dismiss"
+                aria-label="<%= t('admin.toast.dismiss') %>">×</button>
+      </div>
+    <% end %>
+  </div>
+
   <div class="admin-layout">
     <aside class="admin-sidebar">
       <div class="admin-sidebar-inner">
@@ -101,10 +128,6 @@
 
     <div class="admin-main">
       <main class="admin-content">
-        <% flash.each do |type, message| %>
-          <% alert_class = type == 'notice' ? 'alert-success' : 'alert-error' %>
-          <div class="alert <%= alert_class %> admin-flash" role="alert"><%= message %></div>
-        <% end %>
         <% if @spotify_rate_limit_status.present? %>
           <div
             class="admin-rate-limit-banner"

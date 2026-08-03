@@ -109,7 +109,8 @@ module Admin
 
       assert_response :success
       assert_select 'form.admin-original-song-assignment-form[data-controller~=?]', 'admin-clipboard'
-      assert_select '.admin-copy-status[data-admin-clipboard-target=?][aria-live=?]', 'status', 'polite'
+      assert_select '.admin-toast-container[data-controller=?]', 'admin-toast'
+      assert_select '.admin-copy-status', count: 0
       assert_select 'td:nth-child(2) button.admin-copyable-value[type=?][data-action=?][data-admin-clipboard-text-value=?]',
                     'button', 'admin-clipboard#copy', 'assign-copy-album', text: 'assign-copy-album'
       assert_select 'td:nth-child(4) button.admin-copyable-value[type=?][data-action=?][data-admin-clipboard-text-value=?]',

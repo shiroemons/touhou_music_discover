@@ -1401,6 +1401,10 @@ module Admin
       patch admin_resource_url('circles', circle), params: { record: { name: 'Updated Admin Circle' } }
 
       assert_redirected_to admin_resource_path('circles', circle)
+      follow_redirect!
+
+      assert_response :success
+      assert_select '.admin-toast-item.alert-success[role=?]', 'status', text: /サークルを更新しました。/
       assert_equal 'Updated Admin Circle', circle.reload.name
 
       assert_difference('Circle.count', -1) do

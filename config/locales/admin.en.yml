@@ -30,6 +30,11 @@ en:
       edit: "Edit %{resource}"
     shared:
       blank: "Not set"
+    toast:
+      region_label: "Notifications"
+      dismiss: "Dismiss notification"
+      copy_success: "Copied"
+      copy_failure: "Could not copy"
     spotify_rate_limit:
       kicker: "Spotify API 429"
       title: "Spotify API rate limited"

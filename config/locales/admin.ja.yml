@@ -65,6 +65,11 @@ ja:
       edit: "%{resource} 編集"
     shared:
       blank: "未設定"
+    toast:
+      region_label: "通知"
+      dismiss: "通知を閉じる"
+      copy_success: "コピーしました"
+      copy_failure: "コピーできませんでした"
     spotify_rate_limit:
       kicker: "Spotify API 429"
       title: "Spotify APIのレート制限中"

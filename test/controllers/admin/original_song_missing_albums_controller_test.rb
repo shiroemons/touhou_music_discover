@@ -23,6 +23,7 @@ module Admin
       assert_select 'td', { text: 'Linked Album', count: 0 }
       assert_select 'a[href=?]', admin_track_original_song_assignments_path(q: missing_album.jan_code, view: 'albums'), text: '紐づけ'
       assert_select 'textarea[data-admin-clipboard-target=?]', 'source', text: "Missing Circle\tMissing Album"
+      assert_select '.admin-copy-status', count: 0
       assert_not_includes response.body, missing_track.isrc
     end
 

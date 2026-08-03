@@ -1,9 +1,12 @@
 import { Controller } from "@hotwired/stimulus"
+import { showAdminToast } from "./admin_toast_controller.mjs"
 
 export default class extends Controller {
-  static targets = ["source", "status"]
+  static targets = ["source"]
   static values = {
-    text: String
+    text: String,
+    successMessage: { type: String, default: "コピーしました" },
+    failureMessage: { type: String, default: "コピーできませんでした" }
   }
 
   async copy(event) {
@@ -14,9 +17,9 @@ export default class extends Controller {
 
     try {
       await this.writeText(text)
-      this.showStatus("コピーしました")
+      showAdminToast(this.successMessageValue, { variant: "success" })
     } catch (_error) {
-      this.showStatus("コピーできませんでした")
+      showAdminToast(this.failureMessageValue, { variant: "error" })
     }
   }
 
@@ -59,13 +62,4 @@ export default class extends Controller {
     }
   }
 
-  showStatus(message) {
-    if (!this.hasStatusTarget) return
-
-    this.statusTarget.textContent = message
-    clearTimeout(this.statusTimer)
-    this.statusTimer = setTimeout(() => {
-      this.statusTarget.textContent = ""
-    }, 2500)
-  }
 }

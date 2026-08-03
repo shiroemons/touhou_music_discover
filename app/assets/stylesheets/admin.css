@@ -158,10 +158,87 @@
   padding: 1.75rem;
 }
 
-.admin-flash {
-  border-radius: 8px;
-  border-width: 1px;
-  box-shadow: var(--admin-shadow);
+.admin-toast-container {
+  gap: 0.5rem;
+  max-width: calc(100vw - 2rem);
+  pointer-events: none;
+  top: max(1rem, env(safe-area-inset-top));
+  width: min(36rem, calc(100vw - 2rem));
+  z-index: var(--admin-z-toast);
+}
+
+.admin-toast-container .admin-toast-item {
+  align-items: center;
+  background-color: var(--admin-surface);
+  border-color: var(--admin-border);
+  box-sizing: border-box;
+  color: var(--admin-text);
+  grid-template-columns: minmax(0, 1fr) auto;
+  max-width: 100%;
+  pointer-events: auto;
+  box-shadow: var(--admin-shadow-soft);
+  transition: opacity 180ms ease, transform 180ms ease;
+  width: 100%;
+}
+
+.admin-toast-container .admin-toast-item[data-admin-toast-variant='success'] {
+  background-color: var(--admin-primary-soft);
+  border-color: var(--admin-primary);
+}
+
+.admin-toast-container .admin-toast-item[data-admin-toast-variant='info'] {
+  background-color: var(--admin-surface-strong);
+  border-color: var(--admin-primary);
+}
+
+.admin-toast-container .admin-toast-item[data-admin-toast-variant='warning'] {
+  background-color: var(--admin-warning-soft);
+  border-color: var(--admin-warning-border);
+}
+
+.admin-toast-container .admin-toast-item[data-admin-toast-variant='error'] {
+  background-color: var(--admin-danger-soft);
+  border-color: var(--admin-danger);
+}
+
+.admin-toast-message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.admin-shell .admin-toast-container .admin-toast-dismiss {
+  align-self: center;
+  aspect-ratio: 1;
+  background-color: var(--admin-primary-hover);
+  border-color: var(--admin-primary-hover);
+  border-radius: 9999px;
+  color: var(--admin-surface);
+  flex: 0 0 1.75rem;
+  font-size: 1rem;
+  font-weight: 800;
+  height: 1.75rem;
+  line-height: 1;
+  min-height: 1.75rem;
+  padding: 0;
+  width: 1.75rem;
+}
+
+.admin-shell .admin-toast-container .admin-toast-dismiss:hover,
+.admin-shell .admin-toast-container .admin-toast-dismiss:focus-visible {
+  background-color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: var(--admin-surface);
+}
+
+.admin-shell .admin-toast-container .admin-toast-dismiss:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+}
+
+.admin-toast-item[data-admin-toast-state='leaving'] {
+  opacity: 0;
+  transform: translateY(-0.35rem);
 }
 
 .admin-rate-limit-banner {
@@ -1687,41 +1764,6 @@
   min-width: 64rem;
 }
 
-.admin-copy-status {
-  color: var(--admin-muted);
-  font-size: 0.82rem;
-  font-weight: 800;
-  min-width: 7rem;
-}
-
-.admin-original-song-assignment-copy-toast {
-  background: var(--admin-surface);
-  border: 1px solid var(--admin-primary);
-  border-radius: 999px;
-  box-shadow: var(--admin-shadow);
-  color: var(--admin-text);
-  left: calc(50% + var(--admin-sidebar-half-width));
-  max-width: calc(100vw - 2rem);
-  min-width: 0;
-  opacity: 0;
-  padding: 0.65rem 1rem;
-  pointer-events: none;
-  position: fixed;
-  text-align: center;
-  top: 0.5rem;
-  transform: translate(-50%, -0.75rem);
-  transition: opacity 180ms ease, transform 180ms ease, visibility 180ms ease;
-  visibility: hidden;
-  white-space: normal;
-  z-index: var(--admin-z-toast);
-}
-
-.admin-original-song-assignment-copy-toast:not(:empty) {
-  opacity: 1;
-  transform: translate(-50%, 0);
-  visibility: visible;
-}
-
 .admin-copyable-value {
   appearance: none;
   background: transparent;
@@ -1753,7 +1795,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .admin-original-song-assignment-copy-toast {
+  .admin-toast-container .admin-toast-item {
     transition: none;
   }
 }
@@ -3229,7 +3271,6 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   max-width: 64rem;
 }
 
-.admin-flash,
 .admin-rate-limit-banner,
 .admin-panel,
 .admin-stat-card,
@@ -3881,10 +3922,6 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
 }
 
 @media (max-width: 991.98px) {
-  .admin-original-song-assignment-copy-toast {
-    left: 50%;
-  }
-
   .admin-sidebar {
     min-height: auto;
   }
@@ -5156,7 +5193,6 @@ html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
   min-width: 0;
 }
 
-.admin-content:has(.admin-resource-index-page) > .admin-flash,
 .admin-content:has(.admin-resource-index-page) > .admin-rate-limit-banner {
   flex: 0 0 auto;
   margin-bottom: 0.75rem;

@@ -13,6 +13,7 @@ import AdminInfiniteScrollController from "./admin_infinite_scroll_controller"
 import AdminOriginalSongAlbumController from "./admin_original_song_album_controller"
 import AdminOriginalSongPickerController from "./admin_original_song_picker_controller"
 import AdminThemeController from "./admin_theme_controller"
+import AdminToastController from "./admin_toast_controller.mjs"
 import CountdownController from "./countdown_controller"
 import HelloController from "./hello_controller"
 import PlaylistRefreshPollingController from "./playlist_refresh_polling_controller"
@@ -27,6 +28,7 @@ application.register("admin-infinite-scroll", AdminInfiniteScrollController)
 application.register("admin-original-song-album", AdminOriginalSongAlbumController)
 application.register("admin-original-song-picker", AdminOriginalSongPickerController)
 application.register("admin-theme", AdminThemeController)
+application.register("admin-toast", AdminToastController)
 application.register("countdown", CountdownController)
 application.register("hello", HelloController)
 application.register("playlist-refresh-polling", PlaylistRefreshPollingController)

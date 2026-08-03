@@ -127,11 +127,11 @@
               ),
               method: :patch,
               class: 'admin-original-song-assignment-form',
-              data: { controller: 'admin-clipboard' } do %>
-  <span class="admin-copy-status admin-original-song-assignment-copy-toast"
-        data-admin-clipboard-target="status"
-        aria-live="polite"
-        role="status"></span>
+              data: {
+                controller: 'admin-clipboard',
+                admin_clipboard_success_message_value: t('admin.toast.copy_success'),
+                admin_clipboard_failure_message_value: t('admin.toast.copy_failure')
+              } do %>
   <div class="admin-panel admin-table-panel admin-original-song-assignment-panel"
        data-controller="<%= 'admin-infinite-scroll' if admin_infinite_scroll? %>"
        data-admin-infinite-scroll-enabled-value="<%= admin_infinite_scroll? %>"
