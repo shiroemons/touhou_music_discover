@@ -1,5 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
+const PASTED_ORIGINAL_SONG_DELIMITER_PATTERN = /[,、，\/／]/
+
 export default class extends Controller {
   static targets = ["hidden", "input", "listbox", "selected"]
   static values = {
@@ -103,10 +105,16 @@ export default class extends Controller {
     if (!text || !this.hasResolveUrlValue) return
 
     event.preventDefault()
-    if (this.pastedRows(text).length > 1) {
-      this.resolvePastedRows(text)
+    const rows = this.pastedRows(text)
+    if (rows.length > 1) {
+      const pastedText = rows.join("\n")
+      if (this.shouldDistributePastedRows(rows, event)) {
+        this.resolvePastedRows(pastedText)
+      } else {
+        this.resolvePastedText(pastedText)
+      }
     } else {
-      this.resolvePastedText(text.trim())
+      this.resolvePastedText(rows[0] || text.trim())
     }
   }
 
@@ -137,6 +145,10 @@ export default class extends Controller {
     this.inputTarget.setAttribute("aria-expanded", "false")
     this.activeIndex = -1
     this.updateActiveOption()
+  }
+
+  shouldDistributePastedRows(rows, event) {
+    return event.shiftKey || rows.some((row) => PASTED_ORIGINAL_SONG_DELIMITER_PATTERN.test(row))
   }
 
   async loadOptions(query, { activateFirst }) {

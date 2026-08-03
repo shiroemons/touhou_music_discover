@@ -1459,6 +1459,14 @@
   margin-left: 0;
 }
 
+.admin-original-song-paste-hint {
+  color: var(--admin-muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.35;
+  max-width: 24rem;
+}
+
 .admin-original-song-assignment-table {
   min-width: 96rem;
   table-layout: fixed;

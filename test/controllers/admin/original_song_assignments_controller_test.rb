@@ -96,6 +96,8 @@ module Admin
 
       assert_equal %w[サークル アルバム名 トラック番号 名前 原曲検索 設定済み原曲], headers
       assert_select 'tbody tr td:nth-child(3)', text: '7'
+      assert_select '.admin-original-song-paste-hint',
+                    text: '複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。'
     end
 
     test 'renders album and track names as copy buttons' do
@@ -247,6 +249,34 @@ module Admin
 
       assert_equal ['Paste First', 'Paste Second', 'ASSIGN-PASTE-003'], resolution_queries
       assert_equal [[first_song.code], [second_song.code], [third_song.code]], resolution_option_values
+    end
+
+    test 'resolves slash-separated original songs independently on each pasted line' do
+      first_song = create_original_song(code: 'ASSIGN-PASTE-ROWS-001', title: '蠢々秋月　～ Mooned Insect')
+      second_song = create_original_song(code: 'ASSIGN-PASTE-ROWS-002', title: 'もう歌しか聞こえない')
+      third_song = create_original_song(code: 'ASSIGN-PASTE-ROWS-003', title: '少女綺想曲　～ Dream Battle')
+      fourth_song = create_original_song(code: 'ASSIGN-PASTE-ROWS-004', title: '恋色マスタースパーク')
+      fifth_song = create_original_song(code: 'ASSIGN-PASTE-ROWS-005', title: 'シンデレラケージ　～ Kagome-Kagome')
+      sixth_song = create_original_song(code: 'ASSIGN-PASTE-ROWS-006', title: 'エクステンドアッシュ　～ 蓬莱人')
+
+      get admin_resolve_track_original_song_assignments_url,
+          params: {
+            text: <<~TEXT
+              #{first_song.title}/#{second_song.title}
+              #{third_song.title}/#{fourth_song.title}
+              #{fifth_song.title}/#{sixth_song.title}
+            TEXT
+          }
+
+      assert_response :success
+      resolutions = response.parsed_body.fetch('resolutions')
+      resolution_queries = resolutions.map { |resolution| resolution.fetch('query') }
+      resolution_option_values = resolutions.map { |resolution| resolution.fetch('options').pluck('value') }
+
+      assert_equal [first_song.title, second_song.title, third_song.title, fourth_song.title, fifth_song.title, sixth_song.title],
+                   resolution_queries
+      assert_equal [[first_song.code], [second_song.code], [third_song.code], [fourth_song.code], [fifth_song.code], [sixth_song.code]],
+                   resolution_option_values
     end
 
     test 'does not split a pasted original song title that contains common delimiters' do
