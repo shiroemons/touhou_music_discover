@@ -47,6 +47,10 @@ yarn-debug.log*
 
 # devbox
 .devbox/
+
+# mise project configuration
+!mise.toml
+
 dump.rdb
 bun.lock
 

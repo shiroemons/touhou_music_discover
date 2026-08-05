@@ -1,0 +1,334 @@
+version: "3.52.0"
+
+set: [errexit, pipefail]
+
+vars:
+  DEVBOX_PC_PORT_NUM: '{{env "DEVBOX_PC_PORT_NUM" | default "53177"}}'
+
+tasks:
+  default:
+    cmds:
+      - task: help
+
+  help:
+    desc: タスク一覧を表示
+    cmds:
+      - task --list
+    silent: true
+
+  setup:
+    desc: devbox環境を初期化（bundle + yarn）
+    cmds:
+      - devbox run setup
+
+  shell:
+    desc: devboxシェルに入る
+    cmds:
+      - devbox shell
+
+  versions:
+    desc: 開発ツールのバージョンを表示
+    cmds:
+      - |
+        echo "=== 開発ツールのバージョン ==="
+        devbox run -- sh -c 'ruby -v && psql --version && redis-server --version && node --version && yarn --version' 2>/dev/null \
+          | grep -v "東方同人音楽流通" \
+          | sed 's/^ruby \([^ ]*\).*/  Ruby:       \1/' \
+          | sed 's/^psql (PostgreSQL) /  PostgreSQL: /' \
+          | sed 's/^Redis server v=\([^ ]*\).*/  Redis:      \1/' \
+          | sed 's/^v\([0-9]\)/  Node.js:    v\1/' \
+          | sed '/^[0-9]/s/^/  Yarn:       /'
+
+  up:
+    desc: 全サービスをバックグラウンドで起動（起動済みの場合はステータスを表示）
+    cmds:
+      - |
+        if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
+          echo "サービスは既に起動しています"
+        else
+          devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+        fi
+      - task: versions
+      - task: status
+
+  tui:
+    desc: 全サービスをTUIモードで起動
+    cmds:
+      - devbox services up
+
+  logs:
+    desc: Railsサーバーのログを表示
+    cmds:
+      - tail -f log/development.log
+
+  down:
+    desc: devboxサービスを停止
+    cmds:
+      - |
+        if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
+          devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null
+          echo "サービスを停止しました"
+        else
+          echo "サービスは起動していません"
+        fi
+
+  restart:
+    desc: devboxサービスを再起動
+    deps:
+      - recover
+
+  status:
+    desc: devboxサービスの状態を表示
+    cmds:
+      - |
+        if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
+          devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}}
+        else
+          echo "サービスは起動していません。task up で起動できます。"
+        fi
+
+  ps:
+    desc: devboxサービスの状態を表示（statusのエイリアス）
+    deps:
+      - status
+
+  health:
+    desc: Rails/DB/Redisの起動状態とHTTP応答を確認
+    cmds:
+      - |
+        echo "=== devbox services ==="
+        devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} || true
+        echo ""
+        echo "=== listening ports ==="
+        lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ':(3000|5432|6379)' || true
+        if ! devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
+          if (lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1) && ! curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
+            echo ""
+            echo "WARNING: devbox管理外の孤児プロセスがポートを掴んでいる可能性があります。task recover-force で掃除できます。"
+          fi
+        fi
+        echo ""
+        echo "=== HTTP health ==="
+        curl -s -o /dev/null -w '  /up    status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/up || true
+        curl -s -o /dev/null -w '  /admin status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/admin || true
+
+  doctor:
+    desc: healthのエイリアス
+    deps:
+      - health
+
+  recover:
+    desc: Terminating/Pendingなどから復旧するため全サービスを停止してバックグラウンド起動
+    cmds:
+      - echo "devboxサービスを停止します"
+      - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
+      - |
+        if lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1; then
+          echo "devbox停止後も 3000/5432/6379 のいずれかが使用中です。"
+          echo "孤児プロセスを停止するには task recover-force を実行してください。"
+          task health
+          exit 1
+        fi
+      - echo "devboxサービスをバックグラウンドで起動します"
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - task: wait-for-rails
+      - task: health
+
+  recover-force:
+    desc: devbox管理外に残った3000/5432/6379の孤児プロセスも停止して復旧
+    cmds:
+      - echo "devboxサービスを停止します"
+      - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
+      - task: kill-orphan-ports
+      - echo "devboxサービスをバックグラウンドで起動します"
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - task: wait-for-rails
+      - task: health
+
+  wait-for-rails:
+    internal: true
+    cmds:
+      - |
+        echo "Railsの /up を待機します"
+        for i in $(seq 1 30); do
+          if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
+            echo "Rails is ready"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "Rails did not become ready within 30 seconds"
+        task health
+        exit 1
+
+  kill-orphan-ports:
+    desc: 3000/5432/6379を掴む孤児プロセスを停止
+    cmds:
+      - |
+        pids="$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:6379 -sTCP:LISTEN 2>/dev/null)"
+        if [ -n "$pids" ]; then
+          echo "孤児プロセスを停止します: $pids"
+          kill $pids 2>/dev/null || true
+          sleep 2
+        fi
+        pids="$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:6379 -sTCP:LISTEN 2>/dev/null)"
+        if [ -n "$pids" ]; then
+          echo "通常終了しない孤児プロセスを強制停止します: $pids"
+          kill -9 $pids 2>/dev/null || true
+          sleep 1
+        fi
+
+  server:
+    desc: Railsサーバーを起動
+    cmds:
+      - devbox run server
+
+  console:
+    desc: Railsコンソールを起動
+    cmds:
+      - devbox run console
+
+  "console:sandbox":
+    desc: Railsコンソール（sandbox）を起動
+    cmds:
+      - devbox run console:sandbox
+
+  bundle:
+    desc: bundle installを実行
+    cmds:
+      - devbox run bundle
+
+  "db:init":
+    desc: データベースを初期化（drop & setup）
+    cmds:
+      - devbox run db:init
+
+  "db:console":
+    desc: データベースコンソールを起動
+    cmds:
+      - devbox run db:console
+
+  "db:migrate":
+    desc: db:migrateを実行
+    cmds:
+      - devbox run db:migrate
+
+  "db:migrate:redo":
+    desc: db:migrate:redoを実行
+    cmds:
+      - devbox run db:migrate:redo
+
+  "db:rollback":
+    desc: db:rollbackを実行
+    cmds:
+      - devbox run db:rollback
+
+  "db:seed":
+    desc: db:seedを実行
+    cmds:
+      - devbox run db:seed
+
+  "db:backup":
+    desc: データベースのバックアップ
+    cmds:
+      - devbox run db:backup
+
+  "db:restore":
+    desc: データベースのリストア
+    cmds:
+      - devbox run db:restore
+
+  "data:upsert-originals":
+    desc: 原作・原曲データをupsert（追加・更新）
+    cmds:
+      - devbox run upsert:originals
+
+  test:
+    desc: テストを実行
+    cmds:
+      - devbox run test
+
+  lint:
+    desc: Rubocopを実行
+    cmds:
+      - devbox run rubocop
+
+  "lint:fix":
+    desc: Rubocop自動修正を実行
+    cmds:
+      - devbox run rubocop:fix
+
+  "lint:fix:all":
+    desc: Rubocop自動修正（全て）を実行
+    cmds:
+      - devbox run rubocop:fix:all
+
+  "import:fetch-touhou-music":
+    desc: 外部から原曲紐付けデータを取得し紐付けを行う
+    cmds:
+      - devbox run import:fetch_touhou_music
+
+  "export:touhou-music-with-original-songs":
+    desc: 原曲付きリストを出力
+    cmds:
+      - devbox run export:touhou_music_with_original_songs
+
+  "import:touhou-music-with-original-songs":
+    desc: 原曲付きリストを読み込み原曲紐付けを行う
+    cmds:
+      - devbox run import:touhou_music_with_original_songs
+
+  "export:touhou-music":
+    desc: 東方同人音楽流通 配信曲リスト出力
+    cmds:
+      - devbox run export:touhou_music
+
+  "export:touhou-music-slim":
+    desc: 東方同人音楽流通 配信曲リストスリム版出力
+    cmds:
+      - devbox run export:touhou_music_slim
+
+  "export:touhou-music-album-only":
+    desc: 東方同人音楽流通 配信アルバムリスト出力
+    cmds:
+      - devbox run export:touhou_music_album_only
+
+  "export:for-algolia":
+    desc: Algolia向けのJSON出力
+    cmds:
+      - devbox run export:for_algolia
+
+  "export:to-random-touhou-music":
+    desc: 東方サブスクランダム選曲アプリ用JSON出力
+    cmds:
+      - devbox run export:to_random_touhou_music
+
+  "change:is-touhou-flag":
+    desc: 原曲情報を見てis_touhouフラグを変更する
+    cmds:
+      - devbox run change:is_touhou_flag
+
+  "associate:album-with-circle":
+    desc: アルバムにサークルを紐付ける
+    cmds:
+      - devbox run associate:album_with_circle
+
+  "export:missing-original-songs-albums":
+    desc: 原曲紐づけがないアルバム一覧
+    cmds:
+      - devbox run export:missing_original_songs_albums
+
+  "export:spotify":
+    desc: Spotifyエクスポート
+    cmds:
+      - devbox run export:spotify
+
+  "export:all":
+    desc: 全てのエクスポートファイルを一括出力
+    cmds:
+      - task: "export:touhou-music-with-original-songs"
+      - task: "export:touhou-music"
+      - task: "export:touhou-music-slim"
+      - task: "export:touhou-music-album-only"
+      - task: "export:spotify"
+      - task: "export:missing-original-songs-albums"

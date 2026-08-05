@@ -6,28 +6,34 @@
 ### 前提条件
 
 - [devbox](https://www.jetify.com/devbox) がインストールされていること
+- [mise](https://mise.jdx.dev/) がインストールされていること
 - [direnv](https://direnv.net/) がインストールされていること（推奨）
 
 ### 初回セットアップ
 
-1. devbox環境に入る
+1. Taskをインストール
+   ```shell
+   mise install
+   ```
+
+2. devbox環境に入る
    ```shell
    devbox shell
    ```
 
-2. 依存パッケージをインストール
+3. 依存パッケージをインストール
    ```shell
-   make setup
+   task setup
    ```
 
-3. データベースの初期化
+4. データベースの初期化
    ```shell
-   make dbinit
+   task db:init
    ```
 
-4. マスターデータの投入
+5. マスターデータの投入
    ```shell
-   make dbseed
+   task db:seed
    ```
 
 ### サーバーの起動
@@ -35,25 +41,25 @@
 全サービス（PostgreSQL, Redis, Rails, Solid Queue worker, JS/CSS）をまとめて起動:
 
 ```shell
-make tui
+task tui
 ```
 
 バックグラウンドで起動する場合:
 
 ```shell
-make up
+task up
 ```
 
 実行すると http://127.0.0.1:3000 でアクセスできる。
 
 SpotifyがOAuthのリダイレクトURIに `localhost` を許可していないため開発環境ではループバックIPを使用しており、`localhost` でアクセスした場合は自動的に `127.0.0.1` へリダイレクトされる。
 
-管理画面のアクション処理はSolid Queue経由の非同期ジョブとして実行される。`make up` / `make tui` では `jobs` サービスも起動するため、管理画面のアクションを動かす場合はRailsだけでなく `jobs` も起動していることを確認する。
+管理画面のアクション処理はSolid Queue経由の非同期ジョブとして実行される。`task up` / `task tui` では `jobs` サービスも起動するため、管理画面のアクションを動かす場合はRailsだけでなく `jobs` も起動していることを確認する。
 
 サービス状態の確認:
 
 ```shell
-make status
+task status
 ```
 
 Solid Queueのジョブ実行状況を確認:
@@ -65,13 +71,13 @@ devbox run -- bin/rails runner 'SolidQueue::Job.order(id: :desc).limit(5).each {
 サービスの停止:
 
 ```shell
-make down
+task down
 ```
 
 ### bundle install
 
 ```shell
-make bundle
+task bundle
 ```
 
 ### DB関連
@@ -87,66 +93,66 @@ Solid Queueのスキーマは `db/queue_schema.rb` で管理される。
 
 - DB初期化（drop & setup）
   ```shell
-  make dbinit
+  task db:init
   ```
 
 - DBコンソール
   ```shell
-  make dbconsole
+  task db:console
   ```
 
 - DBマイグレーション
   ```shell
-  make migrate
+  task db:migrate
   ```
 
 - DBロールバック
   ```shell
-  make rollback
+  task db:rollback
   ```
 
 - DBシード
   ```shell
-  make dbseed
+  task db:seed
   ```
 
 - DBバックアップ
   ```shell
-  make db-dump
+  task db:backup
   ```
 
 - DBリストア
   ```shell
-  make db-restore
+  task db:restore
   ```
 
 ### コンソールの起動
 
 ```shell
-make console
+task console
 ```
 
 - sandbox
   ```shell
-  make console-sandbox
+  task console:sandbox
   ```
 
 ### テストの実行
 
 ```shell
-make minitest
+task test
 ```
 
 ### Rubocop
 
 - 実行
   ```shell
-  make rubocop
+  task lint
   ```
 
 - 自動修正
   ```shell
-  make rubocop-autocorrect
+  task lint:fix
   ```
 
 ### Railsコマンド
@@ -166,9 +172,58 @@ devbox run -- bin/rails -T
 
 ### 利用可能なコマンド一覧
 
+全タスクの一覧だけを表示する場合:
+
 ```shell
-make help
+task --list
 ```
+
+| 分類 | コマンド | 用途 |
+| --- | --- | --- |
+| 基本 | `task` / `task help` | タスク一覧を表示 |
+| 基本 | `task setup` | devbox環境を初期化（bundle + yarn） |
+| 基本 | `task shell` | devboxシェルを起動 |
+| 基本 | `task versions` | Ruby / PostgreSQL / Redis / Node.js / Yarnのバージョンを表示 |
+| 基本 | `task bundle` | bundle installを実行 |
+| 基本 | `task server` | Railsサーバーを起動 |
+| 基本 | `task console` | Railsコンソールを起動 |
+| 基本 | `task console:sandbox` | sandbox付きRailsコンソールを起動 |
+| サービス | `task up` | 全サービスをバックグラウンドで起動 |
+| サービス | `task tui` | 全サービスをTUIモードで起動 |
+| サービス | `task logs` | Railsサーバーのログを表示 |
+| サービス | `task down` | devboxサービスを停止 |
+| サービス | `task restart` | サービスを停止・復旧して再起動 |
+| サービス | `task status` / `task ps` | devboxサービスの状態を表示 |
+| サービス | `task health` / `task doctor` | サービス、待受ポート、HTTP応答を確認 |
+| サービス | `task recover` | サービスを停止して復旧起動（孤児プロセスは停止しない） |
+| サービス | `task recover-force` | 孤児プロセスを停止してサービスを復旧起動 |
+| サービス | `task kill-orphan-ports` | 3000 / 5432 / 6379の孤児プロセスを停止 |
+| DB | `task db:init` | DBをdrop & setupで初期化 |
+| DB | `task db:console` | DBコンソールを起動 |
+| DB | `task db:migrate` | DBマイグレーションを実行 |
+| DB | `task db:migrate:redo` | 直前のマイグレーションをやり直し |
+| DB | `task db:rollback` | DBマイグレーションをロールバック |
+| DB | `task db:seed` | マスターデータを投入 |
+| DB | `task db:backup` | DBをバックアップ |
+| DB | `task db:restore` | DBバックアップをリストア |
+| データ | `task data:upsert-originals` | 原作・原曲データをupsert |
+| 品質 | `task test` | テストを実行 |
+| 品質 | `task lint` | Rubocopを実行 |
+| 品質 | `task lint:fix` | Rubocopを自動修正 |
+| 品質 | `task lint:fix:all` | Rubocopを全範囲で自動修正 |
+| 入力 | `task import:fetch-touhou-music` | 外部から原曲紐付けデータを取得して反映 |
+| 入力 | `task import:touhou-music-with-original-songs` | 原曲付きリストを読み込んで反映 |
+| 出力 | `task export:touhou-music-with-original-songs` | 原曲付きリストを出力 |
+| 出力 | `task export:touhou-music` | 配信曲リストを出力 |
+| 出力 | `task export:touhou-music-slim` | 配信曲リストのスリム版を出力 |
+| 出力 | `task export:touhou-music-album-only` | 配信アルバムリストを出力 |
+| 出力 | `task export:for-algolia` | Algolia向けJSONを出力 |
+| 出力 | `task export:to-random-touhou-music` | 東方サブスクランダム選曲アプリ向けJSONを出力 |
+| 出力 | `task export:missing-original-songs-albums` | 原曲紐付けがないアルバム一覧を出力 |
+| 出力 | `task export:spotify` | Spotify向けデータを出力 |
+| 出力 | `task export:all` | すべてのエクスポートファイルを一括出力 |
+| データ更新 | `task change:is-touhou-flag` | 原曲情報をもとに`is_touhou`を更新 |
+| データ更新 | `task associate:album-with-circle` | アルバムとサークルを紐付け |
 
 ## 情報収集
 
@@ -222,7 +277,7 @@ Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよ
 `APPLE_MUSIC_SECRET_KEY`と`APPLE_MUSIC_TEAM_ID`と`APPLE_MUSIC_MUSIC_ID`を設定する
 
 - AppleMusic MasterArtistからAppleMusicのアーティスト情報を取得
-  - `make dbseed`を行っておく
+  - `task db:seed`を行っておく
   ```shell
   devbox run -- bin/rails apple_music:fetch_apple_music_artist_from_master_artists
   ```
@@ -319,83 +374,55 @@ Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよ
 
 - 外部から`touhou_music_with_original_songs.tsv`を取得し原曲紐付けを行う
   ```shell
-  make fetch-touhou-music-with-original-songs
+  task import:fetch-touhou-music
   ```
 
 - 原曲付きリストを`./tmp/touhou_music_with_original_songs.tsv`に出力
   ```shell
-  make export-touhou-music-with-original-songs
+  task export:touhou-music-with-original-songs
   ```
 
 - 原曲付きリストを`./tmp/touhou_music_with_original_songs.tsv`を読み込み原曲紐付けを行う
   ```shell
-  make import-touhou-music-with-original-songs
+  task import:touhou-music-with-original-songs
   ```
 
 - 東方同人音楽流通 配信曲リスト出力
   ```shell
-  make export-touhou-music
+  task export:touhou-music
   ```
 
 - 東方同人音楽流通 配信曲リストスリム版出力
   ```shell
-  make export-touhou-music-slim
+  task export:touhou-music-slim
   ```
 
 - 東方同人音楽流通 配信アルバムリスト出力
   ```shell
-  make export-touhou-music-album-only
+  task export:touhou-music-album-only
   ```
 
 - Algolia向けのJSON出力
   ```shell
-  make export-for-algolia
+  task export:for-algolia
   ```
 
 - 東方同人音楽流通 東方サブスクランダム選曲アプリ用JSON出力
   ```shell
-  make export-to-random-touhou-music
+  task export:to-random-touhou-music
   ```
 
 - 原曲情報を見て、is_touhouフラグを変更する
   ```shell
-  make change-is-touhou-flag
+  task change:is-touhou-flag
   ```
 
 - アルバムにサークルを紐付ける
   ```shell
-  make associate-album-with-circle
+  task associate:album-with-circle
   ```
 
 - 原曲紐づけがないアルバム一覧
   ```shell
-  make export-missing-original-songs-albums
+  task export:missing-original-songs-albums
   ```
-
-## Docker環境（レガシー）
-
-Docker環境も引き続き利用可能です。全てのコマンドに `docker-` プレフィックスを付けて使用します。
-
-### 初回の環境構築
-
-```shell
-make docker-init
-```
-
-### サーバーの起動
-
-```shell
-make docker-server
-```
-
-### その他のDockerコマンド
-
-```shell
-make docker-console      # Railsコンソール
-make docker-migrate      # マイグレーション
-make docker-minitest     # テスト実行
-make docker-rubocop      # Rubocop
-make docker-bash         # コンテナ内のbash
-```
-
-全てのコマンドは `make help` で確認できます。
