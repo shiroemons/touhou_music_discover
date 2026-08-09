@@ -8,6 +8,6 @@
 #   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
 #   Character.create(name: 'Luke', movie: movies.first)
 Rails.root.glob('db/seeds/*.rb').each do |file|
-  puts "Processing #{file.split('/').last}"
+  puts "Processing #{file.basename}"
   require file
 end
