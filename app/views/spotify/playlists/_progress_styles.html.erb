@@ -32,9 +32,53 @@
 
   .progress-container {
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+    gap: 16px;
     min-height: 70vh;
+  }
+
+  .polling-error {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    max-width: 600px;
+    box-sizing: border-box;
+    padding: 16px 20px;
+    background-color: rgba(255, 59, 48, 0.1);
+    border-left: 4px solid #ff3b30;
+    border-radius: var(--border-radius-md);
+    text-align: left;
+  }
+
+  .polling-error[hidden] {
+    display: none;
+  }
+
+  .polling-error p {
+    flex: 1;
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  .polling-error .btn {
+    flex-shrink: 0;
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 600px) {
+    .polling-error {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .polling-error .btn {
+      width: 100%;
+    }
   }
 
   .progress-card,

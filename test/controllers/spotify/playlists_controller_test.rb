@@ -376,6 +376,37 @@ module Spotify
       assert_match '1曲の更新に失敗しました', @response.body
     end
 
+    test 'progress exposes a retryable polling error target while processing' do
+      log_in
+      RedisPool.with do |redis|
+        redis.set("playlist_update:#{@user.id}", {
+          status: 'processing', update_type: 'windows', current: 0, total: 1
+        }.to_json)
+      end
+
+      get spotify_playlists_progress_path
+
+      assert_response :success
+      assert_select '[data-controller="progress-polling"]'
+      assert_select '[data-progress-polling-target="error"][hidden]', count: 1
+      assert_select 'button[data-action="progress-polling#retry"]', text: '再試行', count: 1
+    end
+
+    test 'refresh counts turbo stream exposes a retryable polling error target' do
+      log_in
+      stub_spotify_get('me/playlists', body: me_playlists_body,
+                                       query: { 'limit' => '50', 'offset' => '0' })
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+
+      post spotify_playlists_refresh_counts_path, as: :turbo_stream
+
+      assert_response :success
+      assert_select '[data-controller="playlist-refresh-polling"]'
+      assert_select '[data-playlist-refresh-polling-target="error"][hidden]', count: 1
+      assert_select 'button[data-action="playlist-refresh-polling#retry"]', text: '再試行', count: 1
+      assert_equal 'completed', wait_for_refresh_counts['status']
+    end
+
     test 'create redirects to the list without touching Spotify when update_type is missing' do
       log_in
 

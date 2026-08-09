@@ -1,6 +1,8 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+  static targets = ["error"]
+
   static values = {
     url: String,
     interval: { type: Number, default: 1000 }
@@ -8,6 +10,7 @@ export default class extends Controller {
 
   connect() {
     this.fetching = false
+    this.timer = null
     this.poll()
   }
 
@@ -16,6 +19,8 @@ export default class extends Controller {
   }
 
   poll() {
+    if (this.timer) return
+
     this.timer = setInterval(() => {
       this.fetchProgress()
     }, this.intervalValue)
@@ -52,12 +57,37 @@ export default class extends Controller {
         }
       } else if (response.status === 401) {
         // セッション切れの場合はトップページへリダイレクト
+        this.stopPolling()
         window.location.href = '/'
+      } else {
+        throw new Error(`Progress request failed: ${response.status}`)
       }
     } catch (error) {
       console.error('Progress fetch error:', error)
+      this.stopPolling()
+      this.showError()
     } finally {
       this.fetching = false
+    }
+  }
+
+  retry() {
+    if (this.fetching) return
+
+    this.hideError()
+    this.poll()
+    return this.fetchProgress()
+  }
+
+  showError() {
+    if (this.hasErrorTarget) {
+      this.errorTarget.hidden = false
+    }
+  }
+
+  hideError() {
+    if (this.hasErrorTarget) {
+      this.errorTarget.hidden = true
     }
   }
 }

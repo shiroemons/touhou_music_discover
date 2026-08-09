@@ -14,5 +14,12 @@
     <% else %>
       <%= render 'processing_card' %>
     <% end %>
+
+    <% unless @completed || @update_info.blank? %>
+      <div class="polling-error" data-progress-polling-target="error" role="alert" hidden>
+        <p>進捗の取得に失敗しました。通信状態を確認して再試行してください。</p>
+        <button type="button" class="btn btn-primary" data-action="progress-polling#retry">再試行</button>
+      </div>
+    <% end %>
   </div>
 </div>
