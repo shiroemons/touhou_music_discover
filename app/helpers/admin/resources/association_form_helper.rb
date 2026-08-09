@@ -3,7 +3,10 @@
 module Admin
   module Resources
     module AssociationFormHelper
-      def admin_association_select(form, resource_config, association, value, field_id)
+      def admin_association_select(form, resource_config, association, field:)
+        value = field.fetch(:value)
+        field_id = field.fetch(:id)
+        input_options = field.fetch(:options, {})
         selected_option = admin_association_selected_option(association, value)
         placeholder = selected_option.present? ? t('admin.form.association_change_placeholder') : t('admin.form.association_search_placeholder')
 
@@ -11,13 +14,15 @@ module Admin
           class: 'admin-association-combobox',
           data: {
             controller: 'admin-association-select',
-            admin_association_select_url_value: admin_resource_association_options_path(resource_config.key, association.foreign_key)
+            admin_association_select_url_value: admin_resource_association_options_path(resource_config.key, association.foreign_key),
+            admin_association_select_error_text_value: t('admin.form.association_load_error'),
+            admin_association_select_retry_text_value: t('admin.form.association_retry')
           }
         ) do
           safe_join(
             [
               form.hidden_field(association.foreign_key, value:, id: "#{field_id}_value", data: { admin_association_select_target: 'hidden' }),
-              admin_association_combobox_frame(field_id, placeholder, selected_option)
+              admin_association_combobox_frame(field_id, placeholder, selected_option, input_options)
             ]
           )
         end
@@ -25,17 +30,18 @@ module Admin
 
       private
 
-      def admin_association_combobox_frame(field_id, placeholder, selected_option)
+      def admin_association_combobox_frame(field_id, placeholder, selected_option, input_options)
         tag.div(class: 'admin-association-combobox-frame') do
           safe_join(
             [
               admin_icon(:search),
-              admin_association_search_input(field_id, placeholder, selected_option),
+              admin_association_search_input(field_id, placeholder, selected_option, input_options),
               tag.div(
                 nil,
                 id: "#{field_id}_listbox",
                 class: 'admin-association-listbox',
                 role: 'listbox',
+                aria: { live: 'polite' },
                 hidden: true,
                 data: { admin_association_select_target: 'listbox' }
               )
@@ -44,7 +50,7 @@ module Admin
         end
       end
 
-      def admin_association_search_input(field_id, placeholder, selected_option)
+      def admin_association_search_input(field_id, placeholder, selected_option, input_options)
         tag.input(
           type: 'search',
           id: field_id,
@@ -53,7 +59,12 @@ module Admin
           value: selected_option&.first,
           autocomplete: 'off',
           role: 'combobox',
-          aria: { autocomplete: 'list', expanded: false, controls: "#{field_id}_listbox" },
+          aria: {
+            autocomplete: 'list',
+            expanded: false,
+            controls: "#{field_id}_listbox",
+            **input_options.fetch(:aria, {})
+          },
           data: {
             admin_association_select_target: 'input',
             action: [

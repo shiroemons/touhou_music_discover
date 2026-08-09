@@ -3,6 +3,7 @@
 <head>
   <title>Admin - TouhouMusicDiscover</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <%= csrf_meta_tags %>
   <%= csp_meta_tag %>
   <script>
@@ -30,6 +31,8 @@
 </head>
 
 <body class="admin-shell">
+  <a class="admin-skip-link" href="#admin-main-content"><%= t('admin.accessibility.skip_to_main') %></a>
+
   <div class="toast toast-top toast-center admin-toast-container"
        data-controller="admin-toast"
        data-admin-toast-default-duration-value="3200"
@@ -71,8 +74,10 @@
         </div>
 
         <% auto_assign_original_songs_active = params[:resource] == 'tracks' && params[:action_key] == 'auto_assign_original_songs' %>
-        <nav class="admin-nav" aria-label="Admin navigation">
-          <%= link_to admin_root_path, class: "admin-nav-link #{'active' if current_page?(admin_root_path)}" do %>
+        <nav class="admin-nav" aria-label="<%= t('admin.navigation.label') %>">
+          <%= link_to admin_root_path,
+                      class: "admin-nav-link #{'active' if current_page?(admin_root_path)}",
+                      aria: { current: current_page?(admin_root_path) ? 'page' : nil } do %>
             <%= admin_icon(:dashboard) %>
             <span><%= t('admin.dashboard.title') %></span>
           <% end %>
@@ -81,8 +86,10 @@
             <div class="admin-nav-group">
               <div class="admin-nav-heading"><%= t("admin.navigation.groups.#{group_key}") %></div>
               <% resources.each do |resource| %>
+                <% resource_active = params[:resource] == resource.key && !auto_assign_original_songs_active %>
                 <%= link_to admin_resources_path(resource.key),
-                            class: "admin-nav-link #{'active' if params[:resource] == resource.key && !auto_assign_original_songs_active}" do %>
+                            class: "admin-nav-link #{'active' if resource_active}",
+                            aria: { current: resource_active ? 'page' : nil } do %>
                   <%= admin_icon(:collection) %>
                   <span><%= resource.label %></span>
                 <% end %>
@@ -91,13 +98,17 @@
             <% if group_key == :master %>
               <div class="admin-nav-group">
                 <div class="admin-nav-heading"><%= t('admin.navigation.groups.operations') %></div>
+                <% assignments_active = current_page?(admin_track_original_song_assignments_path) %>
                 <%= link_to admin_track_original_song_assignments_path,
-                            class: "admin-nav-link #{'active' if current_page?(admin_track_original_song_assignments_path)}" do %>
+                            class: "admin-nav-link #{'active' if assignments_active}",
+                            aria: { current: assignments_active ? 'page' : nil } do %>
                   <%= admin_icon(:list_ordered) %>
                   <span><%= t('admin.original_song_assignments.title') %></span>
                 <% end %>
+                <% auto_assign_active = auto_assign_original_songs_active %>
                 <%= link_to admin_resource_action_path('tracks', 'auto_assign_original_songs'),
-                            class: "admin-nav-link #{'active' if auto_assign_original_songs_active}" do %>
+                            class: "admin-nav-link #{'active' if auto_assign_active}",
+                            aria: { current: auto_assign_active ? 'page' : nil } do %>
                   <%= admin_icon(:lightning) %>
                   <span><%= t('admin.actions.auto_assign_original_songs.label') %></span>
                 <% end %>
@@ -127,7 +138,7 @@
     </aside>
 
     <div class="admin-main">
-      <main class="admin-content">
+      <main class="admin-content" id="admin-main-content" tabindex="-1">
         <% if @spotify_rate_limit_status.present? %>
           <div
             class="admin-rate-limit-banner"

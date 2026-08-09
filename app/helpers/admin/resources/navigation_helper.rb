@@ -13,7 +13,7 @@ module Admin
 
         (filters || resource_config.filters).each do |filter|
           value = active_filters[filter[:attribute]]
-          values = filter[:multiple] ? Array(value).compact_blank : [value]
+          values = filter[:multiple] ? Array(value).compact_blank : [value].compact_blank
           next if values.blank? || values == [filter[:default]]
 
           labels = values.map do |selected_value|

@@ -1,0 +1,18 @@
+<% filtered = local_assigns.fetch(:filtered) %>
+<% clear_path = local_assigns.fetch(:clear_path) %>
+<% empty_key = local_assigns.fetch(:empty_key) %>
+<% empty_description_key = local_assigns.fetch(:empty_description_key) %>
+<% no_matching_results_key = local_assigns.fetch(:no_matching_results_key) %>
+<% no_matching_results_description_key = local_assigns.fetch(:no_matching_results_description_key) %>
+
+<div class="admin-table-empty-state">
+  <strong><%= t(filtered ? no_matching_results_key : empty_key) %></strong>
+  <p><%= t(filtered ? no_matching_results_description_key : empty_description_key) %></p>
+
+  <% if filtered %>
+    <%= link_to clear_path, class: 'btn btn-sm admin-btn' do %>
+      <%= admin_icon(:x) %>
+      <span><%= t('admin.search.clear') %></span>
+    <% end %>
+  <% end %>
+</div>

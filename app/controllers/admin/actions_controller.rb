@@ -21,7 +21,7 @@ module Admin
     def create
       action_preview = @action.preview
       unless @action.runnable?(action_preview)
-        redirect_to action_entry_path, alert: t('admin.actions.auto_assign_original_songs.no_candidates')
+        redirect_to action_entry_path, alert: @action.not_runnable_message
         return
       end
 

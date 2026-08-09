@@ -92,6 +92,15 @@ module Spotify
       PlaylistUpdateService.call(update_type: 'windows', spotify_session: @session, user_id: @user_id)
     end
 
+    test 'marks a valid update type as completed when it has no original songs' do
+      PlaylistUpdateService.call(update_type: 'pc98', spotify_session: @session, user_id: @user_id)
+
+      assert_equal 'completed', progress['status']
+      assert_equal 0, progress['current']
+      assert_equal 0, progress['failed_count']
+      assert_not_requested :get, %r{/me/playlists}
+    end
+
     test 'creates a playlist when none exists and replaces its items' do
       stub_me_playlists([])
       stub_spotify_post('me/playlists', body: { 'id' => 'PL_NEW', 'name' => @song.title })

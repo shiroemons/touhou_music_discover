@@ -60,7 +60,7 @@
       <tbody>
         <% @resource_config.attributes_for_detail.each do |attribute| %>
           <tr>
-            <th><%= @resource_config.detail_attribute_label(attribute) %></th>
+            <th scope="row"><%= @resource_config.detail_attribute_label(attribute) %></th>
             <td><%= admin_display_value(@resource_config, @record, attribute) %></td>
           </tr>
         <% end %>

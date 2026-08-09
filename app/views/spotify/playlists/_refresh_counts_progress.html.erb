@@ -34,6 +34,10 @@
         <p>この処理には数分かかる場合があります。</p>
       </div>
     </div>
+    <div class="polling-error" data-playlist-refresh-polling-target="error" role="alert" hidden>
+      <p>プレイリスト曲数の取得に失敗しました。通信状態を確認して再試行してください。</p>
+      <button type="button" class="btn btn-primary" data-action="playlist-refresh-polling#retry">再試行</button>
+    </div>
   </div>
 </div>
 
@@ -161,6 +165,45 @@
     margin: 5px 0;
     color: var(--text-muted);
     font-size: 0.9rem;
+  }
+
+  .refresh-counts-progress .polling-error {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    background-color: rgba(255, 59, 48, 0.1);
+    border-left: 4px solid #ff3b30;
+    border-radius: var(--border-radius-md);
+    text-align: left;
+  }
+
+  .refresh-counts-progress .polling-error[hidden] {
+    display: none;
+  }
+
+  .refresh-counts-progress .polling-error p {
+    flex: 1;
+    margin: 0;
+    color: var(--text-color);
+  }
+
+  .refresh-counts-progress .polling-error .btn {
+    flex-shrink: 0;
+    margin-top: 0;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 600px) {
+    .refresh-counts-progress .polling-error {
+      align-items: stretch;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .refresh-counts-progress .polling-error .btn {
+      width: 100%;
+    }
   }
 
   /* 完了時のスタイル */

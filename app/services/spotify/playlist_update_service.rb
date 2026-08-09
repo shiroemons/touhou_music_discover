@@ -30,7 +30,12 @@ module Spotify
 
     def call
       originals = fetch_originals
-      return if originals.empty?
+      # 正しいカテゴリでも原曲データがまだ無い場合がある。ここで何も書かずに return
+      # すると Redis の processing が残り、進捗画面が永久にポーリングし続ける。
+      if originals.empty?
+        mark_completed(0)
+        return
+      end
 
       total_count = count_total_songs(originals)
       update_progress(total: total_count)

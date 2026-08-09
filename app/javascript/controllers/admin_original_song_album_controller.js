@@ -45,7 +45,14 @@ export default class extends Controller {
 
       if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
-      this.contentTarget.innerHTML = await response.text()
+      const html = await response.text()
+      const documentFragment = new DOMParser().parseFromString(html, "text/html")
+      const content = documentFragment.querySelector(
+        ".admin-original-song-album-empty, .admin-original-song-album-track-table-inner"
+      )
+      if (!content) throw new Error("Invalid original song album response")
+
+      this.contentTarget.innerHTML = html
       this.contentTarget.hidden = false
       this.loaded = true
       this.statusTarget.hidden = true

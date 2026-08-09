@@ -17,6 +17,7 @@ module Admin
 
       assert_response :success
       assert_select 'h1', '原曲紐づけが必要なアルバム'
+      assert_select 'table.admin-original-song-missing-albums-table thead th[scope=?]', 'col', count: 5
       assert_select 'td', text: 'Missing Circle'
       assert_select 'td', text: 'Missing Album'
       assert_select 'td', text: '2'
@@ -39,6 +40,15 @@ module Admin
       assert_select 'td', text: 'Filter Album'
       assert_select 'td', { text: 'Other Album', count: 0 }
       assert_select 'textarea[data-admin-clipboard-target=?]', 'source', text: "Filter Circle\tFilter Album"
+    end
+
+    test 'shows a clear path when no albums match the search' do
+      get admin_original_song_missing_albums_url, params: { q: 'no-album-match' }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '条件に一致するアルバムがありません。'
+      assert_select '.admin-table-empty-state p', text: /検索語を変更するか/
+      assert_select '.admin-table-empty-state a[href=?]', admin_original_song_missing_albums_path, text: '解除'
     end
 
     private

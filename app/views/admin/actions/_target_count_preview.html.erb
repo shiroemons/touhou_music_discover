@@ -1,0 +1,15 @@
+<% action_key = @action.key %>
+
+<div class="admin-action-summary admin-action-target-summary" aria-labelledby="admin-action-target-count">
+  <div>
+    <span id="admin-action-target-count"><%= t("admin.actions.#{action_key}.target_label") %></span>
+    <strong><%= t("admin.actions.#{action_key}.target_count", count: number_with_delimiter(preview)) %></strong>
+  </div>
+  <p>
+    <% if preview.positive? %>
+      <%= t("admin.actions.#{action_key}.target_description") %>
+    <% else %>
+      <%= t("admin.actions.#{action_key}.no_targets") %>
+    <% end %>
+  </p>
+</div>

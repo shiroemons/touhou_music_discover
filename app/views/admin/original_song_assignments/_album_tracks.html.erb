@@ -15,14 +15,14 @@
       </colgroup>
       <thead>
         <tr>
-          <th><%= t('admin.attributes.common.track_number') %></th>
-          <th><%= t('admin.attributes.common.name') %></th>
+          <th scope="col"><%= t('admin.attributes.common.track_number') %></th>
+          <th scope="col"><%= t('admin.attributes.common.name') %></th>
           <% if show_identifiers %>
-            <th><%= t('admin.attributes.common.jan_code') %></th>
-            <th><%= t('admin.attributes.common.isrc') %></th>
+            <th scope="col"><%= t('admin.attributes.common.jan_code') %></th>
+            <th scope="col"><%= t('admin.attributes.common.isrc') %></th>
           <% end %>
-          <th><%= t('admin.original_song_assignments.original_songs_search') %></th>
-          <th><%= t('admin.original_song_assignments.assigned_original_songs') %></th>
+          <th scope="col"><%= t('admin.original_song_assignments.original_songs_search') %></th>
+          <th scope="col"><%= t('admin.original_song_assignments.assigned_original_songs') %></th>
         </tr>
       </thead>
       <tbody>

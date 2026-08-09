@@ -25,7 +25,7 @@
           <%= form.search_field :q, value: @query, placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
         </div>
         <div class="admin-search-actions">
-          <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+          <%= form.button type: :submit, name: nil, class: 'btn admin-btn-primary' do %>
             <%= admin_icon(:search) %>
             <span><%= t('admin.search.submit') %></span>
           <% end %>
@@ -63,11 +63,11 @@
     <table class="table admin-table admin-original-song-missing-albums-table">
       <thead>
         <tr>
-          <th><%= t('admin.attributes.common.circle_name') %></th>
-          <th><%= t('admin.original_song_missing_albums.album') %></th>
-          <th><%= t('admin.attributes.common.jan_code') %></th>
-          <th><%= t('admin.original_song_missing_albums.missing_tracks_count') %></th>
-          <th class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
+          <th scope="col"><%= t('admin.attributes.common.circle_name') %></th>
+          <th scope="col"><%= t('admin.original_song_missing_albums.album') %></th>
+          <th scope="col"><%= t('admin.attributes.common.jan_code') %></th>
+          <th scope="col"><%= t('admin.original_song_missing_albums.missing_tracks_count') %></th>
+          <th scope="col" class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
         </tr>
       </thead>
       <tbody>
@@ -93,7 +93,15 @@
         <% end %>
         <% if @albums.empty? %>
           <tr>
-            <td colspan="5" class="admin-table-empty"><%= t('admin.original_song_missing_albums.empty') %></td>
+            <td colspan="5" class="admin-table-empty">
+              <%= render 'admin/table_empty_state',
+                         filtered: @query.present?,
+                         clear_path: admin_original_song_missing_albums_path,
+                         empty_key: 'admin.original_song_missing_albums.empty',
+                         empty_description_key: 'admin.original_song_missing_albums.empty_description',
+                         no_matching_results_key: 'admin.original_song_missing_albums.no_matching_results',
+                         no_matching_results_description_key: 'admin.original_song_missing_albums.no_matching_results_description' %>
+            </td>
           </tr>
         <% end %>
       </tbody>

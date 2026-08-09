@@ -87,6 +87,16 @@ module Admin
       I18n.t('admin.actions.confirmation')
     end
 
+    def not_runnable_message
+      I18n.t(
+        "admin.actions.#{key}.no_targets",
+        default: I18n.t(
+          "admin.actions.#{key}.no_candidates",
+          default: I18n.t('admin.actions.no_targets')
+        )
+      )
+    end
+
     def run(fields: {}, record: nil)
       action = action_class.new
       attach_progress_recorder(action)

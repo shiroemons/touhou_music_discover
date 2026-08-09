@@ -324,7 +324,8 @@ module Spotify
       redis = RedisPool.get
       progress_key = "playlist_update:#{session[:user_id]}"
 
-      @update_info = redis.get(progress_key).present? ? JSON.parse(redis.get(progress_key)) : {}
+      raw = redis.get(progress_key)
+      @update_info = raw.present? ? JSON.parse(raw) : {}
       @completed = @update_info['status'] == 'completed'
       @error = @update_info['status'] == 'error'
 
@@ -515,7 +516,8 @@ module Spotify
       redis = RedisPool.get
       progress_key = "refresh_counts:#{session[:user_id]}"
 
-      @update_info = redis.get(progress_key).present? ? JSON.parse(redis.get(progress_key)) : {}
+      raw = redis.get(progress_key)
+      @update_info = raw.present? ? JSON.parse(raw) : {}
       @completed = @update_info['status'] == 'completed'
       @error = @update_info['status'] == 'error'
 

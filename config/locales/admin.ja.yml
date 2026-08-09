@@ -32,6 +32,7 @@ ja:
       missing_tracks: "楽曲未取得"
       incomplete_albums: "楽曲不足アルバム"
       fetch_missing_tracks: "未取得だけ取得"
+      fetch_missing_tracks_unavailable: "取得対象なし"
       review_missing_tracks: "未取得を確認"
       missing_track_samples: "未取得楽曲"
       view_all: "すべて見る"
@@ -53,7 +54,11 @@ ja:
       count_suffix: "件"
       actions_suffix: "アクション"
       updated_at: "最終更新"
+      empty_catalog:
+        title: "カタログデータがありません"
+        description: "原作・原曲マスタとは別に、アルバムと楽曲は外部データの取得またはインポートが必要です。"
     navigation:
+      label: "管理画面ナビゲーション"
       groups:
         master: "マスタ"
         operations: "運用"
@@ -106,6 +111,9 @@ ja:
       loading: "読み込み中..."
       complete: "すべて読み込みました。"
       error: "読み込みに失敗しました。"
+      retry: "再試行"
+    accessibility:
+      skip_to_main: "本文へ移動"
     filters:
       heading: "フィルター"
       active: "適用中の条件"
@@ -154,6 +162,9 @@ ja:
     table:
       actions: "操作"
       empty: "レコードがありません。"
+      empty_description: "このリソースにはまだデータがありません。"
+      no_matching_results: "条件に一致するレコードがありません。"
+      no_matching_results_description: "検索語やフィルターを変更するか、適用中の条件を解除してください。"
       current_results: "表示中"
     details:
       overview: "概要"
@@ -188,6 +199,8 @@ ja:
       save_failed: "保存できませんでした。"
       association_search_placeholder: "選択肢を検索"
       association_change_placeholder: "変更する場合は検索"
+      association_load_error: "候補の読み込みに失敗しました。"
+      association_retry: "再試行"
     confirm:
       destroy: "削除しますか？"
     original_song_assignments:
@@ -208,6 +221,8 @@ ja:
       album_retry: "再試行"
       album_empty: "未設定楽曲はありません。"
       original_songs_search: "原曲検索"
+      search_load_error: "候補の読み込みに失敗しました。"
+      search_retry: "再試行"
       assigned_original_songs: "設定済み原曲"
       status_label: "対象"
       status:
@@ -223,6 +238,9 @@ ja:
       paste_hint: "複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。Ctrl/Cmd+Zで戻し、Ctrl/Cmd+Shift+Zでやり直せます。"
       save: "保存"
       empty: "対象の楽曲はありません。"
+      empty_description: "原曲未設定の楽曲はありません。"
+      no_matching_results: "条件に一致する対象楽曲がありません。"
+      no_matching_results_description: "検索語や対象を変更するか、適用中の条件を解除してください。"
       update_success: "原曲の紐づけを更新しました。"
       no_assignments: "更新対象がありません。"
       track_not_found: "楽曲が見つかりません: %{id}"
@@ -236,6 +254,9 @@ ja:
       copy: "サークル/アルバムをコピー"
       assign: "紐づけ"
       empty: "原曲紐づけが必要なアルバムはありません。"
+      empty_description: "原曲未設定の楽曲を含むアルバムはありません。"
+      no_matching_results: "条件に一致するアルバムがありません。"
+      no_matching_results_description: "検索語を変更するか、検索条件を解除してください。"
     relations:
       heading: "関連"
       empty: "関連レコードはありません。"
@@ -383,6 +404,7 @@ ja:
       default_description: "管理画面のアクションをバックグラウンドで実行します。"
       completed: "完了しました。"
       confirmation: "このアクションはデータ更新や外部API通信を行う可能性があります。内容を確認してから実行してください。"
+      no_targets: "実行対象がありません。"
       confirm_modal:
         title: "アクションを実行しますか？"
         close: "閉じる"
@@ -411,6 +433,8 @@ ja:
         started: "アクションを開始しました。"
         count: "%{current} / %{total}"
         return: "戻る"
+        fetch_error: "進捗の取得に失敗しました。通信状態を確認して再試行してください。"
+        retry: "進捗を再取得"
         statuses:
           queued: "実行待ち"
           processing: "実行中"
@@ -428,18 +452,48 @@ ja:
       fetch_missing_spotify_tracks:
         label: "Spotify未取得楽曲だけ取得"
         description: "Spotifyアルバムが取得済みで、楽曲だけ不足しているアルバムを対象にSpotify楽曲を取得します。"
+        run_label: "%{count}アルバムの楽曲を取得"
+        confirmation: "Spotify楽曲が未取得の%{count}アルバムから楽曲を取得します。"
+        target_label: "取得対象アルバム"
+        target_count: "%{count}アルバム"
+        target_description: "Spotifyアルバムが取得済みで、楽曲が未取得のアルバムだけを対象にします。"
+        no_targets: "取得対象のアルバムはありません。"
       fetch_missing_apple_music_tracks:
         label: "Apple Music未取得楽曲だけ取得"
         description: "Apple Music楽曲が未取得の既存楽曲を対象に、ISRCからApple Music楽曲を取得します。"
+        run_label: "%{count}曲のApple Music楽曲を取得"
+        confirmation: "Apple Music楽曲が未取得の%{count}曲を取得します。"
+        target_label: "取得対象楽曲"
+        target_count: "%{count}曲"
+        target_description: "Apple Music楽曲が未取得の既存楽曲だけを対象にします。"
+        no_targets: "取得対象の楽曲はありません。"
       fetch_missing_line_music_tracks:
         label: "LINE MUSIC未取得楽曲だけ取得"
         description: "LINE MUSICアルバムが取得済みで、楽曲だけ不足しているアルバムを対象にLINE MUSIC楽曲を取得します。"
+        run_label: "%{count}アルバムの楽曲を取得"
+        confirmation: "LINE MUSIC楽曲が未取得の%{count}アルバムから楽曲を取得します。"
+        target_label: "取得対象アルバム"
+        target_count: "%{count}アルバム"
+        target_description: "LINE MUSICアルバムが取得済みで、楽曲が未取得のアルバムだけを対象にします。"
+        no_targets: "取得対象のアルバムはありません。"
       fetch_missing_ytmusic_tracks:
         label: "YouTube Music未取得楽曲だけ取得"
         description: "YouTube Musicアルバムが取得済みで、楽曲だけ不足しているアルバムを対象にYouTube Music楽曲を取得します。"
+        run_label: "%{count}アルバムの楽曲を取得"
+        confirmation: "YouTube Music楽曲が未取得の%{count}アルバムから楽曲を取得します。"
+        target_label: "取得対象アルバム"
+        target_count: "%{count}アルバム"
+        target_description: "YouTube Musicアルバムが取得済みで、楽曲が未取得のアルバムだけを対象にします。"
+        no_targets: "取得対象のアルバムはありません。"
       fetch_missing_spotify_audio_features:
         label: "Spotify未取得オーディオ特性だけ取得"
         description: "Spotify楽曲のうちオーディオ特性が未取得のものだけを対象に取得します。"
+        run_label: "%{count}曲のオーディオ特性を取得"
+        confirmation: "オーディオ特性が未取得の%{count}曲を取得します。"
+        target_label: "取得対象"
+        target_count: "%{count}曲"
+        target_description: "Spotify音響特徴が未取得の楽曲だけを対象にします。"
+        no_targets: "取得対象はありません。"
       import_tracks_with_original_songs:
         label: "原曲紐づけTSVをインポート"
       auto_assign_original_songs:

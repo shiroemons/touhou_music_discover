@@ -15,6 +15,7 @@ module Admin
         ['YouTube Music配信日', 'JANコード', 'サークル', 'Spotifyアルバム名', 'Apple Musicアルバム名', 'YouTube Musicアルバム名', 'LINE MUSICアルバム名', '東方', '操作'],
         css_select('thead th').map { it.text.squish }
       )
+      assert_select 'table.admin-table thead th[scope=?]', 'col', count: 9
       assert_select '.admin-filter-field label', text: '未配信'
       assert_select '.admin-filter-field label', text: '原曲'
       assert_select 'select[name=?][onchange=?]', 'filters[not_delivered]', 'this.form.requestSubmit()'
@@ -25,6 +26,24 @@ module Admin
       assert_select '.admin-list-toolbar'
       assert_select '.admin-record-count', text: /表示中/
       assert_select 'table'
+      assert_select 'form.admin-search-form button[name]', count: 0
+      assert_select '[data-admin-infinite-scroll-target="status"][aria-live="polite"]'
+      assert_select 'button[data-admin-infinite-scroll-target="retry"][hidden]', text: '再試行'
+    end
+
+    test 'explains when a resource search has no matching results' do
+      get admin_resources_url('albums'), params: {
+        q: 'definitely-no-admin-record-9d3f2f',
+        filters: { not_delivered: '', circle_status: '', tracks_original_songs: '' }
+      }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '条件に一致するレコードがありません。'
+      assert_select '.admin-table-empty-state p', text: /検索語やフィルターを変更/
+      assert_select '.admin-table-empty-state a[href=?]', admin_resources_path('albums'), text: '解除'
+      assert_select '.admin-table-empty', text: 'レコードがありません。', count: 0
+      assert_select '.admin-filter-chip', count: 1
+      assert_select '.admin-filter-chip', text: /検索語.*definitely-no-admin-record-9d3f2f/
     end
 
     test 'lists youtube music and line music album names on albums index' do
@@ -49,6 +68,7 @@ module Admin
       assert_select 'th', text: 'LINE MUSICアルバム名'
       assert_select 'tr.admin-clickable-row[data-controller=?]', 'admin-clickable-row'
       assert_select 'tr.admin-clickable-row[data-admin-clickable-row-href-value=?]', admin_resource_path('albums', album)
+      assert_select 'tr.admin-clickable-row[tabindex="0"][data-action*="keydown->admin-clickable-row#openWithKeyboard"]', count: 1
       assert_select 'td', text: 'Admin YouTube Music Album'
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end
@@ -516,6 +536,7 @@ module Admin
       assert_response :success
       assert_select '.admin-detail-table th', text: 'アルバム名'
       assert_select '.admin-detail-table th', text: '配信取得'
+      assert_empty css_select('.admin-detail-table th:not([scope="row"])')
       assert_select '.admin-detail-table td', text: 'Admin Track Detail Album'
     end
 
@@ -915,6 +936,8 @@ module Admin
         assert_match(/#{album.jan_code}.+Admin Edit Select Album/, inputs.first['value'])
       end
       assert_select '.admin-association-listbox[role=?][hidden]', 'listbox'
+      assert_select '.admin-association-listbox[role=?][aria-live=?]', 'listbox', 'polite', count: 3
+      assert_select '[data-admin-association-select-error-text-value=?]', '候補の読み込みに失敗しました。', count: 3
       assert_select '.admin-association-option', count: 0
       assert_select '.admin-association-combobox input[type=hidden][name=?]', 'record[track_id]'
       assert_select '.admin-association-combobox input[type=hidden][name=?]', 'record[spotify_album_id]'
@@ -1430,6 +1453,28 @@ module Admin
       assert_select '.alert-error', /JSON/
     end
 
+    test 'associates validation errors with invalid form fields' do
+      post admin_resources_url('spotify_playlists'), params: {
+        record: {
+          spotify_id: '',
+          spotify_user_id: '',
+          name: ''
+        }
+      }
+
+      assert_response :unprocessable_content
+      assert_select '.alert-error', count: 1
+      assert_select 'input#spotify_playlists_spotify_id[aria-invalid=?][aria-describedby=?]',
+                    'true', 'spotify_playlists_spotify_id_error'
+      assert_select 'ul#spotify_playlists_spotify_id_error li', text: /Spotify/
+      assert_select 'input#spotify_playlists_spotify_user_id[aria-invalid=?][aria-describedby=?]',
+                    'true', 'spotify_playlists_spotify_user_id_error'
+      assert_select 'ul#spotify_playlists_spotify_user_id_error li', text: /Spotify user/
+      assert_select 'input#spotify_playlists_name[aria-invalid=?][aria-describedby=?]',
+                    'true', 'spotify_playlists_name_error'
+      assert_select 'ul#spotify_playlists_name_error li', text: /Name/
+    end
+
     test 'formats payload as pretty json on detail page' do
       album = Album.create!(jan_code: '9888888888899')
       spotify_album = SpotifyAlbum.create!(
@@ -1481,6 +1526,113 @@ module Admin
       assert_select 'button[type=submit][data-turbo-confirm]', count: 0
     end
 
+    test 'shows the target count before fetching missing Spotify audio features' do
+      album = Album.create!(jan_code: '4990000000201')
+      track = Track.create!(album:, isrc: 'JPADMINAUDIO0201')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'admin-audio-target-album',
+        album_type: 'album',
+        name: 'Admin Audio Target Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1
+      )
+      SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id: 'admin-audio-target-track',
+        name: 'Admin Audio Target Track',
+        label: Album::TOUHOU_MUSIC_LABEL
+      )
+
+      get admin_resource_action_url('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+
+      assert_response :success
+      assert_select 'h1', 'Spotify未取得オーディオ特性だけ取得'
+      assert_select '.admin-action-target-summary strong', '1曲'
+      assert_select '.admin-action-target-summary p', /未取得の楽曲だけ/
+      assert_select 'button[type=submit]', text: '1曲のオーディオ特性を取得'
+      assert_select '.admin-action-side-panel .alert-warning', /未取得の1曲を取得/
+    end
+
+    test 'does not enqueue the missing Spotify audio feature action when there are no targets' do
+      get admin_resource_action_url('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+
+      assert_response :success
+      assert_select '.admin-action-target-summary strong', '0曲'
+      assert_select 'button[type=submit][disabled]', text: '0曲のオーディオ特性を取得'
+      assert_select '.admin-action-side-panel .alert-warning', text: I18n.t('admin.actions.fetch_missing_spotify_audio_features.no_targets')
+
+      assert_no_enqueued_jobs do
+        post admin_resource_action_url('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+      end
+
+      assert_redirected_to admin_resource_action_path('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+      assert_equal I18n.t('admin.actions.fetch_missing_spotify_audio_features.no_targets'), flash[:alert]
+    end
+
+    test 'shows target counts for missing streaming track actions' do
+      album = Album.create!(jan_code: '4990000000301')
+      Track.create!(album:, isrc: 'JPADMINMISSING0301')
+      SpotifyAlbum.create!(
+        album:,
+        active: true,
+        spotify_id: 'admin-missing-streaming-album',
+        album_type: 'album',
+        name: 'Admin Missing Streaming Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1
+      )
+      AppleMusicAlbum.create!(
+        album:,
+        apple_music_id: 'admin-missing-streaming-apple-album',
+        name: 'Admin Missing Streaming Apple Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1
+      )
+      LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'admin-missing-streaming-line-album',
+        name: 'Admin Missing Streaming LINE Album',
+        total_tracks: 1
+      )
+      YtmusicAlbum.create!(
+        album:,
+        browse_id: 'admin-missing-streaming-ytmusic-album',
+        name: 'Admin Missing Streaming YouTube Album',
+        total_tracks: 1
+      )
+
+      missing_action_preview_specs.each do |resource_key, action_key, count_text, run_label|
+        get admin_resource_action_url(resource_key, action_key)
+
+        assert_response :success
+        assert_select '.admin-action-target-summary strong', count_text
+        assert_select '.admin-action-target-summary p', /だけを対象/
+        assert_select 'button[type=submit]', text: run_label
+        assert_select '.admin-action-side-panel .alert-warning', /#{Regexp.escape(count_text)}/
+      end
+    end
+
+    test 'does not enqueue missing streaming track actions when there are no targets' do
+      missing_action_preview_specs.each do |resource_key, action_key, count_text, run_label|
+        get admin_resource_action_url(resource_key, action_key)
+
+        assert_response :success
+        assert_select '.admin-action-target-summary strong', count_text.sub('1', '0')
+        assert_select 'button[type=submit][disabled]', text: run_label.sub('1', '0')
+        assert_select '.admin-action-side-panel .alert-warning', text: I18n.t("admin.actions.#{action_key}.no_targets")
+
+        assert_no_enqueued_jobs do
+          post admin_resource_action_url(resource_key, action_key)
+        end
+
+        assert_redirected_to admin_resource_action_path(resource_key, action_key)
+        assert_equal I18n.t("admin.actions.#{action_key}.no_targets"), flash[:alert]
+      end
+    end
+
     test 'shows ytmusic jan action form without browser confirm dependency' do
       get admin_resource_action_url('ytmusic_albums', 'process_ytmusic_jan_to_album_browse_ids')
 
@@ -1495,6 +1647,15 @@ module Admin
     end
 
     private
+
+    def missing_action_preview_specs
+      [
+        ['spotify_tracks', 'fetch_missing_spotify_tracks', '1アルバム', '1アルバムの楽曲を取得'],
+        ['apple_music_tracks', 'fetch_missing_apple_music_tracks', '1曲', '1曲のApple Music楽曲を取得'],
+        ['line_music_tracks', 'fetch_missing_line_music_tracks', '1アルバム', '1アルバムの楽曲を取得'],
+        ['ytmusic_tracks', 'fetch_missing_ytmusic_tracks', '1アルバム', '1アルバムの楽曲を取得']
+      ]
+    end
 
     def create_spotify_track_audio_feature(
       jan_code:,

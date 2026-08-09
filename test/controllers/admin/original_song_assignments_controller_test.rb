@@ -28,11 +28,30 @@ module Admin
       album_headers = css_select('table.admin-original-song-album-table thead th').map { |header| header.text.strip }
 
       assert_equal %w[JANコード サークル アルバム 未設定楽曲数], album_headers
+      assert_select 'table.admin-original-song-album-table thead th[scope=?]', 'col', count: 4
       assert_select 'details[data-controller=?]', 'admin-original-song-album', count: 1
       assert_select 'td', { text: missing_track.isrc, count: 0 }
       assert_select 'form[method=?]', 'post'
       assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]", count: 0
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
+    end
+
+    test 'distinguishes an empty assignment target from filtered no matches' do
+      get admin_track_original_song_assignments_url, params: { q: 'no-assignment-match', view: 'tracks' }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '条件に一致する対象楽曲がありません。'
+      assert_select '.admin-table-empty-state p', text: /検索語や対象を変更するか/
+      assert_select '.admin-table-empty-state a[href=?]',
+                    admin_track_original_song_assignments_path(view: 'tracks', scroll: 'infinite'),
+                    text: '解除'
+
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '対象の楽曲はありません。'
+      assert_select '.admin-table-empty-state p', '原曲未設定の楽曲はありません。'
+      assert_select '.admin-table-empty-state a', count: 0
     end
 
     test 'loads only the missing tracks when an album is expanded' do
@@ -95,7 +114,11 @@ module Admin
       headers = css_select('thead tr th').map { |header| header.text.strip }
 
       assert_equal %w[サークル アルバム名 トラック番号 名前 原曲検索 設定済み原曲], headers
+      assert_select 'table.admin-original-song-assignment-table thead th[scope=?]', 'col', count: 6
       assert_select 'tbody tr td:nth-child(3)', text: '7'
+      assert_select 'tr[data-controller=?][data-admin-original-song-picker-error-text-value=?]',
+                    'admin-original-song-picker', '候補の読み込みに失敗しました。'
+      assert_select '[data-admin-original-song-picker-target=?][role=?][aria-live=?]', 'listbox', 'listbox', 'polite'
       assert_select '.admin-original-song-paste-hint',
                     text: '複数行は区切り文字があれば曲ごとに配布。区切り文字なしは現在の曲へ。Shift貼り付けで1行ずつ配布。Ctrl/Cmd+Zで戻し、Ctrl/Cmd+Shift+Zでやり直せます。'
     end

@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/icon.svg">
   <title>東方音楽発掘</title>
 </head>
 <body>
@@ -57,7 +58,10 @@
         <div class="update-section">
           <h2>原曲別プレイリスト更新</h2>
           <div class="update-cards">
-            <%= link_to spotify_playlists_create_path(update_type: 'windows'), data: { turbo_method: :post }, class: 'update-card windows-card' do %>
+            <%= button_to spotify_playlists_create_path(update_type: 'windows'),
+                          method: :post,
+                          class: 'update-card windows-card',
+                          form: { class: 'update-card-form' } do %>
               <div class="card-inner">
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -79,7 +83,10 @@
               </div>
             <% end %>
             
-            <%= link_to spotify_playlists_create_path(update_type: 'pc98'), data: { turbo_method: :post }, class: 'update-card pc98-card' do %>
+            <%= button_to spotify_playlists_create_path(update_type: 'pc98'),
+                          method: :post,
+                          class: 'update-card pc98-card',
+                          form: { class: 'update-card-form' } do %>
               <div class="card-inner">
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -108,7 +115,10 @@
               </div>
             <% end %>
             
-            <%= link_to spotify_playlists_create_path(update_type: 'zuns_music_collection'), data: { turbo_method: :post }, class: 'update-card zun-card' do %>
+            <%= button_to spotify_playlists_create_path(update_type: 'zuns_music_collection'),
+                          method: :post,
+                          class: 'update-card zun-card',
+                          form: { class: 'update-card-form' } do %>
               <div class="card-inner">
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -130,7 +140,10 @@
               </div>
             <% end %>
             
-            <%= link_to spotify_playlists_create_path(update_type: 'akyus_untouched_score'), data: { turbo_method: :post }, class: 'update-card akyu-card' do %>
+            <%= button_to spotify_playlists_create_path(update_type: 'akyus_untouched_score'),
+                          method: :post,
+                          class: 'update-card akyu-card',
+                          form: { class: 'update-card-form' } do %>
               <div class="card-inner">
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -151,7 +164,10 @@
               </div>
             <% end %>
             
-            <%= link_to spotify_playlists_create_path(update_type: 'commercial_books'), data: { turbo_method: :post }, class: 'update-card books-card' do %>
+            <%= button_to spotify_playlists_create_path(update_type: 'commercial_books'),
+                          method: :post,
+                          class: 'update-card books-card',
+                          form: { class: 'update-card-form' } do %>
               <div class="card-inner">
                 <div class="card-icon">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -378,6 +394,10 @@
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 20px;
     }
+
+    .update-card-form {
+      margin: 0;
+    }
     
     .update-card {
       text-decoration: none;
@@ -387,10 +407,27 @@
       overflow: hidden;
       height: 160px;
     }
+
+    .update-card-form .update-card {
+      width: 100%;
+      padding: 0;
+      border: 0;
+      font: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
     
     .update-card:hover {
       transform: translateY(-5px);
       box-shadow: 0 12px 40px var(--shadow-hover);
+    }
+
+    .update-card-form .update-card:disabled,
+    .update-card-form .update-card:disabled:hover {
+      cursor: wait;
+      opacity: 0.65;
+      transform: none;
+      box-shadow: none;
     }
     
     .card-inner {

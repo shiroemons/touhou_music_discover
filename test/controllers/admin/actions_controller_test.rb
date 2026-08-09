@@ -77,6 +77,9 @@ module Admin
 
       assert_response :success
       assert_select '#admin-action-progress[data-status="queued"][data-polling="true"]'
+      assert_select '[data-admin-action-progress-target=?][role=?][hidden]', 'error', 'alert', count: 1
+      assert_select 'button[data-admin-action-progress-target=?][data-action=?]',
+                    'retry', 'admin-action-progress#retry', text: '進捗を再取得'
       assert_select '#admin-action-progress h2', text: I18n.t('admin.actions.progress.statuses.queued')
       assert_select '.admin-action-progress-percent', text: '—'
       assert_select '.admin-action-progress-meter.is-indeterminate', count: 0

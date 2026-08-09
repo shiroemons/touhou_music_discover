@@ -50,11 +50,16 @@ module Admin
       assert_equal 1, spotify_coverage.fetch(:incomplete_album_tracks_count)
       assert_equal 'spotify_tracks', spotify_coverage.fetch(:missing_track_action_resource_key)
       assert_equal 'fetch_missing_spotify_tracks', spotify_coverage.fetch(:missing_track_action_key)
+      assert_equal 0, spotify_coverage.fetch(:missing_track_action_target_count)
+      assert_equal '0アルバムの楽曲を取得', spotify_coverage.fetch(:missing_track_action_run_label)
       missing_track_sample_ids = spotify_coverage.fetch(:missing_track_samples).map { |track| track.fetch(:id) }
 
       assert_equal [track_without_spotify.id], missing_track_sample_ids
       assert_includes metrics.fetch(:work_queue).map { |item| item.fetch(:key) }, 'spotify_missing_albums'
-      assert_includes metrics.fetch(:data_quality).map { |item| item.fetch(:key) }, 'spotify_tracks_missing_audio_features'
+      audio_quality_item = metrics.fetch(:data_quality).find { |item| item.fetch(:key) == 'spotify_tracks_missing_audio_features' }
+
+      assert_equal 'spotify_track_audio_features', audio_quality_item.fetch(:action_resource_key)
+      assert_equal 'fetch_missing_spotify_audio_features', audio_quality_item.fetch(:action_key)
       assert_equal 2, metrics.dig(:playlist_sync, :total)
       assert_equal 1, metrics.dig(:playlist_sync, :stale)
       assert_equal 50.0, metrics.dig(:playlist_sync, :stale_percent)

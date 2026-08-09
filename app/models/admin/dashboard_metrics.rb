@@ -107,6 +107,7 @@ module Admin
       album_count = Album.unscoped.where.associated(config.fetch(:album_association)).distinct.count
       track_count = Track.unscoped.where.associated(config.fetch(:track_association)).distinct.count
       completion = album_track_completion(config)
+      missing_track_action = missing_track_action_summary(config)
 
       {
         key: config.fetch(:key),
@@ -125,6 +126,8 @@ module Admin
         missing_track_filter: config.fetch(:missing_track_filter),
         missing_track_action_resource_key: config.fetch(:missing_track_action_resource_key),
         missing_track_action_key: config.fetch(:missing_track_action_key),
+        missing_track_action_target_count: missing_track_action.fetch(:target_count),
+        missing_track_action_run_label: missing_track_action.fetch(:run_label),
         missing_album_tracks_count: completion.fetch(:missing),
         incomplete_album_tracks_count: completion.fetch(:incomplete),
         complete_album_tracks_count: completion.fetch(:complete),
@@ -210,6 +213,17 @@ module Admin
             name: track.name.presence
           }
         end
+    end
+
+    def missing_track_action_summary(config)
+      resource = Admin::Resource.find!(config.fetch(:missing_track_action_resource_key))
+      action = resource.action_for!(config.fetch(:missing_track_action_key))
+      preview = action.preview
+
+      {
+        target_count: preview.to_i,
+        run_label: action.run_label(preview)
+      }
     end
 
     def album_track_completion(config)
@@ -301,6 +315,8 @@ module Admin
           count: SpotifyTrack.unscoped.where.missing(:spotify_track_audio_feature).count,
           description: 'テンポ・エネルギーなどの分析に使う特徴量がないSpotify楽曲',
           resource_key: 'spotify_tracks',
+          action_resource_key: 'spotify_track_audio_features',
+          action_key: 'fetch_missing_spotify_audio_features',
           severity: :warning
         ),
         quality_item(
@@ -364,8 +380,10 @@ module Admin
       resource_key = options.fetch(:resource_key)
       severity = options.fetch(:severity)
       filters = options.fetch(:filters, {})
+      action_resource_key = options[:action_resource_key]
+      action_key = options[:action_key]
 
-      {
+      item = {
         key:,
         label:,
         count:,
@@ -374,6 +392,9 @@ module Admin
         filters:,
         severity:
       }
+      item[:action_resource_key] = action_resource_key if action_resource_key.present?
+      item[:action_key] = action_key if action_key.present?
+      item
     end
 
     alias quality_item queue_item

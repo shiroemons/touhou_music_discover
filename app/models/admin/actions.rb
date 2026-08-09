@@ -7,6 +7,14 @@ module Admin
     class BaseAction
       class << self
         attr_accessor :action_name
+
+        def missing_track_album_scope(track_scope, album_association)
+          Album
+            .unscoped
+            .where(jan_code: track_scope.select(:jan_code))
+            .where
+            .associated(album_association)
+        end
       end
 
       attr_reader :response
@@ -57,11 +65,7 @@ module Admin
       end
 
       def albums_with_missing_tracks(track_scope, album_association:, includes: [])
-        scope = Album
-                .unscoped
-                .where(jan_code: track_scope.select(:jan_code))
-                .where
-                .associated(album_association)
+        scope = self.class.missing_track_album_scope(track_scope, album_association)
 
         includes.present? ? scope.includes(*includes) : scope
       end
@@ -266,6 +270,44 @@ module Admin
         return if resource_ids.blank?
 
         YtmusicAlbum.find(Array(resource_ids).first)
+      end
+    end
+
+    module TargetCountPreview
+      def preview
+        target_scope.count
+      end
+
+      def preview_partial
+        'admin/actions/target_count_preview'
+      end
+
+      def runnable?(target_count)
+        target_count.to_i.positive?
+      end
+
+      def run_label(target_count)
+        I18n.t(
+          "admin.actions.#{action_locale_key}.run_label",
+          count: format_target_count(target_count)
+        )
+      end
+
+      def confirmation(target_count)
+        I18n.t(
+          "admin.actions.#{action_locale_key}.confirmation",
+          count: format_target_count(target_count)
+        )
+      end
+
+      private
+
+      def action_locale_key
+        name.demodulize.underscore
+      end
+
+      def format_target_count(target_count)
+        target_count.to_i.to_fs(:delimited)
       end
     end
 
@@ -500,10 +542,19 @@ module Admin
     end
 
     class FetchMissingAppleMusicTracks < BaseAction
+      extend TargetCountPreview
+
       self.action_name = 'Apple Music未取得楽曲だけ取得'
 
+      class << self
+        def target_scope
+          Track.missing_apple_music_tracks
+        end
+      end
+
       def handle(_args)
-        total_count = Track.missing_apple_music_tracks.count
+        missing_tracks = self.class.target_scope
+        total_count = missing_tracks.count
         stats = {
           target_tracks: total_count,
           acquired_tracks: 0,
@@ -515,7 +566,7 @@ module Admin
         }
         Admin::ActionProgress.start(total: total_count, message: 'Apple Music未取得楽曲をISRCから取得しています')
 
-        Track.missing_apple_music_tracks.find_each.with_index(1) do |track, index|
+        missing_tracks.find_each.with_index(1) do |track, index|
           Admin::ActionProgress.update(
             current: index - 1,
             total: total_count,
@@ -603,7 +654,15 @@ module Admin
     end
 
     class FetchMissingLineMusicTracks < BaseAction
+      extend TargetCountPreview
+
       self.action_name = 'LINE MUSIC未取得楽曲だけ取得'
+
+      class << self
+        def target_scope
+          missing_track_album_scope(Track.missing_line_music_tracks, :line_music_album)
+        end
+      end
 
       def handle(_args)
         stats = fetch_missing_tracks_by_album(
@@ -653,7 +712,19 @@ module Admin
     end
 
     class FetchMissingSpotifyTracks < BaseAction
+      extend TargetCountPreview
+
       self.action_name = 'Spotify未取得楽曲だけ取得'
+
+      class << self
+        def target_scope
+          SpotifyAlbum
+            .unscoped
+            .active
+            .joins(:album)
+            .where(albums: { jan_code: Track.missing_spotify_tracks.select(:jan_code) })
+        end
+      end
 
       def handle(_args)
         stats = {
@@ -668,13 +739,9 @@ module Admin
           partial_examples: [],
           error_examples: []
         }
-        spotify_albums = SpotifyAlbum
-                         .unscoped
-                         .active
-                         .joins(:album)
-                         .where(albums: { jan_code: Track.missing_spotify_tracks.select(:jan_code) })
-                         .includes(:album, :spotify_tracks)
-                         .distinct
+        spotify_albums = self.class.target_scope
+                             .includes(:album, :spotify_tracks)
+                             .distinct
         total_count = spotify_albums.count
         stats[:target_albums] = total_count
         Admin::ActionProgress.start(total: total_count, message: 'Spotify未取得楽曲を取得しています')
@@ -747,7 +814,15 @@ module Admin
     end
 
     class FetchMissingSpotifyAudioFeatures < BaseAction
+      extend TargetCountPreview
+
       self.action_name = 'Spotify未取得オーディオ特性だけ取得'
+
+      class << self
+        def target_scope
+          SpotifyTrack.unscoped.where.missing(:spotify_track_audio_feature)
+        end
+      end
 
       def handle(_args)
         count = 0
@@ -760,11 +835,7 @@ module Admin
           not_found_examples: [],
           error_examples: []
         }
-        spotify_tracks = SpotifyTrack
-                         .unscoped
-                         .where
-                         .missing(:spotify_track_audio_feature)
-                         .includes(:album, :spotify_album, :track)
+        spotify_tracks = self.class.target_scope.includes(:album, :spotify_album, :track)
         total_count = spotify_tracks.count
         stats[:target_tracks] = total_count
         inform "Spotify オーディオ特性未取得楽曲: #{count}/#{total_count} Progress: #{progress_percent(count, total_count)}%"
@@ -859,7 +930,15 @@ module Admin
     end
 
     class FetchMissingYtmusicTracks < BaseAction
+      extend TargetCountPreview
+
       self.action_name = 'YouTube Music未取得楽曲だけ取得'
+
+      class << self
+        def target_scope
+          missing_track_album_scope(Track.missing_ytmusic_tracks, :ytmusic_album)
+        end
+      end
 
       def handle(_args)
         stats = fetch_missing_tracks_by_album(

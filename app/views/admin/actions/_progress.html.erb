@@ -16,6 +16,19 @@
     <span class="admin-action-progress-percent"><%= queued ? '—' : "#{percent}%" %></span>
   </div>
   <div class="admin-action-progress-body">
+    <div class="alert alert-error admin-action-progress-fetch-error"
+         data-admin-action-progress-target="error"
+         role="alert"
+         hidden>
+      <span><%= t('admin.actions.progress.fetch_error') %></span>
+      <button type="button"
+              class="btn btn-sm admin-btn"
+              data-admin-action-progress-target="retry"
+              data-action="admin-action-progress#retry">
+        <span><%= t('admin.actions.progress.retry') %></span>
+      </button>
+    </div>
+
     <div
       class="admin-action-progress-meter <%= 'is-indeterminate' if total.zero? && status == 'processing' %>"
       role="progressbar"

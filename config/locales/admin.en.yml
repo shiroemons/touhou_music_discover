@@ -18,6 +18,7 @@ en:
       count_suffix: "records"
       actions_suffix: "actions"
       updated_at: "Last updated"
+      fetch_missing_tracks_unavailable: "No fetchable targets"
     navigation:
       groups:
         master: "Master"
@@ -153,6 +154,8 @@ en:
       save_failed: "Could not save the record."
       association_search_placeholder: "Search options"
       association_change_placeholder: "Search to change"
+      association_load_error: "Could not load association options."
+      association_retry: "Retry"
     confirm:
       destroy: "Delete this record?"
     original_song_assignments:
@@ -173,6 +176,8 @@ en:
       album_retry: "Retry"
       album_empty: "There are no missing tracks."
       original_songs_search: "Original song search"
+      search_load_error: "Could not load original song candidates."
+      search_retry: "Retry"
       assigned_original_songs: "Assigned original songs"
       status_label: "Target"
       status:
@@ -188,6 +193,9 @@ en:
       paste_hint: "Multi-line paste with delimiters assigns one line per track. Without delimiters, all lines go to the current track. Hold Shift to assign one line per track. Use Ctrl/Cmd+Z to undo and Ctrl/Cmd+Shift+Z to redo."
       save: "Save"
       empty: "No tracks found."
+      empty_description: "There are no tracks missing original songs."
+      no_matching_results: "No assignment targets match the current conditions."
+      no_matching_results_description: "Change the search or target, or clear the applied conditions."
       update_success: "Original song assignments were updated."
       no_assignments: "There are no assignments to update."
       track_not_found: "Track was not found: %{id}"
@@ -201,6 +209,9 @@ en:
       copy: "Copy circle/album"
       assign: "Assign"
       empty: "No albums need original song assignments."
+      empty_description: "There are no albums containing tracks missing original songs."
+      no_matching_results: "No albums match the current search."
+      no_matching_results_description: "Change the search or clear the applied condition."
     relations:
       heading: "Relations"
       empty: "No related records."
@@ -332,6 +343,7 @@ en:
       default_description: "Run this admin action in the background."
       completed: "Completed."
       confirmation: "This action may update data or call external APIs. Review the details before running it."
+      no_targets: "There are no targets to process."
       confirm_modal:
         title: "Run this action?"
         close: "Close"
@@ -360,6 +372,8 @@ en:
         started: "Action started."
         count: "%{current} / %{total}"
         return: "Return"
+        fetch_error: "Could not retrieve progress. Check the connection and try again."
+        retry: "Retry progress"
         statuses:
           queued: "Waiting to start"
           processing: "Running"
@@ -374,6 +388,51 @@ en:
         label: "Bulk retrieval"
       fetch_apple_music_album_by_id:
         label: "Fetch by Apple Music album ID"
+      fetch_missing_spotify_tracks:
+        label: "Fetch missing Spotify tracks"
+        description: "Fetches Spotify tracks from albums that have a Spotify album but are missing tracks."
+        run_label: "Fetch tracks for %{count} albums"
+        confirmation: "Fetch missing Spotify tracks from %{count} albums."
+        target_label: "Target albums"
+        target_count: "%{count} albums"
+        target_description: "Only albums with a Spotify album and missing tracks are included."
+        no_targets: "There are no Spotify album targets to fetch."
+      fetch_missing_apple_music_tracks:
+        label: "Fetch missing Apple Music tracks"
+        description: "Fetches Apple Music tracks by ISRC for existing tracks that do not have an Apple Music track yet."
+        run_label: "Fetch Apple Music tracks for %{count} tracks"
+        confirmation: "Fetch missing Apple Music tracks for %{count} tracks."
+        target_label: "Target tracks"
+        target_count: "%{count} tracks"
+        target_description: "Only existing tracks without an Apple Music track are included."
+        no_targets: "There are no Apple Music track targets to fetch."
+      fetch_missing_line_music_tracks:
+        label: "Fetch missing LINE MUSIC tracks"
+        description: "Fetches LINE MUSIC tracks from albums that have a LINE MUSIC album but are missing tracks."
+        run_label: "Fetch tracks for %{count} albums"
+        confirmation: "Fetch missing LINE MUSIC tracks from %{count} albums."
+        target_label: "Target albums"
+        target_count: "%{count} albums"
+        target_description: "Only albums with a LINE MUSIC album and missing tracks are included."
+        no_targets: "There are no LINE MUSIC album targets to fetch."
+      fetch_missing_ytmusic_tracks:
+        label: "Fetch missing YouTube Music tracks"
+        description: "Fetches YouTube Music tracks from albums that have a YouTube Music album but are missing tracks."
+        run_label: "Fetch tracks for %{count} albums"
+        confirmation: "Fetch missing YouTube Music tracks from %{count} albums."
+        target_label: "Target albums"
+        target_count: "%{count} albums"
+        target_description: "Only albums with a YouTube Music album and missing tracks are included."
+        no_targets: "There are no YouTube Music album targets to fetch."
+      fetch_missing_spotify_audio_features:
+        label: "Fetch missing Spotify audio features"
+        description: "Fetches audio features only for Spotify tracks that do not have them yet."
+        run_label: "Fetch audio features for %{count} tracks"
+        confirmation: "Fetch audio features for %{count} Spotify tracks that do not have them yet."
+        target_label: "Target tracks"
+        target_count: "%{count} tracks"
+        target_description: "Only Spotify tracks without audio features are included."
+        no_targets: "There are no tracks to fetch."
       import_tracks_with_original_songs:
         label: "Import original-song links TSV"
       auto_assign_original_songs:
