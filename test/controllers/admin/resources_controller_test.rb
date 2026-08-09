@@ -67,6 +67,7 @@ module Admin
       assert_select 'th', text: 'LINE MUSICアルバム名'
       assert_select 'tr.admin-clickable-row[data-controller=?]', 'admin-clickable-row'
       assert_select 'tr.admin-clickable-row[data-admin-clickable-row-href-value=?]', admin_resource_path('albums', album)
+      assert_select 'tr.admin-clickable-row[tabindex="0"][data-action*="keydown->admin-clickable-row#openWithKeyboard"]', count: 1
       assert_select 'td', text: 'Admin YouTube Music Album'
       assert_select 'td', text: 'Admin LINE MUSIC Album'
     end

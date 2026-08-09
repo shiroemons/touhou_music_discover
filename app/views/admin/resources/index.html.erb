@@ -128,9 +128,10 @@
       <tbody data-admin-infinite-scroll-target="rows">
         <% @records.each do |record| %>
           <tr class="admin-clickable-row"
+              tabindex="0"
               data-controller="admin-clickable-row"
               data-admin-clickable-row-href-value="<%= admin_resource_path(@resource_config.key, record) %>"
-              data-action="click->admin-clickable-row#open">
+              data-action="click->admin-clickable-row#open keydown->admin-clickable-row#openWithKeyboard">
             <% @resource_config.index_attributes.each do |attribute| %>
               <td><%= admin_index_display_value(@resource_config, record, attribute) %></td>
             <% end %>

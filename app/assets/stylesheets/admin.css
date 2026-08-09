@@ -2017,6 +2017,11 @@
   background: var(--admin-surface-muted);
 }
 
+.admin-clickable-row:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: -2px;
+}
+
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;

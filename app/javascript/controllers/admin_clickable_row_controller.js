@@ -11,4 +11,12 @@ export default class extends Controller {
 
     Turbo.visit(this.hrefValue)
   }
+
+  openWithKeyboard(event) {
+    if (event.target.closest("a, button, input, select, textarea")) return
+    if (event.key !== "Enter" && event.key !== " ") return
+
+    this.open(event)
+    event.preventDefault()
+  }
 }
