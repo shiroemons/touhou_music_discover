@@ -1,8 +1,12 @@
 <% metrics = @dashboard_metrics %>
 <% totals = metrics.fetch(:totals) %>
 <% metric_path = lambda do |item|
-     filters = item[:filters].presence
-     filters.present? ? admin_resources_path(item.fetch(:resource_key), filters:) : admin_resources_path(item.fetch(:resource_key))
+     if item[:action_key].present?
+       admin_resource_action_path(item.fetch(:action_resource_key), item.fetch(:action_key))
+     else
+       filters = item[:filters].presence
+       filters.present? ? admin_resources_path(item.fetch(:resource_key), filters:) : admin_resources_path(item.fetch(:resource_key))
+     end
    end %>
 <% segment_width = lambda do |segment|
      segment.fetch(:count).positive? && segment.fetch(:percent).zero? ? 0.4 : segment.fetch(:percent)

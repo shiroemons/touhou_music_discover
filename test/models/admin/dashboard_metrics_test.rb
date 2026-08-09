@@ -54,7 +54,10 @@ module Admin
 
       assert_equal [track_without_spotify.id], missing_track_sample_ids
       assert_includes metrics.fetch(:work_queue).map { |item| item.fetch(:key) }, 'spotify_missing_albums'
-      assert_includes metrics.fetch(:data_quality).map { |item| item.fetch(:key) }, 'spotify_tracks_missing_audio_features'
+      audio_quality_item = metrics.fetch(:data_quality).find { |item| item.fetch(:key) == 'spotify_tracks_missing_audio_features' }
+
+      assert_equal 'spotify_track_audio_features', audio_quality_item.fetch(:action_resource_key)
+      assert_equal 'fetch_missing_spotify_audio_features', audio_quality_item.fetch(:action_key)
       assert_equal 2, metrics.dig(:playlist_sync, :total)
       assert_equal 1, metrics.dig(:playlist_sync, :stale)
       assert_equal 50.0, metrics.dig(:playlist_sync, :stale_percent)

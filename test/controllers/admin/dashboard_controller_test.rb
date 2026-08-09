@@ -82,6 +82,33 @@ module Admin
       end
     end
 
+    test 'links missing Spotify audio features to the retrieval action' do
+      album = Album.create!(jan_code: '4980000000201')
+      track = Track.create!(album:, jan_code: album.jan_code, isrc: 'JPABC2600201')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'dashboard-audio-feature-album',
+        album_type: 'album',
+        name: 'Dashboard Audio Feature Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1
+      )
+      SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id: 'dashboard-audio-feature-track',
+        name: 'Dashboard Audio Feature Track',
+        label: Album::TOUHOU_MUSIC_LABEL
+      )
+
+      get admin_root_url
+
+      assert_response :success
+      assert_select 'a[href=?]', admin_resource_action_path('spotify_track_audio_features', 'fetch_missing_spotify_audio_features'),
+                    text: /Spotify音響特徴未取得/
+    end
+
     private
 
     def with_spotify_rate_limit_cache(cache)

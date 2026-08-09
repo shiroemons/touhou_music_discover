@@ -301,6 +301,8 @@ module Admin
           count: SpotifyTrack.unscoped.where.missing(:spotify_track_audio_feature).count,
           description: 'テンポ・エネルギーなどの分析に使う特徴量がないSpotify楽曲',
           resource_key: 'spotify_tracks',
+          action_resource_key: 'spotify_track_audio_features',
+          action_key: 'fetch_missing_spotify_audio_features',
           severity: :warning
         ),
         quality_item(
@@ -364,8 +366,10 @@ module Admin
       resource_key = options.fetch(:resource_key)
       severity = options.fetch(:severity)
       filters = options.fetch(:filters, {})
+      action_resource_key = options[:action_resource_key]
+      action_key = options[:action_key]
 
-      {
+      item = {
         key:,
         label:,
         count:,
@@ -374,6 +378,9 @@ module Admin
         filters:,
         severity:
       }
+      item[:action_resource_key] = action_resource_key if action_resource_key.present?
+      item[:action_key] = action_key if action_key.present?
+      item
     end
 
     alias quality_item queue_item
