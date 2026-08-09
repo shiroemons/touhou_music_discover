@@ -2600,6 +2600,18 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   margin-left: 0.65rem;
 }
 
+.admin-association-option-error {
+  align-items: flex-start;
+  color: var(--admin-muted);
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.55rem 0.65rem;
+}
+
+.admin-association-retry {
+  justify-self: start;
+}
+
 .admin-field-help {
   color: var(--admin-muted);
   font-size: 0.82rem;

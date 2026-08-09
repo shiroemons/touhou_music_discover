@@ -31,6 +31,7 @@ module Admin
           id: "#{field_id}_listbox",
           class: 'admin-association-listbox',
           role: 'listbox',
+          aria: { live: 'polite' },
           hidden: true,
           data: { admin_association_select_target: 'listbox' }
         )

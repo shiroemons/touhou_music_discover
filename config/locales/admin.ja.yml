@@ -199,6 +199,8 @@ ja:
       save_failed: "保存できませんでした。"
       association_search_placeholder: "選択肢を検索"
       association_change_placeholder: "変更する場合は検索"
+      association_load_error: "候補の読み込みに失敗しました。"
+      association_retry: "再試行"
     confirm:
       destroy: "削除しますか？"
     original_song_assignments:

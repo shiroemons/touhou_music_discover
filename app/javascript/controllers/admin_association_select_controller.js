@@ -7,7 +7,9 @@ export default class extends Controller {
     submitOnSelect: Boolean,
     multiple: Boolean,
     inputName: String,
-    removeLabel: String
+    removeLabel: String,
+    errorText: { type: String, default: "候補の読み込みに失敗しました。" },
+    retryText: { type: String, default: "再試行" }
   }
 
   connect() {
@@ -20,6 +22,7 @@ export default class extends Controller {
     this.selectedLabel = this.inputTarget.value
     this.loadedQuery = null
     this.requestSequence = 0
+    this.retryAction = null
     this.syncSelectedState()
     this.renderSelectedOptions()
     this.close()
@@ -62,6 +65,15 @@ export default class extends Controller {
   choose(event) {
     event.preventDefault()
     this.selectOption(event.currentTarget)
+  }
+
+  retry(event) {
+    event.preventDefault()
+    const action = this.retryAction
+    if (!action) return
+
+    this.retryAction = null
+    return action()
   }
 
   remove(event) {
@@ -164,13 +176,13 @@ export default class extends Controller {
     ))
   }
 
-  async loadOptions(query, { activateFirst }) {
+  async loadOptions(query, { activateFirst, force = false }) {
     if (!this.hasUrlValue) {
       this.filterStaticOptions(query, { activateFirst })
       return
     }
 
-    if (this.loadedQuery === query) {
+    if (!force && this.loadedQuery === query) {
       this.activeIndex = activateFirst && this.visibleOptions().length > 0 ? 0 : -1
       this.updateActiveOption()
       return
@@ -178,6 +190,7 @@ export default class extends Controller {
 
     const requestId = this.requestSequence + 1
     this.requestSequence = requestId
+    this.retryAction = null
     this.listboxTarget.setAttribute("aria-busy", "true")
 
     try {
@@ -200,10 +213,11 @@ export default class extends Controller {
 
       const data = await response.json()
       this.loadedQuery = query
+      this.retryAction = null
       this.renderOptions(data.options || [], { activateFirst })
     } catch (_error) {
       if (requestId === this.requestSequence) {
-        this.renderOptions([], { activateFirst: false })
+        this.renderError(() => this.loadOptions(query, { activateFirst, force: true }))
       }
     } finally {
       if (requestId === this.requestSequence) {
@@ -226,11 +240,34 @@ export default class extends Controller {
   }
 
   renderOptions(options, { activateFirst }) {
+    this.retryAction = null
     this.listboxTarget.replaceChildren(...options.map((option) => this.buildOption(option)))
     this.ensureOptionIds()
     this.syncSelectedState()
     this.activeIndex = activateFirst && this.visibleOptions().length > 0 ? 0 : -1
     this.updateActiveOption()
+  }
+
+  renderError(retryAction) {
+    this.retryAction = retryAction
+
+    const container = document.createElement("div")
+    container.className = "admin-association-option-error"
+
+    const message = document.createElement("span")
+    message.setAttribute("role", "status")
+    message.textContent = this.errorTextValue || "候補の読み込みに失敗しました。"
+
+    const button = document.createElement("button")
+    button.type = "button"
+    button.className = "btn btn-sm admin-btn admin-association-retry"
+    button.dataset.action = "click->admin-association-select#retry"
+    button.textContent = this.retryTextValue || "再試行"
+
+    container.append(message, button)
+    this.listboxTarget.replaceChildren(container)
+    this.activeIndex = -1
+    this.inputTarget.removeAttribute("aria-activedescendant")
   }
 
   buildOption(option) {

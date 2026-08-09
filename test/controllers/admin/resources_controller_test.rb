@@ -933,6 +933,8 @@ module Admin
         assert_match(/#{album.jan_code}.+Admin Edit Select Album/, inputs.first['value'])
       end
       assert_select '.admin-association-listbox[role=?][hidden]', 'listbox'
+      assert_select '.admin-association-listbox[role=?][aria-live=?]', 'listbox', 'polite', count: 3
+      assert_select '[data-admin-association-select-error-text-value=?]', '候補の読み込みに失敗しました。', count: 3
       assert_select '.admin-association-option', count: 0
       assert_select '.admin-association-combobox input[type=hidden][name=?]', 'record[track_id]'
       assert_select '.admin-association-combobox input[type=hidden][name=?]', 'record[spotify_album_id]'

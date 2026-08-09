@@ -14,7 +14,9 @@ module Admin
           class: 'admin-association-combobox',
           data: {
             controller: 'admin-association-select',
-            admin_association_select_url_value: admin_resource_association_options_path(resource_config.key, association.foreign_key)
+            admin_association_select_url_value: admin_resource_association_options_path(resource_config.key, association.foreign_key),
+            admin_association_select_error_text_value: t('admin.form.association_load_error'),
+            admin_association_select_retry_text_value: t('admin.form.association_retry')
           }
         ) do
           safe_join(
@@ -39,6 +41,7 @@ module Admin
                 id: "#{field_id}_listbox",
                 class: 'admin-association-listbox',
                 role: 'listbox',
+                aria: { live: 'polite' },
                 hidden: true,
                 data: { admin_association_select_target: 'listbox' }
               )

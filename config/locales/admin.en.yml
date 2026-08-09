@@ -154,6 +154,8 @@ en:
       save_failed: "Could not save the record."
       association_search_placeholder: "Search options"
       association_change_placeholder: "Search to change"
+      association_load_error: "Could not load association options."
+      association_retry: "Retry"
     confirm:
       destroy: "Delete this record?"
     original_song_assignments:
