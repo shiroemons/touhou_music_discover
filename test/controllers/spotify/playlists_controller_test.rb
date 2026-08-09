@@ -179,6 +179,7 @@ module Spotify
       assert_select '.cache-notice form.cache-refresh-form[action=?]', spotify_clear_playlists_cache_path, count: 1
       assert_select '.cache-notice input[name=?][value=?]', '_method', 'delete', count: 1
       assert_select '.cache-notice a[href=?]', spotify_clear_playlists_cache_path, count: 0
+      assert_select '#playlistTable thead th[scope=?]', 'col', count: 6
     end
 
     # position は fetch_playlists_from_spotify が API 順を反転してから振っているため、
