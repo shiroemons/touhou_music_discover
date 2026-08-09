@@ -9,6 +9,7 @@ module Admin
 
       assert_response :success
       assert_select 'h1', '管理画面'
+      assert_select 'link[rel=?][type=?][href=?]', 'icon', 'image/svg+xml', '/icon.svg'
       assert_select 'a.admin-skip-link[href=?]', '#admin-main-content', text: '本文へ移動'
       assert_select 'main#admin-main-content[tabindex=?]', '-1'
       assert_select 'a[href=?]', '/avo', count: 0
