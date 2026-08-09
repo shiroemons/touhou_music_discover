@@ -12,7 +12,8 @@
   <% if @from_cache %>
     <div class="cache-notice">
       <span>キャッシュから取得</span>
-      <%= link_to '最新情報を取得', spotify_clear_playlists_cache_path, data: { turbo_method: :delete }, class: 'btn btn-small btn-outline' %>
+      <%= button_to '最新情報を取得', spotify_clear_playlists_cache_path, method: :delete,
+                    class: 'btn btn-small btn-outline', form: { class: 'cache-refresh-form' } %>
     </div>
   <% end %>
 
@@ -143,6 +144,10 @@
       margin-bottom: 20px;
       color: #1DB954;
       font-weight: 500;
+    }
+
+    .cache-refresh-form {
+      margin: 0;
     }
 
     .error-message {
@@ -427,4 +432,4 @@
       }
     });
   </script>
-</div> 
+</div>

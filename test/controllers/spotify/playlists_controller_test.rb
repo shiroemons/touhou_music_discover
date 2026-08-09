@@ -176,6 +176,9 @@ module Spotify
       assert_response :success
       assert_match '42', @response.body
       assert_not_requested :get, %r{/me/playlists}
+      assert_select '.cache-notice form.cache-refresh-form[action=?]', spotify_clear_playlists_cache_path, count: 1
+      assert_select '.cache-notice input[name=?][value=?]', '_method', 'delete', count: 1
+      assert_select '.cache-notice a[href=?]', spotify_clear_playlists_cache_path, count: 0
     end
 
     # position は fetch_playlists_from_spotify が API 順を反転してから振っているため、
