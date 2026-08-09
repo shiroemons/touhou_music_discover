@@ -32,6 +32,7 @@ ja:
       missing_tracks: "楽曲未取得"
       incomplete_albums: "楽曲不足アルバム"
       fetch_missing_tracks: "未取得だけ取得"
+      fetch_missing_tracks_unavailable: "取得対象なし"
       review_missing_tracks: "未取得を確認"
       missing_track_samples: "未取得楽曲"
       view_all: "すべて見る"

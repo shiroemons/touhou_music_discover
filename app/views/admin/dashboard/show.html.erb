@@ -222,10 +222,17 @@
         </div>
 
         <div class="admin-coverage-fetch-actions">
-          <%= link_to admin_resource_action_path(coverage.fetch(:missing_track_action_resource_key), coverage.fetch(:missing_track_action_key)),
-                      class: 'btn btn-sm admin-btn-primary' do %>
-            <%= admin_icon(:download) %>
-            <span><%= t('admin.dashboard.fetch_missing_tracks') %></span>
+          <% if coverage.fetch(:missing_track_action_target_count).positive? %>
+            <%= link_to admin_resource_action_path(coverage.fetch(:missing_track_action_resource_key), coverage.fetch(:missing_track_action_key)),
+                        class: 'btn btn-sm admin-btn-primary' do %>
+              <%= admin_icon(:download) %>
+              <span><%= t('admin.dashboard.fetch_missing_tracks') %></span>
+            <% end %>
+          <% else %>
+            <span class="btn btn-sm admin-btn admin-btn-disabled" role="status" aria-disabled="true">
+              <%= admin_icon(:warning) %>
+              <span><%= t('admin.dashboard.fetch_missing_tracks_unavailable') %></span>
+            </span>
           <% end %>
           <%= link_to admin_resources_path('tracks', filters: coverage.fetch(:missing_track_filter)),
                       class: 'btn btn-sm admin-btn' do %>

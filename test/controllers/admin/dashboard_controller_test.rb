@@ -43,10 +43,11 @@ module Admin
       assert_select '.admin-coverage-action', text: /アルバム未取得/
       assert_select '.admin-coverage-action', text: /楽曲未取得/
       assert_select '.admin-coverage-action', text: /楽曲不足アルバム/
-      assert_select 'a[href=?]', admin_resource_action_path('spotify_tracks', 'fetch_missing_spotify_tracks'), text: '未取得だけ取得'
-      assert_select 'a[href=?]', admin_resource_action_path('apple_music_tracks', 'fetch_missing_apple_music_tracks'), text: '未取得だけ取得'
-      assert_select 'a[href=?]', admin_resource_action_path('line_music_tracks', 'fetch_missing_line_music_tracks'), text: '未取得だけ取得'
-      assert_select 'a[href=?]', admin_resource_action_path('ytmusic_tracks', 'fetch_missing_ytmusic_tracks'), text: '未取得だけ取得'
+      assert_select 'a[href=?]', admin_resource_action_path('spotify_tracks', 'fetch_missing_spotify_tracks'), count: 0
+      assert_select 'a[href=?]', admin_resource_action_path('apple_music_tracks', 'fetch_missing_apple_music_tracks'), count: 0
+      assert_select 'a[href=?]', admin_resource_action_path('line_music_tracks', 'fetch_missing_line_music_tracks'), count: 0
+      assert_select 'a[href=?]', admin_resource_action_path('ytmusic_tracks', 'fetch_missing_ytmusic_tracks'), count: 0
+      assert_select '.admin-coverage-fetch-actions [role=?]', 'status', count: 4, text: '取得対象なし'
       assert_select '.admin-missing-track-preview-header', text: /未取得楽曲/
       assert_select '.admin-priority-grid'
       assert_select '.admin-priority-grid h2', '作業キュー'
@@ -57,6 +58,46 @@ module Admin
       assert_select 'h2', 'リソース一覧'
       assert_select 'a[href=?]', admin_resources_path('albums'), text: 'アルバム'
       assert_select 'a[href=?]', admin_new_resource_path('albums'), text: '新規作成'
+    end
+
+    test 'keeps the missing-track fetch action when it has targets' do
+      album = Album.create!(jan_code: '4980000000301')
+      Track.create!(album:, jan_code: album.jan_code, isrc: 'JPABC2600301')
+      SpotifyAlbum.create!(
+        album:,
+        active: true,
+        spotify_id: 'dashboard-targeted-fetch-album',
+        album_type: 'album',
+        name: 'Dashboard Targeted Fetch Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1
+      )
+
+      get admin_root_url
+
+      assert_response :success
+      assert_select '.admin-coverage-card.is-spotify' do
+        assert_select 'a[href=?]', admin_resource_action_path('spotify_tracks', 'fetch_missing_spotify_tracks'),
+                      text: '未取得だけ取得'
+        assert_select '[role=?]', 'status', count: 0
+        assert_select 'a[href=?]', admin_resources_path('tracks', filters: { missing_streaming_track: 'spotify' }),
+                      text: '未取得を確認'
+      end
+    end
+
+    test 'does not offer a missing-track fetch action when only the track is missing' do
+      album = Album.create!(jan_code: '4980000000302')
+      Track.create!(album:, jan_code: album.jan_code, isrc: 'JPABC2600302')
+
+      get admin_root_url
+
+      assert_response :success
+      assert_select '.admin-coverage-card.is-spotify' do
+        assert_select 'a[href=?]', admin_resource_action_path('spotify_tracks', 'fetch_missing_spotify_tracks'), count: 0
+        assert_select '[role=?]', 'status', text: '取得対象なし'
+        assert_select 'a[href=?]', admin_resources_path('tracks', filters: { missing_streaming_track: 'spotify' }),
+                      text: '未取得を確認'
+      end
     end
 
     test 'shows Spotify rate limit countdown when Retry-After is recorded' do

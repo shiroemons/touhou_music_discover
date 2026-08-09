@@ -406,6 +406,11 @@
   color: var(--admin-text);
 }
 
+.admin-shell .btn.admin-btn-disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
 .admin-shell .btn.admin-btn-primary,
 .admin-shell .btn.admin-btn-primary:visited {
   background: var(--admin-primary);

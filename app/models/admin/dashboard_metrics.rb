@@ -125,6 +125,7 @@ module Admin
         missing_track_filter: config.fetch(:missing_track_filter),
         missing_track_action_resource_key: config.fetch(:missing_track_action_resource_key),
         missing_track_action_key: config.fetch(:missing_track_action_key),
+        missing_track_action_target_count: missing_track_action_target_count(config),
         missing_album_tracks_count: completion.fetch(:missing),
         incomplete_album_tracks_count: completion.fetch(:incomplete),
         complete_album_tracks_count: completion.fetch(:complete),
@@ -210,6 +211,12 @@ module Admin
             name: track.name.presence
           }
         end
+    end
+
+    def missing_track_action_target_count(config)
+      resource = Admin::Resource.find!(config.fetch(:missing_track_action_resource_key))
+      action = resource.action_for!(config.fetch(:missing_track_action_key))
+      action.preview.to_i
     end
 
     def album_track_completion(config)
