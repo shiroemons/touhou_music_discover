@@ -35,6 +35,24 @@ module Admin
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
     end
 
+    test 'distinguishes an empty assignment target from filtered no matches' do
+      get admin_track_original_song_assignments_url, params: { q: 'no-assignment-match', view: 'tracks' }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '条件に一致する対象楽曲がありません。'
+      assert_select '.admin-table-empty-state p', text: /検索語や対象を変更するか/
+      assert_select '.admin-table-empty-state a[href=?]',
+                    admin_track_original_song_assignments_path(view: 'tracks', scroll: 'infinite'),
+                    text: '解除'
+
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '対象の楽曲はありません。'
+      assert_select '.admin-table-empty-state p', '原曲未設定の楽曲はありません。'
+      assert_select '.admin-table-empty-state a', count: 0
+    end
+
     test 'loads only the missing tracks when an album is expanded' do
       album = Album.create!(jan_code: '9777777779103')
       missing_track = Track.create!(album:, isrc: 'JPABC269103')

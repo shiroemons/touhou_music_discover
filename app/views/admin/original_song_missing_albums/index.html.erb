@@ -93,7 +93,15 @@
         <% end %>
         <% if @albums.empty? %>
           <tr>
-            <td colspan="5" class="admin-table-empty"><%= t('admin.original_song_missing_albums.empty') %></td>
+            <td colspan="5" class="admin-table-empty">
+              <%= render 'admin/table_empty_state',
+                         filtered: @query.present?,
+                         clear_path: admin_original_song_missing_albums_path,
+                         empty_key: 'admin.original_song_missing_albums.empty',
+                         empty_description_key: 'admin.original_song_missing_albums.empty_description',
+                         no_matching_results_key: 'admin.original_song_missing_albums.no_matching_results',
+                         no_matching_results_description_key: 'admin.original_song_missing_albums.no_matching_results_description' %>
+            </td>
           </tr>
         <% end %>
       </tbody>

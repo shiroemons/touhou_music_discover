@@ -41,6 +41,15 @@ module Admin
       assert_select 'textarea[data-admin-clipboard-target=?]', 'source', text: "Filter Circle\tFilter Album"
     end
 
+    test 'shows a clear path when no albums match the search' do
+      get admin_original_song_missing_albums_url, params: { q: 'no-album-match' }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '条件に一致するアルバムがありません。'
+      assert_select '.admin-table-empty-state p', text: /検索語を変更するか/
+      assert_select '.admin-table-empty-state a[href=?]', admin_original_song_missing_albums_path, text: '解除'
+    end
+
     private
 
     def create_album(jan_code:, circle_name:, album_name:)
