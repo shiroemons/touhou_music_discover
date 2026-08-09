@@ -17,7 +17,15 @@ export default class extends Controller {
   }
 
   confirm() {
+    if (this.confirmed) {
+      return
+    }
+
     this.confirmed = true
+    this.element.setAttribute('aria-busy', 'true')
+    this.element.querySelectorAll('button').forEach((button) => {
+      button.disabled = true
+    })
     this.modalTarget.close()
     this.element.requestSubmit()
   }
