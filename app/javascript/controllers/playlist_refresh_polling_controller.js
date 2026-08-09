@@ -7,6 +7,7 @@ export default class extends Controller {
   }
 
   connect() {
+    this.fetching = false
     this.poll()
   }
 
@@ -28,6 +29,10 @@ export default class extends Controller {
   }
 
   async fetchRefreshCounts() {
+    if (this.fetching) return
+
+    this.fetching = true
+
     try {
       const response = await fetch(this.urlValue, {
         headers: {
@@ -51,6 +56,8 @@ export default class extends Controller {
       }
     } catch (error) {
       console.error('Refresh counts fetch error:', error)
+    } finally {
+      this.fetching = false
     }
   }
 }
