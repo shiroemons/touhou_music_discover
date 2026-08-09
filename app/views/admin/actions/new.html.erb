@@ -1,6 +1,7 @@
 <% action_runnable = @action.runnable?(@action_preview) %>
 <% action_run_label = @action.run_label(@action_preview) %>
 <% action_confirmation = @action.confirmation(@action_preview) %>
+<% action_notice = action_runnable ? action_confirmation : @action.not_runnable_message %>
 <% action_button_class = @action.dangerous? ? 'admin-btn-danger' : 'admin-btn-primary' %>
 
 <div class="admin-action-page <%= 'admin-action-page-with-preview' if @action.preview_partial.present? %>">
@@ -109,7 +110,7 @@
     <aside class="admin-action-side-panel">
       <div class="alert <%= @action.dangerous? ? 'alert-warning admin-action-warning' : 'alert-info admin-action-notice' %>" role="status">
         <%= admin_icon(@action.dangerous? ? :warning : :check_circle) %>
-        <span><%= action_confirmation %></span>
+        <span><%= action_notice %></span>
       </div>
       <div class="admin-panel admin-action-check-card">
         <div class="admin-panel-header">
