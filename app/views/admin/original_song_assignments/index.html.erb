@@ -51,7 +51,7 @@
           <%= form.search_field :q, value: @query, placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
         </div>
         <div class="admin-search-actions">
-          <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+          <%= form.button type: :submit, name: nil, class: 'btn admin-btn-primary' do %>
             <%= admin_icon(:search) %>
             <span><%= t('admin.search.submit') %></span>
           <% end %>
@@ -227,9 +227,18 @@
              data-loading-text="<%= t('admin.scroll_mode.loading') %>"
              data-ready-text="<%= t('admin.scroll_mode.ready') %>"
              data-complete-text="<%= t('admin.scroll_mode.complete') %>"
-             data-error-text="<%= t('admin.scroll_mode.error') %>">
+             data-error-text="<%= t('admin.scroll_mode.error') %>"
+             aria-live="polite"
+             aria-atomic="true">
           <%= @pagy.next.present? ? t('admin.scroll_mode.ready') : t('admin.scroll_mode.complete') %>
         </div>
+        <button type="button"
+                class="btn btn-sm admin-btn"
+                data-admin-infinite-scroll-target="retry"
+                data-action="admin-infinite-scroll#retry"
+                hidden>
+          <%= t('admin.scroll_mode.retry') %>
+        </button>
       </div>
     <% end %>
   </div>

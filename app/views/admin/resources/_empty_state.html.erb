@@ -1,0 +1,18 @@
+<% filtered = admin_active_filters?(resource_config, active_filters, filters:) %>
+
+<div class="admin-table-empty-state">
+  <strong><%= t(filtered ? 'admin.table.no_matching_results' : 'admin.table.empty') %></strong>
+  <p><%= t(filtered ? 'admin.table.no_matching_results_description' : 'admin.table.empty_description') %></p>
+
+  <% if filtered %>
+    <%= link_to admin_clear_filters_path(resource_config), class: 'btn btn-sm admin-btn' do %>
+      <%= admin_icon(:x) %>
+      <span><%= t('admin.search.clear') %></span>
+    <% end %>
+  <% elsif resource_config.attributes_for_form.any? %>
+    <%= link_to admin_new_resource_path(resource_config.key), class: 'btn btn-sm admin-btn-primary' do %>
+      <%= admin_icon(:plus) %>
+      <span><%= t('admin.actions.new_record') %></span>
+    <% end %>
+  <% end %>
+</div>

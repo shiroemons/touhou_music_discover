@@ -25,7 +25,7 @@
           <%= form.search_field :q, value: @query, placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
         </div>
         <div class="admin-search-actions">
-          <%= form.button type: :submit, class: 'btn admin-btn-primary' do %>
+          <%= form.button type: :submit, name: nil, class: 'btn admin-btn-primary' do %>
             <%= admin_icon(:search) %>
             <span><%= t('admin.search.submit') %></span>
           <% end %>

@@ -25,6 +25,24 @@ module Admin
       assert_select '.admin-list-toolbar'
       assert_select '.admin-record-count', text: /表示中/
       assert_select 'table'
+      assert_select 'form.admin-search-form button[name]', count: 0
+      assert_select '[data-admin-infinite-scroll-target="status"][aria-live="polite"]'
+      assert_select 'button[data-admin-infinite-scroll-target="retry"][hidden]', text: '再試行'
+    end
+
+    test 'explains when a resource search has no matching results' do
+      get admin_resources_url('albums'), params: {
+        q: 'definitely-no-admin-record-9d3f2f',
+        filters: { not_delivered: '', circle_status: '', tracks_original_songs: '' }
+      }
+
+      assert_response :success
+      assert_select '.admin-table-empty-state strong', '条件に一致するレコードがありません。'
+      assert_select '.admin-table-empty-state p', text: /検索語やフィルターを変更/
+      assert_select '.admin-table-empty-state a[href=?]', admin_resources_path('albums'), text: '解除'
+      assert_select '.admin-table-empty', text: 'レコードがありません。', count: 0
+      assert_select '.admin-filter-chip', count: 1
+      assert_select '.admin-filter-chip', text: /検索語.*definitely-no-admin-record-9d3f2f/
     end
 
     test 'lists youtube music and line music album names on albums index' do
