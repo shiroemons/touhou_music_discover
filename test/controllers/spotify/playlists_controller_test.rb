@@ -387,6 +387,7 @@ module Spotify
       get spotify_playlists_progress_path
 
       assert_response :success
+      assert_select 'link[rel="icon"][href="/icon.svg"]', count: 1
       assert_select '[data-controller="progress-polling"]'
       assert_select '[data-progress-polling-target="error"][hidden]', count: 1
       assert_select 'button[data-action="progress-polling#retry"]', text: '再試行', count: 1

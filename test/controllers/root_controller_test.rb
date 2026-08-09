@@ -14,6 +14,7 @@ class RootControllerTest < ActionDispatch::IntegrationTest
     get root_path
 
     assert_response :success
+    assert_select 'link[rel="icon"][href="/icon.svg"]', minimum: 1
     assert_select 'form.update-card-form[method="post"]', count: 5
     assert_select 'form.update-card-form button.update-card[type="submit"]', count: 5
     assert_select 'a.update-card', count: 0
