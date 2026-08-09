@@ -1521,6 +1521,51 @@ module Admin
       assert_select 'button[type=submit][data-turbo-confirm]', count: 0
     end
 
+    test 'shows the target count before fetching missing Spotify audio features' do
+      album = Album.create!(jan_code: '4990000000201')
+      track = Track.create!(album:, isrc: 'JPADMINAUDIO0201')
+      spotify_album = SpotifyAlbum.create!(
+        album:,
+        spotify_id: 'admin-audio-target-album',
+        album_type: 'album',
+        name: 'Admin Audio Target Album',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1
+      )
+      SpotifyTrack.create!(
+        album:,
+        track:,
+        spotify_album:,
+        spotify_id: 'admin-audio-target-track',
+        name: 'Admin Audio Target Track',
+        label: Album::TOUHOU_MUSIC_LABEL
+      )
+
+      get admin_resource_action_url('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+
+      assert_response :success
+      assert_select 'h1', 'Spotify未取得オーディオ特性だけ取得'
+      assert_select '.admin-action-target-summary strong', '1曲'
+      assert_select '.admin-action-target-summary p', /未取得の楽曲だけ/
+      assert_select 'button[type=submit]', text: '1曲のオーディオ特性を取得'
+      assert_select '.admin-action-side-panel .alert-warning', /未取得の1曲を取得/
+    end
+
+    test 'does not enqueue the missing Spotify audio feature action when there are no targets' do
+      get admin_resource_action_url('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+
+      assert_response :success
+      assert_select '.admin-action-target-summary strong', '0曲'
+      assert_select 'button[type=submit][disabled]', text: '0曲のオーディオ特性を取得'
+
+      assert_no_enqueued_jobs do
+        post admin_resource_action_url('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+      end
+
+      assert_redirected_to admin_resource_action_path('spotify_track_audio_features', 'fetch_missing_spotify_audio_features')
+      assert_equal I18n.t('admin.actions.fetch_missing_spotify_audio_features.no_targets'), flash[:alert]
+    end
+
     test 'shows ytmusic jan action form without browser confirm dependency' do
       get admin_resource_action_url('ytmusic_albums', 'process_ytmusic_jan_to_album_browse_ids')
 

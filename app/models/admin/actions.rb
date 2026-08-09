@@ -749,6 +749,38 @@ module Admin
     class FetchMissingSpotifyAudioFeatures < BaseAction
       self.action_name = 'Spotify未取得オーディオ特性だけ取得'
 
+      class << self
+        def target_scope
+          SpotifyTrack.unscoped.where.missing(:spotify_track_audio_feature)
+        end
+
+        def preview
+          target_scope.count
+        end
+
+        def preview_partial
+          'admin/actions/fetch_missing_spotify_audio_features_preview'
+        end
+
+        def runnable?(target_count)
+          target_count.to_i.positive?
+        end
+
+        def run_label(target_count)
+          I18n.t(
+            'admin.actions.fetch_missing_spotify_audio_features.run_label',
+            count: target_count.to_i.to_fs(:delimited)
+          )
+        end
+
+        def confirmation(target_count)
+          I18n.t(
+            'admin.actions.fetch_missing_spotify_audio_features.confirmation',
+            count: target_count.to_i.to_fs(:delimited)
+          )
+        end
+      end
+
       def handle(_args)
         count = 0
         stats = {
@@ -760,11 +792,7 @@ module Admin
           not_found_examples: [],
           error_examples: []
         }
-        spotify_tracks = SpotifyTrack
-                         .unscoped
-                         .where
-                         .missing(:spotify_track_audio_feature)
-                         .includes(:album, :spotify_album, :track)
+        spotify_tracks = self.class.target_scope.includes(:album, :spotify_album, :track)
         total_count = spotify_tracks.count
         stats[:target_tracks] = total_count
         inform "Spotify オーディオ特性未取得楽曲: #{count}/#{total_count} Progress: #{progress_percent(count, total_count)}%"

@@ -399,6 +399,7 @@ ja:
       default_description: "管理画面のアクションをバックグラウンドで実行します。"
       completed: "完了しました。"
       confirmation: "このアクションはデータ更新や外部API通信を行う可能性があります。内容を確認してから実行してください。"
+      no_targets: "実行対象がありません。"
       confirm_modal:
         title: "アクションを実行しますか？"
         close: "閉じる"
@@ -458,6 +459,12 @@ ja:
       fetch_missing_spotify_audio_features:
         label: "Spotify未取得オーディオ特性だけ取得"
         description: "Spotify楽曲のうちオーディオ特性が未取得のものだけを対象に取得します。"
+        run_label: "%{count}曲のオーディオ特性を取得"
+        confirmation: "オーディオ特性が未取得の%{count}曲を取得します。"
+        target_label: "取得対象"
+        target_count: "%{count}曲"
+        target_description: "Spotify音響特徴が未取得の楽曲だけを対象にします。"
+        no_targets: "取得対象はありません。"
       import_tracks_with_original_songs:
         label: "原曲紐づけTSVをインポート"
       auto_assign_original_songs:

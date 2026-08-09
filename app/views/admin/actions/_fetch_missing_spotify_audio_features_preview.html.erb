@@ -1,0 +1,13 @@
+<div class="admin-action-summary admin-action-target-summary" aria-labelledby="admin-action-target-count">
+  <div>
+    <span id="admin-action-target-count"><%= t('admin.actions.fetch_missing_spotify_audio_features.target_label') %></span>
+    <strong><%= t('admin.actions.fetch_missing_spotify_audio_features.target_count', count: number_with_delimiter(preview)) %></strong>
+  </div>
+  <p>
+    <% if preview.positive? %>
+      <%= t('admin.actions.fetch_missing_spotify_audio_features.target_description') %>
+    <% else %>
+      <%= t('admin.actions.fetch_missing_spotify_audio_features.no_targets') %>
+    <% end %>
+  </p>
+</div>
