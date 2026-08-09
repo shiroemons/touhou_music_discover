@@ -51,6 +51,7 @@ module Admin
       assert_equal 'spotify_tracks', spotify_coverage.fetch(:missing_track_action_resource_key)
       assert_equal 'fetch_missing_spotify_tracks', spotify_coverage.fetch(:missing_track_action_key)
       assert_equal 0, spotify_coverage.fetch(:missing_track_action_target_count)
+      assert_equal '0アルバムの楽曲を取得', spotify_coverage.fetch(:missing_track_action_run_label)
       missing_track_sample_ids = spotify_coverage.fetch(:missing_track_samples).map { |track| track.fetch(:id) }
 
       assert_equal [track_without_spotify.id], missing_track_sample_ids

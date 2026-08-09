@@ -78,7 +78,7 @@ module Admin
       assert_response :success
       assert_select '.admin-coverage-card.is-spotify' do
         assert_select 'a[href=?]', admin_resource_action_path('spotify_tracks', 'fetch_missing_spotify_tracks'),
-                      text: '未取得だけ取得'
+                      text: '1アルバムの楽曲を取得'
         assert_select '[role=?]', 'status', count: 0
         assert_select 'a[href=?]', admin_resources_path('tracks', filters: { missing_streaming_track: 'spotify' }),
                       text: '未取得を確認'

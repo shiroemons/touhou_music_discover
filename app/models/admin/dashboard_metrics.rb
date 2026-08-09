@@ -107,6 +107,7 @@ module Admin
       album_count = Album.unscoped.where.associated(config.fetch(:album_association)).distinct.count
       track_count = Track.unscoped.where.associated(config.fetch(:track_association)).distinct.count
       completion = album_track_completion(config)
+      missing_track_action = missing_track_action_summary(config)
 
       {
         key: config.fetch(:key),
@@ -125,7 +126,8 @@ module Admin
         missing_track_filter: config.fetch(:missing_track_filter),
         missing_track_action_resource_key: config.fetch(:missing_track_action_resource_key),
         missing_track_action_key: config.fetch(:missing_track_action_key),
-        missing_track_action_target_count: missing_track_action_target_count(config),
+        missing_track_action_target_count: missing_track_action.fetch(:target_count),
+        missing_track_action_run_label: missing_track_action.fetch(:run_label),
         missing_album_tracks_count: completion.fetch(:missing),
         incomplete_album_tracks_count: completion.fetch(:incomplete),
         complete_album_tracks_count: completion.fetch(:complete),
@@ -213,10 +215,15 @@ module Admin
         end
     end
 
-    def missing_track_action_target_count(config)
+    def missing_track_action_summary(config)
       resource = Admin::Resource.find!(config.fetch(:missing_track_action_resource_key))
       action = resource.action_for!(config.fetch(:missing_track_action_key))
-      action.preview.to_i
+      preview = action.preview
+
+      {
+        target_count: preview.to_i,
+        run_label: action.run_label(preview)
+      }
     end
 
     def album_track_completion(config)
