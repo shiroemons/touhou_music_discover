@@ -1,6 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
+  static targets = ["error", "retry"]
   static values = {
     url: String,
     interval: { type: Number, default: 1000 }
@@ -13,6 +14,14 @@ export default class extends Controller {
 
   disconnect() {
     this.stopPolling()
+  }
+
+  retry() {
+    if (this.fetching) return
+
+    this.polling = true
+    this.hideFetchError()
+    this.fetchProgress()
   }
 
   async fetchProgress() {
@@ -30,11 +39,10 @@ export default class extends Controller {
         }
       })
 
-      if (!response.ok) {
-        return
-      }
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
 
       const html = await response.text()
+      this.hideFetchError()
       Turbo.renderStreamMessage(html)
 
       if (response.headers.get("X-Admin-Action-Polling") === "false") {
@@ -42,6 +50,8 @@ export default class extends Controller {
       }
     } catch (error) {
       console.error("Admin action progress fetch error:", error)
+      this.stopPolling()
+      this.showFetchError()
     } finally {
       this.fetching = false
       this.scheduleNext()
@@ -66,5 +76,15 @@ export default class extends Controller {
       clearTimeout(this.timer)
       this.timer = null
     }
+  }
+
+  showFetchError() {
+    if (this.hasErrorTarget) this.errorTarget.hidden = false
+    if (this.hasRetryTarget) this.retryTarget.hidden = false
+  }
+
+  hideFetchError() {
+    if (this.hasErrorTarget) this.errorTarget.hidden = true
+    if (this.hasRetryTarget) this.retryTarget.hidden = true
   }
 }

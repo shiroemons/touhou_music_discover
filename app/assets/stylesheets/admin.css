@@ -2709,6 +2709,18 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   padding: 1.15rem;
 }
 
+.admin-action-progress-fetch-error {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  justify-content: space-between;
+}
+
+.admin-action-progress-fetch-error > span {
+  min-width: min(16rem, 100%);
+}
+
 .admin-action-progress-meter {
   background: var(--admin-surface-muted);
   border: 1px solid var(--admin-border);

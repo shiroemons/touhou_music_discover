@@ -427,6 +427,8 @@ ja:
         started: "アクションを開始しました。"
         count: "%{current} / %{total}"
         return: "戻る"
+        fetch_error: "進捗の取得に失敗しました。通信状態を確認して再試行してください。"
+        retry: "進捗を再取得"
         statuses:
           queued: "実行待ち"
           processing: "実行中"

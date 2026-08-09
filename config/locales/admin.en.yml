@@ -366,6 +366,8 @@ en:
         started: "Action started."
         count: "%{current} / %{total}"
         return: "Return"
+        fetch_error: "Could not retrieve progress. Check the connection and try again."
+        retry: "Retry progress"
         statuses:
           queued: "Waiting to start"
           processing: "Running"
