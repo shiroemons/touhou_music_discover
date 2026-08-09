@@ -13,4 +13,13 @@ class AlbumsControllerTest < ActionDispatch::IntegrationTest
     )
     assert_select 'table thead th[scope=?]', 'col', count: 6
   end
+
+  test 'explains when no albums are available' do
+    Album.delete_all
+
+    get albums_path
+
+    assert_response :success
+    assert_select 'table tbody tr td[colspan=?]', '6', text: 'No albums are available.'
+  end
 end

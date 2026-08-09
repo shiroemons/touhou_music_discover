@@ -14,49 +14,56 @@
     </tr>
   </thead>
   <tbody>
-    <% @records.each do |record| %>
-    <tr>
-      <td><%= record.jan_code %></td>
-      <td>
-        <%= record.circle_name %>
-      </td>
-      <td>
-        <% if record.spotify_album.present? %>
-          <% s_album = record.spotify_album %>
-          <%= s_album.name %><br/>
-          <img src="<%= s_album.image_url %>" alt="<%= s_album.name %>" width="300" loading="lazy" />
-        <% else %>
-          No Album
-        <% end %>
-      </td>
-      <td>
-        <% if record.apple_music_album.present? %>
-          <% am_album = record.apple_music_album %>
-          <%= am_album.name %><br/>
-          <img src="<%= am_album.image_url %>" alt="<%= am_album.name %>" width="300" loading="lazy" />
-        <% else %>
-          No Album
-        <% end %>
-      </td>
-      <td>
-        <% if record.ytmusic_album.present? %>
-          <% ytm_album = record.ytmusic_album %>
-          <%= ytm_album.name %><br/>
-          <img src="<%= ytm_album.image_url %>" alt="<%= ytm_album.name %>" width="300" loading="lazy" />
-        <% else %>
-          No Album
-        <% end %>
-      </td>
-      <td>
-        <% if record.line_music_album.present? %>
-          <% lm_album = record.line_music_album %>
-          <%= lm_album.name %><br/>
-          <img src="<%= lm_album.image_url %>" alt="<%= lm_album.name %>" width="300" loading="lazy" />
-        <% else %>
-          No Album
-        <% end %>
-      </td>
-    </tr>
+    <% records = @records.to_a %>
+    <% if records.empty? %>
+      <tr>
+        <td colspan="6">No albums are available.</td>
+      </tr>
+    <% else %>
+      <% records.each do |record| %>
+        <tr>
+          <td><%= record.jan_code %></td>
+          <td>
+            <%= record.circle_name %>
+          </td>
+          <td>
+            <% if record.spotify_album.present? %>
+              <% s_album = record.spotify_album %>
+              <%= s_album.name %><br/>
+              <img src="<%= s_album.image_url %>" alt="<%= s_album.name %>" width="300" loading="lazy" />
+            <% else %>
+              No Album
+            <% end %>
+          </td>
+          <td>
+            <% if record.apple_music_album.present? %>
+              <% am_album = record.apple_music_album %>
+              <%= am_album.name %><br/>
+              <img src="<%= am_album.image_url %>" alt="<%= am_album.name %>" width="300" loading="lazy" />
+            <% else %>
+              No Album
+            <% end %>
+          </td>
+          <td>
+            <% if record.ytmusic_album.present? %>
+              <% ytm_album = record.ytmusic_album %>
+              <%= ytm_album.name %><br/>
+              <img src="<%= ytm_album.image_url %>" alt="<%= ytm_album.name %>" width="300" loading="lazy" />
+            <% else %>
+              No Album
+            <% end %>
+          </td>
+          <td>
+            <% if record.line_music_album.present? %>
+              <% lm_album = record.line_music_album %>
+              <%= lm_album.name %><br/>
+              <img src="<%= lm_album.image_url %>" alt="<%= lm_album.name %>" width="300" loading="lazy" />
+            <% else %>
+              No Album
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
     <% end %>
   </tbody>
 </table>
