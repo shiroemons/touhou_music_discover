@@ -1448,6 +1448,28 @@ module Admin
       assert_select '.alert-error', /JSON/
     end
 
+    test 'associates validation errors with invalid form fields' do
+      post admin_resources_url('spotify_playlists'), params: {
+        record: {
+          spotify_id: '',
+          spotify_user_id: '',
+          name: ''
+        }
+      }
+
+      assert_response :unprocessable_content
+      assert_select '.alert-error', count: 1
+      assert_select 'input#spotify_playlists_spotify_id[aria-invalid=?][aria-describedby=?]',
+                    'true', 'spotify_playlists_spotify_id_error'
+      assert_select 'ul#spotify_playlists_spotify_id_error li', text: /Spotify/
+      assert_select 'input#spotify_playlists_spotify_user_id[aria-invalid=?][aria-describedby=?]',
+                    'true', 'spotify_playlists_spotify_user_id_error'
+      assert_select 'ul#spotify_playlists_spotify_user_id_error li', text: /Spotify user/
+      assert_select 'input#spotify_playlists_name[aria-invalid=?][aria-describedby=?]',
+                    'true', 'spotify_playlists_name_error'
+      assert_select 'ul#spotify_playlists_name_error li', text: /Name/
+    end
+
     test 'formats payload as pretty json on detail page' do
       album = Album.create!(jan_code: '9888888888899')
       spotify_album = SpotifyAlbum.create!(

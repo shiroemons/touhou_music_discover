@@ -2609,6 +2609,22 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   margin-top: 0;
 }
 
+.admin-input[aria-invalid='true'] {
+  border-color: var(--admin-danger);
+}
+
+.admin-input[aria-invalid='true']:focus {
+  outline: 2px solid var(--admin-danger);
+  outline-offset: 1px;
+}
+
+.admin-field-error-list {
+  color: var(--admin-danger);
+  font-size: 0.82rem;
+  margin: -0.1rem 0 0;
+  padding-left: 1.2rem;
+}
+
 .admin-form-actions {
   border-top: 1px solid var(--admin-border);
   margin-top: 1.25rem;
