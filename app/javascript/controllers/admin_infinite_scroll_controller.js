@@ -56,10 +56,13 @@ export default class extends Controller {
 
       const html = await response.text()
       const documentFragment = new DOMParser().parseFromString(html, "text/html")
-      const incomingRows = documentFragment.querySelectorAll("[data-admin-infinite-scroll-target='rows'] > *")
+      const incomingRowsTarget = documentFragment.querySelector("[data-admin-infinite-scroll-target='rows']")
+      const nextPanel = documentFragment.querySelector("[data-controller~='admin-infinite-scroll']")
+      if (!incomingRowsTarget || !nextPanel) throw new Error("Invalid infinite scroll response")
+
+      const incomingRows = Array.from(incomingRowsTarget.children)
       incomingRows.forEach((row) => this.rowsTarget.appendChild(row))
 
-      const nextPanel = documentFragment.querySelector("[data-controller~='admin-infinite-scroll']")
       this.nextUrlValue = nextPanel?.dataset.adminInfiniteScrollNextUrlValue || ""
 
       if (this.nextUrlValue) {
