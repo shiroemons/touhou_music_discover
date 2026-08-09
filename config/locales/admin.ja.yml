@@ -53,7 +53,11 @@ ja:
       count_suffix: "件"
       actions_suffix: "アクション"
       updated_at: "最終更新"
+      empty_catalog:
+        title: "カタログデータがありません"
+        description: "原作・原曲マスタとは別に、アルバムと楽曲は外部データの取得またはインポートが必要です。"
     navigation:
+      label: "管理画面ナビゲーション"
       groups:
         master: "マスタ"
         operations: "運用"
@@ -106,6 +110,9 @@ ja:
       loading: "読み込み中..."
       complete: "すべて読み込みました。"
       error: "読み込みに失敗しました。"
+      retry: "再試行"
+    accessibility:
+      skip_to_main: "本文へ移動"
     filters:
       heading: "フィルター"
       active: "適用中の条件"
@@ -154,6 +161,9 @@ ja:
     table:
       actions: "操作"
       empty: "レコードがありません。"
+      empty_description: "このリソースにはまだデータがありません。"
+      no_matching_results: "条件に一致するレコードがありません。"
+      no_matching_results_description: "検索語やフィルターを変更するか、適用中の条件を解除してください。"
       current_results: "表示中"
     details:
       overview: "概要"

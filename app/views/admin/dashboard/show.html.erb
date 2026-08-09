@@ -23,6 +23,15 @@
   </div>
 </div>
 
+<% if totals.fetch(:albums).zero? && totals.fetch(:tracks).zero? %>
+  <div class="admin-empty-data-notice" role="status">
+    <div>
+      <strong><%= t('admin.dashboard.empty_catalog.title') %></strong>
+      <p><%= t('admin.dashboard.empty_catalog.description') %></p>
+    </div>
+  </div>
+<% end %>
+
 <div class="admin-priority-grid">
   <section class="admin-panel">
     <div class="admin-panel-header">

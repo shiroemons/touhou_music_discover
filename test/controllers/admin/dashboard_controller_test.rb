@@ -9,7 +9,11 @@ module Admin
 
       assert_response :success
       assert_select 'h1', '管理画面'
+      assert_select 'a.admin-skip-link[href=?]', '#admin-main-content', text: '本文へ移動'
+      assert_select 'main#admin-main-content[tabindex=?]', '-1'
       assert_select 'a[href=?]', '/avo', count: 0
+      assert_select 'nav.admin-nav[aria-label=?]', '管理画面ナビゲーション'
+      assert_select 'nav.admin-nav a.admin-nav-link[aria-current=?]', 'page', count: 1
       nav_group_labels = css_select('.admin-nav .admin-nav-group').map do |group|
         group.at_css('.admin-nav-heading').text.strip
       end
