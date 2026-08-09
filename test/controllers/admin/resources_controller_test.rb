@@ -15,6 +15,7 @@ module Admin
         ['YouTube Music配信日', 'JANコード', 'サークル', 'Spotifyアルバム名', 'Apple Musicアルバム名', 'YouTube Musicアルバム名', 'LINE MUSICアルバム名', '東方', '操作'],
         css_select('thead th').map { it.text.squish }
       )
+      assert_select 'table.admin-table thead th[scope=?]', 'col', count: 9
       assert_select '.admin-filter-field label', text: '未配信'
       assert_select '.admin-filter-field label', text: '原曲'
       assert_select 'select[name=?][onchange=?]', 'filters[not_delivered]', 'this.form.requestSubmit()'
@@ -535,6 +536,7 @@ module Admin
       assert_response :success
       assert_select '.admin-detail-table th', text: 'アルバム名'
       assert_select '.admin-detail-table th', text: '配信取得'
+      assert_empty css_select('.admin-detail-table th:not([scope="row"])')
       assert_select '.admin-detail-table td', text: 'Admin Track Detail Album'
     end
 

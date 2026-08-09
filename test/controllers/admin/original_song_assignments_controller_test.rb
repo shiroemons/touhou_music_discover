@@ -28,6 +28,7 @@ module Admin
       album_headers = css_select('table.admin-original-song-album-table thead th').map { |header| header.text.strip }
 
       assert_equal %w[JANコード サークル アルバム 未設定楽曲数], album_headers
+      assert_select 'table.admin-original-song-album-table thead th[scope=?]', 'col', count: 4
       assert_select 'details[data-controller=?]', 'admin-original-song-album', count: 1
       assert_select 'td', { text: missing_track.isrc, count: 0 }
       assert_select 'form[method=?]', 'post'
@@ -113,6 +114,7 @@ module Admin
       headers = css_select('thead tr th').map { |header| header.text.strip }
 
       assert_equal %w[サークル アルバム名 トラック番号 名前 原曲検索 設定済み原曲], headers
+      assert_select 'table.admin-original-song-assignment-table thead th[scope=?]', 'col', count: 6
       assert_select 'tbody tr td:nth-child(3)', text: '7'
       assert_select 'tr[data-controller=?][data-admin-original-song-picker-error-text-value=?]',
                     'admin-original-song-picker', '候補の読み込みに失敗しました。'

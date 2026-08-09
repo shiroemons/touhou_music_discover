@@ -120,9 +120,9 @@
       <thead>
         <tr>
           <% @resource_config.index_attributes.each do |attribute| %>
-            <th><%= admin_sortable_header(@resource_config, attribute) %></th>
+            <th scope="col"><%= admin_sortable_header(@resource_config, attribute) %></th>
           <% end %>
-          <th class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
+          <th scope="col" class="admin-table-actions-heading"><%= t('admin.table.actions') %></th>
         </tr>
       </thead>
       <tbody data-admin-infinite-scroll-target="rows">
