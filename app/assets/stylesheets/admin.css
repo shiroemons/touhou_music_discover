@@ -1939,6 +1939,11 @@
   color: var(--admin-muted);
 }
 
+.admin-original-song-option-error {
+  display: grid;
+  gap: 0.45rem;
+}
+
 .admin-original-song-missing-query {
   background: var(--admin-surface-muted);
   border-top: 1px solid var(--admin-border);

@@ -7,6 +7,8 @@
 <tr data-controller="admin-original-song-picker"
     data-admin-original-song-picker-url-value="<%= admin_track_original_song_assignment_options_path %>"
     data-admin-original-song-picker-resolve-url-value="<%= admin_resolve_track_original_song_assignments_path %>"
+    data-admin-original-song-picker-error-text-value="<%= t('admin.original_song_assignments.search_load_error') %>"
+    data-admin-original-song-picker-retry-text-value="<%= t('admin.original_song_assignments.search_retry') %>"
     data-admin-original-song-picker-initial-options-value="<%= json_escape(selected_options.to_json) %>">
   <% unless compact %>
     <td class="admin-original-song-assignment-circle-cell"><%= admin_display_value(track_resource, track, :circle_name) %></td>
@@ -40,6 +42,7 @@
              data-action="focus->admin-original-song-picker#focus input->admin-original-song-picker#filter keydown->admin-original-song-picker#keydown keyup->admin-original-song-picker#keyup paste->admin-original-song-picker#paste blur->admin-original-song-picker#blur">
       <div class="admin-original-song-listbox"
            role="listbox"
+           aria-live="polite"
            hidden
            data-admin-original-song-picker-target="listbox"></div>
     </div>

@@ -219,6 +219,8 @@ ja:
       album_retry: "再試行"
       album_empty: "未設定楽曲はありません。"
       original_songs_search: "原曲検索"
+      search_load_error: "候補の読み込みに失敗しました。"
+      search_retry: "再試行"
       assigned_original_songs: "設定済み原曲"
       status_label: "対象"
       status:

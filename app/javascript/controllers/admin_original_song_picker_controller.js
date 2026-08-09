@@ -12,7 +12,9 @@ export default class extends Controller {
   static values = {
     url: String,
     resolveUrl: String,
-    initialOptions: Array
+    initialOptions: Array,
+    errorText: { type: String, default: "候補の読み込みに失敗しました。" },
+    retryText: { type: String, default: "再試行" }
   }
 
   connect() {
@@ -20,6 +22,7 @@ export default class extends Controller {
     this.activeIndex = -1
     this.loadedQuery = null
     this.requestSequence = 0
+    this.retryAction = null
     this.shiftKeyDown = false
     this.history = originalSongAssignmentHistoryFor(this.element)
     this.history.register(this.element, this)
@@ -112,6 +115,15 @@ export default class extends Controller {
     this.resolveEditedMissingQuery(input, { preserveMissingOnEmpty: false })
   }
 
+  retry(event) {
+    event.preventDefault()
+    const action = this.retryAction
+    if (!action) return
+
+    this.retryAction = null
+    return action()
+  }
+
   keydownMissingQuery(event) {
     if (event.key === "Enter") {
       this.retryMissingQuery(event)
@@ -187,8 +199,8 @@ export default class extends Controller {
     return shouldDistributePastedRows(rows, this.shiftKeyDown)
   }
 
-  async loadOptions(query, { activateFirst }) {
-    if (!this.hasUrlValue || this.loadedQuery === query) {
+  async loadOptions(query, { activateFirst, force = false }) {
+    if (!this.hasUrlValue || (!force && this.loadedQuery === query)) {
       this.activeIndex = activateFirst && this.visibleOptions().length > 0 ? 0 : -1
       this.updateActiveOption()
       return
@@ -196,6 +208,7 @@ export default class extends Controller {
 
     const requestId = this.requestSequence + 1
     this.requestSequence = requestId
+    this.retryAction = null
     this.listboxTarget.setAttribute("aria-busy", "true")
 
     try {
@@ -214,10 +227,11 @@ export default class extends Controller {
       const data = await response.json()
       this.loadedQuery = query
       this.currentOptions = data.options || []
+      this.retryAction = null
       this.renderOptions(this.currentOptions, { activateFirst })
     } catch (_error) {
       if (requestId === this.requestSequence) {
-        this.renderOptions([], { activateFirst: false })
+        this.renderError(() => this.loadOptions(query, { activateFirst, force: true }))
       }
     } finally {
       if (requestId === this.requestSequence) {
@@ -233,6 +247,7 @@ export default class extends Controller {
     ], { pending: 1 })
     const requestId = this.requestSequence + 1
     this.requestSequence = requestId
+    this.retryAction = null
     this.open()
     this.listboxTarget.setAttribute("aria-busy", "true")
 
@@ -253,13 +268,14 @@ export default class extends Controller {
       const data = await response.json()
       this.inputTarget.value = ""
       this.loadedQuery = null
+      this.retryAction = null
       this.renderResolvedOptions(data.resolutions || [], {
         historyEntry: entry,
         beforeSnapshot: snapshot
       })
     } catch (_error) {
       if (requestId === this.requestSequence) {
-        this.renderOptions([], { activateFirst: false })
+        this.renderError(() => this.resolvePastedText(text, { beforeSnapshot: snapshot }))
       }
     } finally {
       if (requestId === this.requestSequence) {
@@ -275,6 +291,7 @@ export default class extends Controller {
 
     const requestId = this.requestSequence + 1
     this.requestSequence = requestId
+    this.retryAction = null
     this.open()
     this.listboxTarget.setAttribute("aria-busy", "true")
 
@@ -298,10 +315,11 @@ export default class extends Controller {
 
       this.inputTarget.value = ""
       this.loadedQuery = null
+      this.retryAction = null
       this.renderResolvedOptions(resolutions)
     } catch (_error) {
-      if (!preserveMissingOnEmpty && requestId === this.requestSequence) {
-        this.renderOptions([], { activateFirst: false })
+      if (requestId === this.requestSequence) {
+        this.renderError(() => this.resolveEditedMissingQuery(input, { preserveMissingOnEmpty: false }))
       }
     } finally {
       if (requestId === this.requestSequence) {
@@ -313,6 +331,7 @@ export default class extends Controller {
   selectOption(optionElement) {
     if (!optionElement) return
 
+    this.retryAction = null
     const beforeSnapshot = this.snapshotSelectedOptions()
     const added = this.addOption({
       value: optionElement.dataset.value,
@@ -367,6 +386,7 @@ export default class extends Controller {
   }
 
   renderOptions(options, { activateFirst }) {
+    this.retryAction = null
     const availableOptions = options.filter((option) => (
       !this.selectedOptions.some((selectedOption) => selectedOption.value === option.value)
     ))
@@ -383,6 +403,27 @@ export default class extends Controller {
     this.listboxTarget.replaceChildren(...availableOptions.map((option) => this.buildOption(option)))
     this.activeIndex = activateFirst ? 0 : -1
     this.updateActiveOption()
+  }
+
+  renderError(retryAction) {
+    this.retryAction = retryAction
+
+    const container = document.createElement("div")
+    container.className = "admin-original-song-option-empty admin-original-song-option-error"
+
+    const message = document.createElement("span")
+    message.setAttribute("role", "status")
+    message.textContent = this.errorTextValue || "候補の読み込みに失敗しました。"
+
+    const button = document.createElement("button")
+    button.type = "button"
+    button.className = "admin-original-song-missing-button"
+    button.dataset.action = "click->admin-original-song-picker#retry"
+    button.textContent = this.retryTextValue || "再試行"
+
+    container.append(message, button)
+    this.listboxTarget.replaceChildren(container)
+    this.activeIndex = -1
   }
 
   renderResolvedOptions(resolutions, { historyEntry = null, beforeSnapshot = null } = {}) {
@@ -424,6 +465,7 @@ export default class extends Controller {
   }
 
   renderResolvedChoiceList(options, missingQueries) {
+    this.retryAction = null
     const availableOptions = options.filter((option) => (
       !this.selectedOptions.some((selectedOption) => selectedOption.value === option.value)
     ))
