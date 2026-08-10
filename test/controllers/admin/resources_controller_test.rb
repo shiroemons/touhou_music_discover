@@ -23,6 +23,8 @@ module Admin
       assert_select 'select[name=?] option', 'filters[not_delivered]', text: 'Apple Music未配信'
       assert_select 'select[name=?] option', 'filters[tracks_original_songs]', text: '未設定の楽曲あり'
       assert_select 'a[href=?]', admin_resource_action_path('albums', 'change_touhou_flag'), text: '東方フラグを変更'
+      assert_select '.admin-action-menu summary', text: 'アクション'
+      assert_select '.admin-resource-index-albums .admin-table'
       assert_select '.admin-list-toolbar'
       assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
       assert_select '.admin-record-count', text: /表示中/

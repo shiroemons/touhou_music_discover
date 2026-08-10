@@ -9,6 +9,11 @@ en:
       latest_update: "Latest update"
       no_updates: "No updates"
       overview: "Overview"
+      details_show: "Show details"
+      details_hide: "Hide details"
+      coverage_summary: "Average across 4 services: %{percent}"
+      playlist_summary: "Needs sync: %{count}"
+      resource_summary: "%{count} resources"
       catalog_health: "Catalog health"
       track_classification: "Track classification"
       circle_assignment: "Circle assignment"
@@ -20,6 +25,8 @@ en:
       updated_at: "Last updated"
       fetch_missing_tracks_unavailable: "No fetchable targets"
     navigation:
+      label: "Admin navigation"
+      mobile_toggle: "Menu"
       groups:
         master: "Master"
         operations: "Operations"

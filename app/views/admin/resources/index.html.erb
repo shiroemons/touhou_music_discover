@@ -1,7 +1,7 @@
 <% collection_actions = admin_resource_actions(@resource_config) %>
 <% collection_external_links = admin_collection_external_album_links(@resource_config) %>
 
-<div class="admin-resource-index-page">
+<div class="admin-resource-index-page admin-resource-index-<%= @resource_config.key.dasherize %>">
 <div class="admin-page-header admin-resource-index-header">
   <div class="admin-page-title">
     <span class="admin-kicker"><%= t('admin.dashboard.all_resources') %></span>
@@ -10,23 +10,33 @@
   </div>
   <div class="admin-page-actions">
     <%= render 'external_links', external_links: collection_external_links, compact: true %>
-    <% collection_actions.each do |action| %>
-      <%= link_to admin_resource_action_path(@resource_config.key, action.key), class: 'btn btn-sm admin-btn' do %>
-        <%= admin_icon(:lightning) %>
-        <span><%= action.label %></span>
-      <% end %>
-    <% end %>
-    <% if @resource_config.key == 'tracks' %>
-      <%= link_to admin_track_original_song_assignments_path, class: 'btn btn-sm admin-btn' do %>
-        <%= admin_icon(:list_ordered) %>
-        <span><%= t('admin.original_song_assignments.nav_label') %></span>
-      <% end %>
-    <% end %>
-    <% if @resource_config.key == 'albums' %>
-      <%= link_to admin_original_song_missing_albums_path, class: 'btn btn-sm admin-btn' do %>
-        <%= admin_icon(:list_ordered) %>
-        <span><%= t('admin.original_song_missing_albums.nav_label') %></span>
-      <% end %>
+    <% if collection_actions.any? || @resource_config.key.in?(%w[tracks albums]) %>
+      <details class="admin-action-menu">
+        <summary class="btn btn-sm admin-btn">
+          <%= admin_icon(:lightning) %>
+          <span><%= t('admin.actions.heading') %></span>
+        </summary>
+        <div class="admin-action-menu-panel">
+          <% collection_actions.each do |action| %>
+            <%= link_to admin_resource_action_path(@resource_config.key, action.key), class: 'btn btn-sm admin-btn' do %>
+              <%= admin_icon(:lightning) %>
+              <span><%= action.label %></span>
+            <% end %>
+          <% end %>
+          <% if @resource_config.key == 'tracks' %>
+            <%= link_to admin_track_original_song_assignments_path, class: 'btn btn-sm admin-btn' do %>
+              <%= admin_icon(:list_ordered) %>
+              <span><%= t('admin.original_song_assignments.nav_label') %></span>
+            <% end %>
+          <% end %>
+          <% if @resource_config.key == 'albums' %>
+            <%= link_to admin_original_song_missing_albums_path, class: 'btn btn-sm admin-btn' do %>
+              <%= admin_icon(:list_ordered) %>
+              <span><%= t('admin.original_song_missing_albums.nav_label') %></span>
+            <% end %>
+          <% end %>
+        </div>
+      </details>
     <% end %>
     <%= link_to admin_new_resource_path(@resource_config.key), class: 'btn admin-btn-primary' do %>
       <%= admin_icon(:plus) %>

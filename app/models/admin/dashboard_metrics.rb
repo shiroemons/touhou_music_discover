@@ -77,13 +77,14 @@ module Admin
       track_total = Track.unscoped.count
 
       service_coverages = SERVICE_CONFIGS.map { |config| service_coverage(config, album_total, track_total) }
+      catalog_health_metrics = catalog_health(album_total, track_total)
       data_quality = data_quality_items
 
       {
         totals: totals(album_total, track_total, service_coverages, data_quality),
-        catalog_health: catalog_health(album_total, track_total),
+        catalog_health: catalog_health_metrics,
         service_coverages:,
-        work_queue: work_queue_items(service_coverages),
+        work_queue: work_queue_items(service_coverages, catalog_health_metrics),
         data_quality:,
         playlist_sync: playlist_sync,
         generated_at: Time.current
@@ -229,15 +230,44 @@ module Admin
     def album_track_completion(config)
       scope = config.fetch(:album_scope, -> { config.fetch(:album_class).unscoped }).call
       association_name = config.fetch(:album_track_association)
+      counts = album_track_status_counts(scope, association_name)
 
       {
-        missing: Admin::Resource.streaming_album_track_status_scope(scope, association_name, 'missing').count,
-        incomplete: Admin::Resource.streaming_album_track_status_scope(scope, association_name, 'incomplete').count,
-        complete: Admin::Resource.streaming_album_track_status_scope(scope, association_name, 'complete').count
+        missing: counts.fetch('missing', 0),
+        incomplete: counts.fetch('incomplete', 0),
+        complete: counts.fetch('complete', 0)
       }
     end
 
-    def work_queue_items(service_coverages)
+    def album_track_status_counts(scope, association_name)
+      model_class = scope.klass
+      reflection = model_class.reflect_on_association(association_name)
+      return {} if reflection.blank?
+
+      album_table = model_class.quoted_table_name
+      track_table = reflection.klass.quoted_table_name
+      album_primary_key = "#{album_table}.#{model_class.connection.quote_column_name(model_class.primary_key)}"
+      total_tracks = "#{album_table}.#{model_class.connection.quote_column_name(:total_tracks)}"
+      track_primary_key = "#{track_table}.#{reflection.klass.connection.quote_column_name(reflection.klass.primary_key)}"
+      track_count = "COUNT(#{track_primary_key})"
+      status_sql = <<~SQL.squish
+        CASE
+          WHEN #{track_count} = 0 THEN 'missing'
+          WHEN #{total_tracks} > 0 AND #{track_count} < #{total_tracks} THEN 'incomplete'
+          WHEN #{total_tracks} > 0 AND #{track_count} >= #{total_tracks} THEN 'complete'
+        END
+      SQL
+
+      scope
+        .left_joins(association_name)
+        .group(Arel.sql(album_primary_key), Arel.sql(total_tracks))
+        .pluck(Arel.sql(status_sql))
+        .tally
+    end
+
+    def work_queue_items(service_coverages, catalog_health_metrics)
+      missing_original_tracks_count = catalog_health_metrics.fetch(:missing_original_tracks).fetch(:count)
+      missing_circle_albums_count = catalog_health_metrics.fetch(:missing_circle_albums).fetch(:count)
       service_items = service_coverages.flat_map do |coverage|
         [
           queue_item(
@@ -274,7 +304,7 @@ module Admin
         queue_item(
           key: 'tracks_missing_original_songs',
           label: '原曲未紐付け楽曲',
-          count: Track.unscoped.where.missing(:original_songs).count,
+          count: missing_original_tracks_count,
           description: '原曲との関連がない楽曲',
           resource_key: 'tracks',
           filters: { original_songs_count: 'none' },
@@ -292,7 +322,7 @@ module Admin
         queue_item(
           key: 'albums_missing_circles',
           label: 'サークル未設定アルバム',
-          count: Album.unscoped.where.missing(:circles).count,
+          count: missing_circle_albums_count,
           description: 'サークル情報が未登録のアルバム',
           resource_key: 'albums',
           severity: :notice
@@ -362,12 +392,13 @@ module Admin
       scope = SpotifyPlaylist.unscoped
       stale_scope = scope.where(synced_at: nil).or(scope.where(synced_at: ...24.hours.ago))
       total = scope.count
+      never_synced = scope.where(synced_at: nil).count
       stale = stale_scope.count
 
       {
         total:,
-        synced: scope.where.not(synced_at: nil).count,
-        never_synced: scope.where(synced_at: nil).count,
+        synced: total - never_synced,
+        never_synced:,
         stale:,
         latest_synced_at: scope.maximum(:synced_at),
         stale_percent: percentage(stale, total),

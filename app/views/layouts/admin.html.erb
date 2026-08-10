@@ -62,7 +62,7 @@
 
   <div class="admin-layout">
     <aside class="admin-sidebar">
-      <div class="admin-sidebar-inner">
+      <div class="admin-sidebar-inner" data-controller="admin-mobile-nav">
         <div class="admin-brand">
           <%= link_to admin_root_path, class: 'admin-brand-link' do %>
             <span class="admin-brand-mark">T</span>
@@ -73,8 +73,21 @@
           <% end %>
         </div>
 
+        <button type="button"
+                class="admin-mobile-nav-toggle"
+                data-admin-mobile-nav-target="toggle"
+                data-action="admin-mobile-nav#toggle"
+                aria-expanded="false"
+                aria-controls="admin-navigation">
+          <%= admin_icon(:list_ordered) %>
+          <span><%= t('admin.navigation.mobile_toggle') %></span>
+        </button>
+
         <% auto_assign_original_songs_active = params[:resource] == 'tracks' && params[:action_key] == 'auto_assign_original_songs' %>
-        <nav class="admin-nav" aria-label="<%= t('admin.navigation.label') %>">
+        <nav id="admin-navigation"
+             class="admin-nav"
+             data-admin-mobile-nav-target="menu"
+             aria-label="<%= t('admin.navigation.label') %>">
           <%= link_to admin_root_path,
                       class: "admin-nav-link #{'active' if current_page?(admin_root_path)}",
                       aria: { current: current_page?(admin_root_path) ? 'page' : nil } do %>

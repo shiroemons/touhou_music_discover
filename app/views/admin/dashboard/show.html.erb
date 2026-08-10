@@ -104,12 +104,17 @@
 </div>
 
 <% catalog_health = metrics.fetch(:catalog_health) %>
-<section class="admin-panel admin-catalog-health-panel">
-  <div class="admin-panel-header">
+<section class="admin-panel admin-dashboard-disclosure admin-catalog-health-panel">
+  <details>
+    <summary class="admin-panel-header">
     <h2><%= t('admin.dashboard.catalog_health') %></h2>
-  </div>
+      <span class="admin-disclosure-action">
+        <span class="admin-disclosure-action-show"><%= t('admin.dashboard.details_show') %></span>
+        <span class="admin-disclosure-action-hide"><%= t('admin.dashboard.details_hide') %></span>
+      </span>
+    </summary>
 
-  <div class="admin-catalog-health-grid">
+  <div class="admin-disclosure-content admin-catalog-health-grid">
     <div class="admin-catalog-metric-grid">
       <% %i[missing_circle_albums missing_original_tracks original_or_other_tracks touhou_arrangement_tracks].each do |key| %>
         <% item = catalog_health.fetch(key) %>
@@ -165,14 +170,23 @@
       </div>
     </div>
   </div>
+  </details>
 </section>
 
-<section class="admin-panel admin-coverage-panel">
-  <div class="admin-panel-header">
+<section class="admin-panel admin-dashboard-disclosure admin-coverage-panel">
+  <details>
+    <summary class="admin-panel-header">
     <h2><%= t('admin.dashboard.streaming_coverage') %></h2>
-  </div>
+      <span class="admin-disclosure-summary">
+        <%= t('admin.dashboard.coverage_summary', percent: number_to_percentage(totals.fetch(:average_album_coverage), precision: 1, strip_insignificant_zeros: true)) %>
+      </span>
+      <span class="admin-disclosure-action">
+        <span class="admin-disclosure-action-show"><%= t('admin.dashboard.details_show') %></span>
+        <span class="admin-disclosure-action-hide"><%= t('admin.dashboard.details_hide') %></span>
+      </span>
+    </summary>
 
-  <div class="admin-coverage-grid">
+  <div class="admin-disclosure-content admin-coverage-grid">
     <% metrics.fetch(:service_coverages).each do |coverage| %>
       <article class="admin-coverage-card is-<%= coverage.fetch(:key).to_s.dasherize %>">
         <div class="admin-coverage-heading">
@@ -263,19 +277,30 @@
       </article>
     <% end %>
   </div>
+  </details>
 </section>
 
 <section class="admin-panel">
   <% playlist_sync = metrics.fetch(:playlist_sync) %>
-  <div class="admin-panel-header">
-    <h2><%= t('admin.dashboard.playlist_sync') %></h2>
-    <%= link_to admin_resources_path(playlist_sync.fetch(:resource_key)), class: 'btn btn-sm admin-btn' do %>
-      <%= admin_icon(:list) %>
-      <span><%= t('admin.actions.index') %></span>
-    <% end %>
-  </div>
+  <details class="admin-dashboard-disclosure">
+    <summary class="admin-panel-header">
+      <h2><%= t('admin.dashboard.playlist_sync') %></h2>
+      <span class="admin-disclosure-summary"><%= t('admin.dashboard.playlist_summary', count: number_with_delimiter(playlist_sync.fetch(:stale))) %></span>
+      <span class="admin-disclosure-action">
+        <span class="admin-disclosure-action-show"><%= t('admin.dashboard.details_show') %></span>
+        <span class="admin-disclosure-action-hide"><%= t('admin.dashboard.details_hide') %></span>
+      </span>
+    </summary>
 
-  <div class="admin-sync-grid">
+  <div class="admin-disclosure-content">
+    <div class="admin-panel-header admin-disclosure-inline-header">
+      <span></span>
+      <%= link_to admin_resources_path(playlist_sync.fetch(:resource_key)), class: 'btn btn-sm admin-btn' do %>
+        <%= admin_icon(:list) %>
+        <span><%= t('admin.actions.index') %></span>
+      <% end %>
+    </div>
+    <div class="admin-sync-grid">
     <div class="admin-sync-summary">
       <span class="admin-stat-label"><%= t('admin.dashboard.stale_playlists') %></span>
       <strong><%= number_with_delimiter(playlist_sync.fetch(:stale)) %></strong>
@@ -292,15 +317,23 @@
             ) %>
       </span>
     </div>
+    </div>
   </div>
+  </details>
 </section>
 
 <section class="admin-panel">
-  <div class="admin-panel-header">
-    <h2><%= t('admin.dashboard.all_resources') %></h2>
-  </div>
+  <details class="admin-dashboard-disclosure">
+    <summary class="admin-panel-header">
+      <h2><%= t('admin.dashboard.all_resources') %></h2>
+      <span class="admin-disclosure-summary"><%= t('admin.dashboard.resource_summary', count: number_with_delimiter(@resources.size)) %></span>
+      <span class="admin-disclosure-action">
+        <span class="admin-disclosure-action-show"><%= t('admin.dashboard.details_show') %></span>
+        <span class="admin-disclosure-action-hide"><%= t('admin.dashboard.details_hide') %></span>
+      </span>
+    </summary>
 
-  <div class="admin-resource-grid">
+  <div class="admin-disclosure-content admin-resource-grid">
     <% @resource_groups.each do |group_key, resources| %>
       <div class="admin-resource-group-card">
         <h3><%= t("admin.navigation.groups.#{group_key}") %></h3>
@@ -329,4 +362,5 @@
       </div>
     <% end %>
   </div>
+  </details>
 </section>

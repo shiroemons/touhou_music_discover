@@ -6041,17 +6041,55 @@ html[data-admin-resolved-theme="light"] .admin-action-execution-panel .admin-act
 
 @media (max-width: 991.98px) {
   /* Keep mobile navigation grouped and vertically discoverable. */
+  .admin-mobile-nav-toggle {
+    align-items: center;
+    background: rgb(255 255 255 / 7%);
+    border: 1px solid rgb(148 163 184 / 20%);
+    border-radius: 0.65rem;
+    color: #f8fafc;
+    display: flex;
+    font-size: 0.88rem;
+    font-weight: 850;
+    gap: 0.5rem;
+    justify-content: flex-start;
+    min-height: 2.85rem;
+    padding: 0.55rem 0.75rem;
+    width: 100%;
+  }
+
+  .admin-mobile-nav-toggle::after {
+    border-bottom: 1px solid currentColor;
+    border-right: 1px solid currentColor;
+    content: "";
+    height: 0.45rem;
+    margin-left: auto;
+    transform: rotate(45deg) translateY(-0.1rem);
+    transition: transform 120ms ease;
+    width: 0.45rem;
+  }
+
+  .admin-mobile-nav-toggle[aria-expanded="true"]::after {
+    transform: rotate(225deg) translate(-0.05rem, -0.05rem);
+  }
+
+  .admin-mobile-nav-toggle:focus-visible {
+    outline: 2px solid var(--admin-primary);
+    outline-offset: 2px;
+  }
+
   .admin-nav {
     border: 1px solid rgb(148 163 184 / 16%);
     border-radius: 0.65rem;
     display: grid;
     gap: 0.35rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    max-height: 10rem;
-    overflow-x: hidden;
-    overflow-y: auto;
+    max-height: none;
+    overflow: visible;
     padding: 0.35rem;
-    scrollbar-gutter: stable;
+  }
+
+  .admin-nav.is-collapsed {
+    display: none;
   }
 
   .admin-nav-heading {
@@ -6071,5 +6109,189 @@ html[data-admin-resolved-theme="light"] .admin-action-execution-panel .admin-act
   .admin-nav-link .admin-icon {
     flex: 0 0 auto;
     margin-top: 0.15rem;
+  }
+}
+
+@media (min-width: 992px) {
+  .admin-mobile-nav-toggle {
+    display: none;
+  }
+}
+
+/* Keep routine list actions compact while leaving the primary create action visible. */
+.admin-action-menu {
+  position: relative;
+}
+
+.admin-action-menu > summary {
+  align-items: center;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 0.35rem;
+  list-style: none;
+}
+
+.admin-action-menu > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-action-menu > summary::after {
+  border-bottom: 1px solid currentColor;
+  border-right: 1px solid currentColor;
+  content: "";
+  height: 0.45rem;
+  margin-left: 0.15rem;
+  transform: rotate(45deg) translateY(-0.1rem);
+  transition: transform 120ms ease;
+  width: 0.45rem;
+}
+
+.admin-action-menu[open] > summary::after {
+  transform: rotate(225deg) translate(-0.05rem, -0.05rem);
+}
+
+.admin-action-menu-panel {
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.65rem;
+  box-shadow: 0 0.8rem 2rem rgb(2 6 23 / 22%);
+  display: grid;
+  gap: 0.35rem;
+  min-width: min(24rem, calc(100vw - 2rem));
+  padding: 0.45rem;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: var(--admin-z-popover, 30);
+}
+
+.admin-action-menu-panel .btn {
+  justify-content: flex-start;
+  text-align: left;
+  white-space: normal;
+  width: 100%;
+}
+
+.admin-resource-index-page .admin-table {
+  min-width: 68rem;
+}
+
+.admin-resource-index-page .admin-index-record-link .admin-value-label {
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+@media (max-width: 767.98px) {
+  .admin-action-menu {
+    flex: 1 1 100%;
+  }
+
+  .admin-action-menu > summary {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .admin-action-menu-panel {
+    margin-top: 0.35rem;
+    min-width: 0;
+    position: static;
+  }
+}
+
+/* Dashboard sections disclose secondary detail without competing with the work queue. */
+.admin-dashboard-disclosure > details,
+.admin-panel > .admin-dashboard-disclosure {
+  display: block;
+}
+
+.admin-dashboard-disclosure summary.admin-panel-header {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.75rem;
+  list-style: none;
+}
+
+.admin-dashboard-disclosure summary.admin-panel-header::-webkit-details-marker {
+  display: none;
+}
+
+.admin-dashboard-disclosure summary.admin-panel-header::before {
+  border-bottom: 2px solid var(--admin-primary);
+  border-right: 2px solid var(--admin-primary);
+  content: "";
+  flex: 0 0 0.6rem;
+  height: 0.6rem;
+  transform: rotate(-45deg);
+  transition: transform 120ms ease;
+  width: 0.6rem;
+}
+
+.admin-dashboard-disclosure details[open] > summary.admin-panel-header::before {
+  transform: rotate(45deg) translate(-0.1rem, -0.1rem);
+}
+
+.admin-dashboard-disclosure summary.admin-panel-header h2 {
+  min-width: 0;
+}
+
+.admin-disclosure-summary,
+.admin-disclosure-action {
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.admin-disclosure-summary {
+  margin-left: auto;
+  text-align: right;
+}
+
+.admin-disclosure-action {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.admin-disclosure-action-hide {
+  display: none;
+}
+
+.admin-dashboard-disclosure details[open] .admin-disclosure-action-show {
+  display: none;
+}
+
+.admin-dashboard-disclosure details[open] .admin-disclosure-action-hide {
+  display: inline;
+}
+
+.admin-disclosure-content {
+  border-top: 1px solid var(--admin-border);
+}
+
+.admin-disclosure-inline-header {
+  border-bottom: 0;
+  min-height: auto;
+  padding: 0.75rem 1rem 0;
+}
+
+@media (max-width: 767.98px) {
+  .admin-dashboard-disclosure summary.admin-panel-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 0.8rem 0.9rem;
+  }
+
+  .admin-dashboard-disclosure summary.admin-panel-header h2 {
+    flex: 1 1 calc(100% - 1.5rem);
+  }
+
+  .admin-disclosure-summary {
+    margin-left: 1.35rem;
+    margin-right: auto;
+    text-align: left;
+  }
+
+  .admin-disclosure-action {
+    margin-left: auto;
   }
 }

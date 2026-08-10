@@ -17,6 +17,11 @@ ja:
       catalog_tracks: "カタログ楽曲"
       streaming_services: "4サービス平均"
       dashboard_generated_at: "集計 %{time}"
+      details_show: "詳細を表示"
+      details_hide: "詳細を閉じる"
+      coverage_summary: "4サービス平均 %{percent}"
+      playlist_summary: "要同期 %{count}件"
+      resource_summary: "%{count}リソース"
       catalog_health: "カタログ整備状況"
       track_classification: "楽曲分類"
       circle_assignment: "サークル紐づけ"
@@ -59,6 +64,7 @@ ja:
         description: "原作・原曲マスタとは別に、アルバムと楽曲は外部データの取得またはインポートが必要です。"
     navigation:
       label: "管理画面ナビゲーション"
+      mobile_toggle: "メニュー"
       groups:
         master: "マスタ"
         operations: "運用"

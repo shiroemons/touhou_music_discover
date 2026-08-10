@@ -14,6 +14,8 @@ module Admin
       assert_select 'main#admin-main-content[tabindex=?]', '-1'
       assert_select 'a[href=?]', '/avo', count: 0
       assert_select 'nav.admin-nav[aria-label=?]', '管理画面ナビゲーション'
+      assert_select 'button.admin-mobile-nav-toggle[aria-controls=?][aria-expanded=?]', 'admin-navigation', 'false'
+      assert_select 'nav#admin-navigation[data-admin-mobile-nav-target=?]', 'menu'
       assert_select 'nav.admin-nav a.admin-nav-link[aria-current=?]', 'page', count: 1
       nav_group_labels = css_select('.admin-nav .admin-nav-group').map do |group|
         group.at_css('.admin-nav-heading').text.strip
@@ -52,6 +54,7 @@ module Admin
       assert_select '.admin-priority-grid'
       assert_select '.admin-priority-grid h2', '作業キュー'
       assert_select '.admin-priority-grid h2', 'データ品質'
+      assert_select '.admin-dashboard-disclosure summary', minimum: 4
       assert_select 'h2', '作業キュー'
       assert_select 'h2', 'データ品質'
       assert_select 'h2', 'Spotifyプレイリスト同期'
