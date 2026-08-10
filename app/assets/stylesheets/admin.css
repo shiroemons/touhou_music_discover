@@ -4947,7 +4947,7 @@ html[data-admin-resolved-theme="light"] .admin-pagination-gap {
 }
 
 .admin-search-row {
-  align-items: center;
+  align-items: flex-end;
   display: flex;
   gap: 0.65rem;
   min-width: min(100%, 28rem);
@@ -5867,6 +5867,44 @@ html[data-admin-resolved-theme="light"] .admin-action-execution-panel .admin-act
 
   .admin-resource-index-page .admin-search-input {
     max-width: none;
+  }
+
+  .admin-search-actions {
+    width: 100%;
+  }
+
+  .admin-search-actions .btn {
+    flex: 1 1 auto;
+  }
+
+  .admin-record-count {
+    margin-left: 0;
+  }
+
+  .admin-original-song-missing-albums-search-form .admin-list-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-original-song-assignment-search-form .admin-list-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-original-song-missing-albums-search-form .admin-search-row,
+  .admin-original-song-assignment-search-form .admin-search-row {
+    align-items: stretch;
+    flex: 0 0 auto;
+    flex-direction: column;
+  }
+
+  .admin-original-song-missing-albums-search-form .admin-search-field,
+  .admin-original-song-assignment-search-form .admin-search-field {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+
+  .admin-original-song-missing-albums-search-form .admin-original-song-missing-albums-copy {
+    justify-self: stretch;
   }
 
   .admin-action-side-panel,
