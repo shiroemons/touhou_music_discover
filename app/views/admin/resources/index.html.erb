@@ -49,24 +49,29 @@
   <%= form.hidden_field :scroll, value: 'infinite' if admin_infinite_scroll? %>
   <div class="admin-list-toolbar">
     <% if @filters.any? %>
-      <div class="admin-filter-bar">
-        <span class="admin-filter-heading"><%= t('admin.filters.heading') %></span>
-        <% @filters.each do |filter| %>
-          <div class="admin-filter-field">
-            <%= form.label "filters_#{filter[:attribute]}", filter[:label], class: 'admin-label' %>
-            <% if filter[:control] == :combobox %>
-              <%= admin_filter_combobox(filter, @active_filters[filter[:attribute]]) %>
-            <% else %>
-              <%= form.select "filters[#{filter[:attribute]}]",
-                              options_for_select((filter[:include_blank] ? [[t('admin.filters.all'), '']] : []) + filter[:options].map { |value, label| [label, value] }, @active_filters[filter[:attribute]]),
-                              {},
-                              class: 'select admin-select',
-                              id: "filters_#{filter[:attribute]}",
-                              onchange: 'this.form.requestSubmit()' %>
-            <% end %>
-          </div>
-        <% end %>
-      </div>
+      <details class="admin-filter-disclosure" data-controller="admin-filter-disclosure" open>
+        <summary class="admin-filter-disclosure-summary">
+          <span><%= t('admin.filters.heading') %></span>
+          <%= admin_icon(:chevron_down) %>
+        </summary>
+        <div class="admin-filter-bar">
+          <% @filters.each do |filter| %>
+            <div class="admin-filter-field">
+              <%= form.label "filters_#{filter[:attribute]}", filter[:label], class: 'admin-label' %>
+              <% if filter[:control] == :combobox %>
+                <%= admin_filter_combobox(filter, @active_filters[filter[:attribute]]) %>
+              <% else %>
+                <%= form.select "filters[#{filter[:attribute]}]",
+                                options_for_select((filter[:include_blank] ? [[t('admin.filters.all'), '']] : []) + filter[:options].map { |value, label| [label, value] }, @active_filters[filter[:attribute]]),
+                                {},
+                                class: 'select admin-select',
+                                id: "filters_#{filter[:attribute]}",
+                                onchange: 'this.form.requestSubmit()' %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </details>
     <% end %>
 
     <div class="admin-list-controls">

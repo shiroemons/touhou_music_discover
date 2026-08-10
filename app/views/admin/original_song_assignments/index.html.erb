@@ -30,24 +30,30 @@
   <%= form.hidden_field :scroll, value: 'infinite' if admin_infinite_scroll? %>
   <%= form.hidden_field :view, value: @view_mode %>
   <div class="admin-list-toolbar">
-    <div class="admin-filter-bar">
-      <div class="admin-filter-field">
-        <%= form.label :status, t('admin.original_song_assignments.status_label'), class: 'admin-label' %>
-        <%= form.select :status,
-                        options_for_select([
-                          [t('admin.original_song_assignments.status.missing'), 'missing'],
-                          [t('admin.original_song_assignments.status.present'), 'present'],
-                          [t('admin.original_song_assignments.status.all'), 'all']
-                        ], @status),
-                        {},
-                        class: 'select admin-select',
-                        onchange: 'this.form.requestSubmit()' %>
+    <details class="admin-filter-disclosure" data-controller="admin-filter-disclosure" open>
+      <summary class="admin-filter-disclosure-summary">
+        <span><%= t('admin.filters.heading') %></span>
+        <%= admin_icon(:chevron_down) %>
+      </summary>
+      <div class="admin-filter-bar">
+        <div class="admin-filter-field">
+          <%= form.label :status, t('admin.original_song_assignments.status_label'), class: 'admin-label' %>
+          <%= form.select :status,
+                          options_for_select([
+                            [t('admin.original_song_assignments.status.missing'), 'missing'],
+                            [t('admin.original_song_assignments.status.present'), 'present'],
+                            [t('admin.original_song_assignments.status.all'), 'all']
+                          ], @status),
+                          {},
+                          class: 'select admin-select',
+                          onchange: 'this.form.requestSubmit()' %>
+        </div>
+        <label class="admin-checkbox-row">
+          <%= check_box_tag :show_identifiers, '1', @show_identifiers, onchange: 'this.form.requestSubmit()' %>
+          <span><%= t('admin.original_song_assignments.show_identifiers') %></span>
+        </label>
       </div>
-      <label class="admin-checkbox-row">
-        <%= check_box_tag :show_identifiers, '1', @show_identifiers, onchange: 'this.form.requestSubmit()' %>
-        <span><%= t('admin.original_song_assignments.show_identifiers') %></span>
-      </label>
-    </div>
+    </details>
 
     <div class="admin-list-controls">
       <div class="admin-search-row">

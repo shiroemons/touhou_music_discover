@@ -20,6 +20,7 @@ module Admin
       assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'
       assert_select '.admin-view-mode-link.is-active', text: 'アルバム表示'
       assert_select '.admin-view-mode-link.is-active', text: '無限スクロール'
+      assert_select 'details.admin-filter-disclosure[data-controller=?][open] summary', 'admin-filter-disclosure', text: 'フィルター'
       assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'
       assert_select 'input[name=?][type=?]', 'show_identifiers', 'checkbox', count: 1
       assert_select 'table.admin-original-song-assignment-table th', { text: 'JANコード', count: 0 }

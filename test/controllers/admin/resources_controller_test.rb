@@ -26,6 +26,7 @@ module Admin
       assert_select '.admin-action-menu summary', text: 'アクション'
       assert_select '.admin-resource-index-albums .admin-table'
       assert_select '.admin-list-toolbar'
+      assert_select 'details.admin-filter-disclosure[data-controller=?][open] summary', 'admin-filter-disclosure', text: 'フィルター'
       assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
       assert_select '.admin-record-count', text: /表示中/
       assert_select 'table'
