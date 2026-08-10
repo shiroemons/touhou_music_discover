@@ -19,11 +19,13 @@ module Admin
       assert_select 'h1', '原曲紐づけが必要なアルバム'
       assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
       assert_select 'table.admin-original-song-missing-albums-table thead th[scope=?]', 'col', count: 5
+      assert_select 'table.admin-original-song-missing-albums-table thead th.admin-table-actions-heading', text: '操作'
       assert_select 'td', text: 'Missing Circle'
       assert_select 'td', text: 'Missing Album'
       assert_select 'td', text: '2'
       assert_select 'td', { text: 'Linked Album', count: 0 }
       assert_select 'a[href=?]', admin_track_original_song_assignments_path(q: missing_album.jan_code, view: 'albums'), text: '紐づけ'
+      assert_select 'td.admin-table-actions-cell', count: 1
       assert_select 'textarea[data-admin-clipboard-target=?]', 'source', text: "Missing Circle\tMissing Album"
       assert_select '.admin-copy-status', count: 0
       assert_not_includes response.body, missing_track.isrc

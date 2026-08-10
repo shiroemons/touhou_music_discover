@@ -1412,15 +1412,18 @@
   vertical-align: middle;
 }
 
-.admin-table td:last-child,
-.admin-table th:last-child {
+.admin-table .admin-table-actions-cell,
+.admin-table .admin-table-actions-heading,
+.admin-original-song-assignment-table .admin-original-song-selected-cell,
+.admin-original-song-assignment-table .admin-original-song-selected-heading {
   background: var(--admin-surface);
   position: sticky;
   right: 0;
   z-index: var(--admin-z-table-actions);
 }
 
-.admin-table th:last-child {
+.admin-table .admin-table-actions-heading,
+.admin-original-song-assignment-table .admin-original-song-selected-heading {
   z-index: var(--admin-z-table-actions-header);
 }
 
@@ -1616,7 +1619,7 @@
 }
 
 /* Keep the editable original-song heading visible during both table scroll directions. */
-.admin-original-song-assignment-table thead th:last-child {
+.admin-original-song-assignment-table thead .admin-original-song-selected-heading {
   position: sticky;
   right: 0;
   top: 0;
@@ -3105,9 +3108,15 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
     grid-column: auto;
   }
 
-  .admin-table td:last-child,
-  .admin-table th:last-child {
+  .admin-table .admin-table-actions-cell,
+  .admin-original-song-assignment-table .admin-original-song-selected-cell {
     position: static;
+    right: auto;
+  }
+
+  .admin-table .admin-table-actions-heading,
+  .admin-original-song-assignment-table thead .admin-original-song-selected-heading {
+    right: auto;
   }
 
   .admin-row-actions {
@@ -3796,8 +3805,10 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   border-color: var(--admin-border);
 }
 
-.admin-table td:last-child,
-.admin-table th:last-child {
+.admin-table .admin-table-actions-cell,
+.admin-table .admin-table-actions-heading,
+.admin-original-song-assignment-table .admin-original-song-selected-cell,
+.admin-original-song-assignment-table .admin-original-song-selected-heading {
   box-shadow: -10px 0 16px -16px rgb(33 31 26 / 60%);
 }
 
@@ -4519,8 +4530,10 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   border-color: rgb(148 163 184 / 12%);
 }
 
-.admin-table td:last-child,
-.admin-table th:last-child {
+.admin-table .admin-table-actions-cell,
+.admin-table .admin-table-actions-heading,
+.admin-original-song-assignment-table .admin-original-song-selected-cell,
+.admin-original-song-assignment-table .admin-original-song-selected-heading {
   background: rgb(15 23 42 / 96%);
   box-shadow: -14px 0 22px -18px rgb(0 0 0 / 90%);
 }
@@ -4861,8 +4874,10 @@ html[data-admin-resolved-theme="light"] .admin-detail-table th {
   border-color: rgb(148 163 184 / 20%);
 }
 
-html[data-admin-resolved-theme="light"] .admin-table td:last-child,
-html[data-admin-resolved-theme="light"] .admin-table th:last-child {
+html[data-admin-resolved-theme="light"] .admin-table .admin-table-actions-cell,
+html[data-admin-resolved-theme="light"] .admin-table .admin-table-actions-heading,
+html[data-admin-resolved-theme="light"] .admin-original-song-assignment-table .admin-original-song-selected-cell,
+html[data-admin-resolved-theme="light"] .admin-original-song-assignment-table .admin-original-song-selected-heading {
   background: rgb(255 255 255 / 96%);
   box-shadow: -14px 0 22px -18px rgb(15 23 42 / 55%);
 }
