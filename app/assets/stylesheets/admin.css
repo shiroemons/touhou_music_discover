@@ -5294,7 +5294,7 @@ html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
   padding: 0.34rem 0.62rem;
 }
 
-@media (max-width: 1399.98px) {
+@media (max-width: 1199.98px) {
   .admin-resource-index-new-label {
     clip: rect(0 0 0 0);
     border: 0;
@@ -5988,4 +5988,88 @@ html[data-admin-resolved-theme="light"] .admin-action-execution-panel .admin-act
 
 .admin-infinite-scroll-footer > .btn {
   min-width: 5rem;
+}
+
+/* Keep search controls identifiable when the placeholder is cleared or localized. */
+.admin-search-field {
+  display: grid;
+  flex: 1 1 24rem;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.admin-search-label {
+  color: var(--admin-muted);
+  font-size: 0.76rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.admin-search-field .admin-search-input {
+  flex: none;
+  max-width: none;
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-original-song-assignment-search-form .admin-search-field {
+  flex-basis: 28rem;
+}
+
+.admin-original-song-assignment-search-form .admin-search-field .admin-search-input {
+  flex: none;
+}
+
+@media (max-width: 991.98px) {
+  .admin-search-row .admin-search-field {
+    flex: 0 1 auto;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* The primary action remains self-describing on narrow screens. */
+  .admin-resource-index-new-label {
+    clip: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    position: static;
+    white-space: nowrap;
+    width: auto;
+  }
+}
+
+@media (max-width: 991.98px) {
+  /* Keep mobile navigation grouped and vertically discoverable. */
+  .admin-nav {
+    border: 1px solid rgb(148 163 184 / 16%);
+    border-radius: 0.65rem;
+    display: grid;
+    gap: 0.35rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 10rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0.35rem;
+    scrollbar-gutter: stable;
+  }
+
+  .admin-nav-heading {
+    display: block;
+    grid-column: 1 / -1;
+    margin-top: 0.25rem;
+    padding: 0.25rem 0.45rem 0.05rem;
+  }
+
+  .admin-nav-link {
+    align-items: flex-start;
+    flex: none;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .admin-nav-link .admin-icon {
+    flex: 0 0 auto;
+    margin-top: 0.15rem;
+  }
 }

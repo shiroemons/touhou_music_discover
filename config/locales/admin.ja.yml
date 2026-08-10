@@ -70,6 +70,8 @@ ja:
       edit: "%{resource} 編集"
     shared:
       blank: "未設定"
+    theme:
+      label: "テーマ"
     toast:
       region_label: "通知"
       dismiss: "通知を閉じる"
@@ -90,6 +92,7 @@ ja:
         minutes: "%{minutes}分"
         seconds: "%{seconds}秒"
     search:
+      label: "キーワード"
       placeholder: "検索"
       submit: "検索"
       clear: "解除"
@@ -203,6 +206,7 @@ ja:
       association_retry: "再試行"
     confirm:
       destroy: "削除しますか？"
+      destroy_with_target: "%{resource}「%{record}」を削除します。削除後は元に戻せません。続行しますか？"
     original_song_assignments:
       auto_preview: "自動紐づけ候補を確認"
       title: "楽曲の原曲紐づけ"
@@ -266,6 +270,7 @@ ja:
       add_placeholder: "ID・コード・名前で検索"
       remove: "解除"
       destroy_confirm: "関連を解除しますか？"
+      destroy_confirm_with_target: "%{relation}「%{record}」との関連を解除します。関連レコード自体は削除されません。続行しますか？"
       create_success: "関連を追加しました。"
       destroy_success: "関連を解除しました。"
       blank_query: "追加する関連レコードを入力してください"

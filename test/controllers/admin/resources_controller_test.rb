@@ -24,9 +24,11 @@ module Admin
       assert_select 'select[name=?] option', 'filters[tracks_original_songs]', text: '未設定の楽曲あり'
       assert_select 'a[href=?]', admin_resource_action_path('albums', 'change_touhou_flag'), text: '東方フラグを変更'
       assert_select '.admin-list-toolbar'
+      assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
       assert_select '.admin-record-count', text: /表示中/
       assert_select 'table'
       assert_select 'form.admin-search-form button[name]', count: 0
+      assert_select '.admin-view-mode-bar a[aria-current=?]', 'page', count: 1
       assert_select '[data-admin-infinite-scroll-target="status"][aria-live="polite"]'
       assert_select 'button[data-admin-infinite-scroll-target="retry"][hidden]', text: '再試行'
     end
@@ -448,6 +450,8 @@ module Admin
       assert_select 'h2', '概要'
       assert_select 'h2', 'すべての項目'
       assert_select '.admin-record-overview'
+      assert_select '.admin-danger-zone form[data-turbo-confirm]', count: 1
+      assert_includes css_select('.admin-danger-zone form[data-turbo-confirm]').first['data-turbo-confirm'], 'アルバム「9777777777777」'
       assert_select 'h2', '関連'
       assert_select '.admin-relation-header', /楽曲/
       assert_select 'a[href=?]', admin_resource_path('tracks', album.tracks.first), text: '詳細'
@@ -1464,6 +1468,7 @@ module Admin
 
       assert_response :unprocessable_content
       assert_select '.alert-error', count: 1
+      assert_select '#admin-form-error-summary[role=?][aria-labelledby=?][tabindex=?]', 'alert', 'admin-form-error-title', '-1'
       assert_select 'input#spotify_playlists_spotify_id[aria-invalid=?][aria-describedby=?]',
                     'true', 'spotify_playlists_spotify_id_error'
       assert_select 'ul#spotify_playlists_spotify_id_error li', text: /Spotify/

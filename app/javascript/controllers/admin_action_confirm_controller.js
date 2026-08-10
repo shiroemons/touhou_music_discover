@@ -5,6 +5,21 @@ export default class extends Controller {
 
   connect() {
     this.confirmed = false
+    this.returnFocusElement = null
+    this.handleModalClose = () => {
+      if (this.confirmed) return
+
+      const returnFocusElement = this.returnFocusElement
+      this.returnFocusElement = null
+      returnFocusElement?.focus?.({ preventScroll: true })
+    }
+    this.modalTarget.addEventListener?.("close", this.handleModalClose)
+  }
+
+  disconnect() {
+    if (this.hasModalTarget) {
+      this.modalTarget.removeEventListener?.("close", this.handleModalClose)
+    }
   }
 
   submit(event) {
@@ -13,6 +28,7 @@ export default class extends Controller {
     }
 
     event.preventDefault()
+    this.returnFocusElement = document.activeElement
     this.modalTarget.showModal()
   }
 

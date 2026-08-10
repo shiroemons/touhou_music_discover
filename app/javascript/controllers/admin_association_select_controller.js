@@ -30,17 +30,20 @@ export default class extends Controller {
 
   disconnect() {
     clearTimeout(this.searchTimer)
+    clearTimeout(this.blurTimer)
   }
 
   filter() {
     this.open()
     clearTimeout(this.searchTimer)
+    clearTimeout(this.blurTimer)
     this.searchTimer = setTimeout(() => {
       this.loadOptions(this.inputTarget.value, { activateFirst: true })
     }, 150)
   }
 
   focus() {
+    clearTimeout(this.blurTimer)
     this.open()
     this.loadOptions("", { activateFirst: false })
 
@@ -112,13 +115,15 @@ export default class extends Controller {
   }
 
   blur() {
-    setTimeout(() => {
+    clearTimeout(this.blurTimer)
+    this.blurTimer = setTimeout(() => {
       if (this.multipleValue) {
         this.inputTarget.value = ""
       } else {
         this.restoreSelectedLabel()
       }
       this.close()
+      this.blurTimer = null
     }, 120)
   }
 

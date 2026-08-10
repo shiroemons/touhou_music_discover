@@ -1,7 +1,11 @@
 <% if record.errors.any? %>
-  <div class="alert alert-error" role="alert">
+  <div id="admin-form-error-summary"
+       class="alert alert-error"
+       role="alert"
+       tabindex="-1"
+       aria-labelledby="admin-form-error-title">
     <div>
-      <p class="admin-form-error-title"><%= t('admin.form.save_failed') %></p>
+      <p id="admin-form-error-title" class="admin-form-error-title"><%= t('admin.form.save_failed') %></p>
       <ul class="admin-form-error-list">
         <% record.errors.full_messages.each do |message| %>
           <li><%= message %></li>

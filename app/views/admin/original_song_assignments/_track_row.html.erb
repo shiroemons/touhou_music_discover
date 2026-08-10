@@ -3,6 +3,7 @@
 <% selected_options = selected_original_songs.map do |song| %>
   <% { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } %>
 <% end %>
+<% original_song_listbox_id = "admin-original-song-options-#{track.id}" %>
 
 <tr data-controller="admin-original-song-picker"
     data-admin-original-song-picker-url-value="<%= admin_track_original_song_assignment_options_path %>"
@@ -37,10 +38,15 @@
              placeholder="<%= t('admin.original_song_assignments.search_placeholder') %>"
              autocomplete="off"
              role="combobox"
+             aria-autocomplete="list"
              aria-expanded="false"
+             aria-haspopup="listbox"
+             aria-label="<%= t('admin.original_song_assignments.original_songs_search') %>"
+             aria-controls="<%= original_song_listbox_id %>"
              data-admin-original-song-picker-target="input"
              data-action="focus->admin-original-song-picker#focus input->admin-original-song-picker#filter keydown->admin-original-song-picker#keydown keyup->admin-original-song-picker#keyup paste->admin-original-song-picker#paste blur->admin-original-song-picker#blur">
       <div class="admin-original-song-listbox"
+           id="<%= original_song_listbox_id %>"
            role="listbox"
            aria-live="polite"
            hidden

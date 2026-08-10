@@ -17,6 +17,7 @@ module Admin
 
       assert_response :success
       assert_select 'h1', '原曲紐づけが必要なアルバム'
+      assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
       assert_select 'table.admin-original-song-missing-albums-table thead th[scope=?]', 'col', count: 5
       assert_select 'td', text: 'Missing Circle'
       assert_select 'td', text: 'Missing Album'

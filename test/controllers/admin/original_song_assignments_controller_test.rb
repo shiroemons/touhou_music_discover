@@ -67,6 +67,9 @@ module Admin
       assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]"
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
       assert_select 'td.admin-original-song-search-cell', count: 1
+      assert_select 'input.admin-original-song-search-input[role=?][aria-label=?][aria-controls=?]',
+                    'combobox', '原曲検索', "admin-original-song-options-#{missing_track.id}"
+      assert_select "#admin-original-song-options-#{missing_track.id}[role=?]", 'listbox'
     end
 
     test 'does not expose the album track endpoint for non-missing status' do

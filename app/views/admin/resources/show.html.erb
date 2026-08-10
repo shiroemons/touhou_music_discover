@@ -70,7 +70,10 @@
 </div>
 
 <div class="admin-danger-zone">
-  <%= button_to admin_resource_path(@resource_config.key, @record), method: :delete, class: 'btn admin-btn-danger', form: { data: { turbo_confirm: t('admin.confirm.destroy') } } do %>
+  <%= button_to admin_resource_path(@resource_config.key, @record),
+                method: :delete,
+                class: 'btn admin-btn-danger',
+                form: { data: { turbo_confirm: t('admin.confirm.destroy_with_target', resource: @resource_config.label, record: admin_record_label(@record)) } } do %>
     <%= admin_icon(:trash) %>
     <span><%= t('admin.actions.destroy') %></span>
   <% end %>
@@ -104,7 +107,7 @@
                     <%= button_to admin_resource_relation_record_path(@resource_config.key, @record, section.name, related_record),
                                   method: :delete,
                                   class: 'btn btn-sm admin-btn-danger',
-                                  form: { data: { turbo_confirm: t('admin.relations.destroy_confirm') } } do %>
+                                  form: { data: { turbo_confirm: t('admin.relations.destroy_confirm_with_target', relation: section.label, record: admin_record_label(related_record)) } } do %>
                       <%= admin_icon(:x) %>
                       <span><%= t('admin.relations.remove') %></span>
                     <% end %>

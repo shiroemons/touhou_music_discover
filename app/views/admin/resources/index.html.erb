@@ -61,9 +61,12 @@
 
     <div class="admin-list-controls">
       <div class="admin-search-row">
-        <div class="admin-search-input">
-          <%= admin_icon(:search) %>
-          <%= form.search_field :q, value: params[:q], placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
+        <div class="admin-search-field">
+          <%= form.label :q, t('admin.search.label'), class: 'admin-search-label' %>
+          <div class="admin-search-input">
+            <%= admin_icon(:search) %>
+            <%= form.search_field :q, value: params[:q], placeholder: t('admin.search.placeholder'), class: 'input admin-input' %>
+          </div>
         </div>
         <div class="admin-search-actions">
           <%= form.button type: :submit, name: nil, class: 'btn admin-btn-primary' do %>
@@ -85,11 +88,11 @@
       <div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
         <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
         <div class="admin-view-mode-options">
-          <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'true' } do %>
+          <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'page' } do %>
             <%= admin_icon(:list_ordered) %>
             <span><%= t('admin.scroll_mode.pagination') %></span>
           <% end %>
-          <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'true' : nil } do %>
+          <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'page' : nil } do %>
             <%= admin_icon(:arrow_down_circle) %>
             <span><%= t('admin.scroll_mode.infinite') %></span>
           <% end %>

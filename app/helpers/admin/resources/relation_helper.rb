@@ -95,7 +95,7 @@ module Admin
         image_url = admin_record_image_url(record)
         return if image_url.blank?
 
-        image_tag(image_url, alt: label, class: 'admin-record-thumb', loading: 'lazy')
+        image_tag(image_url, alt: label, class: 'admin-record-thumb', loading: 'lazy', decoding: 'async')
       end
 
       def admin_record_image_url(record)

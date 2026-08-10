@@ -12,7 +12,7 @@
   data-polling="<%= active_status %>"
 >
   <div class="admin-panel-header">
-    <h2><%= t("admin.actions.progress.statuses.#{status}", default: status.humanize) %></h2>
+    <h2 aria-live="polite" aria-atomic="true"><%= t("admin.actions.progress.statuses.#{status}", default: status.humanize) %></h2>
     <span class="admin-action-progress-percent"><%= queued ? '—' : "#{percent}%" %></span>
   </div>
   <div class="admin-action-progress-body">

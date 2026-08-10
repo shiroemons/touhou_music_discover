@@ -31,6 +31,8 @@ en:
       edit: "Edit %{resource}"
     shared:
       blank: "Not set"
+    theme:
+      label: "Theme"
     toast:
       region_label: "Notifications"
       dismiss: "Dismiss notification"
@@ -51,6 +53,7 @@ en:
         minutes: "%{minutes}m"
         seconds: "%{seconds}s"
     search:
+      label: "Keyword"
       placeholder: "Search"
       submit: "Search"
       clear: "Clear"
@@ -158,6 +161,7 @@ en:
       association_retry: "Retry"
     confirm:
       destroy: "Delete this record?"
+      destroy_with_target: "Delete %{resource} \"%{record}\"? This cannot be undone."
     original_song_assignments:
       auto_preview: "Review auto-link candidates"
       title: "Track Original Song Assignments"
@@ -221,6 +225,7 @@ en:
       add_placeholder: "Search by ID, code, or name"
       remove: "Remove"
       destroy_confirm: "Remove this relation?"
+      destroy_confirm_with_target: "Remove the relation to %{relation} \"%{record}\"? The related record will not be deleted."
       create_success: "Relation added."
       destroy_success: "Relation removed."
       blank_query: "Enter a related record to add"
