@@ -30,7 +30,6 @@ module Admin
 
       assert_equal %w[JANコード サークル アルバム 未設定楽曲数], album_headers
       assert_select 'table.admin-original-song-album-table thead th[scope=?]', 'col', count: 4
-      assert_select 'table.admin-original-song-album-table thead th.admin-original-song-selected-heading', count: 0
       assert_select 'summary.admin-original-song-album-summary span[data-label]', count: 4
       assert_select 'details[data-controller=?]', 'admin-original-song-album', count: 1
       assert_select 'td', { text: missing_track.isrc, count: 0 }
@@ -67,7 +66,6 @@ module Admin
 
       assert_response :success
       assert_select 'table.admin-original-song-album-track-table-inner'
-      assert_select 'table.admin-original-song-album-track-table-inner thead th.admin-original-song-selected-heading', count: 1
       assert_select 'input[name=?]', "assignments[#{missing_track.id}][original_song_codes]"
       assert_select 'input[name=?]', "assignments[#{linked_track.id}][original_song_codes]", count: 0
       assert_select 'td.admin-original-song-search-cell', count: 1
@@ -122,7 +120,6 @@ module Admin
 
       assert_equal %w[サークル アルバム名 トラック番号 名前 原曲検索 設定済み原曲], headers
       assert_select 'table.admin-original-song-assignment-table thead th[scope=?]', 'col', count: 6
-      assert_select 'table.admin-original-song-assignment-table thead th.admin-original-song-selected-heading', count: 1
       assert_select 'tbody tr td:nth-child(3)', text: '7'
       assert_select 'tr[data-controller=?][data-admin-original-song-picker-error-text-value=?]',
                     'admin-original-song-picker', '候補の読み込みに失敗しました。'

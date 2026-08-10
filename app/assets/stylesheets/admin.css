@@ -1393,6 +1393,7 @@
   font-size: 0.9rem;
 }
 
+/* Keep only the header row sticky so no column can cover another while scrolling horizontally. */
 .admin-table thead th {
   background: var(--admin-surface-muted);
   border-bottom: 1px solid var(--admin-border);
@@ -1410,21 +1411,6 @@
 .admin-detail-table th {
   padding: 0.72rem 0.85rem;
   vertical-align: middle;
-}
-
-.admin-table .admin-table-actions-cell,
-.admin-table .admin-table-actions-heading,
-.admin-original-song-assignment-table .admin-original-song-selected-cell,
-.admin-original-song-assignment-table .admin-original-song-selected-heading {
-  background: var(--admin-surface);
-  position: sticky;
-  right: 0;
-  z-index: var(--admin-z-table-actions);
-}
-
-.admin-table .admin-table-actions-heading,
-.admin-original-song-assignment-table .admin-original-song-selected-heading {
-  z-index: var(--admin-z-table-actions-header);
 }
 
 .admin-table-actions-heading {
@@ -1616,14 +1602,6 @@
 
 .admin-original-song-assignment-table .admin-original-song-selected-cell {
   min-width: 0;
-}
-
-/* Keep the editable original-song heading visible during both table scroll directions. */
-.admin-original-song-assignment-table thead .admin-original-song-selected-heading {
-  position: sticky;
-  right: 0;
-  top: 0;
-  z-index: var(--admin-z-table-actions-header);
 }
 
 .admin-original-song-album-table {
@@ -3108,17 +3086,6 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
     grid-column: auto;
   }
 
-  .admin-table .admin-table-actions-cell,
-  .admin-original-song-assignment-table .admin-original-song-selected-cell {
-    position: static;
-    right: auto;
-  }
-
-  .admin-table .admin-table-actions-heading,
-  .admin-original-song-assignment-table thead .admin-original-song-selected-heading {
-    right: auto;
-  }
-
   .admin-row-actions {
     justify-content: flex-start;
   }
@@ -3803,13 +3770,6 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
 .admin-detail-table td,
 .admin-detail-table th {
   border-color: var(--admin-border);
-}
-
-.admin-table .admin-table-actions-cell,
-.admin-table .admin-table-actions-heading,
-.admin-original-song-assignment-table .admin-original-song-selected-cell,
-.admin-original-song-assignment-table .admin-original-song-selected-heading {
-  box-shadow: -10px 0 16px -16px rgb(33 31 26 / 60%);
 }
 
 .admin-reference-card,
@@ -4530,14 +4490,6 @@ html[data-admin-resolved-theme="light"] .admin-association-option-group-label {
   border-color: rgb(148 163 184 / 12%);
 }
 
-.admin-table .admin-table-actions-cell,
-.admin-table .admin-table-actions-heading,
-.admin-original-song-assignment-table .admin-original-song-selected-cell,
-.admin-original-song-assignment-table .admin-original-song-selected-heading {
-  background: rgb(15 23 42 / 96%);
-  box-shadow: -14px 0 22px -18px rgb(0 0 0 / 90%);
-}
-
 .admin-table tbody tr:hover td {
   background: rgb(30 41 59 / 56%);
 }
@@ -4872,14 +4824,6 @@ html[data-admin-resolved-theme="light"] .admin-table th,
 html[data-admin-resolved-theme="light"] .admin-detail-table td,
 html[data-admin-resolved-theme="light"] .admin-detail-table th {
   border-color: rgb(148 163 184 / 20%);
-}
-
-html[data-admin-resolved-theme="light"] .admin-table .admin-table-actions-cell,
-html[data-admin-resolved-theme="light"] .admin-table .admin-table-actions-heading,
-html[data-admin-resolved-theme="light"] .admin-original-song-assignment-table .admin-original-song-selected-cell,
-html[data-admin-resolved-theme="light"] .admin-original-song-assignment-table .admin-original-song-selected-heading {
-  background: rgb(255 255 255 / 96%);
-  box-shadow: -14px 0 22px -18px rgb(15 23 42 / 55%);
 }
 
 html[data-admin-resolved-theme="light"] .admin-table tbody tr:hover td {
