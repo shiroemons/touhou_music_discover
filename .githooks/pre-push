@@ -6,6 +6,9 @@ if [ "${SKIP_HOOKS:-}" = "1" ]; then
   exit 0
 fi
 
+echo "Running bundler-audit before push..."
+devbox run -- sh -c 'unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE; bundle exec bundler-audit check --update'
+
 echo "Running tests before push..."
 devbox run env PARALLEL_WORKERS=1 RAILS_ENV=test bin/rails db:test:prepare
 devbox run env PARALLEL_WORKERS=1 RAILS_ENV=test bin/rails test
