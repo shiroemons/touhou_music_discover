@@ -60,33 +60,87 @@
     <% end %>
   </div>
 
-  <div class="admin-layout">
-    <aside class="admin-sidebar">
-      <div class="admin-sidebar-inner" data-controller="admin-mobile-nav">
-        <div class="admin-brand">
-          <%= link_to admin_root_path, class: 'admin-brand-link' do %>
-            <span class="admin-brand-mark">T</span>
-            <span>
-              <span class="admin-brand-title">Touhou Music</span>
-              <span class="admin-brand-subtitle">Admin Console</span>
-            </span>
-          <% end %>
-        </div>
+  <div class="admin-layout" data-controller="admin-mobile-nav">
+    <button type="button"
+            class="admin-mobile-nav-backdrop"
+            data-admin-mobile-nav-target="backdrop"
+            data-action="admin-mobile-nav#close"
+            aria-label="<%= t('admin.navigation.mobile_close') %>"
+            hidden>
+      <span class="visually-hidden"><%= t('admin.navigation.mobile_close') %></span>
+    </button>
 
-        <button type="button"
-                class="admin-mobile-nav-toggle"
-                data-admin-mobile-nav-target="toggle"
-                data-action="admin-mobile-nav#toggle"
-                aria-expanded="false"
-                aria-controls="admin-navigation">
-          <%= admin_icon(:list_ordered) %>
-          <span><%= t('admin.navigation.mobile_toggle') %></span>
-        </button>
+    <aside id="admin-sidebar"
+           class="admin-sidebar"
+           data-admin-mobile-nav-target="drawer"
+           aria-hidden="true">
+      <div class="admin-sidebar-inner">
+        <div class="admin-brand">
+          <div class="admin-brand-header">
+            <%= link_to admin_root_path, class: 'admin-brand-link' do %>
+              <span class="admin-brand-mark">T</span>
+              <span>
+                <span class="admin-brand-title">Touhou Music</span>
+                <span class="admin-brand-subtitle"><%= t('admin.navigation.subtitle') %></span>
+              </span>
+            <% end %>
+
+            <div class="admin-brand-actions">
+              <details class="admin-theme-switcher" data-controller="admin-theme">
+                <summary class="admin-theme-trigger"
+                         aria-label="<%= t('admin.theme.label') %>"
+                         title="<%= t('admin.theme.label') %>">
+                  <%= admin_icon(:monitor) %>
+                  <span class="visually-hidden"><%= t('admin.theme.label') %></span>
+                </summary>
+                <div class="admin-theme-options" role="group" aria-label="<%= t('admin.theme.label') %>">
+                  <button type="button"
+                          class="admin-theme-option"
+                          data-admin-theme-target="button"
+                          data-admin-theme-mode="light"
+                          data-action="admin-theme#set"
+                          aria-label="<%= t('admin.theme.options.light') %>"
+                          title="<%= t('admin.theme.options.light') %>">
+                    <%= admin_icon(:sun) %>
+                    <span class="visually-hidden"><%= t('admin.theme.options.light') %></span>
+                  </button>
+                  <button type="button"
+                          class="admin-theme-option"
+                          data-admin-theme-target="button"
+                          data-admin-theme-mode="dark"
+                          data-action="admin-theme#set"
+                          aria-label="<%= t('admin.theme.options.dark') %>"
+                          title="<%= t('admin.theme.options.dark') %>">
+                    <%= admin_icon(:moon) %>
+                    <span class="visually-hidden"><%= t('admin.theme.options.dark') %></span>
+                  </button>
+                  <button type="button"
+                          class="admin-theme-option"
+                          data-admin-theme-target="button"
+                          data-admin-theme-mode="system"
+                          data-action="admin-theme#set"
+                          aria-label="<%= t('admin.theme.options.system') %>"
+                          title="<%= t('admin.theme.options.system') %>">
+                    <%= admin_icon(:monitor) %>
+                    <span class="visually-hidden"><%= t('admin.theme.options.system') %></span>
+                  </button>
+                </div>
+              </details>
+
+              <button type="button"
+                      class="admin-mobile-nav-close"
+                      data-admin-mobile-nav-target="close"
+                      data-action="admin-mobile-nav#close"
+                      aria-label="<%= t('admin.navigation.mobile_close') %>">
+                <%= admin_icon(:x) %>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <% auto_assign_original_songs_active = params[:resource] == 'tracks' && params[:action_key] == 'auto_assign_original_songs' %>
         <nav id="admin-navigation"
              class="admin-nav"
-             data-admin-mobile-nav-target="menu"
              aria-label="<%= t('admin.navigation.label') %>">
           <%= link_to admin_root_path,
                       class: "admin-nav-link #{'active' if current_page?(admin_root_path)}",
@@ -130,27 +184,20 @@
           <% end %>
         </nav>
 
-        <div class="admin-theme-switcher" data-controller="admin-theme">
-          <span class="admin-theme-switcher-label"><%= t('admin.theme.label') %></span>
-          <div class="admin-theme-options" role="group" aria-label="管理画面テーマ">
-            <button type="button" class="admin-theme-option" data-admin-theme-target="button" data-admin-theme-mode="light" data-action="admin-theme#set" aria-label="ライトテーマ">
-              <%= admin_icon(:sun) %>
-              <span>Light</span>
-            </button>
-            <button type="button" class="admin-theme-option" data-admin-theme-target="button" data-admin-theme-mode="dark" data-action="admin-theme#set" aria-label="ダークテーマ">
-              <%= admin_icon(:moon) %>
-              <span>Dark</span>
-            </button>
-            <button type="button" class="admin-theme-option" data-admin-theme-target="button" data-admin-theme-mode="system" data-action="admin-theme#set" aria-label="システム設定に合わせる">
-              <%= admin_icon(:monitor) %>
-              <span>System</span>
-            </button>
-          </div>
-        </div>
       </div>
     </aside>
 
     <div class="admin-main">
+      <button type="button"
+              class="admin-mobile-nav-trigger"
+              data-admin-mobile-nav-target="open"
+              data-action="admin-mobile-nav#open"
+              aria-expanded="false"
+              aria-controls="admin-sidebar">
+        <%= admin_icon(:list_ordered) %>
+        <span><%= t('admin.navigation.mobile_toggle') %></span>
+      </button>
+
       <main class="admin-content" id="admin-main-content" tabindex="-1">
         <% if @spotify_rate_limit_status.present? %>
           <div

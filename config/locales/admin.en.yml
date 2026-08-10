@@ -26,7 +26,9 @@ en:
       fetch_missing_tracks_unavailable: "No fetchable targets"
     navigation:
       label: "Admin navigation"
+      subtitle: "Administration"
       mobile_toggle: "Menu"
+      mobile_close: "Close menu"
       groups:
         master: "Master"
         operations: "Operations"
@@ -39,7 +41,11 @@ en:
     shared:
       blank: "Not set"
     theme:
-      label: "Theme"
+      label: "Display settings"
+      options:
+        light: "Light theme"
+        dark: "Dark theme"
+        system: "Use system setting"
     toast:
       region_label: "Notifications"
       dismiss: "Dismiss notification"

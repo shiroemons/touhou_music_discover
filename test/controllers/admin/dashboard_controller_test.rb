@@ -14,8 +14,10 @@ module Admin
       assert_select 'main#admin-main-content[tabindex=?]', '-1'
       assert_select 'a[href=?]', '/avo', count: 0
       assert_select 'nav.admin-nav[aria-label=?]', '管理画面ナビゲーション'
-      assert_select 'button.admin-mobile-nav-toggle[aria-controls=?][aria-expanded=?]', 'admin-navigation', 'false'
-      assert_select 'nav#admin-navigation[data-admin-mobile-nav-target=?]', 'menu'
+      assert_select 'button.admin-mobile-nav-trigger[aria-controls=?][aria-expanded=?]', 'admin-sidebar', 'false'
+      assert_select 'aside#admin-sidebar[data-admin-mobile-nav-target=?][aria-hidden=?]', 'drawer', 'true'
+      assert_select 'button.admin-mobile-nav-close[aria-label=?]', 'メニューを閉じる'
+      assert_select 'button.admin-mobile-nav-backdrop[aria-label=?][hidden]', 'メニューを閉じる'
       assert_select 'nav.admin-nav a.admin-nav-link[aria-current=?]', 'page', count: 1
       nav_group_labels = css_select('.admin-nav .admin-nav-group').map do |group|
         group.at_css('.admin-nav-heading').text.strip
@@ -27,10 +29,10 @@ module Admin
       assert_select 'nav.admin-nav a.admin-nav-link[href=?]',
                     admin_resource_action_path('tracks', 'auto_assign_original_songs'),
                     text: '一致するアルバムから原曲を自動紐づけ'
-      assert_select '.admin-theme-switcher[data-controller=?]', 'admin-theme'
-      assert_select 'button[data-admin-theme-mode=?]', 'light', text: 'Light'
-      assert_select 'button[data-admin-theme-mode=?]', 'dark', text: 'Dark'
-      assert_select 'button[data-admin-theme-mode=?]', 'system', text: 'System'
+      assert_select 'details.admin-theme-switcher[data-controller=?] summary.admin-theme-trigger[aria-label=?]', 'admin-theme', '表示設定'
+      assert_select 'button[data-admin-theme-mode=?][aria-label=?]', 'light', '明るいテーマ'
+      assert_select 'button[data-admin-theme-mode=?][aria-label=?]', 'dark', '暗いテーマ'
+      assert_select 'button[data-admin-theme-mode=?][aria-label=?]', 'system', 'システム設定に合わせる'
       assert_select '.admin-toast-container[data-controller=?][aria-label=?]', 'admin-toast', '通知'
       assert_select '.admin-toast-item', count: 0
       assert_select '.admin-stat-card', minimum: 4

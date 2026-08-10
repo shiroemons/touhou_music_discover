@@ -107,7 +107,8 @@
 <section class="admin-panel admin-dashboard-disclosure admin-catalog-health-panel">
   <details>
     <summary class="admin-panel-header">
-    <h2><%= t('admin.dashboard.catalog_health') %></h2>
+      <%= admin_icon(:chevron_right) %>
+      <h2><%= t('admin.dashboard.catalog_health') %></h2>
       <span class="admin-disclosure-action">
         <span class="admin-disclosure-action-show"><%= t('admin.dashboard.details_show') %></span>
         <span class="admin-disclosure-action-hide"><%= t('admin.dashboard.details_hide') %></span>
@@ -176,7 +177,8 @@
 <section class="admin-panel admin-dashboard-disclosure admin-coverage-panel">
   <details>
     <summary class="admin-panel-header">
-    <h2><%= t('admin.dashboard.streaming_coverage') %></h2>
+      <%= admin_icon(:chevron_right) %>
+      <h2><%= t('admin.dashboard.streaming_coverage') %></h2>
       <span class="admin-disclosure-summary">
         <%= t('admin.dashboard.coverage_summary', percent: number_to_percentage(totals.fetch(:average_album_coverage), precision: 1, strip_insignificant_zeros: true)) %>
       </span>
@@ -284,6 +286,7 @@
   <% playlist_sync = metrics.fetch(:playlist_sync) %>
   <details class="admin-dashboard-disclosure">
     <summary class="admin-panel-header">
+      <%= admin_icon(:chevron_right) %>
       <h2><%= t('admin.dashboard.playlist_sync') %></h2>
       <span class="admin-disclosure-summary"><%= t('admin.dashboard.playlist_summary', count: number_with_delimiter(playlist_sync.fetch(:stale))) %></span>
       <span class="admin-disclosure-action">
@@ -325,6 +328,7 @@
 <section class="admin-panel">
   <details class="admin-dashboard-disclosure">
     <summary class="admin-panel-header">
+      <%= admin_icon(:chevron_right) %>
       <h2><%= t('admin.dashboard.all_resources') %></h2>
       <span class="admin-disclosure-summary"><%= t('admin.dashboard.resource_summary', count: number_with_delimiter(@resources.size)) %></span>
       <span class="admin-disclosure-action">

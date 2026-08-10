@@ -64,7 +64,9 @@ ja:
         description: "原作・原曲マスタとは別に、アルバムと楽曲は外部データの取得またはインポートが必要です。"
     navigation:
       label: "管理画面ナビゲーション"
+      subtitle: "管理画面"
       mobile_toggle: "メニュー"
+      mobile_close: "メニューを閉じる"
       groups:
         master: "マスタ"
         operations: "運用"
@@ -77,7 +79,11 @@ ja:
     shared:
       blank: "未設定"
     theme:
-      label: "テーマ"
+      label: "表示設定"
+      options:
+        light: "明るいテーマ"
+        dark: "暗いテーマ"
+        system: "システム設定に合わせる"
     toast:
       region_label: "通知"
       dismiss: "通知を閉じる"
