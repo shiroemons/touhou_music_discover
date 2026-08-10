@@ -5294,20 +5294,6 @@ html[data-admin-resolved-theme="light"] .admin-filter-chip strong {
   padding: 0.34rem 0.62rem;
 }
 
-@media (max-width: 1199.98px) {
-  .admin-resource-index-new-label {
-    clip: rect(0 0 0 0);
-    border: 0;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    padding: 0;
-    position: absolute;
-    white-space: nowrap;
-    width: 1px;
-  }
-}
-
 .admin-resource-index-page .admin-list-toolbar {
   gap: 0.65rem;
   padding: 0.7rem;
@@ -6626,6 +6612,14 @@ html[data-admin-resolved-theme] .admin-pagination {
 }
 
 @media (max-width: 991.98px) {
+  .admin-shell {
+    overflow-x: hidden;
+  }
+
+  .admin-layout {
+    overflow-x: hidden;
+  }
+
   body.admin-mobile-nav-open {
     overflow: hidden;
   }
@@ -6832,5 +6826,18 @@ html[data-admin-resolved-theme] .admin-pagination {
   .admin-mobile-nav-backdrop,
   .admin-filter-disclosure-summary > .admin-icon {
     transition: none;
+  }
+}
+
+/* Keep dashboard metrics inside the content column at intermediate widths. */
+@media (max-width: 1199.98px) {
+  .admin-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-stat-grid {
+    grid-template-columns: 1fr;
   }
 }
