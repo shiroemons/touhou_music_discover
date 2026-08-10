@@ -33,7 +33,8 @@ threads threads_count, threads_count
 # 併用するとfork後にDB/Redisコネクションを張り直す処理が複数箇所で必要になり、リスクが割に合わない。
 # また本アプリはトラフィックの少ない社内向け管理画面であり、クラスタモードの恩恵も小さい。
 
-# Specifies the `port` that Puma will listen on to receive requests; default is 3000.
+# ポートの選択と競合時のフォールバックはbin/dev-serverで行う。
+# RailsのCLI引数がPuma設定より優先されるため、ここでは渡されたPORTをそのまま使う。
 port ENV.fetch('PORT', 3000)
 
 # Allow puma to be restarted by `bin/rails restart` command.

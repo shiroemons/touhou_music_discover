@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+
+require 'fileutils'
+require_relative '../lib/development/port_selector'
+
+default_port = Development::PortSelector::DEFAULT_PORT.to_s
+requested_port = ENV.fetch('PORT', default_port).to_s
+port_file = ENV.fetch('RAILS_PORT_FILE', 'tmp/pids/server.port')
+
+begin
+  selected_port = if requested_port == '0'
+                    0
+                  else
+                    Development::PortSelector.select(preferred_port: requested_port)
+                  end
+rescue Development::PortSelector::InvalidPort, Development::PortSelector::NoAvailablePort => e
+  warn "Railsの起動ポートを決定できません: #{e.message}"
+  exit 1
+end
+
+if selected_port.to_s != requested_port
+  warn "ポート #{requested_port} は使用中のため、#{selected_port} で Rails を起動します。"
+end
+
+FileUtils.rm_f('tmp/pids/server.pid')
+if selected_port.zero?
+  FileUtils.rm_f(port_file)
+else
+  FileUtils.mkdir_p(File.dirname(port_file))
+  File.write(port_file, "#{selected_port}\n")
+end
+
+ENV['PORT'] = selected_port.to_s
+exec 'bin/rails', 'server', '-b', '0.0.0.0', '-p', selected_port.to_s, *ARGV

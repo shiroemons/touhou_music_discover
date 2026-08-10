@@ -1,0 +1,29 @@
+#!/usr/bin/env sh
+
+set -eu
+
+port_file="${RAILS_PORT_FILE:-tmp/pids/server.port}"
+
+if [ -r "$port_file" ]; then
+  port="$(tr -d '[:space:]' < "$port_file")"
+  case "$port" in
+    ''|*[!0-9]*) ;;
+    *)
+      if [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; then
+        printf '%s\n' "$port"
+        exit 0
+      fi
+      ;;
+  esac
+fi
+
+port="${PORT:-3000}"
+case "$port" in
+  ''|*[!0-9]*) port=3000 ;;
+esac
+
+if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+  port=3000
+fi
+
+printf '%s\n' "$port"

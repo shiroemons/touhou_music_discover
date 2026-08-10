@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+
+set -eu
+
+script_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+port="$($script_dir/current_rails_port)"
+timeout="${RAILS_HEALTH_TIMEOUT:-2}"
+
+curl -fsS --max-time "$timeout" "http://127.0.0.1:${port}/up" >/dev/null

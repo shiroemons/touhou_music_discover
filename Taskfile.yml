@@ -48,15 +48,17 @@ tasks:
         if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
           echo "サービスは既に起動しています"
         else
-          devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+          devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" -b --pcport {{.DEVBOX_PC_PORT_NUM}}
         fi
+      - task: wait-for-rails
       - task: versions
       - task: status
+      - task: health
 
   tui:
     desc: 全サービスをTUIモードで起動
     cmds:
-      - devbox services up
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" --pcport {{.DEVBOX_PC_PORT_NUM}}
 
   logs:
     desc: Railsサーバーのログを表示
@@ -99,21 +101,23 @@ tasks:
     desc: Rails/DB/Redisの起動状態とHTTP応答を確認
     cmds:
       - |
+        rails_port="$(scripts/current_rails_port)"
         echo "=== devbox services ==="
         devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} || true
         echo ""
         echo "=== listening ports ==="
-        lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ':(3000|5432|6379)' || true
+        lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ":(${rails_port}|5432|6379)([[:space:]]|$)" || true
         if ! devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
-          if (lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1) && ! curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
+          if (lsof -tiTCP:"${rails_port}" -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1) && ! scripts/rails_health >/dev/null 2>&1; then
             echo ""
             echo "WARNING: devbox管理外の孤児プロセスがポートを掴んでいる可能性があります。task recover-force で掃除できます。"
           fi
         fi
         echo ""
         echo "=== HTTP health ==="
-        curl -s -o /dev/null -w '  /up    status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/up || true
-        curl -s -o /dev/null -w '  /admin status=%{http_code} time=%{time_total}s\n' http://127.0.0.1:3000/admin || true
+        echo "  URL    http://127.0.0.1:${rails_port}"
+        curl -s -o /dev/null -w '  /up    status=%{http_code} time=%{time_total}s\n' "http://127.0.0.1:${rails_port}/up" || true
+        curl -s -o /dev/null -w '  /admin status=%{http_code} time=%{time_total}s\n' "http://127.0.0.1:${rails_port}/admin" || true
 
   doctor:
     desc: healthのエイリアス
@@ -126,25 +130,25 @@ tasks:
       - echo "devboxサービスを停止します"
       - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
       - |
-        if lsof -tiTCP:3000 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1; then
-          echo "devbox停止後も 3000/5432/6379 のいずれかが使用中です。"
+        if lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1; then
+          echo "devbox停止後も 5432/6379 のいずれかが使用中です。"
           echo "孤児プロセスを停止するには task recover-force を実行してください。"
           task health
           exit 1
         fi
       - echo "devboxサービスをバックグラウンドで起動します"
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" -b --pcport {{.DEVBOX_PC_PORT_NUM}}
       - task: wait-for-rails
       - task: health
 
   recover-force:
-    desc: devbox管理外に残った3000/5432/6379の孤児プロセスも停止して復旧
+    desc: devbox管理外に残ったRails/5432/6379の孤児プロセスも停止して復旧
     cmds:
       - echo "devboxサービスを停止します"
       - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
       - task: kill-orphan-ports
       - echo "devboxサービスをバックグラウンドで起動します"
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" -b --pcport {{.DEVBOX_PC_PORT_NUM}}
       - task: wait-for-rails
       - task: health
 
@@ -154,7 +158,7 @@ tasks:
       - |
         echo "Railsの /up を待機します"
         for i in $(seq 1 30); do
-          if curl -fsS http://127.0.0.1:3000/up >/dev/null 2>&1; then
+          if scripts/rails_health; then
             echo "Rails is ready"
             exit 0
           fi
@@ -165,16 +169,17 @@ tasks:
         exit 1
 
   kill-orphan-ports:
-    desc: 3000/5432/6379を掴む孤児プロセスを停止
+    desc: Railsの起動ポートと5432/6379を掴む孤児プロセスを停止
     cmds:
       - |
-        pids="$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:6379 -sTCP:LISTEN 2>/dev/null)"
+        ports="$(scripts/current_rails_port) 3000 5432 6379"
+        pids="$(for port in $ports; do lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true; done | sort -u)"
         if [ -n "$pids" ]; then
           echo "孤児プロセスを停止します: $pids"
           kill $pids 2>/dev/null || true
           sleep 2
         fi
-        pids="$(lsof -tiTCP:3000 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5432 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:6379 -sTCP:LISTEN 2>/dev/null)"
+        pids="$(for port in $ports; do lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true; done | sort -u)"
         if [ -n "$pids" ]; then
           echo "通常終了しない孤児プロセスを強制停止します: $pids"
           kill -9 $pids 2>/dev/null || true

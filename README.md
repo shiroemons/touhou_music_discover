@@ -50,7 +50,13 @@ task tui
 task up
 ```
 
-実行すると http://127.0.0.1:3000 でアクセスできる。
+通常は http://127.0.0.1:3000 でアクセスできる。3000番ポートが使用中の場合は、次に空いているポートを自動的に選択する。実際のアクセス先は `task up` 完了時、または `task health` の `URL` 行で確認できる。
+
+起動ポートを指定する場合は、`PORT` に優先ポートを設定する。指定したポートも使用中なら、そこから次の空きポートを選択する。
+
+```shell
+PORT=3001 task up
+```
 
 SpotifyがOAuthのリダイレクトURIに `localhost` を許可していないため開発環境ではループバックIPを使用しており、`localhost` でアクセスした場合は自動的に `127.0.0.1` へリダイレクトされる。
 
@@ -197,7 +203,7 @@ task --list
 | サービス | `task health` / `task doctor` | サービス、待受ポート、HTTP応答を確認 |
 | サービス | `task recover` | サービスを停止して復旧起動（孤児プロセスは停止しない） |
 | サービス | `task recover-force` | 孤児プロセスを停止してサービスを復旧起動 |
-| サービス | `task kill-orphan-ports` | 3000 / 5432 / 6379の孤児プロセスを停止 |
+| サービス | `task kill-orphan-ports` | Railsの起動ポート / 5432 / 6379の孤児プロセスを停止 |
 | DB | `task db:init` | DBをdrop & setupで初期化 |
 | DB | `task db:console` | DBコンソールを起動 |
 | DB | `task db:migrate` | DBマイグレーションを実行 |
@@ -245,10 +251,10 @@ Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよ
 
 1. [Spotify Developer Dashboard](https://developer.spotify.com/dashboard)でアプリの設定を開き、Redirect URIに以下を追加
    ```
-   http://127.0.0.1:3000/auth/spotify/callback
+   http://127.0.0.1:<起動したポート>/auth/spotify/callback
    ```
 
-2. ブラウザで `http://127.0.0.1:3000` にアクセス
+2. `task health` の `URL` 行に表示された `http://127.0.0.1:<起動したポート>` にブラウザでアクセス
 
 **注意**: `localhost`ではなく`127.0.0.1`を使用してください。
 
