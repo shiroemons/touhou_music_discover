@@ -6856,3 +6856,92 @@ html[data-admin-resolved-theme] .admin-pagination {
     grid-template-columns: 1fr;
   }
 }
+
+/* Present the four-field album queue as readable cards on phones. */
+@media (max-width: 767.98px) {
+  .admin-original-song-album-table {
+    min-width: 0;
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .admin-original-song-album-table > colgroup > col {
+    width: auto;
+  }
+
+  .admin-original-song-album-table > thead {
+    clip: rect(0 0 0 0);
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    position: absolute;
+    white-space: nowrap;
+    width: 1px;
+  }
+
+  .admin-original-song-album-table .admin-original-song-album-cell {
+    padding: 0;
+  }
+
+  .admin-original-song-album-summary {
+    gap: 0.15rem 0;
+    grid-template-areas:
+      "name count"
+      "circle jan";
+    grid-template-columns: minmax(0, 1fr) minmax(7.5rem, auto);
+    min-height: 0;
+    padding: 0.35rem 0;
+  }
+
+  .admin-original-song-album-summary > span {
+    padding: 0.4rem 0.75rem;
+  }
+
+  .admin-original-song-album-summary > span::before {
+    color: var(--admin-muted);
+    content: attr(data-label);
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 850;
+    line-height: 1.2;
+    margin-bottom: 0.14rem;
+  }
+
+  .admin-original-song-album-summary-jan {
+    grid-area: jan;
+    text-align: right;
+  }
+
+  .admin-original-song-album-summary-circle {
+    grid-area: circle;
+  }
+
+  .admin-original-song-album-summary-name {
+    align-items: start;
+    display: grid;
+    grid-area: name;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, auto);
+  }
+
+  .admin-original-song-album-summary-name::before {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .admin-original-song-album-summary-name > .admin-icon {
+    grid-column: 1;
+    grid-row: 2;
+    margin-top: 0.28rem;
+  }
+
+  .admin-original-song-album-summary-name .admin-copyable-value {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .admin-original-song-album-summary-count {
+    grid-area: count;
+    white-space: normal;
+  }
+}

@@ -31,6 +31,7 @@ module Admin
       assert_equal %w[JANコード サークル アルバム 未設定楽曲数], album_headers
       assert_select 'table.admin-original-song-album-table thead th[scope=?]', 'col', count: 4
       assert_select 'table.admin-original-song-album-table thead th.admin-original-song-selected-heading', count: 0
+      assert_select 'summary.admin-original-song-album-summary span[data-label]', count: 4
       assert_select 'details[data-controller=?]', 'admin-original-song-album', count: 1
       assert_select 'td', { text: missing_track.isrc, count: 0 }
       assert_select 'form[method=?]', 'post'

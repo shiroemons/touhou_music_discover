@@ -26,15 +26,19 @@
              data-admin-original-song-album-error-text-value="<%= t('admin.original_song_assignments.album_load_error') %>"
              data-admin-original-song-album-retry-text-value="<%= t('admin.original_song_assignments.album_retry') %>">
       <summary class="admin-original-song-album-summary">
-        <span class="admin-original-song-album-summary-jan"><%= album.jan_code %></span>
-        <span class="admin-original-song-album-summary-circle">
+        <span class="admin-original-song-album-summary-jan"
+              data-label="<%= t('admin.attributes.common.jan_code') %>"><%= album.jan_code %></span>
+        <span class="admin-original-song-album-summary-circle"
+              data-label="<%= t('admin.attributes.common.circle_name') %>">
           <%= album.circle_name.presence || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %>
         </span>
-        <span class="admin-original-song-album-summary-name">
+        <span class="admin-original-song-album-summary-name"
+              data-label="<%= t('admin.original_song_missing_albums.album') %>">
           <%= admin_icon(:chevron_right) %>
           <%= album_content %>
         </span>
-        <span class="admin-original-song-album-summary-count">
+        <span class="admin-original-song-album-summary-count"
+              data-label="<%= t('admin.original_song_missing_albums.missing_tracks_count') %>">
           <%= t('admin.original_song_assignments.album_track_count', count: number_with_delimiter(track_count)) %>
         </span>
       </summary>
