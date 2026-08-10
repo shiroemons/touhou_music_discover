@@ -28,6 +28,7 @@ tasks:
 
   versions:
     desc: 開発ツールのバージョンを表示
+    silent: true
     cmds:
       - |
         echo "=== 開発ツールのバージョン ==="
@@ -41,6 +42,7 @@ tasks:
 
   up:
     desc: 全サービスをバックグラウンドで起動（起動済みの場合はステータスを表示）
+    silent: true
     cmds:
       - |
         if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
@@ -79,6 +81,7 @@ tasks:
 
   status:
     desc: devboxサービスの状態を表示
+    silent: true
     cmds:
       - |
         if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
