@@ -6889,3 +6889,416 @@ html[data-admin-resolved-theme] .admin-pagination {
     white-space: normal;
   }
 }
+
+/* Keep list workspaces structured: filters, results, and display controls stay visually grouped. */
+.admin-list-toolbar {
+  align-items: stretch;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--admin-shadow-soft);
+  display: grid;
+  gap: 0;
+  padding: 0;
+}
+
+.admin-filter-disclosure {
+  align-items: stretch;
+  border-bottom: 1px solid var(--admin-border);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(5.5rem, 6.5rem) minmax(0, 1fr);
+  padding: 0.85rem 1rem;
+}
+
+.admin-filter-disclosure-summary {
+  align-self: start;
+  color: var(--admin-text);
+  font-size: 0.8rem;
+  font-weight: 850;
+  min-height: var(--admin-control-height);
+  padding: 0.55rem 0;
+}
+
+.admin-filter-disclosure-summary > .admin-icon {
+  color: var(--admin-muted);
+}
+
+.admin-filter-bar {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  min-width: 0;
+  padding: 0;
+}
+
+.admin-filter-field {
+  flex: none;
+  min-width: 0;
+}
+
+.admin-filter-field .admin-label {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.admin-checkbox-row {
+  align-self: end;
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.55rem;
+  box-sizing: border-box;
+  min-height: var(--admin-control-height);
+  padding: 0.5rem 0.75rem;
+}
+
+.admin-list-controls {
+  align-items: end;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-width: 0;
+  padding: 0.85rem 1rem;
+}
+
+.admin-search-row {
+  align-items: end;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-width: 0;
+  width: auto;
+}
+
+.admin-search-row .admin-search-input,
+.admin-search-field {
+  min-width: 0;
+}
+
+.admin-search-row .admin-search-input {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.admin-search-actions {
+  flex-wrap: wrap;
+  min-width: max-content;
+}
+
+.admin-record-count {
+  align-self: stretch;
+  box-sizing: border-box;
+  margin-left: 0;
+  min-width: 13rem;
+}
+
+.admin-view-mode-bar {
+  justify-content: flex-start;
+  min-width: max-content;
+}
+
+.admin-view-mode-label {
+  white-space: nowrap;
+}
+
+.admin-view-mode-options {
+  gap: 0.15rem;
+}
+
+.admin-active-filter-bar {
+  background: var(--admin-surface-muted);
+  border-top: 1px solid var(--admin-border);
+  padding: 0.7rem 1rem;
+}
+
+.admin-shell .admin-table-scroll {
+  overscroll-behavior: contain;
+  scrollbar-color: var(--admin-border-strong) transparent;
+  scrollbar-gutter: stable;
+}
+
+.admin-original-song-assignment-search-form .admin-list-controls {
+  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-original-song-assignment-search-form .admin-search-row .admin-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.admin-original-song-assignment-search-form .admin-original-song-assignment-view-modes {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin-left: 0;
+  min-width: 0;
+}
+
+.admin-original-song-assignment-search-form .admin-original-song-paste-hint {
+  max-width: none;
+}
+
+.admin-original-song-missing-albums-search-form .admin-list-controls {
+  align-items: end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+@media (max-width: 1199.98px) {
+  .admin-list-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-list-controls > .admin-view-mode-bar {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .admin-original-song-assignment-search-form .admin-list-controls,
+  .admin-original-song-missing-albums-search-form .admin-list-controls {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .admin-original-song-assignment-search-form .admin-original-song-assignment-view-modes {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-filter-disclosure {
+    display: block;
+    padding: 0.75rem;
+  }
+
+  .admin-filter-disclosure-summary {
+    background: var(--admin-surface-muted);
+    border: 1px solid var(--admin-border);
+    border-radius: 0.55rem;
+    justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    width: 100%;
+  }
+
+  .admin-filter-disclosure > .admin-filter-bar {
+    grid-template-columns: 1fr;
+    margin-top: 0.65rem;
+  }
+
+  .admin-list-controls,
+  .admin-original-song-assignment-search-form .admin-list-controls,
+  .admin-original-song-missing-albums-search-form .admin-list-controls {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    padding: 0.75rem;
+  }
+
+  .admin-search-row {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-search-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    min-width: 0;
+  }
+
+  .admin-search-actions .btn {
+    width: 100%;
+  }
+
+  .admin-record-count {
+    min-width: 0;
+  }
+
+  .admin-original-song-assignment-search-form .admin-record-count {
+    align-content: start;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-original-song-assignment-search-form .admin-record-count span,
+  .admin-original-song-assignment-search-form .admin-record-count strong,
+  .admin-original-song-assignment-search-form .admin-record-count small {
+    white-space: normal;
+  }
+
+  .admin-list-controls > .admin-view-mode-bar,
+  .admin-original-song-assignment-search-form .admin-original-song-assignment-view-modes {
+    grid-column: auto;
+  }
+
+  .admin-view-mode-bar {
+    align-items: stretch;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .admin-view-mode-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .admin-view-mode-link {
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .admin-original-song-assignment-search-form .admin-original-song-assignment-view-modes {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-original-song-assignment-search-form .admin-original-song-paste-hint {
+    grid-column: auto;
+  }
+}
+
+/* A collapsed filter area should read as a compact control, not as an empty two-column row. */
+.admin-filter-disclosure:not([open]) {
+  border-bottom: 0;
+  display: block;
+  padding-block: 0.75rem;
+}
+
+.admin-filter-disclosure:not([open]) > .admin-filter-disclosure-summary {
+  background: var(--admin-surface-muted);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.55rem;
+  justify-content: space-between;
+  padding-inline: 0.75rem;
+  width: 100%;
+}
+
+.admin-filter-disclosure:not([open]) > .admin-filter-disclosure-summary::after {
+  color: var(--admin-muted);
+  content: "条件を表示";
+  font-size: 0.74rem;
+  font-weight: 750;
+  margin-left: auto;
+}
+
+.admin-filter-disclosure-summary:focus-visible {
+  outline: 2px solid var(--admin-primary);
+  outline-offset: 2px;
+}
+
+/* Keep the search action aligned with the input below its label at tablet widths. */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .admin-resource-index-page .admin-list-controls,
+  .admin-resource-index-page .admin-search-row,
+  .admin-original-song-assignment-search-form .admin-list-controls,
+  .admin-original-song-assignment-search-form .admin-search-row,
+  .admin-original-song-missing-albums-search-form .admin-list-controls,
+  .admin-original-song-missing-albums-search-form .admin-search-row {
+    align-items: end;
+  }
+}
+
+/* Keep search conditions separate from result status and display controls. */
+.admin-result-toolbar {
+  align-items: center;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.75rem;
+  box-shadow: var(--admin-shadow-soft);
+  display: grid;
+  gap: 0.75rem 1rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0.7rem 1rem;
+}
+
+.admin-result-toolbar .admin-record-count {
+  align-self: center;
+  justify-self: start;
+  margin-left: 0;
+  min-width: 13rem;
+}
+
+.admin-result-toolbar > .admin-view-mode-bar {
+  justify-content: flex-end;
+  margin: 0;
+  min-width: 0;
+}
+
+.admin-resource-index-page {
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+}
+
+.admin-resource-index-page .admin-list-controls,
+.admin-original-song-assignment-search-form .admin-list-controls,
+.admin-original-song-missing-albums-search-form .admin-list-controls {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-resource-index-page .admin-result-toolbar .admin-record-count {
+  margin-left: 0;
+}
+
+.admin-original-song-assignment-result-toolbar {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-original-song-assignment-result-toolbar .admin-record-count {
+  justify-self: start;
+}
+
+.admin-original-song-assignment-result-toolbar .admin-original-song-assignment-view-modes {
+  align-items: center;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  margin-left: 0;
+  min-width: 0;
+}
+
+.admin-original-song-assignment-result-toolbar .admin-view-mode-bar {
+  justify-content: flex-start;
+  margin: 0;
+  min-width: 0;
+}
+
+.admin-original-song-assignment-result-toolbar .admin-original-song-paste-hint {
+  max-width: none;
+}
+
+.admin-original-song-missing-albums-result-toolbar .admin-original-song-missing-albums-copy {
+  justify-self: end;
+}
+
+@media (max-width: 767.98px) {
+  .admin-result-toolbar {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-result-toolbar .admin-record-count,
+  .admin-result-toolbar > .admin-view-mode-bar,
+  .admin-original-song-assignment-result-toolbar .admin-original-song-assignment-view-modes,
+  .admin-original-song-missing-albums-result-toolbar .admin-original-song-missing-albums-copy {
+    justify-self: stretch;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-result-toolbar > .admin-view-mode-bar {
+    justify-content: flex-start;
+  }
+
+  .admin-original-song-assignment-result-toolbar .admin-original-song-assignment-view-modes {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-original-song-missing-albums-result-toolbar .admin-original-song-missing-albums-copy .btn {
+    width: 100%;
+  }
+}

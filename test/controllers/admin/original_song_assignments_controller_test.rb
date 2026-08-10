@@ -18,8 +18,11 @@ module Admin
       assert_select 'a[href=?]', admin_resource_action_path('tracks', 'auto_assign_original_songs'),
                     text: '自動紐づけ候補を確認'
       assert_select 'input[type=hidden][name=?][value=?]', 'scroll', 'infinite'
-      assert_select '.admin-view-mode-link.is-active', text: 'アルバム表示'
-      assert_select '.admin-view-mode-link.is-active', text: '無限スクロール'
+      assert_select '.admin-search-form .admin-record-count', count: 0
+      assert_select '.admin-search-form .admin-view-mode-bar', count: 0
+      assert_select '.admin-result-toolbar .admin-record-count', text: /表示中|対象アルバム/
+      assert_select '.admin-result-toolbar .admin-view-mode-link.is-active', text: 'アルバム表示'
+      assert_select '.admin-result-toolbar .admin-view-mode-link.is-active', text: '無限スクロール'
       assert_select 'details.admin-filter-disclosure[data-controller=?][open] summary', 'admin-filter-disclosure', text: 'フィルター'
       assert_select 'select[name=?] option[selected]', 'status', text: '原曲未設定'
       assert_select 'input[name=?][type=?]', 'show_identifiers', 'checkbox', count: 1
@@ -104,6 +107,7 @@ module Admin
 
       assert_response :success
       assert_select '.admin-view-mode-link.is-active', text: 'ページ送り'
+      assert_select '.admin-result-toolbar .admin-view-mode-link.is-active', text: 'ページ送り'
       assert_select 'nav.admin-pagination[aria-label=?]', 'ページ送り'
       assert_select '.admin-infinite-scroll-status', 0
     end

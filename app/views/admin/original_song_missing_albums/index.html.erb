@@ -40,26 +40,31 @@
           <% end %>
         </div>
       </div>
-      <div class="admin-record-count">
-        <span><%= t('admin.table.current_results') %></span>
-        <strong><%= admin_records_summary(@pagy) %></strong>
-      </div>
-      <div class="admin-original-song-missing-albums-copy"
-           data-controller="admin-clipboard"
-           data-admin-clipboard-success-message-value="<%= t('admin.toast.copy_success') %>"
-           data-admin-clipboard-failure-message-value="<%= t('admin.toast.copy_failure') %>">
-        <textarea class="visually-hidden" data-admin-clipboard-target="source"><%= @copy_text %></textarea>
-        <%= button_tag type: :button,
-                       class: 'btn admin-btn',
-                       disabled: @copy_text.blank?,
-                       data: { action: 'admin-clipboard#copy' } do %>
-          <%= admin_icon(:copy) %>
-          <span><%= t('admin.original_song_missing_albums.copy') %></span>
-        <% end %>
-      </div>
     </div>
   </div>
 <% end %>
+
+<div class="admin-result-toolbar admin-original-song-missing-albums-result-toolbar"
+     role="region"
+     aria-label="<%= t('admin.table.current_results') %>">
+  <div class="admin-record-count">
+    <span><%= t('admin.table.current_results') %></span>
+    <strong><%= admin_records_summary(@pagy) %></strong>
+  </div>
+  <div class="admin-original-song-missing-albums-copy"
+       data-controller="admin-clipboard"
+       data-admin-clipboard-success-message-value="<%= t('admin.toast.copy_success') %>"
+       data-admin-clipboard-failure-message-value="<%= t('admin.toast.copy_failure') %>">
+    <textarea class="visually-hidden" data-admin-clipboard-target="source"><%= @copy_text %></textarea>
+    <%= button_tag type: :button,
+                   class: 'btn admin-btn',
+                   disabled: @copy_text.blank?,
+                   data: { action: 'admin-clipboard#copy' } do %>
+      <%= admin_icon(:copy) %>
+      <span><%= t('admin.original_song_missing_albums.copy') %></span>
+    <% end %>
+  </div>
+</div>
 
 <div class="admin-panel admin-table-panel admin-original-song-missing-albums-panel">
   <div class="admin-table-scroll">

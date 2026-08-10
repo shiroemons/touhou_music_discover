@@ -30,7 +30,10 @@
   <%= form.hidden_field :scroll, value: 'infinite' if admin_infinite_scroll? %>
   <%= form.hidden_field :view, value: @view_mode %>
   <div class="admin-list-toolbar">
-    <details class="admin-filter-disclosure" data-controller="admin-filter-disclosure" open>
+    <details class="admin-filter-disclosure"
+             data-controller="admin-filter-disclosure"
+             data-admin-filter-disclosure-active="<%= (@query.present? || @status != 'missing' || @show_identifiers) %>"
+             open>
       <summary class="admin-filter-disclosure-summary">
         <span><%= t('admin.filters.heading') %></span>
         <%= admin_icon(:chevron_down) %>
@@ -80,57 +83,62 @@
           <% end %>
         </div>
       </div>
-      <div class="admin-record-count">
-        <% if album_view? %>
-          <span><%= t('admin.original_song_assignments.album_results') %></span>
-          <strong><%= admin_records_summary(@pagy) %></strong>
-          <small><%= t('admin.original_song_assignments.album_track_total', count: number_with_delimiter(@assignment_track_count)) %></small>
-        <% else %>
-          <span><%= t('admin.table.current_results') %></span>
-          <strong><%= admin_records_summary(@pagy) %></strong>
-        <% end %>
-      </div>
-      <div class="admin-original-song-assignment-view-modes">
-        <span class="admin-original-song-paste-hint"
-              title="<%= t('admin.original_song_assignments.paste_hint') %>">
-          <%= t('admin.original_song_assignments.paste_hint') %>
-        </span>
-        <div class="admin-view-mode-bar" aria-label="<%= t('admin.original_song_assignments.display_mode') %>">
-          <span class="admin-view-mode-label"><%= t('admin.original_song_assignments.display_mode') %></span>
-          <div class="admin-view-mode-options">
-            <% if @status == 'missing' %>
-              <%= link_to album_view_path,
-                          class: "admin-view-mode-link #{'is-active' if album_view?}",
-                          aria: { current: album_view? ? 'page' : nil } do %>
-                <%= admin_icon(:collection) %>
-                <span><%= t('admin.original_song_assignments.album_view') %></span>
-              <% end %>
-            <% end %>
-            <%= link_to track_view_path,
-                        class: "admin-view-mode-link #{'is-active' unless album_view?}",
-                        aria: { current: album_view? ? nil : 'page' } do %>
-              <%= admin_icon(:list_ordered) %>
-              <span><%= t('admin.original_song_assignments.track_view') %></span>
-            <% end %>
-          </div>
-        </div>
-        <div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
-          <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
-          <div class="admin-view-mode-options">
-            <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'page' } do %>
-              <%= admin_icon(:list_ordered) %>
-              <span><%= t('admin.scroll_mode.pagination') %></span>
-            <% end %>
-            <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'page' : nil } do %>
-              <%= admin_icon(:arrow_down_circle) %>
-              <span><%= t('admin.scroll_mode.infinite') %></span>
-            <% end %>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 <% end %>
+
+<div class="admin-result-toolbar admin-original-song-assignment-result-toolbar"
+     role="region"
+     aria-label="<%= t('admin.table.current_results') %>">
+  <div class="admin-record-count">
+    <% if album_view? %>
+      <span><%= t('admin.original_song_assignments.album_results') %></span>
+      <strong><%= admin_records_summary(@pagy) %></strong>
+      <small><%= t('admin.original_song_assignments.album_track_total', count: number_with_delimiter(@assignment_track_count)) %></small>
+    <% else %>
+      <span><%= t('admin.table.current_results') %></span>
+      <strong><%= admin_records_summary(@pagy) %></strong>
+    <% end %>
+  </div>
+  <div class="admin-original-song-assignment-view-modes">
+    <span class="admin-original-song-paste-hint"
+          title="<%= t('admin.original_song_assignments.paste_hint') %>">
+      <%= t('admin.original_song_assignments.paste_hint') %>
+    </span>
+    <div class="admin-view-mode-bar" aria-label="<%= t('admin.original_song_assignments.display_mode') %>">
+      <span class="admin-view-mode-label"><%= t('admin.original_song_assignments.display_mode') %></span>
+      <div class="admin-view-mode-options">
+        <% if @status == 'missing' %>
+          <%= link_to album_view_path,
+                      class: "admin-view-mode-link #{'is-active' if album_view?}",
+                      aria: { current: album_view? ? 'page' : nil } do %>
+            <%= admin_icon(:collection) %>
+            <span><%= t('admin.original_song_assignments.album_view') %></span>
+          <% end %>
+        <% end %>
+        <%= link_to track_view_path,
+                    class: "admin-view-mode-link #{'is-active' unless album_view?}",
+                    aria: { current: album_view? ? nil : 'page' } do %>
+          <%= admin_icon(:list_ordered) %>
+          <span><%= t('admin.original_song_assignments.track_view') %></span>
+        <% end %>
+      </div>
+    </div>
+    <div class="admin-view-mode-bar" aria-label="<%= t('admin.scroll_mode.label') %>">
+      <span class="admin-view-mode-label"><%= t('admin.scroll_mode.label') %></span>
+      <div class="admin-view-mode-options">
+        <%= link_to admin_scroll_mode_path(:pagination), class: "admin-view-mode-link #{'is-active' unless admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? nil : 'page' } do %>
+          <%= admin_icon(:list_ordered) %>
+          <span><%= t('admin.scroll_mode.pagination') %></span>
+        <% end %>
+        <%= link_to admin_scroll_mode_path(:infinite), class: "admin-view-mode-link #{'is-active' if admin_infinite_scroll?}", aria: { current: admin_infinite_scroll? ? 'page' : nil } do %>
+          <%= admin_icon(:arrow_down_circle) %>
+          <span><%= t('admin.scroll_mode.infinite') %></span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
 
 <%= form_with url: admin_track_original_song_assignments_path(
                 q: @query,

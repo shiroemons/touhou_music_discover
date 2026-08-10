@@ -18,6 +18,10 @@ module Admin
       assert_response :success
       assert_select 'h1', '原曲紐づけが必要なアルバム'
       assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
+      assert_select '.admin-search-form .admin-record-count', count: 0
+      assert_select '.admin-result-toolbar .admin-record-count', text: /表示中/
+      assert_select '.admin-search-form .admin-original-song-missing-albums-copy', count: 0
+      assert_select '.admin-result-toolbar .admin-original-song-missing-albums-copy', count: 1
       assert_select 'table.admin-original-song-missing-albums-table thead th[scope=?]', 'col', count: 5
       assert_select 'table.admin-original-song-missing-albums-table thead th.admin-table-actions-heading', text: '操作'
       assert_select 'td', text: 'Missing Circle'

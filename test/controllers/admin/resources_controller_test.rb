@@ -28,10 +28,12 @@ module Admin
       assert_select '.admin-list-toolbar'
       assert_select 'details.admin-filter-disclosure[data-controller=?][open] summary', 'admin-filter-disclosure', text: 'フィルター'
       assert_select '.admin-search-field label[for=?]', 'q', text: 'キーワード'
-      assert_select '.admin-record-count', text: /表示中/
+      assert_select '.admin-search-form .admin-record-count', count: 0
+      assert_select '.admin-search-form .admin-view-mode-bar', count: 0
+      assert_select '.admin-result-toolbar .admin-record-count', text: /表示中/
       assert_select 'table'
       assert_select 'form.admin-search-form button[name]', count: 0
-      assert_select '.admin-view-mode-bar a[aria-current=?]', 'page', count: 1
+      assert_select '.admin-result-toolbar .admin-view-mode-bar a[aria-current=?]', 'page', count: 1
       assert_select '[data-admin-infinite-scroll-target="status"][aria-live="polite"]'
       assert_select 'button[data-admin-infinite-scroll-target="retry"][hidden]', text: '再試行'
     end
