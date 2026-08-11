@@ -4,6 +4,12 @@ require 'test_helper'
 
 module Spotify
   class PlaylistUpdateServiceTest < ActiveSupport::TestCase
+    test 'limits playlist updates to the five supported original categories' do
+      assert_equal %w[windows pc98 zuns_music_collection akyus_untouched_score commercial_books],
+                   PlaylistUpdateService::UPDATE_TYPES
+      assert_not_includes PlaylistUpdateService::UPDATE_TYPES, 'other'
+    end
+
     setup do
       @original = Original.create!(code: 'TEST_ORIG_SVC', title: 'テスト作品', short_title: 'テスト作品',
                                    original_type: :windows, series_order: 9980)

@@ -10,7 +10,7 @@ module Spotify
     # 未知の値を渡すと fetch_originals が [] を返して call が mark_completed 抜きで
     # 早期リターンするため、progress_key が 'processing' のまま止まってしまう。
     # ここで事前に弾き、Redis へ書き込む前にリダイレクトする。
-    VALID_UPDATE_TYPES = %w[windows pc98 zuns_music_collection akyus_untouched_score commercial_books].freeze
+    VALID_UPDATE_TYPES = PlaylistUpdateService::UPDATE_TYPES
 
     before_action :require_spotify_session,
                   only: %i[index clear_cache sync_single create refresh_counts original_songs]

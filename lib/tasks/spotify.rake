@@ -4,8 +4,8 @@ namespace :spotify do
   desc '原曲別プレイリストをDBの正規化結果と照合（デフォルトはdry-run）'
   task reconcile_playlists: :environment do
     user_id = ENV['USER_ID'].presence || abort('USER_ID is required')
-    types = ENV.fetch('TYPES', Original.original_types.keys.join(',')).split(',').map(&:strip).compact_blank
-    known_types = Original.original_types.keys
+    types = ENV.fetch('TYPES', Spotify::PlaylistUpdateService::UPDATE_TYPES.join(',')).split(',').map(&:strip).compact_blank
+    known_types = Spotify::PlaylistUpdateService::UPDATE_TYPES
     invalid_types = types - known_types
     abort "TYPES contains unknown values: #{invalid_types.join(', ')}" if invalid_types.any?
 

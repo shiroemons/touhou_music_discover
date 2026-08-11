@@ -7,6 +7,7 @@ module Spotify
   # Redis更新はバッチ処理で最適化されている。
   class PlaylistUpdateService
     LIMIT = 50
+    UPDATE_TYPES = %w[windows pc98 zuns_music_collection akyus_untouched_score commercial_books].freeze
     # 進捗情報をRedisに書き込む間隔（曲数）
     PROGRESS_UPDATE_INTERVAL = 5
 
