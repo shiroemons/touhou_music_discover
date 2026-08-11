@@ -238,12 +238,12 @@ tasks:
       - devbox run db:seed
 
   "db:backup":
-    desc: データベースのバックアップ
+    desc: 圧縮した日付付きファイルでデータベースをバックアップ
     cmds:
       - devbox run db:backup
 
   "db:restore":
-    desc: データベースのリストア
+    desc: 最新または指定したバックアップからデータベースをリストア
     cmds:
       - devbox run db:restore
 

@@ -126,10 +126,15 @@ Solid Queueのスキーマは `db/queue_schema.rb` で管理される。
   ```shell
   task db:backup
   ```
+  `tmp/data/touhou_music_discover-YYYYMMDD-HHMMSS.bak` にgzip圧縮されたカスタム形式で保存される。
 
 - DBリストア
   ```shell
   task db:restore
+  ```
+  `BACKUP_FILE`を指定しない場合は、`tmp/data`内の最新の日付付きバックアップを使用する。
+  ```shell
+  BACKUP_FILE=tmp/data/touhou_music_discover-20260811-175418.bak task db:restore
   ```
 
 ### コンソールの起動
@@ -210,8 +215,8 @@ task --list
 | DB | `task db:migrate:redo` | 直前のマイグレーションをやり直し |
 | DB | `task db:rollback` | DBマイグレーションをロールバック |
 | DB | `task db:seed` | マスターデータを投入 |
-| DB | `task db:backup` | DBをバックアップ |
-| DB | `task db:restore` | DBバックアップをリストア |
+| DB | `task db:backup` | gzip圧縮した日付付きファイルへDBをバックアップ |
+| DB | `task db:restore` | 最新または指定したDBバックアップをリストア |
 | データ | `task data:upsert-originals` | 原作・原曲データをupsert |
 | 品質 | `task test` | テストを実行 |
 | 品質 | `task lint` | Rubocopを実行 |
