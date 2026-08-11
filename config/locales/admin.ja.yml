@@ -451,6 +451,7 @@ ja:
         queued: "バックグラウンド処理の開始を待っています。"
         started: "アクションを開始しました。"
         count: "%{current} / %{total}"
+        not_started: "進捗の記録を開始する前に失敗しました。"
         return: "戻る"
         fetch_error: "進捗の取得に失敗しました。通信状態を確認して再試行してください。"
         retry: "進捗を再取得"

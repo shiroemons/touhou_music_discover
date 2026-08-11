@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 module AppleMusicClient
-  LIMIT = 100
-
   class Album
+    LIMIT = 100
+
     def self.fetch(album_id)
       return if AppleMusicAlbum.exists?(apple_music_id: album_id)
 

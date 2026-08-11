@@ -3,11 +3,6 @@
 require 'json'
 
 module LineMusic
-  class ApiError < StandardError; end
-  class ParameterMissing < StandardError; end
-
-  API_URI = 'https://music.line.me/api2/'
-
   class Client
     # クラス変数へのメモ化を複数スレッドから同時に行うと、コネクションが二重に
     # 生成されうるため排他制御する。

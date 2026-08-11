@@ -3,11 +3,15 @@
 require 'date'
 
 module LineMusic
-  autoload :Album,  'line_music/album'
+  API_URI = 'https://music.line.me/api2/'
+
+  autoload :Album, 'line_music/album'
+  autoload :ApiError, 'line_music/api_error'
   autoload :Artist, 'line_music/artist'
   autoload :Base,   'line_music/base'
   autoload :Client, 'line_music/client'
-  autoload :Track,  'line_music/track'
+  autoload :ParameterMissing, 'line_music/parameter_missing'
+  autoload :Track, 'line_music/track'
 
   # HTTPメソッドの委譲
   class << self

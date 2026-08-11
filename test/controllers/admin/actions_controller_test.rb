@@ -106,6 +106,33 @@ module Admin
       RedisPool.get.del("admin:action_runs:#{run_id}") if run_id
     end
 
+    test 'shows a pre-progress failure once without a zero progress count' do
+      run_id = create_action_run
+      error_message = 'uninitialized constant Admin::Example'
+      Admin::ActionRun.update!(
+        run_id,
+        status: 'error',
+        current: 0,
+        total: 0,
+        message: error_message,
+        result_message: error_message,
+        result_status: 'error'
+      )
+
+      get admin_resource_action_run_url('albums', 'change_touhou_flag', run_id)
+
+      assert_response :success
+      assert_select '#admin-action-progress[data-status="error"][data-polling="false"]'
+      assert_select '.admin-action-progress-percent', text: '—'
+      assert_select '.admin-action-progress-meter[aria-valuenow]', count: 0
+      assert_select '.admin-action-progress-meta', text: /進捗の記録を開始する前に失敗しました。/
+      assert_select '.admin-action-progress-meta', text: %r{0 / 0}, count: 0
+      assert_select '.admin-action-progress-result-content p', text: error_message, count: 1
+      assert_equal 1, response.body.scan(error_message).size
+    ensure
+      RedisPool.get.del("admin:action_runs:#{run_id}") if run_id
+    end
+
     test 'progress response explicitly reports whether polling should continue' do
       run_id = create_action_run
 

@@ -4,9 +4,11 @@ require 'date'
 
 module AppleMusic
   autoload :Album,    'apple_music/album'
+  autoload :ApiError, 'apple_music/api_error'
   autoload :Artist,   'apple_music/artist'
   autoload :Client,   'apple_music/client'
   autoload :Config,   'apple_music/config'
+  autoload :ParameterMissing, 'apple_music/parameter_missing'
   autoload :Response, 'apple_music/response'
   autoload :Song,     'apple_music/song'
   class << self

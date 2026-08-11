@@ -29,6 +29,21 @@ module Admin
       assert_equal ['run-1', result], completed
     end
 
+    test 'keeps the uploaded file marker on the lazily loaded value class' do
+      assert_equal '_admin_action_uploaded_file', Admin::ActionUploadedFile::ACTION_UPLOADED_FILE_MARKER
+      assert_not Admin.const_defined?(:ACTION_UPLOADED_FILE_MARKER, false)
+
+      job = Admin::ActionJob.new(
+        run_id: 'run-1',
+        resource_key: 'tracks',
+        action_key: 'import_tracks_with_original_songs',
+        fields: {}
+      )
+
+      assert job.send(:uploaded_file_argument?, { '_admin_action_uploaded_file' => true })
+      assert_not job.send(:uploaded_file_argument?, { '_admin_action_uploaded_file' => false })
+    end
+
     test 'deserializes uploaded file fields before running admin action' do
       result = Admin::ActionResult.new(status: :success, message: 'done')
       action = FakeAction.new(result)

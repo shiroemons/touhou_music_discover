@@ -43,7 +43,7 @@ module Admin
     end
 
     def uploaded_file_argument?(value)
-      value.is_a?(Hash) && value[Admin::ACTION_UPLOADED_FILE_MARKER]
+      value.is_a?(Hash) && value[Admin::ActionUploadedFile::ACTION_UPLOADED_FILE_MARKER]
     end
 
     def cleanup_uploaded_files(run_id)

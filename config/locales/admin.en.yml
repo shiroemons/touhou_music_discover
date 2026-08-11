@@ -391,6 +391,7 @@ en:
         queued: "Waiting for the background action to start."
         started: "Action started."
         count: "%{current} / %{total}"
+        not_started: "The action failed before progress tracking started."
         return: "Return"
         fetch_error: "Could not retrieve progress. Check the connection and try again."
         retry: "Retry progress"
