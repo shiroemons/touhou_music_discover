@@ -60,7 +60,12 @@
     <% end %>
   </div>
 
-  <div class="admin-layout" data-controller="admin-mobile-nav">
+  <div class="admin-layout"
+       data-controller="admin-mobile-nav"
+       data-admin-mobile-nav-mobile-label-value="<%= t('admin.navigation.mobile_toggle') %>"
+       data-admin-mobile-nav-mobile-close-label-value="<%= t('admin.navigation.mobile_close') %>"
+       data-admin-mobile-nav-desktop-open-label-value="<%= t('admin.navigation.sidebar_open') %>"
+       data-admin-mobile-nav-desktop-close-label-value="<%= t('admin.navigation.sidebar_close') %>">
     <button type="button"
             class="admin-mobile-nav-backdrop"
             data-admin-mobile-nav-target="backdrop"
@@ -79,7 +84,7 @@
           <div class="admin-brand-header">
             <%= link_to admin_root_path, class: 'admin-brand-link' do %>
               <span class="admin-brand-mark">T</span>
-              <span>
+              <span class="admin-brand-copy">
                 <span class="admin-brand-title">Touhou Music</span>
                 <span class="admin-brand-subtitle"><%= t('admin.navigation.subtitle') %></span>
               </span>
@@ -132,7 +137,12 @@
                       data-admin-mobile-nav-target="close"
                       data-action="admin-mobile-nav#close"
                       aria-label="<%= t('admin.navigation.mobile_close') %>">
-                <%= admin_icon(:x) %>
+                <span class="admin-sidebar-collapse-icon" aria-hidden="true">
+                  <%= admin_icon(:panel_left) %>
+                </span>
+                <span class="admin-mobile-nav-close-icon" aria-hidden="true">
+                  <%= admin_icon(:x) %>
+                </span>
               </button>
             </div>
           </div>
@@ -189,13 +199,19 @@
 
     <div class="admin-main">
       <button type="button"
-              class="admin-mobile-nav-trigger"
+              class="admin-mobile-nav-trigger admin-sidebar-toggle"
               data-admin-mobile-nav-target="open"
-              data-action="admin-mobile-nav#open"
+              data-action="admin-mobile-nav#toggle"
               aria-expanded="false"
-              aria-controls="admin-sidebar">
-        <%= admin_icon(:list_ordered) %>
-        <span><%= t('admin.navigation.mobile_toggle') %></span>
+              aria-controls="admin-sidebar"
+              aria-label="<%= t('admin.navigation.mobile_toggle') %>">
+        <span class="admin-sidebar-toggle-icon admin-sidebar-toggle-icon-desktop" aria-hidden="true">
+          <%= admin_icon(:panel_left) %>
+        </span>
+        <span class="admin-sidebar-toggle-icon admin-sidebar-toggle-icon-mobile" aria-hidden="true">
+          <%= admin_icon(:list_ordered) %>
+        </span>
+        <span data-admin-mobile-nav-target="openLabel"><%= t('admin.navigation.mobile_toggle') %></span>
       </button>
 
       <main class="admin-content" id="admin-main-content" tabindex="-1">

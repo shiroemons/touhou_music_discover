@@ -1,13 +1,20 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["drawer", "open", "close", "backdrop"]
+  static targets = ["drawer", "open", "openLabel", "close", "backdrop"]
+  static values = {
+    mobileLabel: String,
+    mobileCloseLabel: String,
+    desktopOpenLabel: String,
+    desktopCloseLabel: String
+  }
 
   connect() {
+    this.desktopOpen = true
     this.mobileQuery = window.matchMedia("(max-width: 991.98px)")
     this.mediaQueryListener = () => this.syncWithViewport()
     this.keydownListener = (event) => {
-      if (event.key === "Escape" && this.isOpen() && this.mobileQuery.matches) {
+      if (event.key === "Escape" && this.isOpen()) {
         this.close()
       }
     }
@@ -32,11 +39,16 @@ export default class extends Controller {
   }
 
   toggle() {
-    this.setOpen(!this.isOpen())
+    const shouldOpen = !this.isOpen()
+    this.setOpen(shouldOpen, {
+      focusClose: shouldOpen,
+      restoreFocus: !shouldOpen
+    })
   }
 
   syncWithViewport() {
-    this.setOpen(!this.mobileQuery.matches)
+    const shouldOpen = this.mobileQuery.matches ? false : this.desktopOpen
+    this.setOpen(shouldOpen)
   }
 
   isOpen() {
@@ -44,22 +56,43 @@ export default class extends Controller {
   }
 
   setOpen(open, { focusClose = false, restoreFocus = false } = {}) {
-    const isMobile = this.mobileQuery?.matches
-    const shouldOpen = !isMobile || open
+    const isMobile = Boolean(this.mobileQuery?.matches)
+    const shouldOpen = Boolean(open)
     const wasOpen = this.isOpen()
 
+    if (!isMobile) {
+      this.desktopOpen = shouldOpen
+    }
+
     this.drawerTarget.classList.toggle("is-open", shouldOpen)
+    this.element?.classList?.toggle("is-sidebar-collapsed", !shouldOpen)
     this.drawerTarget.setAttribute("aria-hidden", (!shouldOpen).toString())
-    this.drawerTarget.inert = Boolean(isMobile && !shouldOpen)
+    this.drawerTarget.inert = !shouldOpen
     this.backdropTarget.hidden = !(isMobile && shouldOpen)
     this.backdropTarget.classList.toggle("is-visible", Boolean(isMobile && shouldOpen))
-    this.openTarget.setAttribute("aria-expanded", shouldOpen.toString())
+    this.updateLabels({ isMobile, shouldOpen })
     this.setBodyScrollLock(Boolean(isMobile && shouldOpen))
 
-    if (focusClose && isMobile && shouldOpen) {
+    if (focusClose && shouldOpen) {
       this.closeTarget.focus()
-    } else if (restoreFocus && wasOpen && isMobile && !shouldOpen) {
+    } else if (restoreFocus && wasOpen && !shouldOpen) {
       this.openTarget.focus()
+    }
+  }
+
+  updateLabels({ isMobile, shouldOpen }) {
+    const toggleLabel = isMobile
+      ? (shouldOpen ? this.mobileCloseLabelValue : this.mobileLabelValue)
+      : (shouldOpen ? this.desktopCloseLabelValue : this.desktopOpenLabelValue)
+    const closeLabel = isMobile ? this.mobileCloseLabelValue : this.desktopCloseLabelValue
+
+    this.openTarget.setAttribute("aria-expanded", shouldOpen.toString())
+    this.openTarget.setAttribute("aria-label", toggleLabel)
+    if (this.openLabelTarget) {
+      this.openLabelTarget.textContent = toggleLabel
+    }
+    if (this.closeTarget) {
+      this.closeTarget.setAttribute("aria-label", closeLabel)
     }
   }
 

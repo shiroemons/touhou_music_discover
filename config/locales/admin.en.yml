@@ -29,6 +29,8 @@ en:
       subtitle: "Administration"
       mobile_toggle: "Menu"
       mobile_close: "Close menu"
+      sidebar_open: "Show sidebar"
+      sidebar_close: "Hide sidebar"
       groups:
         master: "Master"
         operations: "Operations"

@@ -20,7 +20,12 @@ function classList() {
 
 function buildController({ mobile = true } = {}) {
   const controller = Object.create(AdminMobileNavController.prototype)
+  controller.context = { scope: { element: { classList: classList() } } }
   controller.mobileQuery = { matches: mobile }
+  controller.mobileLabelValue = "メニュー"
+  controller.mobileCloseLabelValue = "メニューを閉じる"
+  controller.desktopOpenLabelValue = "サイドバーを表示"
+  controller.desktopCloseLabelValue = "サイドバーを隠す"
   controller.drawerTarget = {
     attributes: {},
     classList: classList(),
@@ -39,7 +44,12 @@ function buildController({ mobile = true } = {}) {
     },
     focused: false
   }
+  controller.openLabelTarget = { textContent: "" }
   controller.closeTarget = {
+    attributes: {},
+    setAttribute(name, value) {
+      this.attributes[name] = value
+    },
     focus() {
       this.focused = true
     },
@@ -66,31 +76,45 @@ test("collapses the navigation on mobile and exposes the expanded state", () => 
   assert.equal(controller.drawerTarget.inert, true)
   assert.equal(controller.backdropTarget.hidden, true)
   assert.equal(controller.openTarget.attributes["aria-expanded"], "false")
+  assert.equal(controller.openTarget.attributes["aria-label"], "メニュー")
 
-  controller.open()
+  controller.toggle()
 
   assert.equal(controller.drawerTarget.classList.contains("is-open"), true)
   assert.equal(controller.drawerTarget.attributes["aria-hidden"], "false")
   assert.equal(controller.drawerTarget.inert, false)
   assert.equal(controller.backdropTarget.hidden, false)
   assert.equal(controller.openTarget.attributes["aria-expanded"], "true")
+  assert.equal(controller.openTarget.attributes["aria-label"], "メニューを閉じる")
   assert.equal(controller.closeTarget.focused, true)
 
   controller.close()
 
   assert.equal(controller.drawerTarget.classList.contains("is-open"), false)
   assert.equal(controller.openTarget.attributes["aria-expanded"], "false")
+  assert.equal(controller.openTarget.attributes["aria-label"], "メニュー")
   assert.equal(controller.openTarget.focused, true)
 })
 
-test("keeps the navigation open on desktop", () => {
+test("supports closing and reopening the navigation on desktop", () => {
   const controller = buildController({ mobile: false })
 
   controller.setOpen(false)
 
+  assert.equal(controller.drawerTarget.classList.contains("is-open"), false)
+  assert.equal(controller.drawerTarget.attributes["aria-hidden"], "true")
+  assert.equal(controller.drawerTarget.inert, true)
+  assert.equal(controller.backdropTarget.hidden, true)
+  assert.equal(controller.openTarget.attributes["aria-expanded"], "false")
+  assert.equal(controller.openTarget.attributes["aria-label"], "サイドバーを表示")
+
+  controller.toggle()
+
   assert.equal(controller.drawerTarget.classList.contains("is-open"), true)
   assert.equal(controller.drawerTarget.attributes["aria-hidden"], "false")
   assert.equal(controller.drawerTarget.inert, false)
-  assert.equal(controller.backdropTarget.hidden, true)
   assert.equal(controller.openTarget.attributes["aria-expanded"], "true")
+  assert.equal(controller.openTarget.attributes["aria-label"], "サイドバーを隠す")
+  assert.equal(controller.closeTarget.attributes["aria-label"], "サイドバーを隠す")
+  assert.equal(controller.closeTarget.focused, true)
 })

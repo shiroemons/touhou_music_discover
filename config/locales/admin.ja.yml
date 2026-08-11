@@ -67,6 +67,8 @@ ja:
       subtitle: "管理画面"
       mobile_toggle: "メニュー"
       mobile_close: "メニューを閉じる"
+      sidebar_open: "サイドバーを表示"
+      sidebar_close: "サイドバーを隠す"
       groups:
         master: "マスタ"
         operations: "運用"

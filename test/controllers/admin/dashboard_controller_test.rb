@@ -14,9 +14,18 @@ module Admin
       assert_select 'main#admin-main-content[tabindex=?]', '-1'
       assert_select 'a[href=?]', '/avo', count: 0
       assert_select 'nav.admin-nav[aria-label=?]', '管理画面ナビゲーション'
-      assert_select 'button.admin-mobile-nav-trigger[aria-controls=?][aria-expanded=?]', 'admin-sidebar', 'false'
+      assert_select 'button.admin-sidebar-toggle[data-action=?][aria-controls=?][aria-expanded=?][aria-label=?]',
+                    'admin-mobile-nav#toggle', 'admin-sidebar', 'false', 'メニュー'
+      assert_select '.admin-layout[data-admin-mobile-nav-desktop-open-label-value=?][data-admin-mobile-nav-desktop-close-label-value=?]',
+                    'サイドバーを表示', 'サイドバーを隠す'
+      assert_select 'button.admin-sidebar-toggle .admin-sidebar-toggle-icon-desktop svg path', minimum: 2
+      assert_select 'button.admin-sidebar-toggle .admin-sidebar-toggle-icon-desktop svg path[d=?]', 'M9 3v18'
+      assert_select 'button.admin-sidebar-toggle .admin-sidebar-toggle-icon-mobile svg path', minimum: 3
       assert_select 'aside#admin-sidebar[data-admin-mobile-nav-target=?][aria-hidden=?]', 'drawer', 'true'
       assert_select 'button.admin-mobile-nav-close[aria-label=?]', 'メニューを閉じる'
+      assert_select 'button.admin-mobile-nav-close .admin-sidebar-collapse-icon svg path', minimum: 2
+      assert_select 'button.admin-mobile-nav-close .admin-sidebar-collapse-icon svg path[d=?]', 'M9 3v18'
+      assert_select 'button.admin-mobile-nav-close .admin-mobile-nav-close-icon svg path', minimum: 2
       assert_select 'button.admin-mobile-nav-backdrop[aria-label=?][hidden]', 'メニューを閉じる'
       assert_select 'nav.admin-nav a.admin-nav-link[aria-current=?]', 'page', count: 1
       nav_group_labels = css_select('.admin-nav .admin-nav-group').map do |group|
