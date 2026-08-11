@@ -3,6 +3,7 @@
 class Album < ApplicationRecord
   default_scope { order(jan_code: :desc) }
   TOUHOU_MUSIC_LABEL = '東方同人音楽流通'
+  TITLE_SOURCE_OPTIONS = %w[spotify apple_music ytmusic line_music].freeze
 
   has_many :circles_albums, dependent: :destroy
   has_many :circles, through: :circles_albums
@@ -17,6 +18,8 @@ class Album < ApplicationRecord
   has_one :spotify_album, -> { where(active: true) }, inverse_of: :album, dependent: nil
   has_one :line_music_album, dependent: :destroy
   has_one :ytmusic_album, dependent: :destroy
+
+  validates :title_source_override, inclusion: { in: TITLE_SOURCE_OPTIONS }, allow_blank: true
 
   common_columns = %i[name url release_date total_tracks payload]
   delegate :apple_music_id, *common_columns.push(:label), to: :apple_music_album, allow_nil: true, prefix: true
@@ -44,5 +47,26 @@ class Album < ApplicationRecord
 
   def image_url
     spotify_album&.image_url || apple_music_album&.image_url || ytmusic_album&.image_url || line_music_album&.image_url
+  end
+
+  def display_title_resolution
+    cache_key = [title_source_override, updated_at&.to_f]
+    return @display_title_resolution_cache.last if @display_title_resolution_cache&.first == cache_key
+
+    resolution = AlbumTitleResolver.for(self)
+    @display_title_resolution_cache = [cache_key, resolution]
+    resolution
+  end
+
+  def display_name
+    display_title_resolution.display_album_name
+  end
+
+  def display_title_source
+    display_title_resolution.source
+  end
+
+  def display_title_source_override?
+    title_source_override.present?
   end
 end

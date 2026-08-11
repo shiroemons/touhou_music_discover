@@ -29,7 +29,7 @@
         <%= render partial: 'admin/original_song_assignments/track_row',
                    collection: tracks,
                    as: :track,
-                   locals: { compact: true, track_resource:, show_identifiers: } %>
+                   locals: { compact: true, track_resource:, show_identifiers:, title_resolution: } %>
       </tbody>
     </table>
   </div>

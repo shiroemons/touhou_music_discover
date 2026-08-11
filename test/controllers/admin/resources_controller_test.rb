@@ -1659,6 +1659,26 @@ module Admin
       assert_select 'button[type=submit][data-turbo-confirm]', count: 0
     end
 
+    test 'allows an album to override the display title service' do
+      album = Album.create!(jan_code: '9777777777999')
+
+      get admin_edit_resource_url('albums', album)
+
+      assert_response :success
+      assert_select 'select[name=?]', 'record[title_source_override]'
+      assert_select 'select[name=?] option[value=?]', 'record[title_source_override]', 'apple_music', text: 'Apple Music'
+      assert_select '#albums_title_source_override_help', text: /アルバム単位/
+
+      patch admin_resource_url('albums', album), params: { record: { title_source_override: 'apple_music' } }
+
+      assert_redirected_to admin_resource_path('albums', album)
+      assert_equal 'apple_music', album.reload.title_source_override
+      follow_redirect!
+
+      assert_select '.admin-detail-table th', text: '表示名の配信元（手動指定）'
+      assert_select '.admin-detail-table td .admin-title-source-override', text: 'Apple Music'
+    end
+
     private
 
     def missing_action_preview_specs

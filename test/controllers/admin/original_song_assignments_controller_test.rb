@@ -160,6 +160,39 @@ module Admin
                     'button', 'admin-clipboard#copy', 'assign-copy-group-album', text: 'assign-copy-group-album'
     end
 
+    test 'uses the album-level Japanese title source in copy buttons' do
+      track = create_track(jan_code: '9777777779145', isrc: 'JPABC269145')
+      spotify_album = create_spotify_album(album: track.album, spotify_id: 'assign-source-spotify-album')
+      create_spotify_track(album: track.album, track:, spotify_album:, spotify_id: 'assign-source-spotify-track', track_number: 1)
+      apple_album = AppleMusicAlbum.create!(
+        album: track.album,
+        apple_music_id: 'assign-source-apple-album',
+        name: '日本語アルバム',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        total_tracks: 1,
+        payload: {}
+      )
+      AppleMusicTrack.create!(
+        album: track.album,
+        track:,
+        apple_music_album: apple_album,
+        apple_music_id: 'assign-source-apple-track',
+        artist_name: '',
+        composer_name: '',
+        name: '日本語曲',
+        label: Album::TOUHOU_MUSIC_LABEL,
+        disc_number: 1,
+        track_number: 1,
+        payload: {}
+      )
+
+      get admin_track_original_song_assignments_url, params: { view: 'tracks' }
+
+      assert_response :success
+      assert_select 'td.admin-original-song-assignment-album-cell button[data-admin-clipboard-text-value=?]', '日本語アルバム'
+      assert_select 'td.admin-original-song-assignment-track-name-cell button[data-admin-clipboard-text-value=?]', '日本語曲'
+    end
+
     test 'shows the album thumbnail without adding it to the track name' do
       track = create_track(jan_code: '9777777779143', isrc: 'JPABC269143')
       spotify_album = create_spotify_album(

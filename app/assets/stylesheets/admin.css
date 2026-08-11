@@ -1684,6 +1684,12 @@
   min-width: 0;
 }
 
+.admin-title-source-badge {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
 .admin-original-song-album-summary-circle,
 .admin-original-song-album-summary-jan,
 .admin-original-song-album-summary-count {
@@ -6888,6 +6894,12 @@ html[data-admin-resolved-theme] .admin-pagination {
   .admin-original-song-album-summary-name .admin-copyable-value {
     grid-column: 2;
     grid-row: 2;
+  }
+
+  .admin-original-song-album-summary-name .admin-title-source-badge {
+    grid-column: 2;
+    grid-row: 3;
+    justify-self: start;
   }
 
   .admin-original-song-album-summary-count {

@@ -8,8 +8,10 @@ namespace :touhou_music_discover do
     task touhou_music_with_original_songs: :environment do
       FileUtils.mkdir_p('tmp/export')
       File.open('tmp/export/touhou_music_with_original_songs.tsv', 'w') do |f|
-        f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs")
-        Album.unscoped.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks original_songs]).order(jan_code: :asc).each do |album|
+        f.puts("jan\tisrc\ttrack_number\tspotify_album_id\tspotify_track_id\tspotify_album_name\tspotify_track_name\tapple_music_album_id\tapple_music_track_id\tapple_music_album_name\tapple_music_track_name\toriginal_songs\tdisplay_album_name\tdisplay_track_name\tdisplay_title_source")
+        albums = Album.unscoped.includes(:spotify_album, :apple_music_album, tracks: %i[spotify_tracks apple_music_tracks original_songs]).order(jan_code: :asc).to_a
+        title_resolutions = AlbumTitleResolver.for_many(albums)
+        albums.each do |album|
           jan = album.jan_code
           # 特定のアルバムのみ出力する場合、コメントをオフにする
           # next if jan != ''
@@ -20,6 +22,7 @@ namespace :touhou_music_discover do
           spotify_album = album.spotify_album
           spotify_album_id = spotify_album&.spotify_id
           spotify_album_name = spotify_album&.name
+          title_resolution = title_resolutions.fetch(album.id)
           album.tracks.sort_by(&:isrc).each do |track|
             isrc = track.isrc
             apple_music_track = track.apple_music_track(album)
@@ -30,11 +33,14 @@ namespace :touhou_music_discover do
             spotify_track_id = spotify_track&.spotify_id
             spotify_track_name = spotify_track&.name
             original_songs = track.original_songs.map(&:title).join('/')
+            display_album_name = title_resolution.display_album_name
+            display_track_name = title_resolution.display_track_name(track)
+            display_title_source = title_resolution.source
 
             # 原曲の紐付けがまだの楽曲を出力する場合、コメントをオフにする
             # next if original_songs.present?
 
-            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}")
+            f.puts("#{jan}\t#{isrc}\t#{track_number}\t#{spotify_album_id}\t#{spotify_track_id}\t#{spotify_album_name}\t#{spotify_track_name}\t#{apple_music_album_id}\t#{apple_music_track_id}\t#{apple_music_album_name}\t#{apple_music_track_name}\t#{original_songs}\t#{display_album_name}\t#{display_track_name}\t#{display_title_source}")
           end
         end
       end
@@ -103,20 +109,13 @@ namespace :touhou_music_discover do
       FileUtils.mkdir_p('tmp/export')
       File.open('tmp/export/touhou_music_slim.tsv', 'w') do |f|
         f.puts("circle\talbum_name\tno\ttrack_name\tapple_music_track_url\tyoutube_music_track_url\tspotify_track_url\tline_music_track_url")
-        Album.unscoped.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).each do |album|
+        albums = Album.unscoped.includes(:circles, :apple_music_album, :line_music_album, :spotify_album, :ytmusic_album, tracks: %i[apple_music_tracks line_music_tracks spotify_tracks ytmusic_tracks]).order(jan_code: :asc).to_a
+        title_resolutions = AlbumTitleResolver.for_many(albums)
+        albums.each do |album|
           circle = album.circles&.map(&:name)&.join(' / ')
 
-          # Apple Music
-          apple_music_album_name = album.apple_music_album&.name
-          # YouTube Music
-          youtube_music_album_name = album.ytmusic_album&.name
-          # Spotify
-          spotify_album_name = album.spotify_album&.name
-          # LINE MUSIC
-          line_music_album_name = album.line_music_album&.name
-
-          # Album name
-          album_name = youtube_music_album_name || apple_music_album_name || spotify_album_name || line_music_album_name
+          title_resolution = title_resolutions.fetch(album.id)
+          album_name = title_resolution.display_album_name
 
           # track_numberでソート
           tracks = album.tracks.sort_by do |track|
@@ -133,19 +132,15 @@ namespace :touhou_music_discover do
 
             # Apple Music
             apple_music_track_url = apple_music_track&.url
-            apple_music_track_name = apple_music_track&.name
             # YouTube Music
             youtube_music_track_url = ytmusic_track&.url
-            youtube_music_track_name = ytmusic_track&.name
             # Spotify
             spotify_track_url = spotify_track&.url
-            spotify_track_name = spotify_track&.name
             # LINE MUSIC
             line_music_track_url = line_music_track&.url
-            line_music_track_name = line_music_track&.name
 
-            # Track name
-            track_name = youtube_music_track_name || apple_music_track_name || spotify_track_name || line_music_track_name
+            # Track name: アルバム単位で決定した配信元の表記を使用する
+            track_name = title_resolution.display_track_name(track)
             f.puts("#{circle}\t#{album_name}\t#{track_number}\t#{track_name}\t#{apple_music_track_url}\t#{youtube_music_track_url}\t#{spotify_track_url}\t#{line_music_track_url}")
           end
         end
@@ -365,13 +360,13 @@ namespace :touhou_music_discover do
         file.puts("サークル\tアルバム\tYouTube URL")
 
         # `tracks_missing_original_songs` スコープを利用してアルバムを取得
-        albums = Album.tracks_missing_original_songs.includes(:circles, :spotify_album, :apple_music_album, :line_music_album, :ytmusic_album)
+        albums = Album.tracks_missing_original_songs.includes(:circles, :spotify_album, :apple_music_album, :line_music_album, :ytmusic_album).to_a
+        title_resolutions = AlbumTitleResolver.for_many(albums)
 
         # サークル名、アルバム名、YouTube URLを取得し、配列に格納
         result = albums.map do |album|
           circle_name = album.circles&.map(&:name)&.join(' / ')
-          # アルバム名は Spotify を最優先に取得
-          album_name = album.spotify_album&.name || album.apple_music_album&.name || album.line_music_album&.name || album.ytmusic_album&.name
+          album_name = title_resolutions.fetch(album.id).display_album_name
 
           # YouTube Music の URL を修正
           ytmusic_url = album.ytmusic_album&.playlist_url

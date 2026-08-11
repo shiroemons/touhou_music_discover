@@ -170,6 +170,7 @@ en:
       show_track: "View track details"
     form:
       save_failed: "Could not save the record."
+      title_source_override_help: "Automatic selection chooses one service for the whole album when its catalog is complete and its Japanese title coverage is strongest. An incomplete manual choice falls back to automatic selection."
       association_search_placeholder: "Search options"
       association_change_placeholder: "Search to change"
       association_load_error: "Could not load association options."
@@ -206,6 +207,7 @@ en:
       original_songs: "Original songs"
       album_name: "Album name"
       track_name: "Track name"
+      title_source_coverage: "Japanese titles %{current}/%{total}"
       copy_value: "Copy %{label}: %{value}"
       show_identifiers: "Show JAN/ISRC"
       search_placeholder: "Search by code, song, or original work"
@@ -278,6 +280,7 @@ en:
         created_at: "Created at"
         updated_at: "Updated at"
         name: "Name"
+        display_name: "Name"
         title: "Title"
         short_title: "Short title"
         code: "Code"
@@ -289,6 +292,7 @@ en:
         is_touhou: "Touhou"
         circle_name: "Circle"
         album_name: "Album name"
+        display_album_name: "Album name"
         albums_count: "Albums count"
         original_songs_count: "Original songs count"
         streaming_tracks_status: "Streaming retrieval"
@@ -326,6 +330,8 @@ en:
         ytmusic_album_name: "YouTube Music album name"
         ytmusic_album_distributed_on: "YouTube Music distribution date"
         line_music_album_name: "LINE MUSIC album name"
+        title_source_override: "Display-name service (manual)"
+        display_title_source: "Display-name service"
         album_type: "Album type"
         label: "Label"
         release_date: "Release date"
@@ -357,6 +363,18 @@ en:
         valence: "Valence"
       circle:
         created_at: "Added at"
+    values:
+      album_title_source:
+        automatic: "Automatic"
+        spotify: "Spotify"
+        apple_music: "Apple Music"
+        ytmusic: "YouTube Music"
+        line_music: "LINE MUSIC"
+        unavailable: "Unavailable"
+      album_title_source_mode:
+        automatic: "automatic"
+        override: "manual"
+        fallback: "fallback"
     actions:
       heading: "Actions"
       primary: "Primary actions"

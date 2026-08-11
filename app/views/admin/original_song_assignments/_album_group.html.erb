@@ -1,4 +1,5 @@
-<% album_name = admin_original_song_assignment_album_name(album) %>
+<% title_resolution = local_assigns[:title_resolution] || album.display_title_resolution %>
+<% album_name = title_resolution.display_album_name %>
 <% album_content = if admin_record_image_url(album).present?
                      admin_value_with_thumbnail(album, album_name)
                    else
@@ -36,6 +37,7 @@
               data-label="<%= t('admin.original_song_missing_albums.album') %>">
           <%= admin_icon(:chevron_right) %>
           <%= album_content %>
+          <%= admin_original_song_assignment_title_source_badge(title_resolution) %>
         </span>
         <span class="admin-original-song-album-summary-count"
               data-label="<%= t('admin.original_song_missing_albums.missing_tracks_count') %>">

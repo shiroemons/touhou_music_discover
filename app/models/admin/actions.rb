@@ -381,8 +381,8 @@ module Admin
               track.jan_code,
               track.isrc,
               track.circle_name,
-              track.album_name,
-              track.name,
+              track.display_album_name,
+              track.display_name,
               track.original_songs.map(&:title).join('/')
             ]
           end

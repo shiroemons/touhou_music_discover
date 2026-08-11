@@ -4,6 +4,7 @@ module Admin
   module Resources
     module FormInputHelper
       include AssociationFormHelper
+      include TitleSourceFormHelper
 
       private
 
@@ -11,6 +12,8 @@ module Admin
         column = resource_config.column_for(attribute)
         value = record.public_send(attribute) if record.respond_to?(attribute)
         field_id = admin_field_id(resource_config, attribute)
+
+        return admin_title_source_override_input(form, attribute, field_id, field_options) if record.is_a?(Album) && attribute.to_s == 'title_source_override'
 
         if record.persisted? && resource_config.readonly_attribute?(attribute)
           return admin_readonly_input(

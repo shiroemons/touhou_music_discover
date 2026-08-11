@@ -3,6 +3,8 @@
 module Admin
   module Resources
     module DisplayHelper
+      include TitleSourceDisplayHelper
+
       STREAMING_ALBUM_INDEX_ASSOCIATIONS = {
         'spotify_album_name' => :spotify_album,
         'apple_music_album_name' => :apple_music_album,
@@ -17,6 +19,7 @@ module Admin
         return admin_line_music_unavailable_tracks_value(record) if attribute.to_s == 'unavailable_catalog_tracks'
 
         value = resource_config.value_for(record, attribute)
+        return admin_album_title_source_value(record, attribute, value) if record.is_a?(Album) && attribute.to_s.in?(%w[title_source_override display_title_source])
         return admin_ytmusic_distribution_source_value(value) if record.is_a?(YtmusicAlbum) && attribute.to_s == 'distribution_source'
 
         reference_record = admin_reference_record(record, attribute, value)
@@ -72,7 +75,7 @@ module Admin
         return false if value.blank?
         return false unless Admin::Resource.find_by_model_class(resource_config.model_class)
 
-        attribute.to_s.in?(%w[name title short_title album_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name])
+        attribute.to_s.in?(%w[name title short_title album_name display_name display_album_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name])
       end
 
       def admin_pretty_json(value)
@@ -96,7 +99,7 @@ module Admin
       end
 
       def admin_thumbnail_attribute?(attribute)
-        attribute.to_s.in?(%w[name title album_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name])
+        attribute.to_s.in?(%w[name title album_name display_name display_album_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name])
       end
 
       def admin_value_with_thumbnail(record, value)

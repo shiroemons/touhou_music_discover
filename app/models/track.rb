@@ -40,6 +40,18 @@ class Track < ApplicationRecord
     spotify_tracks.first&.name || apple_music_tracks.first&.name
   end
 
+  def display_album_name
+    album&.display_name || jan_code
+  end
+
+  def display_name
+    album&.display_title_resolution&.display_track_name(self) || isrc
+  end
+
+  def display_title_source
+    album&.display_title_source
+  end
+
   def original_songs_count
     original_songs.size
   end

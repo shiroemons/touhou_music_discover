@@ -59,7 +59,7 @@ module Admin
     end
 
     def album_name(album)
-      album.spotify_album_name || album.apple_music_album_name || album.ytmusic_album_name || album.line_music_album_name || album.jan_code
+      album.display_name
     end
     helper_method :album_name
   end

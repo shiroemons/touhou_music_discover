@@ -9,10 +9,12 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
 
   SPOTIFY_EXPORT_PATH = Rails.root.join('tmp/export/spotify_touhou_music.tsv')
   TOUHOU_MUSIC_WITH_ORIGINAL_SONGS_EXPORT_PATH = Rails.root.join('tmp/export/touhou_music_with_original_songs.tsv')
+  TOUHOU_MUSIC_SLIM_EXPORT_PATH = Rails.root.join('tmp/export/touhou_music_slim.tsv')
 
   setup do
     Rake::Task['touhou_music_discover:export:spotify'].reenable
     Rake::Task['touhou_music_discover:export:touhou_music_with_original_songs'].reenable
+    Rake::Task['touhou_music_discover:export:touhou_music_slim'].reenable
   end
 
   test 'spotify export outputs active spotify albums only' do
@@ -71,6 +73,46 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
     tracks.each { |track| assert_includes output, track.isrc }
     original_songs.each { |original_song| assert_includes output, original_song.title }
     assert_operator original_song_queries, :<=, 1
+  end
+
+  test 'slim export uses one normalized title source for the album' do
+    album = Album.create!(jan_code: "export-slim-#{SecureRandom.hex(4)}", is_touhou: true)
+    track = Track.create!(album:, isrc: "JPGHI#{SecureRandom.alphanumeric(7).upcase}")
+    spotify_album = create_spotify_album(album:,
+                                         spotify_id: 'export-slim-spotify-album',
+                                         name: 'English Collection',
+                                         active: true)
+    apple_album = AppleMusicAlbum.create!(
+      album:,
+      apple_music_id: 'export-slim-apple-album',
+      name: '日本語コレクション',
+      label: Album::TOUHOU_MUSIC_LABEL,
+      total_tracks: 1,
+      payload: {}
+    )
+    create_spotify_track(album:, track:, spotify_album:, spotify_id: 'export-slim-spotify-track', name: 'English Track')
+    AppleMusicTrack.create!(
+      album:,
+      track:,
+      apple_music_album: apple_album,
+      apple_music_id: 'export-slim-apple-track',
+      artist_name: '',
+      composer_name: '',
+      name: '日本語曲',
+      label: Album::TOUHOU_MUSIC_LABEL,
+      disc_number: 1,
+      track_number: 1,
+      payload: {}
+    )
+
+    export_path = reset_export(TOUHOU_MUSIC_SLIM_EXPORT_PATH)
+    Rake::Task['touhou_music_discover:export:touhou_music_slim'].invoke
+
+    output = export_path.read
+
+    assert_includes output, "日本語コレクション\t1\t日本語曲"
+    assert_not_includes output, 'English Collection'
+    assert_not_includes output, 'English Track'
   end
 
   private

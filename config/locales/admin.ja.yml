@@ -214,6 +214,7 @@ ja:
       show_track: "楽曲詳細を見る"
     form:
       save_failed: "保存できませんでした。"
+      title_source_override_help: "自動判定では、全曲が揃っていて日本語タイトルの割合が高い配信元をアルバム単位で選びます。指定した配信元が不完全な場合は自動判定へ戻ります。"
       association_search_placeholder: "選択肢を検索"
       association_change_placeholder: "変更する場合は検索"
       association_load_error: "候補の読み込みに失敗しました。"
@@ -250,6 +251,7 @@ ja:
       original_songs: "原曲"
       album_name: "アルバム名"
       track_name: "曲名"
+      title_source_coverage: "日本語タイトル %{current}/%{total}件"
       copy_value: "%{label}「%{value}」をコピー"
       show_identifiers: "JAN/ISRCを表示"
       search_placeholder: "原曲コード・曲名・原作で検索"
@@ -322,6 +324,7 @@ ja:
         created_at: "作成日時"
         updated_at: "更新日時"
         name: "名前"
+        display_name: "名前"
         title: "タイトル"
         short_title: "略称"
         code: "コード"
@@ -333,6 +336,7 @@ ja:
         is_touhou: "東方"
         circle_name: "サークル"
         album_name: "アルバム名"
+        display_album_name: "アルバム名"
         albums_count: "アルバム数"
         original_songs_count: "原曲数"
         streaming_tracks_status: "配信取得"
@@ -370,6 +374,8 @@ ja:
         ytmusic_album_name: "YouTube Musicアルバム名"
         ytmusic_album_distributed_on: "YouTube Music配信日"
         line_music_album_name: "LINE MUSICアルバム名"
+        title_source_override: "表示名の配信元（手動指定）"
+        display_title_source: "表示名の配信元"
         album_type: "アルバム種別"
         label: "レーベル"
         release_date: "リリース日"
@@ -410,6 +416,17 @@ ja:
         distribution_fetched_at: "配信日取得日時"
         distribution_track_metadata: "配信日判定用の楽曲情報"
     values:
+      album_title_source:
+        automatic: "自動判定"
+        spotify: "Spotify"
+        apple_music: "Apple Music"
+        ytmusic: "YouTube Music"
+        line_music: "LINE MUSIC"
+        unavailable: "未判定"
+      album_title_source_mode:
+        automatic: "自動"
+        override: "手動指定"
+        fallback: "候補不足"
       ytmusic_album:
         distribution_source:
           art_track_mode: "Art Trackの最頻公開日"

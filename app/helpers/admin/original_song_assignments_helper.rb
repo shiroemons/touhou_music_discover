@@ -10,6 +10,10 @@ module Admin
       admin_copyable_original_song_assignment_button(value, label:, content: display_value)
     end
 
+    def admin_copyable_original_song_assignment_resolved_value(value, label:, display_value: value)
+      admin_copyable_original_song_assignment_button(value, label:, content: display_value)
+    end
+
     def admin_copyable_original_song_assignment_button(value, label:, content: value)
       copy_label = t('admin.original_song_assignments.copy_value', label:, value:)
       tag.button(
@@ -41,11 +45,29 @@ module Admin
     end
 
     def admin_original_song_assignment_album_name(album)
-      album.spotify_album_name ||
-        album.apple_music_album_name ||
-        album.ytmusic_album_name ||
-        album.line_music_album_name ||
-        album.jan_code
+      album.display_name
+    end
+
+    def admin_original_song_assignment_title_source_badge(resolution)
+      source_label = t("admin.values.album_title_source.#{resolution&.source || 'unavailable'}", default: t('admin.values.album_title_source.unavailable'))
+      mode = if resolution&.override?
+               'override'
+             elsif resolution&.fallback?
+               'fallback'
+             else
+               'automatic'
+             end
+      mode_label = t("admin.values.album_title_source_mode.#{mode}")
+      title = if resolution
+                current, total = resolution.coverage
+                t('admin.original_song_assignments.title_source_coverage', current:, total:)
+              end
+
+      tag.span("#{source_label}・#{mode_label}", class: %w[badge admin-title-source-badge], title:)
+    end
+
+    def admin_original_song_assignment_track_title_resolution(track, title_resolutions)
+      title_resolutions&.fetch(track.jan_code, nil) || track.album&.display_title_resolution
     end
 
     private

@@ -21,9 +21,15 @@ module Admin
       if album_view?
         @pagy, @albums = pagy(:offset, assignment_album_scope, limit: Admin::Resource::DEFAULT_ITEMS)
         @album_track_counts = assignment_track_counts(@albums)
+        @album_title_resolutions = AlbumTitleResolver.for_many(@albums)
         @assignment_track_count = filtered_assignment_scope.count
       else
         @pagy, @tracks = pagy(:offset, assignment_scope, limit: Admin::Resource::DEFAULT_ITEMS)
+        albums = Album.unscoped.where(jan_code: @tracks.map(&:jan_code)).to_a
+        title_resolutions = AlbumTitleResolver.for_many(albums)
+        @title_resolutions_by_jan = albums.to_h do |album|
+          [album.jan_code, title_resolutions.fetch(album.id)]
+        end
       end
     end
 
@@ -37,8 +43,11 @@ module Admin
       @tracks = assignment_scope.where(jan_code: params[:jan_code])
       return head :not_found unless @tracks.exists?
 
+      album = Album.unscoped.find_by(jan_code: params[:jan_code])
+      title_resolution = AlbumTitleResolver.for(album)
+
       render partial: 'admin/original_song_assignments/album_tracks',
-             locals: { tracks: @tracks, track_resource: @track_resource, show_identifiers: @show_identifiers }
+             locals: { tracks: @tracks, track_resource: @track_resource, show_identifiers: @show_identifiers, title_resolution: }
     end
 
     def update

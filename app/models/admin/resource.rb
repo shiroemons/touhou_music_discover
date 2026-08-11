@@ -513,8 +513,8 @@ module Admin
             key: 'albums',
             model_class_name: 'Album',
             index_attributes: %i[ytmusic_album_distributed_on jan_code circle_name spotify_album_name apple_music_album_name ytmusic_album_name line_music_album_name is_touhou],
-            detail_attributes: %i[id ytmusic_album_distributed_on jan_code is_touhou created_at updated_at],
-            form_attributes: %i[jan_code is_touhou],
+            detail_attributes: %i[id ytmusic_album_distributed_on jan_code is_touhou title_source_override display_title_source created_at updated_at],
+            form_attributes: %i[jan_code is_touhou title_source_override],
             search_scope: lambda { |scope, query|
               Admin::Resource.associated_search(
                 scope,
@@ -564,8 +564,8 @@ module Admin
           new(
             key: 'tracks',
             model_class_name: 'Track',
-            index_attributes: %i[ytmusic_album_distributed_on name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count],
-            detail_attributes: %i[id ytmusic_album_distributed_on name album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count created_at updated_at],
+            index_attributes: %i[ytmusic_album_distributed_on display_name display_album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count],
+            detail_attributes: %i[id ytmusic_album_distributed_on display_name display_album_name circle_name jan_code isrc streaming_tracks_status is_touhou original_songs_count created_at updated_at],
             form_attributes: %i[jan_code isrc is_touhou],
             search_attributes: %i[jan_code isrc],
             filter_definitions: [missing_streaming_track_filter, original_songs_count_filter, track_catalog_type_filter],

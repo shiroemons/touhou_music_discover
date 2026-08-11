@@ -1,4 +1,8 @@
 <% compact = local_assigns.fetch(:compact, false) %>
+<% title_resolution = local_assigns[:title_resolution] || admin_original_song_assignment_track_title_resolution(track, local_assigns[:title_resolutions]) %>
+<% display_album_name = title_resolution&.display_album_name || track.jan_code %>
+<% display_track_name = title_resolution&.display_track_name(track) || track.isrc %>
+<% display_album_value = admin_record_image_url(track).present? ? admin_value_with_thumbnail(track, display_album_name) : display_album_name %>
 <% selected_original_songs = track.original_songs.sort_by { |song| [song.original_code, song.track_number, song.code] } %>
 <% selected_options = selected_original_songs.map do |song| %>
   <% { value: song.code, label: [song.code, song.title, song.original_title].compact_blank.uniq.join(' / ') } %>
@@ -14,17 +18,21 @@
   <% unless compact %>
     <td class="admin-original-song-assignment-circle-cell"><%= admin_display_value(track_resource, track, :circle_name) %></td>
     <td class="admin-original-song-assignment-album-cell">
-      <%= admin_copyable_original_song_assignment_value(track_resource, track, :album_name,
-                                                        label: t('admin.original_song_assignments.album_name')) %>
+      <%= admin_copyable_original_song_assignment_resolved_value(
+            display_album_name,
+            label: t('admin.original_song_assignments.album_name'),
+            display_value: display_album_value
+          ) %>
     </td>
   <% end %>
   <td class="admin-original-song-assignment-track-number-cell">
     <%= admin_original_song_assignment_track_number(track) || tag.span(t('admin.shared.blank'), class: 'admin-muted-text') %>
   </td>
   <td class="admin-original-song-assignment-track-name-cell">
-    <%= admin_copyable_original_song_assignment_value(track_resource, track, :name,
-                                                      label: t('admin.original_song_assignments.track_name'),
-                                                      thumbnail: false) %>
+    <%= admin_copyable_original_song_assignment_resolved_value(
+          display_track_name,
+          label: t('admin.original_song_assignments.track_name')
+        ) %>
   </td>
   <% if show_identifiers %>
     <td class="admin-original-song-assignment-jan-cell"><%= track.jan_code %></td>

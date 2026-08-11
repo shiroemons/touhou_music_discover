@@ -188,7 +188,8 @@
                          album:,
                          track_count: @album_track_counts.fetch(album.jan_code, 0),
                          query: @query,
-                         show_identifiers: @show_identifiers %>
+                         show_identifiers: @show_identifiers,
+                         title_resolution: @album_title_resolutions.fetch(album.id) %>
             <% end %>
             <% if @albums.empty? %>
               <tr>
@@ -237,7 +238,7 @@
             <%= render partial: 'admin/original_song_assignments/track_row',
                        collection: @tracks,
                        as: :track,
-                       locals: { compact: false, track_resource: @track_resource, show_identifiers: @show_identifiers } %>
+                       locals: { compact: false, track_resource: @track_resource, show_identifiers: @show_identifiers, title_resolutions: @title_resolutions_by_jan } %>
             <% if @tracks.empty? %>
               <tr>
                 <td colspan="<%= @show_identifiers ? 8 : 6 %>" class="admin-table-empty">
