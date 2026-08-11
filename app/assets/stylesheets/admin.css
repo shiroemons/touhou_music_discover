@@ -7618,3 +7618,43 @@ html[data-admin-resolved-theme] .admin-pagination {
     transition: none;
   }
 }
+
+/* Keep menu-style disclosures inside their owning surface and close them consistently. */
+details[data-controller~="admin-menu"]:not([open]) > :not(summary),
+details.admin-theme-switcher:not([open]) > :not(summary) {
+  display: none;
+}
+
+.admin-action-menu-panel {
+  left: 0;
+  max-width: calc(100vw - 2rem);
+  min-width: 0;
+  right: auto;
+  width: min(24rem, calc(100vw - 2rem));
+}
+
+/* Use the available container width instead of fixed minimums at every breakpoint. */
+.admin-catalog-health-grid {
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+}
+
+.admin-coverage-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(18rem, 100%), 1fr));
+}
+
+.admin-relation-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(24rem, 100%), 1fr));
+}
+
+@media (min-width: 1200px) and (max-width: 1699.98px) {
+  .admin-coverage-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-action-menu-panel {
+    max-width: none;
+    width: auto;
+  }
+}

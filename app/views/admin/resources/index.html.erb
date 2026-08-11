@@ -11,12 +11,15 @@
   <div class="admin-page-actions">
     <%= render 'external_links', external_links: collection_external_links, compact: true %>
     <% if collection_actions.any? || @resource_config.key.in?(%w[tracks albums]) %>
-      <details class="admin-action-menu">
-        <summary class="btn btn-sm admin-btn">
+      <details class="admin-action-menu" data-controller="admin-menu">
+        <summary class="btn btn-sm admin-btn"
+                  role="button"
+                  aria-expanded="false"
+                  aria-controls="admin-action-menu-panel">
           <%= admin_icon(:lightning) %>
           <span><%= t('admin.actions.heading') %></span>
         </summary>
-        <div class="admin-action-menu-panel">
+        <div id="admin-action-menu-panel" class="admin-action-menu-panel">
           <% collection_actions.each do |action| %>
             <%= link_to admin_resource_action_path(@resource_config.key, action.key), class: 'btn btn-sm admin-btn' do %>
               <%= admin_icon(:lightning) %>

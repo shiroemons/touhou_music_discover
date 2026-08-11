@@ -11,6 +11,7 @@ import AdminClickableRowController from "./admin_clickable_row_controller"
 import AdminClipboardController from "./admin_clipboard_controller"
 import AdminInfiniteScrollController from "./admin_infinite_scroll_controller"
 import AdminFilterDisclosureController from "./admin_filter_disclosure_controller"
+import AdminMenuController from "./admin_menu_controller"
 import AdminMobileNavController from "./admin_mobile_nav_controller"
 import AdminOriginalSongAlbumController from "./admin_original_song_album_controller"
 import AdminOriginalSongPickerController from "./admin_original_song_picker_controller"
@@ -28,6 +29,7 @@ application.register("admin-clickable-row", AdminClickableRowController)
 application.register("admin-clipboard", AdminClipboardController)
 application.register("admin-infinite-scroll", AdminInfiniteScrollController)
 application.register("admin-filter-disclosure", AdminFilterDisclosureController)
+application.register("admin-menu", AdminMenuController)
 application.register("admin-mobile-nav", AdminMobileNavController)
 application.register("admin-original-song-album", AdminOriginalSongAlbumController)
 application.register("admin-original-song-picker", AdminOriginalSongPickerController)

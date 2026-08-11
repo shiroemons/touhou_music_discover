@@ -1,14 +1,15 @@
-import { Controller } from "@hotwired/stimulus"
+import AdminMenuController from "./admin_menu_controller"
 
 const THEMES = ["light", "dark", "system"]
 
-export default class extends Controller {
+export default class extends AdminMenuController {
   static targets = ["button"]
   static values = {
     storageKey: { type: String, default: "touhou-admin-theme" }
   }
 
   connect() {
+    super.connect()
     this.mediaQuery = window.matchMedia("(prefers-color-scheme: dark)")
     this.mediaQueryListener = () => {
       if (this.currentTheme() === "system") {
@@ -22,6 +23,7 @@ export default class extends Controller {
 
   disconnect() {
     this.mediaQuery?.removeEventListener("change", this.mediaQueryListener)
+    super.disconnect()
   }
 
   set(event) {
