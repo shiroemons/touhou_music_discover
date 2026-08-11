@@ -1851,22 +1851,26 @@
   color: var(--admin-danger);
 }
 
-.admin-original-song-search {
+.admin-original-song-search,
+.admin-relation-search {
   position: relative;
 }
 
-.admin-original-song-search .admin-icon {
+.admin-original-song-search .admin-icon,
+.admin-relation-search .admin-icon {
   color: var(--admin-muted);
   height: 1rem;
   left: 0.75rem;
   pointer-events: none;
   position: absolute;
-  top: 0.72rem;
+  top: 50%;
+  transform: translateY(-50%);
   width: 1rem;
   z-index: var(--admin-z-input-icon);
 }
 
-.admin-original-song-search-input {
+.admin-original-song-search-input,
+.admin-relation-search-input {
   padding-left: 2.2rem;
   width: 100%;
 }
@@ -2443,15 +2447,17 @@
 .admin-association-combobox-frame .admin-icon {
   color: var(--admin-muted);
   height: 1rem;
-  left: 0.85rem;
+  left: 0.65rem;
+  pointer-events: none;
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   width: 1rem;
+  z-index: var(--admin-z-input-icon);
 }
 
 .admin-association-combobox-input {
-  padding-left: 2.25rem;
+  padding-left: 1.75rem;
 }
 
 .admin-association-listbox {
@@ -7395,7 +7401,8 @@ html[data-admin-resolved-theme] .admin-pagination {
 .admin-association-combobox,
 .admin-association-combobox-frame,
 .admin-original-song-picker,
-.admin-original-song-search {
+.admin-original-song-search,
+.admin-relation-search {
   max-width: 100%;
   min-width: 0;
   width: 100%;
@@ -7452,6 +7459,11 @@ html[data-admin-resolved-theme] .admin-pagination {
   }
 
   .admin-relation-form-row .admin-input {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .admin-relation-search {
     flex-basis: 100%;
     max-width: none;
   }

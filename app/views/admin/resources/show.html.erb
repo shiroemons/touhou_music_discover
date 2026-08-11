@@ -122,9 +122,12 @@
                           class: 'admin-relation-form' do |form| %>
               <%= form.label :related_query, t('admin.relations.add_label', relation: section.label), class: 'admin-label' %>
               <div class="admin-relation-form-row">
-                <%= form.text_field :related_query,
-                                    class: 'input admin-input',
-                                    placeholder: t('admin.relations.add_placeholder') %>
+                <div class="admin-relation-search">
+                  <%= admin_icon(:search) %>
+                  <%= form.text_field :related_query,
+                                      class: 'input admin-input admin-relation-search-input',
+                                      placeholder: t('admin.relations.add_placeholder') %>
+                </div>
                 <%= form.button type: :submit, class: 'btn btn-sm admin-btn-primary' do %>
                   <%= admin_icon(:plus) %>
                   <span><%= t('admin.relations.add') %></span>

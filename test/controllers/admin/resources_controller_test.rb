@@ -471,6 +471,7 @@ module Admin
       assert_response :success
       assert_select 'form[action=?]', admin_resource_relation_path('albums', album, 'circles')
       assert_select 'input[name=?][placeholder=?]', 'related_query', 'ID・コード・名前で検索'
+      assert_select '.admin-relation-search .admin-icon', count: 1
 
       assert_difference('album.circles.count', 1) do
         post admin_resource_relation_url('albums', album, 'circles'), params: { related_query: circle.name }
@@ -627,6 +628,8 @@ module Admin
       assert_select '[data-admin-association-select-multiple-value=?]', 'true', count: 2
       assert_select 'input[type=search][role=?][id=?]', 'combobox', 'filters_original_type'
       assert_select 'input[type=search][role=?][id=?]', 'combobox', 'filters_original'
+      assert_select '.admin-association-combobox-frame .admin-icon[stroke-width=?][stroke-linecap=?][stroke-linejoin=?]',
+                    '2', 'round', 'round', count: 2
       original_filter = css_select('.admin-filter-combobox').find { |combobox| combobox.at_css('#filters_original') }
       visible_children = original_filter.element_children.filter_map { |child| child['class'] }
 
