@@ -88,6 +88,18 @@ module Spotify
       stub_spotify_put(path, status: 403, body: { error: { status: 403, message: 'Forbidden.' } })
     end
 
+    def stub_playlist_items(id, spotify_ids)
+      stub_spotify_get("playlists/#{id}/tracks",
+                       body: {
+                         'items' => spotify_ids.map { |spotify_id| { 'track' => { 'id' => spotify_id } } },
+                         'total' => spotify_ids.size,
+                         'limit' => 100,
+                         'offset' => 0,
+                         'next' => nil
+                       },
+                       query: { 'limit' => '100', 'offset' => '0' })
+    end
+
     def call_service
       PlaylistUpdateService.call(update_type: 'windows', spotify_session: @session, user_id: @user_id)
     end
@@ -105,6 +117,7 @@ module Spotify
       stub_me_playlists([])
       stub_spotify_post('me/playlists', body: { 'id' => 'PL_NEW', 'name' => @song.title })
       stub_spotify_put('playlists/PL_NEW/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_playlist_items('PL_NEW', ['SVCTRACK1'])
 
       call_service
 
@@ -120,6 +133,7 @@ module Spotify
     test 'reuses an existing playlist instead of creating a duplicate' do
       stub_me_playlists([playlist_item('PL_EXISTING', @song.title)])
       put_stub = stub_spotify_put('playlists/PL_EXISTING/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_playlist_items('PL_EXISTING', ['SVCTRACK1'])
 
       call_service
 
@@ -134,6 +148,7 @@ module Spotify
       stub_me_playlists([playlist_item_owned_by('PL_FOREIGN', @song.title, 'someone-else')])
       stub_spotify_post('me/playlists', body: { 'id' => 'PL_NEW', 'name' => @song.title })
       stub_spotify_put('playlists/PL_NEW/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_playlist_items('PL_NEW', ['SVCTRACK1'])
 
       call_service
 
@@ -155,6 +170,7 @@ module Spotify
       stub_me_playlists([playlist_item('PL_EXISTING', @song.title),
                          playlist_item('PL_EMPTY', empty_song.title)])
       stub_spotify_put('playlists/PL_EXISTING/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_playlist_items('PL_EXISTING', ['SVCTRACK1'])
 
       call_service
 
@@ -169,6 +185,7 @@ module Spotify
       create_song_without_tracks
       stub_me_playlists([playlist_item('PL_EXISTING', @song.title)])
       stub_spotify_put('playlists/PL_EXISTING/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_playlist_items('PL_EXISTING', ['SVCTRACK1'])
 
       call_service
 

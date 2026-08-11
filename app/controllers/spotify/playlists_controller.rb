@@ -73,30 +73,40 @@ module Spotify
         return
       end
 
-      # through関連の複雑さを避けるため直接SQL
-      spotify_tracks = SpotifyTrack.find_by_sql([<<~SQL.squish, original_song_code])
-        SELECT spotify_tracks.*
-        FROM spotify_tracks
-        INNER JOIN tracks ON tracks.id = spotify_tracks.track_id
-        INNER JOIN tracks_original_songs ON tracks_original_songs.track_id = tracks.id
-        WHERE tracks_original_songs.original_song_code = ?
-      SQL
-      if spotify_tracks.empty?
+      original_song = OriginalSong.non_duplicated.find_by(code: original_song_code)
+      if original_song.nil?
         redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.tracks_not_found')
         return
       end
 
+      selection = Spotify::PlaylistTrackSelector.call(original_song)
+      if selection.raw_count.zero?
+        redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.tracks_not_found')
+        return
+      end
+      raise Spotify::PlaylistTrackSelector::AmbiguousSelectionError, selection.ambiguous_groups if selection.ambiguous?
+
       # 対話的なリクエスト（ユーザーが同期ボタンを押して待っている）なので、
       # レート制限時は長く待たず早めに諦める。デフォルト（tries: 5, max_retry_after: 900）は
       # バックグラウンド処理向け。
-      Spotify::PlaylistTrackWriter.call(session: spotify_session, playlist_id:,
-                                        spotify_tracks:, tries: 3, max_retry_after: 60,
-                                        source: 'Spotify::PlaylistsController#sync_single')
+      Spotify::PlaylistUpdateLock.with(session[:user_id]) do
+        Spotify::PlaylistTrackWriter.call(session: spotify_session, playlist_id:,
+                                          spotify_tracks: selection.tracks,
+                                          tries: 3, max_retry_after: 60,
+                                          source: 'Spotify::PlaylistsController#sync_single',
+                                          verify: true)
+      end
 
       spotify_playlist = SpotifyPlaylist.find_by(spotify_id: playlist_id)
-      spotify_playlist&.update(total: spotify_tracks.size, synced_at: Time.current)
+      spotify_playlist&.update(total: selection.canonical_count, synced_at: Time.current)
 
-      redirect_to spotify_playlists_path, notice: "#{playlist_name}を同期しました（#{spotify_tracks.size}曲）"
+      redirect_to spotify_playlists_path, notice: "#{playlist_name}を同期しました（#{selection.canonical_count}曲）"
+    rescue Spotify::PlaylistTrackSelector::AmbiguousSelectionError => e
+      Rails.logger.warn("sync_single ambiguous track selection: #{e.message}")
+      mark_sync_incomplete(params[:id])
+      redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.ambiguous_tracks')
+    rescue Spotify::PlaylistUpdateLock::BusyError
+      redirect_to spotify_playlists_path, alert: I18n.t('spotify.playlists.alerts.update_in_progress')
     rescue SpotifyApi::QuotaExceededError => e
       # クォータ超過は復旧まで数時間かかるため、通常のレート制限とは別メッセージにする。
       # RateLimitError のサブクラスなので RateLimitError より先に rescue する必要がある。
@@ -123,17 +133,36 @@ module Spotify
         return
       end
 
-      progress_key = "playlist_update:#{session[:user_id]}"
+      user_id = session[:user_id]
+      lock = Spotify::PlaylistUpdateLock.new(user_id)
+      begin
+        # The worker runs after this request returns, so a block-scoped lock
+        # would be released too early and allow a second full update to start.
+        lock.acquire!
+        start_playlist_update(update_type, user_id, lock)
+      rescue Spotify::PlaylistUpdateLock::BusyError
+        redirect_to spotify_playlists_progress_path, alert: I18n.t('spotify.playlists.alerts.update_in_progress')
+        return
+      rescue StandardError
+        lock.release!
+        raise
+      end
+
+      redirect_to spotify_playlists_progress_path
+    end
+
+    def start_playlist_update(update_type, user_id, lock)
+      progress_key = "playlist_update:#{user_id}"
       redis = RedisPool.get
       redis.set(progress_key, {
         update_type:, total: 0, current: 0, current_song: '', current_original: '',
-        songs_in_original: 0, arrangement_count: 0, status: 'processing',
+        songs_in_original: 0, arrangement_count: 0, raw_track_count: 0,
+        duplicate_track_count: 0, failed_playlists: [], status: 'processing',
         started_at: Time.current.to_s, completed_at: nil
       }.to_json)
 
       # スレッドにはリクエストのコンテキストが無いため、セッションとユーザーIDは
       # Thread.new の前にローカル変数へ取り出しておく。
-      user_id = session[:user_id]
       session_for_thread = spotify_session
       Thread.new do
         # 進捗キーへの error 書き込みは PlaylistUpdateService#mark_error が行うため、
@@ -143,11 +172,12 @@ module Spotify
         Rails.logger.error("プレイリスト更新エラー: #{e.class} - #{e.message}")
         Rails.logger.error(e.backtrace.join("\n"))
       ensure
+        lock.release!
         ActiveRecord::Base.connection_pool.release_connection
       end
-
-      redirect_to spotify_playlists_progress_path
     end
+
+    private :start_playlist_update
 
     def progress
       load_progress_info

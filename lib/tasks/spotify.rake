@@ -1,6 +1,109 @@
 # frozen_string_literal: true
 
 namespace :spotify do
+  desc '原曲別プレイリストをDBの正規化結果と照合（デフォルトはdry-run）'
+  task reconcile_playlists: :environment do
+    user_id = ENV['USER_ID'].presence || abort('USER_ID is required')
+    types = ENV.fetch('TYPES', Original.original_types.keys.join(',')).split(',').map(&:strip).compact_blank
+    known_types = Original.original_types.keys
+    invalid_types = types - known_types
+    abort "TYPES contains unknown values: #{invalid_types.join(', ')}" if invalid_types.any?
+
+    apply = ENV.fetch('APPLY', '0') == '1'
+    abort '実プレイリストを書き換えるには CONFIRM=RECONCILE_ORIGINAL_PLAYLISTS が必要です' if apply && ENV['CONFIRM'] != 'RECONCILE_ORIGINAL_PLAYLISTS'
+
+    session = SpotifyApi::UserSession.find(user_id)
+    abort "Spotify session not found for USER_ID=#{user_id}" unless session
+
+    playlists = SpotifyRetry.with_retry(source: 'spotify:reconcile_playlists#load_playlists') do
+      SpotifyApi::Playlist.all_mine(session, limit: Spotify::PlaylistUpdateService::LIMIT)
+    end
+    playlists_by_name = playlists.compact
+                                 .select { |playlist| playlist.dig('owner', 'id') == session.spotify_user_id }
+                                 .group_by { |playlist| playlist['name'] }
+
+    songs_by_title = Original.where(original_type: types).includes(:original_songs).flat_map do |original|
+      original.original_songs.reject(&:is_duplicate)
+    end.group_by(&:title)
+
+    puts "user_id: #{user_id}"
+    puts "spotify_user_id: #{session.spotify_user_id}"
+    puts "types: #{types.join(',')}"
+    puts "apply: #{apply}"
+    puts "target songs: #{songs_by_title.size}"
+
+    counts = Hash.new(0)
+    run = lambda do
+      songs_by_title.sort_by { |title, _songs| title }.each do |title, songs|
+        playlist_candidates = playlists_by_name[title].to_a
+        if songs.size != 1
+          counts[:skip_multiple_original_songs] += 1
+          puts [
+            'skip_multiple_original_songs', title, "songs=#{songs.size}"
+          ].join("\t")
+          next
+        end
+
+        if playlist_candidates.empty?
+          counts[:skip_missing_playlist] += 1
+          puts ['skip_missing_playlist', title].join("\t")
+          next
+        end
+
+        if playlist_candidates.size != 1
+          counts[:skip_multiple_playlists] += 1
+          puts [
+            'skip_multiple_playlists', title, "playlists=#{playlist_candidates.size}"
+          ].join("\t")
+          next
+        end
+
+        playlist = playlist_candidates.first
+        begin
+          result = Spotify::PlaylistReconciler.new(
+            session:,
+            playlist_id: playlist['id'],
+            original_song: songs.first,
+            playlist_name: title,
+            apply:
+          ).call
+          counts[result.status] += 1
+          puts [
+            result.status,
+            result.playlist_id,
+            result.playlist_name,
+            "current=#{result.current_count}",
+            "desired=#{result.desired_count}",
+            "missing=#{result.missing_count}",
+            "extra=#{result.extra_count}",
+            "exact_duplicates=#{result.exact_duplicate_count}",
+            "semantic_duplicate_groups=#{result.semantic_duplicate_group_count}",
+            "db_raw=#{result.selection.raw_count}",
+            "db_canonical=#{result.selection.canonical_count}",
+            "db_duplicate_slots=#{result.selection.duplicate_count}"
+          ].join("\t")
+        rescue Spotify::PlaylistTrackSelector::AmbiguousSelectionError => e
+          counts[:skip_ambiguous_tracks] += 1
+          puts ['skip_ambiguous_tracks', title, e.message].join("\t")
+        rescue SpotifyApi::QuotaExceededError
+          raise
+        rescue StandardError => e
+          counts[:error] += 1
+          puts ['error', title, e.class.name, e.message].join("\t")
+        end
+      end
+    end
+
+    if apply
+      Spotify::PlaylistUpdateLock.with(user_id) { run.call }
+    else
+      run.call
+    end
+
+    puts "summary: #{counts.sort_by { |key, _value| key.to_s }.map { |key, value| "#{key}=#{value}" }.join(' ')}"
+    puts 'dry-run only. Set APPLY=1 and the required CONFIRM value to repair playlists.' unless apply
+  end
+
   desc 'SpotifyAlbumの重複を整理（デフォルトはdry-run）'
   task dedupe_albums: :environment do
     mode = ENV.fetch('MODE', 'same_spotify_id')

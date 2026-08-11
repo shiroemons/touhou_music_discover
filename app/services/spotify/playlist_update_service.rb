@@ -25,6 +25,7 @@ module Spotify
       @playlists_cache = nil
       @failed_count = 0
       @last_error_message = nil
+      @failed_playlists = []
       @progress_info = load_progress_info
     end
 
@@ -108,21 +109,20 @@ module Spotify
     end
 
     def process_original_song(original_song, current_count)
-      # spotify_tracks は has_many :through の CollectionProxy なので、そのまま扱うと
-      # empty? / size / map がそれぞれ別のクエリを別の時点で発行する。空判定と
-      # PlaylistTrackWriter の間には find_or_create_playlist のネットワーク I/O が挟まるため、
-      # その間に SpotifyTrack が消えると writer だけが空集合を見て全消し PUT を撃つ。
-      # ここで一度だけ配列に実体化し、以降の判定と書き込みが同じ集合を見るようにする。
-      spotify_tracks = original_song.spotify_tracks.to_a
-      return current_count if spotify_tracks.empty?
+      selection = PlaylistTrackSelector.call(original_song)
+      return current_count if selection.raw_count.zero?
+
+      raise PlaylistTrackSelector::AmbiguousSelectionError, selection.ambiguous_groups if selection.ambiguous?
 
       update_progress(
         current_song: original_song.title,
         current: current_count,
-        arrangement_count: spotify_tracks.size
+        arrangement_count: selection.canonical_count,
+        raw_track_count: selection.raw_count,
+        duplicate_track_count: selection.duplicate_count
       )
 
-      update_playlist_for_song(original_song, spotify_tracks)
+      update_playlist_for_song(original_song, selection.tracks)
 
       current_count + 1
     rescue SpotifyApi::QuotaExceededError
@@ -134,6 +134,7 @@ module Spotify
       Rails.logger.error("Error processing song #{original_song.title}: #{e.class} - #{e.message}")
       @failed_count += 1
       @last_error_message = "#{e.class}: #{e.message}"
+      record_failure(original_song, selection, e)
       current_count + 1
     end
 
@@ -144,11 +145,14 @@ module Spotify
     def update_playlist_for_song(original_song, spotify_tracks)
       playlist = find_or_create_playlist(original_song.title)
       # id が無いレスポンスをそのまま渡すと playlists//tracks へ PUT してしまう。
-      return unless playlist&.[]('id')
+      raise SpotifyApi::ApiError, 'Spotify playlist response did not include an id' unless playlist&.[]('id')
 
       PlaylistTrackWriter.call(session: spotify_session, playlist_id: playlist['id'],
                                spotify_tracks:,
-                               source: 'Spotify::PlaylistUpdateService')
+                               source: 'Spotify::PlaylistUpdateService',
+                               verify: true)
+
+      playlist
     end
 
     # 作成直後に GET /playlists/{id} で取り直していたが、
@@ -218,7 +222,22 @@ module Spotify
       # 完了扱いでも実際には書けていない曲がありうるため、失敗の実態を進捗情報に残す。
       @progress_info['failed_count'] = @failed_count
       @progress_info['last_error_message'] = @last_error_message if @last_error_message
+      @progress_info['failed_playlists'] = @failed_playlists
       flush_progress
+    end
+
+    def record_failure(original_song, selection, error)
+      playlist = find_playlist(original_song.title)
+      @failed_playlists << {
+        'original_song_code' => original_song.code,
+        'name' => original_song.title,
+        'playlist_id' => playlist&.[]('id'),
+        'raw_track_count' => selection&.raw_count,
+        'canonical_track_count' => selection&.canonical_count,
+        'duplicate_track_count' => selection&.duplicate_count,
+        'error_class' => error.class.name,
+        'error_message' => error.message.to_s.presence || error.class.name
+      }
     end
 
     def mark_error(message)

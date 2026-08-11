@@ -49,5 +49,37 @@
       </div>
     <% end %>
   </div>
+
+  <% failed_playlists = Array(@update_info['failed_playlists']) %>
+  <% if failed_playlists.any? %>
+    <section class="failed-playlists" aria-labelledby="failed-playlists-title">
+      <h3 id="failed-playlists-title">更新できなかったプレイリスト</h3>
+      <p>失敗した対象だけを再更新できます。重複候補がある場合は自動修復せず、確認対象として残しています。</p>
+      <ul>
+        <% failed_playlists.each do |failure| %>
+          <% name = failure['name'].presence || failure['original_song_code'].presence || '名称不明' %>
+          <li>
+            <span><%= name %></span>
+            <% if failure['raw_track_count'].present? && failure['canonical_track_count'].present? %>
+              <small>
+                DB候補 <%= failure['raw_track_count'] %>件 → 正規化後 <%= failure['canonical_track_count'] %>件
+                （重複候補 <%= failure['duplicate_track_count'].to_i %>件）
+              </small>
+            <% end %>
+            <% if failure['playlist_id'].present? %>
+              <%= button_to 'このプレイリストを再更新',
+                            spotify_playlist_sync_path(id: failure['playlist_id'], name:),
+                            method: :post,
+                            class: 'btn btn-secondary',
+                            form: { data: { turbo_confirm: "#{name}を再更新しますか？" } } %>
+            <% else %>
+              <small>SpotifyプレイリストIDを取得できなかったため、一覧から対象を確認してください。</small>
+            <% end %>
+          </li>
+        <% end %>
+      </ul>
+    </section>
+  <% end %>
+
   <p><%= link_to 'トップページに戻る', root_path, class: 'btn btn-primary' %></p>
 </div>

@@ -83,5 +83,47 @@ module Spotify
       end
       assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks"
     end
+
+    test 'does not retry a non-idempotent POST after a timeout' do
+      stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_request(:post, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks").to_timeout
+
+      assert_raises(Faraday::ConnectionFailed) do
+        PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
+                                 spotify_tracks: tracks(101), source: 'test')
+      end
+
+      assert_requested :post, "#{SpotifyApiStubs::API_BASE}/playlists/PL1/tracks", times: 1
+    end
+
+    test 'verifies the complete playlist after writing when requested' do
+      stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_spotify_get('playlists/PL1/tracks', body: {
+                         'items' => tracks(3).map { |track| { 'track' => { 'id' => track.spotify_id } } },
+                         'total' => 3,
+                         'limit' => 100,
+                         'offset' => 0,
+                         'next' => nil
+                       }, query: { 'limit' => '100', 'offset' => '0' })
+
+      assert_equal 3, PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
+                                               spotify_tracks: tracks(3), source: 'test', verify: true)
+    end
+
+    test 'raises when post-write verification finds a different playlist' do
+      stub_spotify_put('playlists/PL1/tracks', body: { 'snapshot_id' => 'snap' })
+      stub_spotify_get('playlists/PL1/tracks', body: {
+                         'items' => [{ 'track' => { 'id' => 'OTHER' } }],
+                         'total' => 1,
+                         'limit' => 100,
+                         'offset' => 0,
+                         'next' => nil
+                       }, query: { 'limit' => '100', 'offset' => '0' })
+
+      assert_raises(PlaylistTrackWriter::VerificationError) do
+        PlaylistTrackWriter.call(session: @session, playlist_id: 'PL1',
+                                 spotify_tracks: tracks(3), source: 'test', verify: true)
+      end
+    end
   end
 end

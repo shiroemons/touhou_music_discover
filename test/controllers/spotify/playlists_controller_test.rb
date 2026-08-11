@@ -76,6 +76,18 @@ module Spotify
       detail.to_json
     end
 
+    def stub_playlist_items(id, spotify_ids)
+      stub_spotify_get("playlists/#{id}/tracks",
+                       body: {
+                         'items' => spotify_ids.map { |spotify_id| { 'track' => { 'id' => spotify_id } } },
+                         'total' => spotify_ids.size,
+                         'limit' => 100,
+                         'offset' => 0,
+                         'next' => nil
+                       },
+                       query: { 'limit' => '100', 'offset' => '0' })
+    end
+
     # refresh_counts / create は Thread.new で非同期実行されるため、Redis の進捗キーが
     # 終了状態になるまでポーリングして待つ。
     def wait_for_progress(key, timeout: 5)
@@ -344,6 +356,7 @@ module Spotify
       stub_spotify_get('me/playlists', body: me_playlists_body,
                                        query: { 'limit' => '50', 'offset' => '0' })
       stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap' })
+      stub_playlist_items('PL_MATCHED', ['TRACK1'])
 
       post spotify_playlists_create_path, params: { update_type: 'windows' }
 
@@ -373,11 +386,16 @@ module Spotify
 
       assert_equal 'completed', info['status']
       assert_equal 1, info['failed_count']
+      assert_equal 'PL_MATCHED', info['failed_playlists'].first['playlist_id']
 
       get spotify_playlists_progress_path
 
       assert_response :success
       assert_match '1曲の更新に失敗しました', @response.body
+      retry_path = spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_select 'form[action=?]', retry_path, count: 1
+      assert_select 'form[action=?] button', retry_path, text: 'このプレイリストを再更新', count: 1
     end
 
     test 'progress exposes a retryable polling error target while processing' do
@@ -463,6 +481,7 @@ module Spotify
                                          name: @song.title, total: 7, position: 0)
       stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
       stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap3' })
+      stub_playlist_items('PL_MATCHED', ['TRACK1'])
 
       post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
 
@@ -485,11 +504,28 @@ module Spotify
       create_spotify_track('TRACK1')
       stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
       stub_spotify_put('playlists/PL_MATCHED/tracks', body: { snapshot_id: 'snap3' })
+      stub_playlist_items('PL_MATCHED', ['TRACK1'])
 
       post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
 
       assert_redirected_to spotify_playlists_path
       assert_not_requested :get, %r{/me/playlists}
+    end
+
+    test 'sync_single reports that a full update is already running' do
+      log_in
+      create_spotify_track('TRACK1')
+      stub_spotify_get('playlists/PL_MATCHED', body: playlist_detail_body)
+      lock = PlaylistUpdateLock.new(@user.id, ttl: 60)
+      lock.acquire!
+
+      post spotify_playlist_sync_path(id: 'PL_MATCHED', name: @song.title)
+
+      assert_redirected_to spotify_playlists_path
+      assert_equal I18n.t('spotify.playlists.alerts.update_in_progress'), flash[:alert]
+      assert_not_requested :put, "#{SpotifyApiStubs::API_BASE}/playlists/PL_MATCHED/tracks"
+    ensure
+      lock&.release!
     end
 
     test 'sync_single refuses a playlist whose name is not an original song' do

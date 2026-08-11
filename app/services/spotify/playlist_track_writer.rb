@@ -12,6 +12,7 @@ module Spotify
   # controller とサービスで実装を分けず、このクラスに閉じ込めている。
   class PlaylistTrackWriter
     MAX_ITEMS_PER_REQUEST = 100
+    class VerificationError < StandardError; end
 
     class << self
       def call(...)
@@ -26,6 +27,7 @@ module Spotify
     #   Task 11 のバックグラウンド呼び出しはデフォルト（SpotifyRetry::DEFAULT_TRIES）のままでよいが、
     #   sync_single のような対話的な呼び出しは短く上書きする。
     # @param max_retry_after [Integer] SpotifyRetry.with_retry に渡す待機上限秒数。tries と同様の理由で調整可能にする。
+    # @param verify [Boolean] 書き込み後に GET でプレイリスト全体を検証する。
     # @return [Integer] 書き込んだトラック数
     # rubocop:disable Metrics/ParameterLists -- 呼び出し側（sync_single とバックグラウンドサービス）が
     # allow_clear/tries/max_retry_after を個別に指定できる必要があるため、
@@ -33,14 +35,17 @@ module Spotify
     def initialize(session:, playlist_id:, spotify_tracks:, source:,
                    allow_clear: false,
                    tries: SpotifyRetry::DEFAULT_TRIES,
-                   max_retry_after: SpotifyRetry::DEFAULT_MAX_RETRY_AFTER)
+                   max_retry_after: SpotifyRetry::DEFAULT_MAX_RETRY_AFTER,
+                   verify: false)
       @session = session
       @playlist_id = playlist_id
-      @uris = spotify_tracks.map { |track| "spotify:track:#{track.spotify_id}" }
+      # セレクタは内部Track単位の重複を除去するが、外部IDの重複も最後の安全弁として除去する。
+      @uris = spotify_tracks.map { |track| "spotify:track:#{track.spotify_id}" }.uniq
       @source = source
       @allow_clear = allow_clear
       @tries = tries
       @max_retry_after = max_retry_after
+      @verify = verify
     end
     # rubocop:enable Metrics/ParameterLists
 
@@ -54,18 +59,48 @@ module Spotify
       with_retry { SpotifyApi::Playlist.replace_items(session, playlist_id, uris.first(MAX_ITEMS_PER_REQUEST)) }
 
       uris.drop(MAX_ITEMS_PER_REQUEST).each_slice(MAX_ITEMS_PER_REQUEST) do |batch|
-        with_retry { SpotifyApi::Playlist.add_items(session, playlist_id, batch) }
+        # POST は非冪等であり、サーバー側で成功した後にタイムアウトすると再送で
+        # 同じバッチが二重登録される。追加操作は自動リトライせず、失敗した場合は
+        # 呼び出し元に返して、次回のPUTによる全体再構築へ委ねる。
+        with_non_idempotent_write { SpotifyApi::Playlist.add_items(session, playlist_id, batch) }
       end
+
+      verify_contents! if verify
 
       uris.size
     end
 
     private
 
-    attr_reader :session, :playlist_id, :uris, :source, :allow_clear, :tries, :max_retry_after
+    attr_reader :session, :playlist_id, :uris, :source, :allow_clear, :tries, :max_retry_after, :verify
 
     def with_retry(&)
       SpotifyRetry.with_retry(source:, tries:, max_retry_after:, &)
+    end
+
+    def with_non_idempotent_write(&)
+      SpotifyRetry.with_retry(source:, tries: 1, max_retry_after:, &)
+    end
+
+    def verify_contents!
+      actual_uris = with_retry do
+        items = SpotifyApi::Playlist.all_items(session, playlist_id, limit: MAX_ITEMS_PER_REQUEST)
+        items.each_with_index.map { |item, index| item_uri(item, index) }
+      end
+
+      return if actual_uris == uris
+
+      raise VerificationError,
+            "playlist verification failed: expected=#{uris.size} actual=#{actual_uris.size} " \
+            "playlist_id=#{playlist_id}"
+    end
+
+    def item_uri(item, index)
+      track = item && (item['track'] || item['item'])
+      track_id = track&.[]('id').presence
+      return "spotify:track:#{track_id}" if track_id
+
+      "spotify:unavailable:#{index}"
     end
   end
 end
