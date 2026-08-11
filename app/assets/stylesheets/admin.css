@@ -7302,3 +7302,161 @@ html[data-admin-resolved-theme] .admin-pagination {
     width: 100%;
   }
 }
+
+/* Keep form controls readable on every admin screen without restricting data tables. */
+.admin-shell {
+  --admin-form-max-width: 56rem;
+  --admin-field-max-width: 36rem;
+  --admin-search-max-width: 40rem;
+  --admin-filter-max-width: 20rem;
+}
+
+.admin-form-panel:not(.admin-action-execution-panel),
+.admin-action-progress-card {
+  max-width: min(100%, var(--admin-form-max-width));
+}
+
+.admin-field,
+.admin-action-fields {
+  min-width: 0;
+}
+
+.admin-field > .admin-input,
+.admin-field > .admin-association-combobox,
+.admin-action-fields .admin-input {
+  box-sizing: border-box;
+  max-width: min(100%, var(--admin-field-max-width));
+  width: 100%;
+}
+
+.admin-field > textarea.admin-input,
+.admin-action-fields textarea.admin-input {
+  max-width: min(100%, var(--admin-form-max-width));
+}
+
+.admin-search-row {
+  align-items: end;
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+.admin-search-field {
+  flex: 0 1 var(--admin-search-max-width);
+  max-width: var(--admin-search-max-width);
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-search-row .admin-search-input {
+  max-width: none;
+  width: 100%;
+}
+
+.admin-search-actions {
+  flex: 0 0 auto;
+}
+
+.admin-filter-bar {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), var(--admin-filter-max-width)));
+  justify-content: start;
+}
+
+.admin-filter-field {
+  max-width: var(--admin-filter-max-width);
+  width: 100%;
+}
+
+.admin-filter-field > .admin-select,
+.admin-filter-field > .admin-association-combobox {
+  max-width: 100%;
+}
+
+.admin-original-song-assignment-search-form .admin-filter-bar {
+  grid-template-columns: minmax(0, var(--admin-filter-max-width)) auto;
+  justify-content: start;
+}
+
+.admin-original-song-assignment-search-form .admin-filter-field {
+  max-width: var(--admin-filter-max-width);
+}
+
+.admin-relation-form-row {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.admin-relation-form-row .admin-input {
+  flex: 1 1 20rem;
+  max-width: min(100%, var(--admin-field-max-width));
+  min-width: 0;
+}
+
+.admin-association-combobox,
+.admin-association-combobox-frame,
+.admin-original-song-picker,
+.admin-original-song-search {
+  max-width: 100%;
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-association-option,
+.admin-association-option-error,
+.admin-original-song-option,
+.admin-original-song-option-empty {
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+@media (min-width: 768px) {
+  .admin-search-row,
+  .admin-resource-index-page .admin-search-row,
+  .admin-original-song-assignment-search-form .admin-search-row,
+  .admin-original-song-missing-albums-search-form .admin-search-row {
+    align-items: flex-end;
+    flex-direction: row;
+  }
+
+  .admin-search-actions {
+    width: auto;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .admin-search-row,
+  .admin-resource-index-page .admin-search-row,
+  .admin-original-song-assignment-search-form .admin-search-row,
+  .admin-original-song-missing-albums-search-form .admin-search-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-search-field {
+    flex: 0 0 auto;
+    max-width: none;
+  }
+
+  .admin-filter-bar,
+  .admin-original-song-assignment-search-form .admin-filter-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-filter-field,
+  .admin-original-song-assignment-search-form .admin-filter-field {
+    max-width: none;
+  }
+
+  .admin-relation-form-row {
+    align-items: stretch;
+  }
+
+  .admin-relation-form-row .admin-input {
+    flex-basis: 100%;
+    max-width: none;
+  }
+
+  .admin-relation-form-row .btn {
+    width: 100%;
+  }
+}
