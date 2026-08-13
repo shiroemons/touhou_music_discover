@@ -39,6 +39,30 @@ class LineMusicTrackTest < ActiveSupport::TestCase
     assert_equal 4, line_music_track.track_number
   end
 
+  test 'save_track rejects a source album that differs from the LINE MUSIC parent album' do
+    old_album = Album.create!(jan_code: "line-music-source-old-#{SecureRandom.hex(4)}")
+    new_album = Album.create!(jan_code: "line-music-source-new-#{SecureRandom.hex(4)}")
+    old_track = Track.create!(album: old_album, isrc: "ISRC#{SecureRandom.hex(4)}")
+    line_music_album = LineMusicAlbum.create!(
+      album: new_album,
+      line_music_id: "lm-album-#{SecureRandom.hex(4)}",
+      name: 'LINE MUSIC Album',
+      total_tracks: 1,
+      payload: {}
+    )
+
+    assert_no_difference -> { LineMusicTrack.unscoped.count } do
+      assert_raises(LineMusicTrack::SourceAlbumMismatchError) do
+        LineMusicTrack.save_track(
+          old_album.id,
+          old_track.id,
+          line_music_album,
+          build_api_track(track_id: "lm-track-#{SecureRandom.hex(4)}")
+        )
+      end
+    end
+  end
+
   test 'reports progress while fetching LINE MUSIC tracks' do
     album = Album.create!(jan_code: "line-music-track-progress-#{SecureRandom.hex(4)}")
     updates = []

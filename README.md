@@ -392,6 +392,12 @@ Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよ
   devbox run -- bin/rails line_music:update_line_music_tracks
   ```
 
+- LINE MUSICトラックのcanonical親不整合を確認・修復（既定はdry-run）
+  ```shell
+  devbox run -- bin/rails line_music:repair_track_parent_mismatches
+  APPLY=1 devbox run -- bin/rails line_music:repair_track_parent_mismatches
+  ```
+
 ### 共通
 
 - 外部から`touhou_music_with_original_songs.tsv`を取得し原曲紐付けを行う

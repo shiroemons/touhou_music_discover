@@ -39,6 +39,44 @@ class LineMusicAlbumTest < ActiveSupport::TestCase
     assert_equal 'リジッドパラダイス ~ Reanimate', @line_music_album.payload['album_title']
   end
 
+  test 'save_album removes stale track relations when the canonical album changes' do
+    old_album = Album.create!(jan_code: "line-music-old-parent-#{SecureRandom.hex(4)}")
+    new_album = Album.create!(jan_code: "line-music-new-parent-#{SecureRandom.hex(4)}")
+    old_track = Track.create!(album: old_album, isrc: "ISRC#{SecureRandom.hex(4)}")
+    line_music_album = LineMusicAlbum.create!(
+      album: old_album,
+      line_music_id: 'mb-test-reparent',
+      name: 'Old Album',
+      total_tracks: 1,
+      payload: {}
+    )
+    LineMusicTrack.create!(
+      album: old_album,
+      track: old_track,
+      line_music_album:,
+      line_music_id: 'mt-test-reparent',
+      name: 'Old Track',
+      url: '',
+      disc_number: 1,
+      track_number: 1,
+      payload: {}
+    )
+
+    fetched_album = build_line_music_api_album(
+      album_id: line_music_album.line_music_id,
+      album_title: 'New Album',
+      release_date: Date.new(2026, 2, 21),
+      track_total_count: 1
+    )
+
+    assert_difference -> { LineMusicTrack.unscoped.where(line_music_album_id: line_music_album.id).count }, -1 do
+      LineMusicAlbum.save_album(new_album.id, fetched_album)
+    end
+
+    assert_equal new_album.id, line_music_album.reload.album_id
+    assert_empty LineMusicTrack.unscoped.where(line_music_album_id: line_music_album.id)
+  end
+
   test 'save_album skips LINE MUSIC album without title' do
     album = Album.create!(jan_code: "line-music-blank-title-#{SecureRandom.hex(4)}")
     lm_album = build_line_music_api_album(album_id: 'mb-test-blank-title', album_title: nil)

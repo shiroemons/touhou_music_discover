@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
 class LineMusicTrack < ApplicationRecord
+  class SourceAlbumMismatchError < StandardError; end
+  class SourceTrackMismatchError < StandardError; end
+
   default_scope { includes(:album).order('albums.jan_code desc').order(disc_number: :asc).order(track_number: :asc) }
 
   belongs_to :album
@@ -256,6 +259,21 @@ class LineMusicTrack < ApplicationRecord
   end
 
   def self.save_track(album_id, track_id, lm_album, lm_track)
+    canonical_album = lm_album&.album
+    canonical_album_id = lm_album&.album_id
+    raise ArgumentError, 'LINE MUSICアルバムのcanonical albumがありません' if canonical_album.blank? || canonical_album_id.blank?
+
+    if album_id.present? && album_id != canonical_album_id
+      raise SourceAlbumMismatchError,
+            "LINE MUSICトラックのsource albumが親アルバムと異なります: #{album_id} != #{canonical_album_id}"
+    end
+
+    source_track = Track.unscoped.find_by(id: track_id)
+    if source_track.blank? || source_track.jan_code != canonical_album.jan_code
+      raise SourceTrackMismatchError,
+            "LINE MUSICトラックのsource trackが親アルバムと異なります: #{track_id}"
+    end
+
     url = "https://music.line.me/webapp/track/#{lm_track.track_id}"
     Rails.logger.info "LINE MUSIC トラック情報保存: #{lm_track.track_title} (ID: #{lm_track.track_id})"
 
@@ -263,13 +281,13 @@ class LineMusicTrack < ApplicationRecord
       line_music_album_id: lm_album.id,
       line_music_id: lm_track.track_id
     ) do |record|
-      record.album_id = album_id
+      record.album_id = canonical_album_id
       record.track_id = track_id
       record.name = lm_track.track_title
     end
 
     line_music_track.update!(
-      album_id:,
+      album_id: canonical_album_id,
       track_id:,
       name: lm_track.track_title,
       url:,

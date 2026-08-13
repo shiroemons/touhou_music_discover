@@ -195,15 +195,27 @@ class LineMusicAlbum < ApplicationRecord
     Rails.logger.info "LINE MUSIC アルバム情報保存: #{album_title} (ID: #{lm_album.album_id})"
 
     line_music_album = ::LineMusicAlbum.find_or_initialize_by(line_music_id: lm_album.album_id)
-    line_music_album.assign_attributes(
-      album_id:,
-      name: album_title,
-      url:,
-      release_date: lm_album.release_date,
-      total_tracks: lm_album.track_total_count,
-      payload: lm_album.as_json
-    )
-    line_music_album.save!
+    reparented = line_music_album.persisted? && line_music_album.album_id.present? && line_music_album.album_id != album_id
+
+    line_music_album.transaction do
+      line_music_album.assign_attributes(
+        album_id:,
+        name: album_title,
+        url:,
+        release_date: lm_album.release_date,
+        total_tracks: lm_album.track_total_count,
+        payload: lm_album.as_json
+      )
+      line_music_album.save!
+
+      if reparented
+        ::LineMusicTrack.unscoped.where(line_music_album_id: line_music_album.id).delete_all
+        Rails.logger.warn(
+          'LINE MUSICアルバムのcanonical親が変更されたため、既存トラック紐付けを削除しました: ' \
+          "#{line_music_album.line_music_id} (#{line_music_album.album_id})"
+        )
+      end
+    end
     Rails.logger.info "LINE MUSIC アルバム情報を保存しました: #{album_title}"
     line_music_album
   end

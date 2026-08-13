@@ -125,4 +125,41 @@ namespace :line_music do
       print "\rLINE MUSIC 楽曲: #{count}/#{max_count} Progress: #{(count * 100.0 / max_count).round(1)}%"
     end
   end
+
+  desc 'LINE MUSICトラックのcanonical親不整合を修復（既定はdry-run。APPLY=1で実行）'
+  task repair_track_parent_mismatches: :environment do
+    line_music_album_ids = ENV.fetch('LINE_MUSIC_ALBUM_ID', '').split(',').map(&:strip).compact_blank
+    apply = ENV['APPLY'] == '1'
+    result = LineMusicTrackParentRepair.new(apply:, line_music_album_ids:).call
+
+    result.plans.each do |plan|
+      line_music_album = plan.line_music_album
+      puts [
+        'album',
+        line_music_album.id,
+        line_music_album.line_music_id,
+        line_music_album.name,
+        "repairs=#{plan.repairs.size}",
+        "issues=#{plan.issues.size}"
+      ].join("\t")
+
+      plan.repairs.each do |repair|
+        line_music_track = repair.line_music_track
+        puts [
+          'repair',
+          line_music_track.id,
+          line_music_track.line_music_id,
+          "album=#{repair.old_album_id}->#{repair.new_album_id}",
+          "track=#{repair.old_track_id}->#{repair.new_track_id}"
+        ].join("\t")
+      end
+
+      plan.issues.each do |issue|
+        puts ['issue', issue.line_music_track_id, issue.line_music_id, issue.reason].join("\t")
+      end
+    end
+
+    puts "summary: albums=#{result.plans.size} tracks=#{result.updated_count} apply=#{apply}"
+    puts 'dry-run only. Set APPLY=1 to update the database.' unless apply
+  end
 end
