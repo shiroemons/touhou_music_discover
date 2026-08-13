@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class YtmusicAlbum < ApplicationRecord
+  DISTRIBUTION_SUCCESS_SOURCES = %w[art_track_mode all_track_mode single_track].freeze
+  DISTRIBUTION_ALGORITHM_VERSION = 'distribution-calculator-v1'
+  DISTRIBUTION_CORRECTED_SOURCE = 'corrected'
+
   default_scope { includes(:album).order('albums.jan_code desc') }
 
   has_many :ytmusic_tracks,
@@ -21,6 +25,7 @@ class YtmusicAlbum < ApplicationRecord
   scope :distribution_missing, lambda {
     where(
       "distributed_on IS NULL OR distribution_source = 'failed' OR " \
+      "distribution_source = 'degraded' OR " \
       "distribution_track_metadata @> '[{\"degraded\": true}]'"
     )
   }
@@ -207,17 +212,48 @@ class YtmusicAlbum < ApplicationRecord
   # distribution_track_metadataが保存されていればそれを正として使う（ytmusic_tracksの行は
   # アルバム取り込みより遅れて作られるため、行が無い/一部しか無いアルバムでも集計できるようにするため）。
   # 保存されていなければ従来どおりytmusic_tracksの行から集計する（後方互換）。
-  def recalculate_distribution!
+  def recalculate_distribution!(now: Time.current)
     tracks, source_of_truth = distribution_tracks_for_calculation
     result = DistributionCalculator.new(tracks, source_of_truth:).call
 
-    update!(
-      distributed_on: result.distributed_on,
-      youtube_published_on: result.youtube_published_on,
-      original_released_on: result.original_released_on,
+    attributes = {
       distribution_source: result.distribution_source,
-      distribution_stats: result.distribution_stats,
-      distribution_fetched_at: Time.current
+      distribution_stats: distribution_stats_with_audit(result, now:),
+      distribution_fetched_at: now
+    }
+
+    if successful_distribution_result?(result)
+      attributes.merge!(
+        distributed_on: result.distributed_on,
+        youtube_published_on: result.youtube_published_on,
+        original_released_on: result.original_released_on
+      )
+    end
+
+    update!(attributes)
+  end
+
+  # 配信日を運用者が明示的に訂正・取消するときだけ既知の値を消去する。
+  # 自動取得の failed/degraded では recalculate_distribution! が既知の正常値を保持する。
+  def clear_distribution!(reason:, now: Time.current)
+    raise ArgumentError, 'reason must be present' if reason.blank?
+
+    stats = distribution_stats.is_a?(Hash) ? distribution_stats.deep_dup : {}
+    stats['latest_status'] = DISTRIBUTION_CORRECTED_SOURCE
+    stats['latest_fetched_at'] = now.iso8601
+    stats['algorithm_version'] = DISTRIBUTION_ALGORITHM_VERSION
+    stats['correction'] = {
+      'reason' => reason,
+      'corrected_at' => now.iso8601
+    }
+
+    update!(
+      distributed_on: nil,
+      youtube_published_on: nil,
+      original_released_on: nil,
+      distribution_source: DISTRIBUTION_CORRECTED_SOURCE,
+      distribution_stats: stats,
+      distribution_fetched_at: now
     )
   end
 
@@ -481,6 +517,29 @@ class YtmusicAlbum < ApplicationRecord
   end
 
   private
+
+  def successful_distribution_result?(result)
+    DISTRIBUTION_SUCCESS_SOURCES.include?(result.distribution_source) && result.distributed_on.present?
+  end
+
+  def distribution_stats_with_audit(result, now:)
+    stats = result.distribution_stats.deep_dup
+    previous_stats = distribution_stats.is_a?(Hash) ? distribution_stats : {}
+
+    stats['latest_status'] = result.distribution_source
+    stats['latest_fetched_at'] = now.iso8601
+    stats['algorithm_version'] = DISTRIBUTION_ALGORITHM_VERSION
+
+    if successful_distribution_result?(result)
+      stats['last_successful_at'] = now.iso8601
+      stats['last_successful_source'] = result.distribution_source
+    else
+      stats['last_successful_at'] = previous_stats['last_successful_at'] if previous_stats['last_successful_at'].present?
+      stats['last_successful_source'] = previous_stats['last_successful_source'] if previous_stats['last_successful_source'].present?
+    end
+
+    stats
+  end
 
   # recalculate_distribution!が集計対象にするトラック相当のオブジェクト一覧と、その集計元を返す。
   def distribution_tracks_for_calculation

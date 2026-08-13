@@ -388,6 +388,35 @@ namespace :touhou_music_discover do
     end
   end
 
+  namespace :catalog do
+    desc 'カタログsnapshotの品質ゲートを実行する（失敗時はsnapshotを生成しない）'
+    task preflight: :environment do
+      result = CatalogSnapshot::Exporter.new(
+        output_dir: ENV.fetch('OUTPUT_DIR', CatalogSnapshot::DEFAULT_OUTPUT_DIR)
+      ).preflight
+
+      puts JSON.pretty_generate(
+        valid: result.fetch(:valid),
+        report_path: result.fetch(:report_path),
+        report: {
+          error_count: result.fetch(:report).errors.length,
+          warning_count: result.fetch(:report).warning_count,
+          errors: result.fetch(:report).errors
+        }
+      )
+      abort 'Catalog snapshot preflight failed' unless result.fetch(:valid)
+    end
+
+    desc 'versioned JSONLカタログsnapshotを生成する'
+    task export: :environment do
+      result = CatalogSnapshot::Exporter.new(
+        output_dir: ENV.fetch('OUTPUT_DIR', CatalogSnapshot::DEFAULT_OUTPUT_DIR)
+      ).call
+
+      puts JSON.pretty_generate(result)
+    end
+  end
+
   namespace :import do
     desc 'Touhou music with original songs file import'
     task touhou_music_with_original_songs: :environment do

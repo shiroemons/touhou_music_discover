@@ -433,6 +433,39 @@ class YtmusicAlbumTest < ActiveSupport::TestCase
     assert_not_includes YtmusicAlbum.unscoped.distribution_missing.pluck(:id), ytmusic_album.id
   end
 
+  test 'recalculate_distribution!: failedになっても既知の正常な配信日と監査情報を保持する' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 29))
+    first_run_at = Time.zone.local(2026, 8, 13, 12, 0, 0)
+    failed_run_at = first_run_at + 1.hour
+
+    ytmusic_album.recalculate_distribution!(now: first_run_at)
+    known_good_date = ytmusic_album.distributed_on
+    ytmusic_album.update!(distribution_track_metadata: [distribution_metadata_entry(video_id: 'failed', art_track: false, published_on: nil)])
+
+    ytmusic_album.recalculate_distribution!(now: failed_run_at)
+
+    assert_equal 'failed', ytmusic_album.distribution_source
+    assert_equal known_good_date, ytmusic_album.distributed_on
+    assert_equal first_run_at.iso8601, ytmusic_album.distribution_stats['last_successful_at']
+    assert_equal 'single_track', ytmusic_album.distribution_stats['last_successful_source']
+    assert_equal failed_run_at.iso8601, ytmusic_album.distribution_stats['latest_fetched_at']
+  end
+
+  test 'clear_distribution!: 明示的な訂正理由がある場合だけ既知の配信日を消去する' do
+    album = create_distribution_album
+    ytmusic_album = create_distribution_ytmusic_album(album)
+    create_distribution_track(ytmusic_album:, album:, art_track: true, published_on: Date.new(2026, 6, 29))
+    ytmusic_album.recalculate_distribution!(now: Time.zone.local(2026, 8, 13, 12, 0, 0))
+
+    ytmusic_album.clear_distribution!(reason: '公開元の訂正', now: Time.zone.local(2026, 8, 13, 13, 0, 0))
+
+    assert_equal 'corrected', ytmusic_album.distribution_source
+    assert_nil ytmusic_album.distributed_on
+    assert_equal '公開元の訂正', ytmusic_album.distribution_stats.dig('correction', 'reason')
+  end
+
   private
 
   def with_singleton_method(object, method_name, replacement)

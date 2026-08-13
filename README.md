@@ -236,6 +236,17 @@ task --list
 | データ更新 | `task change:is-touhou-flag` | 原曲情報をもとに`is_touhou`を更新 |
 | データ更新 | `task associate:album-with-circle` | アルバムとサークルを紐付け |
 
+### Cloudflare向けカタログsnapshot
+
+Cloudflare側へ渡す正式な同期データは、既存のTSV／Algolia出力ではなく、品質ゲート付きのversioned JSONL snapshotを使用します。外部APIは呼び出さず、Rails DBの保存済みデータだけを読み取ります。
+
+```shell
+OUTPUT_DIR=/path/to/catalog-snapshots devbox run -- bin/rails touhou_music_discover:catalog:preflight
+OUTPUT_DIR=/path/to/catalog-snapshots devbox run -- bin/rails touhou_music_discover:catalog:export
+```
+
+`preflight`がエラーを検出した場合、snapshotは生成されず、`OUTPUT_DIR/reports/`に診断レポートが出力されます。現在のDBにはLINE MUSICのalbum／track親紐付け不一致があるため、修正が完了するまで`export`は停止します。
+
 ## 情報収集
 
 - ローカル環境
