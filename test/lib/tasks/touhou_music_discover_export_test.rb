@@ -2,6 +2,7 @@
 
 require 'test_helper'
 require 'rake'
+require 'tmpdir'
 
 class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
   Rake::Task.define_task(:environment)
@@ -15,6 +16,7 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
     Rake::Task['touhou_music_discover:export:spotify'].reenable
     Rake::Task['touhou_music_discover:export:touhou_music_with_original_songs'].reenable
     Rake::Task['touhou_music_discover:export:touhou_music_slim'].reenable
+    Rake::Task['touhou_music_discover:export:for_algolia'].reenable
   end
 
   test 'spotify export outputs active spotify albums only' do
@@ -115,6 +117,131 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
     assert_not_includes output, 'English Track'
   end
 
+  test 'Algolia export includes selected albums even when their tracks are stale' do
+    album = Album.create!(jan_code: "export-algolia-stale-#{SecureRandom.hex(4)}", is_touhou: true)
+    track = Track.create!(album:, isrc: "JPKLM#{SecureRandom.alphanumeric(7).upcase}")
+    spotify_album = create_spotify_album(
+      album:,
+      spotify_id: 'export-algolia-stale-spotify-album',
+      name: 'Export Algolia Stale Album',
+      active: true
+    )
+    spotify_track = create_spotify_track(
+      album:,
+      track:,
+      spotify_album:,
+      spotify_id: 'export-algolia-stale-spotify-track',
+      name: 'Export Algolia Stale Spotify Track'
+    )
+    apple_music_album = AppleMusicAlbum.create!(
+      album:,
+      apple_music_id: 'export-algolia-stale-apple-album',
+      name: 'Export Algolia Stale Album',
+      label: Album::TOUHOU_MUSIC_LABEL,
+      total_tracks: 1,
+      payload: { 'attributes' => {} }
+    )
+    apple_music_track = AppleMusicTrack.create!(
+      album:,
+      track:,
+      apple_music_album:,
+      apple_music_id: 'export-algolia-stale-apple-track',
+      name: 'Export Algolia Stale Apple Track',
+      label: Album::TOUHOU_MUSIC_LABEL,
+      url: 'https://music.apple.com/jp/song/export-algolia-stale',
+      disc_number: 1,
+      track_number: 1,
+      payload: {}
+    )
+    line_music_album = LineMusicAlbum.create!(
+      album:,
+      line_music_id: 'export-algolia-stale-line-album',
+      name: 'Export Algolia Stale Album',
+      total_tracks: 1,
+      payload: { 'artists' => [] }
+    )
+    line_music_track = LineMusicTrack.create!(
+      album:,
+      track:,
+      line_music_album:,
+      line_music_id: 'export-algolia-stale-line-track',
+      name: 'Export Algolia Stale LINE Track',
+      url: 'https://music.line.me/webapp/track/export-algolia-stale',
+      disc_number: 1,
+      track_number: 1,
+      payload: {}
+    )
+
+    stale_at = 2.months.ago
+    [spotify_track, apple_music_track, line_music_track].each do |service_track|
+      service_track.assign_attributes(updated_at: stale_at)
+      service_track.save!(touch: false)
+    end
+
+    Dir.mktmpdir('algolia-export-test') do |directory|
+      with_env('JAN_CODES' => album.jan_code, 'ALGOLIA_OUTPUT_DIR' => directory) do
+        capture_io { Rake::Task['touhou_music_discover:export:for_algolia'].invoke }
+      end
+
+      {
+        'touhou_music_spotify_for_algolia.json' => 'Export Algolia Stale Spotify Track',
+        'touhou_music_apple_music_for_algolia.json' => 'Export Algolia Stale Apple Track',
+        'touhou_music_line_music_for_algolia.json' => 'Export Algolia Stale LINE Track'
+      }.each do |filename, track_name|
+        rows = JSON.parse(File.read(File.join(directory, filename)))
+        object_ids = rows.map { |row| row.fetch('objectID') }
+        track_names = rows.first.fetch('tracks').map { |row| row.fetch('name') }
+
+        assert_equal [album.id], object_ids
+        assert_equal [track_name], track_names
+      end
+    end
+  end
+
+  test 'Algolia export rejects unknown JAN codes before writing files' do
+    Dir.mktmpdir('algolia-export-invalid-test') do |directory|
+      error = with_env('JAN_CODES' => 'missing-jAN-code', 'ALGOLIA_OUTPUT_DIR' => directory) do
+        assert_raises(ArgumentError) do
+          Rake::Task['touhou_music_discover:export:for_algolia'].invoke
+        end
+      end
+
+      assert_empty Dir.children(directory)
+      assert_match 'missing-jAN-code', error.message
+    end
+  end
+
+  test 'Algolia full export includes albums whose tracks are stale' do
+    album = Album.create!(jan_code: "export-algolia-full-#{SecureRandom.hex(4)}", is_touhou: true)
+    track = Track.create!(album:, isrc: "JPMNO#{SecureRandom.alphanumeric(7).upcase}")
+    spotify_album = create_spotify_album(
+      album:,
+      spotify_id: 'export-algolia-full-spotify-album',
+      name: 'Export Algolia Full Album',
+      active: true
+    )
+    spotify_track = create_spotify_track(
+      album:,
+      track:,
+      spotify_album:,
+      spotify_id: 'export-algolia-full-spotify-track',
+      name: 'Export Algolia Full Track'
+    )
+    spotify_track.assign_attributes(updated_at: 2.months.ago)
+    spotify_track.save!(touch: false)
+
+    Dir.mktmpdir('algolia-full-export-test') do |directory|
+      with_env('FULL_EXPORT' => '1', 'ALGOLIA_OUTPUT_DIR' => directory) do
+        capture_io { Rake::Task['touhou_music_discover:export:for_algolia'].invoke }
+      end
+
+      rows = JSON.parse(File.read(File.join(directory, 'touhou_music_spotify_for_algolia.json')))
+      object_ids = rows.map { |row| row.fetch('objectID') }
+
+      assert_includes object_ids, album.id
+    end
+  end
+
   private
 
   def count_original_song_selects(&)
@@ -163,5 +290,13 @@ class TouhouMusicDiscoverExportTest < ActiveSupport::TestCase
   def reset_export(path)
     FileUtils.rm_f(path)
     path
+  end
+
+  def with_env(overrides)
+    previous = overrides.keys.index_with { |key| ENV.fetch(key, nil) }
+    overrides.each { |key, value| ENV[key] = value }
+    yield
+  ensure
+    previous.each { |key, value| ENV[key] = value }
   end
 end

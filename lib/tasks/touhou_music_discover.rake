@@ -191,26 +191,85 @@ namespace :touhou_music_discover do
 
     desc 'Output albums and songs as JSON for Algolia'
     task for_algolia: :environment do
-      FileUtils.mkdir_p('tmp/algolia')
-      File.open('tmp/algolia/touhou_music_spotify_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(spotify_tracks: { track: { original_songs: :original } }).where(spotify_tracks: { spotify_album_id: SpotifyAlbum.unscoped.active.select(:id), updated_at: 1.month.ago.. })
-        file.puts(JSON.pretty_generate(SpotifyAlbumsToAlgoliaPresenter.new(albums).as_json))
+      output_dir = Pathname.new(ENV.fetch('ALGOLIA_OUTPUT_DIR', 'tmp/algolia'))
+      output_dir = Rails.root.join(output_dir) unless output_dir.absolute?
+      FileUtils.mkdir_p(output_dir)
+
+      requested_jan_codes = [ENV.fetch('JAN_CODE', nil), ENV.fetch('JAN_CODES', nil)].compact
+      requested_jan_codes = requested_jan_codes.flat_map { |value| value.split(',') }.map(&:strip).compact_blank.uniq
+      full_export = ENV['FULL_EXPORT'] == '1'
+
+      raise ArgumentError, 'JAN_CODESとFULL_EXPORTは同時に指定できません' if requested_jan_codes.any? && full_export
+
+      selected_album_ids = if requested_jan_codes.empty?
+                             nil
+                           else
+                             selected_albums = Album.unscoped.where(jan_code: requested_jan_codes)
+                             found_jan_codes = selected_albums.pluck(:jan_code)
+                             missing_jan_codes = requested_jan_codes - found_jan_codes
+                             raise ArgumentError, "指定されたJANコードが見つかりません: #{missing_jan_codes.join(', ')}" if missing_jan_codes.any?
+
+                             puts "Algolia出力対象JAN: #{found_jan_codes.join(', ')}"
+                             selected_albums.pluck(:id)
+                           end
+
+      puts 'Algolia出力モード: 全件' if full_export
+
+      updated_since = 1.month.ago
+      active_spotify_album_ids = SpotifyAlbum.unscoped.active.select(:id)
+      export_albums = lambda do |associations:, recent_scope:, full_scope:|
+        scope = Album.unscoped.eager_load(associations)
+        if selected_album_ids
+          full_scope.call(scope.where(id: selected_album_ids))
+        elsif full_export
+          full_scope.call(scope)
+        else
+          recent_scope.call(scope)
+        end
       end
 
-      File.open('tmp/algolia/touhou_music_apple_music_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(apple_music_tracks: { track: { original_songs: :original } }).where(apple_music_tracks: { updated_at: 1.month.ago.. })
-        file.puts(JSON.pretty_generate(AppleMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
+      write_algolia_export = lambda do |filename:, presenter:, associations:, recent_scope:, full_scope:|
+        albums = export_albums.call(associations:, recent_scope:, full_scope:)
+        File.open(output_dir.join(filename), 'w') do |file|
+          file.puts(JSON.pretty_generate(presenter.new(albums).as_json))
+        end
       end
 
-      File.open('tmp/algolia/touhou_music_youtube_music_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(ytmusic_tracks: { track: { original_songs: :original } }).where(ytmusic_tracks: { updated_at: 1.month.ago.. })
-        file.puts(JSON.pretty_generate(YtmusicAlbumsToAlgoliaPresenter.new(albums).as_json))
-      end
+      write_algolia_export.call(
+        filename: 'touhou_music_spotify_for_algolia.json',
+        presenter: SpotifyAlbumsToAlgoliaPresenter,
+        associations: { spotify_tracks: { track: { original_songs: :original } } },
+        recent_scope: lambda do |scope|
+          scope.where(spotify_tracks: { spotify_album_id: active_spotify_album_ids, updated_at: updated_since.. })
+        end,
+        full_scope: lambda do |scope|
+          scope.where(spotify_tracks: { spotify_album_id: active_spotify_album_ids })
+        end
+      )
 
-      File.open('tmp/algolia/touhou_music_line_music_for_algolia.json', 'w') do |file|
-        albums = Album.unscoped.eager_load(line_music_tracks: { track: { original_songs: :original } }).where(line_music_tracks: { updated_at: 1.month.ago.. })
-        file.puts(JSON.pretty_generate(LineMusicAlbumsToAlgoliaPresenter.new(albums).as_json))
-      end
+      write_algolia_export.call(
+        filename: 'touhou_music_apple_music_for_algolia.json',
+        presenter: AppleMusicAlbumsToAlgoliaPresenter,
+        associations: { apple_music_tracks: { track: { original_songs: :original } } },
+        recent_scope: ->(scope) { scope.where(apple_music_tracks: { updated_at: updated_since.. }) },
+        full_scope: ->(scope) { scope.where.not(apple_music_tracks: { id: nil }) }
+      )
+
+      write_algolia_export.call(
+        filename: 'touhou_music_youtube_music_for_algolia.json',
+        presenter: YtmusicAlbumsToAlgoliaPresenter,
+        associations: { ytmusic_tracks: { track: { original_songs: :original } } },
+        recent_scope: ->(scope) { scope.where(ytmusic_tracks: { updated_at: updated_since.. }) },
+        full_scope: ->(scope) { scope.where.not(ytmusic_tracks: { id: nil }) }
+      )
+
+      write_algolia_export.call(
+        filename: 'touhou_music_line_music_for_algolia.json',
+        presenter: LineMusicAlbumsToAlgoliaPresenter,
+        associations: { line_music_tracks: { track: { original_songs: :original } } },
+        recent_scope: ->(scope) { scope.where(line_music_tracks: { updated_at: updated_since.. }) },
+        full_scope: ->(scope) { scope.where.not(line_music_tracks: { id: nil }) }
+      )
     end
 
     desc 'Output files for random_touhou_music'

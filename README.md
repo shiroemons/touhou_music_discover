@@ -435,6 +435,19 @@ Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよ
   task export:for-algolia
   ```
 
+  通常は直近1か月以内に更新されたアルバムを出力します。未反映の古いアルバムを追加投入する場合は、JANコードをカンマ区切りで指定します。指定時は更新日条件を適用せず、対象アルバムの全トラックを出力します。
+
+  ```shell
+  JAN_CODES=4582736137602 devbox run export:for_algolia
+  JAN_CODES=4582736137602,4582736138272 devbox run export:for_algolia
+  ```
+
+  全アルバムを出力する場合は`FULL_EXPORT=1`を指定できます。既存の出力先を保持したまま追加用ファイルを作る場合は`ALGOLIA_OUTPUT_DIR`を指定してください。
+
+  ```shell
+  FULL_EXPORT=1 ALGOLIA_OUTPUT_DIR=tmp/algolia/full devbox run export:for_algolia
+  ```
+
 - 東方同人音楽流通 東方サブスクランダム選曲アプリ用JSON出力
   ```shell
   task export:to-random-touhou-music
