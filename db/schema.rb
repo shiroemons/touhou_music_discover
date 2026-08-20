@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_11_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_20_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "pgcrypto"
@@ -89,6 +89,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_000000) do
     t.datetime "updated_at", null: false
     t.index ["album_id"], name: "index_circles_albums_on_album_id"
     t.index ["circle_id", "album_id"], name: "index_circles_albums_on_circle_id_and_album_id", unique: true
+  end
+
+  create_table "line_music_album_replacement_candidates", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.uuid "line_music_album_id", null: false
+    t.string "line_music_id", null: false
+    t.string "name", null: false
+    t.jsonb "payload"
+    t.date "release_date"
+    t.string "status", default: "pending", null: false
+    t.integer "total_tracks"
+    t.datetime "updated_at", null: false
+    t.string "url"
+    t.index ["line_music_album_id", "line_music_id"], name: "index_lm_replacement_candidates_on_album_and_lm_id", unique: true
+    t.index ["line_music_album_id"], name: "idx_on_line_music_album_id_86e29543d4"
+    t.index ["status"], name: "index_line_music_album_replacement_candidates_on_status"
+  end
+
+  create_table "line_music_album_replacements", id: :uuid, default: -> { "gen_random_uuid()" }, force: :cascade do |t|
+    t.string "action_run_id"
+    t.jsonb "after_snapshot", default: {}, null: false
+    t.jsonb "before_snapshot", default: {}, null: false
+    t.datetime "created_at", null: false
+    t.uuid "line_music_album_id", null: false
+    t.string "new_line_music_id", null: false
+    t.integer "new_total_tracks", null: false
+    t.string "new_url", null: false
+    t.string "old_line_music_id", null: false
+    t.integer "old_total_tracks"
+    t.string "old_url"
+    t.datetime "updated_at", null: false
+    t.index ["action_run_id"], name: "index_line_music_album_replacements_on_action_run_id"
+    t.index ["line_music_album_id"], name: "index_line_music_album_replacements_on_line_music_album_id"
+    t.index ["new_line_music_id"], name: "index_line_music_album_replacements_on_new_line_music_id"
+    t.index ["old_line_music_id"], name: "index_line_music_album_replacements_on_old_line_music_id"
   end
 
   create_table "line_music_albums", id: :uuid, default: -> { "public.gen_random_uuid()" }, force: :cascade do |t|
@@ -339,6 +374,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_11_000000) do
   add_foreign_key "apple_music_tracks", "tracks"
   add_foreign_key "circles_albums", "albums"
   add_foreign_key "circles_albums", "circles"
+  add_foreign_key "line_music_album_replacement_candidates", "line_music_albums"
+  add_foreign_key "line_music_album_replacements", "line_music_albums"
   add_foreign_key "line_music_albums", "albums"
   add_foreign_key "line_music_tracks", "albums"
   add_foreign_key "line_music_tracks", "line_music_albums"

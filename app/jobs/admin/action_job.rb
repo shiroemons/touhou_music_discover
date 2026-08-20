@@ -19,7 +19,7 @@ module Admin
         resource_config = Admin::Resource.find!(resource_key)
         action = resource_config.action_for!(action_key)
         record = resource_config.model_class.find(record_id) if record_id.present?
-        result = action.run(fields: deserialize_fields(fields), record:)
+        result = run_action(action, fields: deserialize_fields(fields), record:, run_id:)
         Admin::ActionRun.complete!(run_id, result)
       end
     rescue StandardError => e
@@ -34,6 +34,14 @@ module Admin
 
     def deserialize_fields(fields)
       fields.to_h.transform_values { |value| deserialize_field_value(value) }
+    end
+
+    def run_action(action, fields:, record:, run_id:)
+      arguments = { fields:, record: }
+      run_parameters = action.method(:run).parameters
+      arguments[:action_run_id] = run_id if run_parameters.any? { |type, name| type == :keyrest || (type == :key && name == :action_run_id) }
+
+      action.run(**arguments)
     end
 
     def deserialize_field_value(value)

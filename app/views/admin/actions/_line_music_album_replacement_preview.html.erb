@@ -1,0 +1,73 @@
+<section class="admin-transfer-preview" aria-labelledby="line-music-replacement-preview-heading">
+  <div class="admin-transfer-preview-header">
+    <div>
+      <span class="admin-kicker"><%= t('admin.actions.replace_line_music_album.preview.kicker') %></span>
+      <h3 id="line-music-replacement-preview-heading"><%= t('admin.actions.replace_line_music_album.preview.heading') %></h3>
+      <p><%= t('admin.actions.replace_line_music_album.preview.description') %></p>
+    </div>
+    <span class="admin-action-status-pill"><%= t(preview&.ready? ? 'admin.actions.replace_line_music_album.preview.read_only' : 'admin.actions.replace_line_music_album.preview.blocked') %></span>
+  </div>
+
+  <% if preview.blank? %>
+    <p class="admin-empty"><%= t('admin.actions.replace_line_music_album.preview.enter_id') %></p>
+  <% elsif preview.errors.any? %>
+    <div class="alert alert-error" role="alert">
+      <ul>
+        <% preview.errors.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% else %>
+    <dl class="admin-action-summary-grid">
+      <div>
+        <dt><%= t('admin.actions.replace_line_music_album.preview.old_id') %></dt>
+        <dd><%= preview.old_line_music_id %></dd>
+      </div>
+      <div>
+        <dt><%= t('admin.actions.replace_line_music_album.preview.new_id') %></dt>
+        <dd><%= preview.new_line_music_id %></dd>
+      </div>
+      <div>
+        <dt><%= t('admin.actions.replace_line_music_album.preview.created') %></dt>
+        <dd><%= preview.diff.fetch('created', 0) %></dd>
+      </div>
+      <div>
+        <dt><%= t('admin.actions.replace_line_music_album.preview.updated') %></dt>
+        <dd><%= preview.diff.fetch('updated', 0) %></dd>
+      </div>
+      <div>
+        <dt><%= t('admin.actions.replace_line_music_album.preview.removed') %></dt>
+        <dd><%= preview.diff.fetch('removed', 0) %></dd>
+      </div>
+    </dl>
+
+    <div class="admin-table-scroll">
+      <table class="table admin-detail-table">
+        <caption><%= t('admin.actions.replace_line_music_album.preview.mapping_caption') %></caption>
+        <thead>
+          <tr>
+            <th scope="col"><%= t('admin.actions.replace_line_music_album.preview.position') %></th>
+            <th scope="col"><%= t('admin.actions.replace_line_music_album.preview.title') %></th>
+            <th scope="col"><%= t('admin.actions.replace_line_music_album.preview.old_track_id') %></th>
+            <th scope="col"><%= t('admin.actions.replace_line_music_album.preview.new_track_id') %></th>
+            <th scope="col"><%= t('admin.actions.replace_line_music_album.preview.strategy') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% preview.mappings.each do |mapping| %>
+            <% source_track = mapping.fetch(:source) %>
+            <% line_track = mapping.fetch(:line) %>
+            <tr>
+              <td><%= [line_track.disc_number, line_track.track_number].compact.join(' / ') %></td>
+              <td><%= line_track.track_title %></td>
+              <td><code><%= preview.line_music_album.line_music_tracks.find { |track| track.track_id.to_s == source_track.track_id.to_s }&.line_music_id || '—' %></code></td>
+              <td><code><%= line_track.track_id %></code></td>
+              <td><%= mapping.fetch(:strategy) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

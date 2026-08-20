@@ -9,6 +9,12 @@ class LineMusicAlbum < ApplicationRecord
            -> { order(Arel.sql('line_music_tracks.disc_number ASC, line_music_tracks.track_number ASC')) },
            inverse_of: :line_music_album,
            dependent: :destroy
+  has_many :replacement_candidates,
+           class_name: 'LineMusicAlbumReplacementCandidate',
+           dependent: :destroy
+  has_many :replacements,
+           class_name: 'LineMusicAlbumReplacementHistory',
+           dependent: :restrict_with_exception
 
   belongs_to :album
 
@@ -18,6 +24,24 @@ class LineMusicAlbum < ApplicationRecord
   scope :is_touhou, -> { eager_load(:album).where(albums: { is_touhou: true }) }
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
   scope :missing_album, -> { where.missing(:album) }
+
+  def self.default_url(line_music_id)
+    LineMusicAlbumReplacement.default_url(line_music_id)
+  end
+
+  def pending_replacement_candidate(line_music_id: nil)
+    candidates = replacement_candidates.pending
+    candidates = candidates.where(line_music_id:) if line_music_id.present?
+    candidates.order(updated_at: :desc).first
+  end
+
+  def pending_replacement_line_music_id
+    pending_replacement_candidate&.line_music_id
+  end
+
+  def pending_replacement_url
+    pending_replacement_candidate&.url
+  end
 
   JAN_TO_ALBUM_IDS = {
     '4580547318838' => 'mb000000000229658f', # 幽閉サテライト - 感情ケミストリー(Drum 'n' Bass Remix short ver.)
@@ -166,7 +190,7 @@ class LineMusicAlbum < ApplicationRecord
 
             line_music_album.update(
               name: lm_album.album_title,
-              url: "https://music.line.me/webapp/album/#{line_music_album.line_music_id}",
+              url: default_url(line_music_album.line_music_id),
               total_tracks: lm_album.track_total_count,
               release_date: lm_album.release_date,
               payload: lm_album.as_json
@@ -191,8 +215,21 @@ class LineMusicAlbum < ApplicationRecord
       return nil
     end
 
-    url = "https://music.line.me/webapp/album/#{lm_album.album_id}"
+    url = default_url(lm_album.album_id)
     Rails.logger.info "LINE MUSIC アルバム情報保存: #{album_title} (ID: #{lm_album.album_id})"
+
+    existing_for_album = ::LineMusicAlbum.unscoped.find_by(album_id:)
+    if existing_for_album.present? && existing_for_album.line_music_id != lm_album.album_id
+      ::LineMusicAlbumReplacementCandidate.record_from_api!(
+        line_music_album: existing_for_album,
+        line_album: lm_album
+      )
+      Rails.logger.warn(
+        '既存のcanonicalアルバムに別のLINE MUSIC IDが見つかったため、重複作成を防いで候補として保存しました: ' \
+        "#{existing_for_album.line_music_id} -> #{lm_album.album_id}"
+      )
+      return nil
+    end
 
     line_music_album = ::LineMusicAlbum.find_or_initialize_by(line_music_id: lm_album.album_id)
     reparented = line_music_album.persisted? && line_music_album.album_id.present? && line_music_album.album_id != album_id
@@ -234,8 +271,7 @@ class LineMusicAlbum < ApplicationRecord
       line_album = line_albums.first
       if matches_album?(line_album, album)
         Rails.logger.info "一致するアルバムが見つかりました: #{line_album.album_title}"
-        LineMusicAlbum.save_album(album.album_id, line_album)
-        return true
+        return LineMusicAlbum.save_album(album.album_id, line_album).present?
       else
         Rails.logger.info "アルバムが条件に一致しませんでした: リリース日=#{line_album.release_date}, トラック数=#{line_album.track_total_count} vs #{album.total_tracks}"
         return false
@@ -255,8 +291,7 @@ class LineMusicAlbum < ApplicationRecord
 
         if exact_title_match
           Rails.logger.info "タイトルが完全一致するアルバムを選択: #{exact_title_match.album_title}"
-          LineMusicAlbum.save_album(album.album_id, exact_title_match)
-          return true
+          return LineMusicAlbum.save_album(album.album_id, exact_title_match).present?
         end
 
         # リリース日が最も近いアルバムを選択
@@ -265,8 +300,7 @@ class LineMusicAlbum < ApplicationRecord
                              .min_by { |la| (la.release_date - album.release_date).abs }
         if closest_date_match && release_date_matches?(closest_date_match, album)
           Rails.logger.info "リリース日が近いアルバムを選択: #{closest_date_match.album_title}, 日付差: #{release_date_difference(closest_date_match, album)}日"
-          LineMusicAlbum.save_album(album.album_id, closest_date_match)
-          return true
+          return LineMusicAlbum.save_album(album.album_id, closest_date_match).present?
         end
       end
 
@@ -289,8 +323,7 @@ class LineMusicAlbum < ApplicationRecord
 
       if line_album
         Rails.logger.info "一致するアルバムが見つかりました: #{line_album.album_title}"
-        LineMusicAlbum.save_album(album.album_id, line_album)
-        return true
+        return LineMusicAlbum.save_album(album.album_id, line_album).present?
       end
     end
 
@@ -417,8 +450,7 @@ class LineMusicAlbum < ApplicationRecord
 
       if matches_album?(line_album, album)
         Rails.logger.info 'アルバム情報が一致しました'
-        LineMusicAlbum.save_album(album.album_id, line_album)
-        return true
+        return LineMusicAlbum.save_album(album.album_id, line_album).present?
       else
         Rails.logger.info 'アルバム情報が一致しませんでした'
       end

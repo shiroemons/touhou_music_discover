@@ -1,8 +1,20 @@
-<% action_runnable = @action.runnable?(@action_preview) %>
+<% field_preview_action = @action.field_preview? %>
+<% field_values = (@action_field_values || {}).with_indifferent_access %>
+<% field_preview_ready = field_preview_action && @action_preview.present? && @action.runnable?(@action_preview) %>
+<% field_preview_form = field_preview_action && !field_preview_ready %>
+<% action_runnable = field_preview_action ? field_preview_ready : @action.runnable?(@action_preview) %>
 <% action_run_label = @action.run_label(@action_preview) %>
 <% action_confirmation = @action.confirmation(@action_preview) %>
-<% action_notice = action_runnable ? action_confirmation : @action.not_runnable_message %>
+<% action_notice = if field_preview_form
+                     t('admin.actions.preview_required')
+                   elsif action_runnable
+                     action_confirmation
+                   else
+                     @action.not_runnable_message
+                   end %>
 <% action_button_class = @action.dangerous? ? 'admin-btn-danger' : 'admin-btn-primary' %>
+<% action_path = @record.present? ? admin_member_resource_action_path(@resource_config.key, @record, @action.key) : admin_resource_action_path(@resource_config.key, @action.key) %>
+<% preview_path = @record.present? ? admin_member_resource_action_preview_path(@resource_config.key, @record, @action.key) : action_path %>
 
 <div class="admin-action-page <%= 'admin-action-page-with-preview' if @action.preview_partial.present? %>">
   <div class="admin-page-header admin-action-header">
@@ -39,35 +51,40 @@
         <% end %>
 
         <%= form_with scope: :fields,
-                      url: @record.present? ? admin_member_resource_action_path(@resource_config.key, @record, @action.key) : admin_resource_action_path(@resource_config.key, @action.key),
+                      url: field_preview_form ? preview_path : action_path,
                       method: :post,
                       multipart: true,
-                      data: {
+                      html: { data: (field_preview_form ? { turbo: 'false' } : {
                         controller: 'admin-action-confirm',
                         action: 'submit->admin-action-confirm#submit'
-                      } do |form| %>
+                      }) } do |form| %>
           <% if @action.fields.any? %>
             <div class="admin-action-fields">
               <% @action.fields.each do |field| %>
-                <div class="admin-field">
-                  <%= form.label field.name, field.name.to_s.humanize, class: 'admin-label' %>
-                  <% if field.type == :file %>
-                    <%= form.file_field field.name, class: 'file-input admin-input', required: field.required %>
-                  <% else %>
-                    <%= form.text_field field.name, class: 'input admin-input', required: field.required %>
-                  <% end %>
-                  <% if field.help.present? %>
-                    <div class="admin-field-help"><%= field.help %></div>
-                  <% end %>
-                </div>
+                <% field_value = field_values[field.name] || (@record&.line_music_id if field.name == :expected_old_line_music_id) || (@record&.pending_replacement_line_music_id if field.name == :new_line_music_id) %>
+                <% if field.type == :hidden %>
+                  <%= form.hidden_field field.name, value: field_value %>
+                <% else %>
+                  <div class="admin-field">
+                    <%= form.label field.name, @action.field_label(field), class: 'admin-label' %>
+                    <% if field.type == :file %>
+                      <%= form.file_field field.name, class: 'file-input admin-input', required: field.required %>
+                    <% else %>
+                      <%= form.text_field field.name, value: field_value, class: 'input admin-input', required: field.required %>
+                    <% end %>
+                    <% if (field_help = @action.field_help(field)).present? %>
+                      <div class="admin-field-help"><%= field_help %></div>
+                    <% end %>
+                  </div>
+                <% end %>
               <% end %>
             </div>
           <% end %>
 
           <div class="admin-form-actions">
-            <%= form.button type: :submit, class: "btn #{action_button_class}", disabled: !action_runnable do %>
-              <%= admin_icon(:play) %>
-              <span><%= action_run_label %></span>
+            <%= form.button type: :submit, class: "btn #{action_button_class}", disabled: (!field_preview_form && !action_runnable) do %>
+              <%= admin_icon(field_preview_form ? :eye : :play) %>
+              <span><%= field_preview_form ? t('admin.actions.preview_button') : action_run_label %></span>
             <% end %>
             <%= link_to @record.present? ? admin_resource_path(@resource_config.key, @record) : admin_resources_path(@resource_config.key), class: 'btn admin-btn' do %>
               <%= admin_icon(:x) %>
@@ -75,34 +92,36 @@
             <% end %>
           </div>
 
-          <dialog class="modal" aria-labelledby="admin-action-confirm-title" data-admin-action-confirm-target="modal">
-            <div class="modal-box admin-confirm-modal">
-              <div class="admin-confirm-modal-header">
-                <h2 id="admin-action-confirm-title"><%= t('admin.actions.confirm_modal.title') %></h2>
-                <button type="button" class="btn btn-ghost btn-sm admin-icon-button" data-action="admin-action-confirm#cancel" aria-label="<%= t('admin.actions.confirm_modal.close') %>">
-                  <%= admin_icon(:x) %>
-                </button>
+          <% unless field_preview_form %>
+            <dialog class="modal" aria-labelledby="admin-action-confirm-title" data-admin-action-confirm-target="modal">
+              <div class="modal-box admin-confirm-modal">
+                <div class="admin-confirm-modal-header">
+                  <h2 id="admin-action-confirm-title"><%= t('admin.actions.confirm_modal.title') %></h2>
+                  <button type="button" class="btn btn-ghost btn-sm admin-icon-button" data-action="admin-action-confirm#cancel" aria-label="<%= t('admin.actions.confirm_modal.close') %>">
+                    <%= admin_icon(:x) %>
+                  </button>
+                </div>
+                <div class="admin-confirm-modal-body">
+                  <p><%= action_confirmation %></p>
+                  <strong><%= @action.label %></strong>
+                  <p class="admin-action-confirm-description"><%= @action.description %></p>
+                </div>
+                <div class="modal-action admin-confirm-modal-actions">
+                  <button type="button" class="btn admin-btn" data-action="admin-action-confirm#cancel">
+                    <%= admin_icon(:x) %>
+                    <span><%= t('admin.actions.cancel') %></span>
+                  </button>
+                  <button type="button" class="btn <%= action_button_class %>" data-action="admin-action-confirm#confirm" <%= 'disabled' unless action_runnable %>>
+                    <%= admin_icon(:play) %>
+                    <span><%= action_run_label %></span>
+                  </button>
+                </div>
               </div>
-              <div class="admin-confirm-modal-body">
-                <p><%= action_confirmation %></p>
-                <strong><%= @action.label %></strong>
-                <p class="admin-action-confirm-description"><%= @action.description %></p>
-              </div>
-              <div class="modal-action admin-confirm-modal-actions">
-                <button type="button" class="btn admin-btn" data-action="admin-action-confirm#cancel">
-                  <%= admin_icon(:x) %>
-                  <span><%= t('admin.actions.cancel') %></span>
-                </button>
-                <button type="button" class="btn <%= action_button_class %>" data-action="admin-action-confirm#confirm" <%= 'disabled' unless action_runnable %>>
-                  <%= admin_icon(:play) %>
-                  <span><%= action_run_label %></span>
-                </button>
-              </div>
-            </div>
-            <form method="dialog" class="modal-backdrop">
-              <button><%= t('admin.actions.confirm_modal.close') %></button>
-            </form>
-          </dialog>
+              <form method="dialog" class="modal-backdrop">
+                <button><%= t('admin.actions.confirm_modal.close') %></button>
+              </form>
+            </dialog>
+          <% end %>
         <% end %>
       </div>
     </div>

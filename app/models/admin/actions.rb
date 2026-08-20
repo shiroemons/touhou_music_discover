@@ -271,6 +271,14 @@ module Admin
 
         YtmusicAlbum.find(Array(resource_ids).first)
       end
+
+      def line_music_album_from_fields(args)
+        fields = args.values_at(:fields).first || args[:fields]
+        resource_ids = fields&.dig('admin_resource_ids') || fields&.[]('admin_resource_ids')
+        return if resource_ids.blank?
+
+        LineMusicAlbum.unscoped.find(Array(resource_ids).first)
+      end
     end
 
     module TargetCountPreview
@@ -640,6 +648,159 @@ module Admin
         LineMusicAlbum.fetch_albums(progress_callback: method(:record_progress))
 
         succeed 'Done!'
+      end
+    end
+
+    class DetectLineMusicAlbumReplacement < BaseAction
+      self.action_name = 'LINE MUSIC置換候補を検出'
+
+      class << self
+        def preview(record:)
+          return if record.blank?
+
+          LineMusicAlbumReplacementDetector.new(line_music_album: record).prepare
+        end
+
+        def preview_partial
+          'admin/actions/line_music_album_replacement_detection_preview'
+        end
+
+        def runnable?(plan)
+          plan&.ready?
+        end
+
+        def dangerous?
+          false
+        end
+
+        def run_label(plan)
+          I18n.t('admin.actions.detect_line_music_album_replacement.run_label', count: plan&.candidate_count.to_i)
+        end
+
+        def confirmation(plan)
+          I18n.t('admin.actions.detect_line_music_album_replacement.confirmation', count: plan&.candidate_count.to_i)
+        end
+      end
+
+      def handle(**args)
+        line_music_album = args[:models]&.first || line_music_album_from_fields(args)
+        return error('対象のLINE MUSICアルバムが見つかりません。') if line_music_album.blank?
+
+        result = LineMusicAlbumReplacementDetector.new(line_music_album:).detect!
+        if result.candidate_count.positive?
+          succeed "置換候補を#{result.candidate_count}件保存しました: #{result.candidate_ids.join(', ')}"
+        else
+          warn '新しい置換候補は見つかりませんでした。'
+        end
+      end
+    end
+
+    class DetectLineMusicAlbumReplacements < BaseAction
+      extend TargetCountPreview
+
+      self.action_name = 'LINE MUSIC置換候補を一括検出'
+
+      class << self
+        def target_scope
+          LineMusicAlbum.unscoped.where.not(line_music_id: nil)
+        end
+      end
+
+      def handle(**_args)
+        albums = self.class.target_scope
+        total = albums.count
+        detected_count = 0
+        error_count = 0
+        Admin::ActionProgress.start(total:, message: 'LINE MUSIC置換候補を検出しています')
+
+        albums.find_each.with_index(1) do |line_music_album, index|
+          result = LineMusicAlbumReplacementDetector.new(line_music_album:).detect!
+          detected_count += result.candidate_count
+        rescue StandardError => e
+          error_count += 1
+          Rails.logger.error "LINE MUSIC置換候補の検出に失敗しました: #{line_music_album.line_music_id} - #{e.class}: #{e.message}"
+        ensure
+          Admin::ActionProgress.update(
+            current: index,
+            total:,
+            message: "LINE MUSIC置換候補を検出しています: #{index}/#{total}"
+          )
+        end
+
+        message = "検出完了: 候補#{detected_count}件"
+        message = "#{message}, エラー#{error_count}件" if error_count.positive?
+        error_count.positive? ? warn(message) : succeed(message)
+      end
+    end
+
+    class ReplaceLineMusicAlbum < BaseAction
+      self.action_name = 'LINE MUSICアルバムを置換'
+
+      class << self
+        def field_preview?
+          true
+        end
+
+        def preview(fields:, record:)
+          return LineMusicAlbumReplacement::Plan.new(record, nil, [], [], nil, nil, {}, {}, {}, ['対象のLINE MUSICアルバムが見つかりません。']) if record.blank?
+
+          LineMusicAlbumReplacement.new(
+            line_music_album: record,
+            new_line_music_id: fields[:new_line_music_id] || fields['new_line_music_id'],
+            new_url: fields[:new_url] || fields['new_url'],
+            expected_old_line_music_id: fields[:expected_old_line_music_id] || fields['expected_old_line_music_id']
+          ).prepare
+        end
+
+        def preview_partial
+          'admin/actions/line_music_album_replacement_preview'
+        end
+
+        def runnable?(plan)
+          plan&.ready?
+        end
+
+        def run_label(plan)
+          return I18n.t('admin.actions.replace_line_music_album.run_label') if plan.blank?
+
+          I18n.t(
+            'admin.actions.replace_line_music_album.run_label',
+            created: plan.diff.fetch('created', 0),
+            updated: plan.diff.fetch('updated', 0),
+            removed: plan.diff.fetch('removed', 0)
+          )
+        end
+
+        def confirmation(plan)
+          return I18n.t('admin.actions.replace_line_music_album.confirmation') if plan.blank?
+
+          I18n.t(
+            'admin.actions.replace_line_music_album.confirmation',
+            old_id: plan.old_line_music_id,
+            new_id: plan.new_line_music_id,
+            removed: plan.diff.fetch('removed', 0)
+          )
+        end
+      end
+
+      def handle(**args)
+        line_music_album = args[:models]&.first || line_music_album_from_fields(args)
+        fields = args[:fields] || {}
+        return error('対象のLINE MUSICアルバムが見つかりません。') if line_music_album.blank?
+
+        result = LineMusicAlbumReplacement.new(
+          line_music_album:,
+          new_line_music_id: fields[:new_line_music_id] || fields['new_line_music_id'],
+          new_url: fields[:new_url] || fields['new_url'],
+          expected_old_line_music_id: fields[:expected_old_line_music_id] || fields['expected_old_line_music_id']
+        ).apply!(action_run_id: args[:action_run_id])
+
+        succeed(
+          "LINE MUSICアルバムを置換しました: #{result.old_line_music_id} -> #{result.new_line_music_id} " \
+          "（楽曲 更新#{result.updated_count}件 / 追加#{result.created_count}件 / 削除#{result.removed_count}件）"
+        )
+      rescue LineMusicAlbumReplacement::Error => e
+        error(e.message)
       end
     end
 

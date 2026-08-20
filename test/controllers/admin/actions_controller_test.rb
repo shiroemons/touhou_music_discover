@@ -70,6 +70,141 @@ module Admin
       assert_equal I18n.t('admin.actions.auto_assign_original_songs.no_candidates'), flash[:alert]
     end
 
+    test 'requires a replacement preview before allowing the LINE MUSIC album update' do
+      album = Album.create!(jan_code: "admin-line-music-replacement-#{SecureRandom.hex(4)}")
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'admin-old-line-album',
+        name: 'Admin LINE MUSIC Album',
+        total_tracks: 1,
+        payload: {}
+      )
+
+      get admin_member_resource_action_url('line_music_albums', line_music_album, 'replace_line_music_album')
+
+      assert_response :success
+      assert_select 'form[action=?]', admin_member_resource_action_preview_path('line_music_albums', line_music_album, 'replace_line_music_album'), count: 1
+      assert_select 'button[type=submit]', text: '照合結果を表示', count: 1
+      assert_select 'input[name="fields[expected_old_line_music_id]"][value="admin-old-line-album"]', count: 1
+
+      post admin_member_resource_action_preview_url('line_music_albums', line_music_album, 'replace_line_music_album'), params: {
+        fields: {
+          new_line_music_id: '',
+          new_url: '',
+          expected_old_line_music_id: 'admin-old-line-album'
+        }
+      }
+
+      assert_response :success
+      assert_select '.alert-error', text: /新しいLINE MUSICアルバムIDを入力してください/
+      assert_select 'button[type=submit]', text: '照合結果を表示', count: 1
+      assert_no_enqueued_jobs
+    end
+
+    test 'renders a successful LINE MUSIC replacement preview before enqueueing it' do
+      album = Album.create!(jan_code: "admin-line-music-preview-#{SecureRandom.hex(4)}")
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'admin-preview-old',
+        name: 'Admin Preview Album',
+        total_tracks: 1,
+        payload: {}
+      )
+      api_album = Struct.new(:album_id, :album_title, :track_total_count).new('admin-preview-new', 'Admin Preview Album', 1)
+      plan = LineMusicAlbumReplacement::Plan.new(
+        line_music_album,
+        api_album,
+        [],
+        [],
+        'https://music.line.me/webapp/album/admin-preview-new',
+        'admin-preview-old',
+        { 'album' => {}, 'tracks' => [] },
+        { 'album' => {}, 'tracks' => [] },
+        { 'created' => 0, 'updated' => 1, 'removed' => 0, 'unchanged' => 0 },
+        []
+      )
+
+      with_replacement_prepare(-> { plan }) do
+        post admin_member_resource_action_preview_url('line_music_albums', line_music_album, 'replace_line_music_album'), params: {
+          fields: {
+            new_line_music_id: 'admin-preview-new',
+            new_url: '',
+            expected_old_line_music_id: 'admin-preview-old'
+          }
+        }
+      end
+
+      assert_response :success
+      assert_select 'h3', text: '置換前後の照合結果'
+      assert_select '.admin-action-status-pill', text: 'プレビュー（未更新）'
+      assert_select 'button[type=submit]:not([disabled])', text: /置換を実行/
+      assert_select 'form[action=?]', admin_member_resource_action_path('line_music_albums', line_music_album, 'replace_line_music_album'), count: 1
+      assert_no_enqueued_jobs
+    end
+
+    test 'offers a response link for each detected LINE MUSIC replacement candidate' do
+      album = Album.create!(jan_code: "admin-line-music-detection-#{SecureRandom.hex(4)}")
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'admin-detection-old',
+        name: 'Admin Detection Album',
+        total_tracks: 1,
+        payload: {}
+      )
+      candidate = Data.define(:album_id, :album_title, :release_date, :track_total_count).new(
+        'admin-detection-new',
+        'Admin Detection Album',
+        Date.new(2026, 5, 4),
+        1
+      )
+      plan = LineMusicAlbumReplacementDetector::Plan.new(line_music_album, [candidate], ['Admin Detection Album'], [])
+      expected_path = admin_member_resource_action_path(
+        'line_music_albums',
+        line_music_album,
+        'replace_line_music_album',
+        new_line_music_id: candidate.album_id
+      )
+
+      with_detector_prepare(-> { plan }) do
+        assert_no_difference -> { LineMusicAlbumReplacementCandidate.count } do
+          get admin_member_resource_action_url('line_music_albums', line_music_album, 'detect_line_music_album_replacement')
+        end
+      end
+
+      assert_response :success
+      assert_select 'a[href=?]', expected_path, text: 'この候補で対応', count: 1
+    end
+
+    test 'prefills the selected replacement candidate in the replacement form' do
+      album = Album.create!(jan_code: "admin-line-music-selected-#{SecureRandom.hex(4)}")
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'admin-selected-old',
+        name: 'Admin Selected Album',
+        total_tracks: 1,
+        payload: {}
+      )
+      LineMusicAlbumReplacementCandidate.create!(
+        line_music_album:,
+        line_music_id: 'admin-selected-new',
+        name: 'Admin Selected Album',
+        url: 'https://music.line.me/webapp/album/admin-selected-new',
+        total_tracks: 1,
+        payload: {}
+      )
+
+      get admin_member_resource_action_url(
+        'line_music_albums',
+        line_music_album,
+        'replace_line_music_album',
+        new_line_music_id: 'admin-selected-new'
+      )
+
+      assert_response :success
+      assert_select 'input[name="fields[new_line_music_id]"][value="admin-selected-new"]', count: 1
+      assert_select 'input[name="fields[new_url]"][value="https://music.line.me/webapp/album/admin-selected-new"]', count: 1
+    end
+
     test 'shows a queued action without presenting it as running' do
       run_id = create_action_run
 
@@ -173,6 +308,22 @@ module Admin
       yield
     ensure
       Admin::ActionRun.define_singleton_method(method_name, original)
+    end
+
+    def with_replacement_prepare(replacement)
+      original_method = LineMusicAlbumReplacement.instance_method(:prepare)
+      LineMusicAlbumReplacement.define_method(:prepare, &replacement)
+      yield
+    ensure
+      LineMusicAlbumReplacement.define_method(:prepare, original_method)
+    end
+
+    def with_detector_prepare(replacement)
+      original_method = LineMusicAlbumReplacementDetector.instance_method(:prepare)
+      LineMusicAlbumReplacementDetector.define_method(:prepare, &replacement)
+      yield
+    ensure
+      LineMusicAlbumReplacementDetector.define_method(:prepare, original_method)
     end
 
     def create_transfer_candidate

@@ -1,0 +1,59 @@
+<section class="admin-transfer-preview" aria-labelledby="line-music-detection-preview-heading">
+  <div class="admin-transfer-preview-header">
+    <div>
+      <span class="admin-kicker"><%= t('admin.actions.detect_line_music_album_replacement.preview.kicker') %></span>
+      <h3 id="line-music-detection-preview-heading"><%= t('admin.actions.detect_line_music_album_replacement.preview.heading') %></h3>
+      <p><%= t('admin.actions.detect_line_music_album_replacement.preview.description') %></p>
+    </div>
+    <span class="admin-action-status-pill"><%= t(preview&.ready? ? 'admin.actions.detect_line_music_album_replacement.preview.read_only' : 'admin.actions.detect_line_music_album_replacement.preview.blocked') %></span>
+  </div>
+
+  <% if preview.blank? %>
+    <p class="admin-empty"><%= t('admin.actions.detect_line_music_album_replacement.preview.empty') %></p>
+  <% elsif preview.errors.any? %>
+    <div class="alert alert-error" role="alert">
+      <ul>
+        <% preview.errors.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% elsif preview.candidates.empty? %>
+    <p class="admin-empty"><%= t('admin.actions.detect_line_music_album_replacement.preview.no_candidates') %></p>
+  <% else %>
+    <div class="admin-table-scroll">
+      <table class="table admin-detail-table">
+        <caption><%= t('admin.actions.detect_line_music_album_replacement.preview.candidate_caption') %></caption>
+        <thead>
+          <tr>
+            <th scope="col"><%= t('admin.actions.detect_line_music_album_replacement.preview.id') %></th>
+            <th scope="col"><%= t('admin.actions.detect_line_music_album_replacement.preview.name') %></th>
+            <th scope="col"><%= t('admin.actions.detect_line_music_album_replacement.preview.release_date') %></th>
+            <th scope="col"><%= t('admin.actions.detect_line_music_album_replacement.preview.tracks') %></th>
+            <th scope="col"><%= t('admin.actions.detect_line_music_album_replacement.preview.action') %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% preview.candidates.each do |candidate| %>
+            <tr>
+              <td><code><%= candidate.album_id %></code></td>
+              <td><%= candidate.album_title %></td>
+              <td><%= candidate.release_date %></td>
+              <td><%= candidate.track_total_count %></td>
+              <td>
+                <%= link_to t('admin.actions.detect_line_music_album_replacement.preview.respond'),
+                            admin_member_resource_action_path(
+                              @resource_config.key,
+                              preview.line_music_album,
+                              'replace_line_music_album',
+                              new_line_music_id: candidate.album_id
+                            ),
+                            class: 'btn btn-sm admin-btn-primary' %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</section>

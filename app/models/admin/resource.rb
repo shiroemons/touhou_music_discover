@@ -782,7 +782,8 @@ module Admin
             index_attributes: %i[name circle_name album_id release_date tracks_status catalog_availability line_music_id],
             detail_attributes: %i[
               id name circle_name album_id release_date tracks_status catalog_availability
-              unavailable_catalog_tracks total_tracks line_music_id url payload created_at updated_at
+              unavailable_catalog_tracks total_tracks line_music_id url pending_replacement_line_music_id
+              pending_replacement_url payload created_at updated_at
             ],
             form_attributes: %i[album_id line_music_id name url release_date total_tracks payload],
             search_scope: lambda { |scope, query|
@@ -807,7 +808,14 @@ module Admin
                 ]
               }
             ],
-            action_class_names: %w[FetchLineMusicAlbum UpdateLineMusicAlbum ProcessLineMusicJanToAlbumIds]
+            action_class_names: %w[
+              FetchLineMusicAlbum
+              UpdateLineMusicAlbum
+              ProcessLineMusicJanToAlbumIds
+              DetectLineMusicAlbumReplacements
+              DetectLineMusicAlbumReplacement
+              ReplaceLineMusicAlbum
+            ]
           ),
           new(
             key: 'line_music_tracks',

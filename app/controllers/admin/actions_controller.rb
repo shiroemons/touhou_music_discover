@@ -15,18 +15,34 @@ module Admin
     end
 
     def new
-      @action_preview = @action.preview
+      @action_field_values = default_action_fields
+      @action_preview = @action.field_preview? ? nil : @action.preview(record: @record)
+    end
+
+    def preview
+      @action_field_values = action_fields
+      @action_preview = @action.preview(fields: @action_field_values, record: @record)
+      render :new
     end
 
     def create
-      action_preview = @action.preview
+      fields = action_fields
+      action_preview = @action.preview(fields:, record: @record)
       unless @action.runnable?(action_preview)
-        redirect_to action_entry_path, alert: @action.not_runnable_message
+        unless @action.field_preview?
+          redirect_to action_entry_path, alert: @action.not_runnable_message
+          return
+        end
+
+        @action_field_values = fields
+        @action_preview = action_preview
+        flash.now[:alert] = @action.not_runnable_message
+        render :new, status: :unprocessable_content
         return
       end
 
       run_id = SecureRandom.uuid
-      fields = prepare_action_fields(run_id)
+      fields = prepare_action_fields(run_id, fields)
       Admin::ActionRun.create!(
         run_id:,
         resource_key: @resource_config.key,
@@ -73,8 +89,27 @@ module Admin
       params.expect(fields: [*@action.fields.map(&:name)]).to_h
     end
 
-    def prepare_action_fields(run_id)
-      action_fields.transform_values.with_index do |value, index|
+    def default_action_fields
+      return {} if @record.blank?
+
+      requested_replacement_id = params[:new_line_music_id].presence
+      replacement_candidate = if @record.respond_to?(:pending_replacement_candidate)
+                                if requested_replacement_id.present?
+                                  @record.pending_replacement_candidate(line_music_id: requested_replacement_id)
+                                else
+                                  @record.pending_replacement_candidate
+                                end
+                              end
+
+      {
+        'expected_old_line_music_id' => @record.line_music_id,
+        'new_line_music_id' => requested_replacement_id || replacement_candidate&.line_music_id,
+        'new_url' => replacement_candidate&.url
+      }.compact
+    end
+
+    def prepare_action_fields(run_id, fields)
+      fields.transform_values.with_index do |value, index|
         value.respond_to?(:tempfile) ? persist_uploaded_file(run_id, index, value) : value
       end
     end

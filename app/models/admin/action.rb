@@ -10,12 +10,22 @@ module Admin
       'FetchAppleMusicAlbumById' => [
         Field.new(:album_id, :text, true, 'Apple MusicのアルバムIDを入力してください')
       ],
+      'ReplaceLineMusicAlbum' => [
+        Field.new(:new_line_music_id, :text, true, nil),
+        Field.new(:new_url, :text, false, nil),
+        Field.new(:expected_old_line_music_id, :hidden, false, nil)
+      ],
       'ImportTracksWithOriginalSongs' => [
         Field.new(:tsv_file, :file, true, nil)
       ]
     }.freeze
 
-    MEMBER_ACTIONS = %w[UpdateYtmusicAlbumPayload FetchYtmusicAlbumDistributionDate].freeze
+    MEMBER_ACTIONS = %w[
+      UpdateYtmusicAlbumPayload
+      FetchYtmusicAlbumDistributionDate
+      ReplaceLineMusicAlbum
+      DetectLineMusicAlbumReplacement
+    ].freeze
 
     attr_accessor :resource, :action_class_name
 
@@ -41,6 +51,10 @@ module Admin
       FIELD_DEFINITIONS.fetch(action_class_name, [])
     end
 
+    def field_preview?
+      action_class.respond_to?(:field_preview?) && action_class.field_preview?
+    end
+
     def member?
       MEMBER_ACTIONS.include?(action_class_name)
     end
@@ -49,8 +63,21 @@ module Admin
       !member?
     end
 
-    def preview
-      action_class.preview if action_class.respond_to?(:preview)
+    def preview(fields: {}, record: nil)
+      return unless action_class.respond_to?(:preview)
+
+      preview_method = action_class.method(:preview)
+      parameter_names = preview_method.parameters.map(&:last)
+      if preview_method.parameters.any? { |type, _name| type == :keyrest } ||
+         (parameter_names.include?(:fields) && parameter_names.include?(:record))
+        action_class.preview(fields:, record:)
+      elsif parameter_names.include?(:fields)
+        action_class.preview(fields:)
+      elsif parameter_names.include?(:record)
+        action_class.preview(record:)
+      else
+        action_class.preview
+      end
     end
 
     def preview_partial
@@ -97,10 +124,10 @@ module Admin
       )
     end
 
-    def run(fields: {}, record: nil)
+    def run(fields: {}, record: nil, action_run_id: nil)
       action = action_class.new
       attach_progress_recorder(action)
-      payload = { fields: fields_for_action(fields, record) }
+      payload = { fields: fields_for_action(fields, record), action_run_id: }
 
       if action.class.instance_method(:handle).parameters.any? { |type, _name| type == :keyrest }
         action.handle(**payload)
@@ -133,6 +160,24 @@ module Admin
       action_fields[:admin_resource_ids] = [record.id] if record.present?
       action_fields
     end
+
+    public
+
+    def field_label(field)
+      I18n.t(
+        "admin.actions.#{key}.fields.#{field.name}.label",
+        default: field.name.to_s.humanize
+      )
+    end
+
+    def field_help(field)
+      I18n.t(
+        "admin.actions.#{key}.fields.#{field.name}.help",
+        default: field.help.to_s
+      ).presence
+    end
+
+    private
 
     def attach_progress_recorder(action)
       progress_recorder = Admin::ActionProgress.current
