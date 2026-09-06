@@ -795,10 +795,21 @@ module Admin
           expected_old_line_music_id: fields[:expected_old_line_music_id] || fields['expected_old_line_music_id']
         ).apply!(action_run_id: args[:action_run_id])
 
-        succeed(
+        replacement_message =
           "LINE MUSICアルバムを置換しました: #{result.old_line_music_id} -> #{result.new_line_music_id} " \
           "（楽曲 更新#{result.updated_count}件 / 追加#{result.created_count}件 / 削除#{result.removed_count}件）"
-        )
+
+        begin
+          export_result = LineMusicAlbumAlgoliaExporter.new(line_music_album:).export!
+          succeed(
+            "#{replacement_message} Algolia向けJSONを出力しました: " \
+            "#{export_result.path.relative_path_from(Rails.root)}"
+          )
+        rescue LineMusicAlbumAlgoliaExporter::Error => e
+          Rails.logger.error("LINE MUSIC置換後のAlgolia出力に失敗しました: #{e.class} - #{e.message}")
+          succeed(replacement_message)
+          warn "アルバム置換は完了しましたが、Algolia向けJSONの出力に失敗しました: #{e.message}"
+        end
       rescue LineMusicAlbumReplacement::Error => e
         error(e.message)
       end

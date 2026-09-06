@@ -448,6 +448,8 @@ Spotifyはセキュリティ強化のため、HTTPのリダイレクトURIおよ
   FULL_EXPORT=1 ALGOLIA_OUTPUT_DIR=tmp/algolia/full devbox run export:for_algolia
   ```
 
+  管理画面からLINE MUSICアルバムの置換を実行した場合は、DBトランザクションの完了後に対象アルバム1件分の `touhou_music_line_music_for_algolia.json` を自動出力します。出力先は `ALGOLIA_OUTPUT_DIR`（未指定時は `tmp/algolia`）です。出力に失敗してもアルバム置換自体は維持され、管理画面の結果に警告を表示します。
+
 - 東方同人音楽流通 東方サブスクランダム選曲アプリ用JSON出力
   ```shell
   task export:to-random-touhou-music

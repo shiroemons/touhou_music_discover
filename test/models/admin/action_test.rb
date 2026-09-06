@@ -283,6 +283,49 @@ module Admin
       assert_equal 'FetchSpotifyAlbum', status.source
     end
 
+    test 'exports the LINE MUSIC Algolia JSON after a successful replacement' do
+      album = Album.create!(jan_code: "admin-line-music-algolia-#{SecureRandom.hex(4)}")
+      line_music_album = LineMusicAlbum.create!(
+        album:,
+        line_music_id: 'admin-algolia-old',
+        name: 'Admin Algolia Album',
+        total_tracks: 1,
+        payload: {}
+      )
+      replacement_result = LineMusicAlbumReplacement::Result.new('admin-algolia-old', 'admin-algolia-new', 0, 1, 0)
+      replacement = Object.new
+      replacement.define_singleton_method(:apply!) { |**_kwargs| replacement_result }
+      exported = false
+      exporter_result = LineMusicAlbumAlgoliaExporter::Result.new(
+        Rails.root.join('tmp/algolia/touhou_music_line_music_for_algolia.json'),
+        1
+      )
+      exporter_line_music_album_id = nil
+      exporter = Object.new
+      exporter.define_singleton_method(:export!) do
+        exported = true
+        exporter_result
+      end
+
+      with_singleton_method(LineMusicAlbumReplacement, :new, ->(**_kwargs) { replacement }) do
+        with_singleton_method(LineMusicAlbumAlgoliaExporter, :new, lambda do |**kwargs|
+          exporter_line_music_album_id = kwargs.fetch(:line_music_album).id
+          exporter
+        end) do
+          result = Admin::Resource.find!('line_music_albums').action_for!('replace_line_music_album').run(
+            record: line_music_album,
+            fields: { new_line_music_id: 'admin-algolia-new' },
+            action_run_id: 'admin-algolia-run'
+          )
+
+          assert_predicate result, :success?
+          assert exported
+          assert_equal line_music_album.id, exporter_line_music_album_id
+          assert_includes result.message, 'Algolia向けJSONを出力しました'
+        end
+      end
+    end
+
     private
 
     def create_album(jan_code)
