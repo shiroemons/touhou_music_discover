@@ -15,12 +15,14 @@ module Admin
     def perform(run_id:, resource_key:, action_key:, fields:, record_id: nil)
       Admin::ActionRun.start!(run_id)
       progress = Admin::ActionProgress.new(run_id)
-      Admin::ActionProgress.with(progress) do
-        resource_config = Admin::Resource.find!(resource_key)
-        action = resource_config.action_for!(action_key)
-        record = resource_config.model_class.find(record_id) if record_id.present?
-        result = run_action(action, fields: deserialize_fields(fields), record:, run_id:)
-        Admin::ActionRun.complete!(run_id, result)
+      ParallelRunner.with_forking_disabled do
+        Admin::ActionProgress.with(progress) do
+          resource_config = Admin::Resource.find!(resource_key)
+          action = resource_config.action_for!(action_key)
+          record = resource_config.model_class.find(record_id) if record_id.present?
+          result = run_action(action, fields: deserialize_fields(fields), record:, run_id:)
+          Admin::ActionRun.complete!(run_id, result)
+        end
       end
     rescue StandardError => e
       Rails.logger.error("[Admin::ActionJob] #{action_key} failed: #{e.class} - #{e.message}")

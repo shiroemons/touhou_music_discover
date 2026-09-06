@@ -9,31 +9,42 @@
 #   3. 呼び出し側の workers: 引数      … 通常はここで WORKERS のキーを指定する。
 # 最終的に [決定値, Parallel.processor_count].min で頭打ちにする。
 #
-# 実行モードは :processes をデフォルトのままにしている。理由は、対象の呼び出し箇所がいずれも
-# 外部API (YtMusic / LineMusic / Spotify の HTTP 呼び出し) 待ちであり、YtMusic::Client や
-# LineMusic::Client のシングルトンが保持するメモ化済み Faraday コネクションが、
-# fork によってプロセスごとに分離されることで結果的にスレッドセーフに保たれているため。
-# :threads に切り替えるとこれらの Faraday コネクションが本当に共有され、安全ではなくなる。
-#
-# ただし残存リスクもある: これらの処理は Solid Queue のワーカースレッドから呼ばれるため、
-# マルチスレッドプロセスからの fork となる。fork の瞬間に他スレッドが握っていたミューテックス
-# (例: Ruby の Logger 内部ミューテックス) は子プロセス側でロックされたまま解放されない可能性があり、
-# これは fork-from-multithreaded-process 一般の既知の危険性で、この設計でも解消しきれていない。
+# 実行モードは :processes をデフォルトのままにしている。Rails runner やバッチ処理では、外部API
+# 待ちの処理をプロセス分離できるためである。ただし、Solid Queue のようなマルチスレッドの
+# ワーカーから fork すると、他スレッドが保持するロックやDB接続を子プロセスが引き継いでしまう。
+# 管理アクションからは `with_forking_disabled` を使い、fork を発生させない。
 module ParallelRunner
   # ワーカー数の単一の情報源。以前は6箇所にハードコードされていた。
   WORKERS = { ytmusic: 7, line_music: 4, spotify: 3 }.freeze
 
   MODE_OPTION_KEYS = { processes: :in_processes, threads: :in_threads }.freeze
+  FORKING_DISABLED_KEY = :parallel_runner_forking_disabled
 
   class << self
     # テストからワーカー数を強制するための上書き値 (nil で未設定)
     attr_accessor :forced_workers
 
+    # Solid Queue のマルチスレッドワーカーからの fork を禁止する。
+    #
+    # fork 元の別スレッドが保持するDB接続やロックは子プロセスに安全に引き継げない。
+    # 管理アクションでは同じワーカー内で逐次実行することで、ワーカーのheartbeat停止と
+    # 実行中ジョブの再投入を防ぐ。
+    def with_forking_disabled
+      previous = Thread.current[FORKING_DISABLED_KEY]
+      Thread.current[FORKING_DISABLED_KEY] = true
+      yield
+    ensure
+      Thread.current[FORKING_DISABLED_KEY] = previous
+    end
+
     def each(records, workers:, mode: :processes, finish: nil, &)
       items = records.to_a
       count = effective_workers(workers)
 
-      return run_inline(items, finish, &) if count <= 1
+      validate_mode!(mode)
+      mode = :inline if forking_disabled?
+
+      return run_inline(items, finish, &) if mode == :inline || count <= 1
 
       prepare_for_fork if mode == :processes
       Parallel.each(items, parallel_options(mode, count, finish), &)
@@ -49,6 +60,16 @@ module ParallelRunner
     end
 
     private
+
+    def forking_disabled?
+      Thread.current[FORKING_DISABLED_KEY] == true
+    end
+
+    def validate_mode!(mode)
+      return if mode == :inline || MODE_OPTION_KEYS.key?(mode)
+
+      raise ArgumentError, "unknown mode: #{mode.inspect}"
+    end
 
     def resolve_workers(workers)
       case workers
@@ -67,13 +88,11 @@ module ParallelRunner
       { option_key => count, finish: }.compact
     end
 
-    # fork 前に親プロセスのアイドルDBコネクションをプールへ返すための保険。
-    # 子プロセス側は ActiveSupport::ForkTracker がコネクションプールを破棄してくれる
-    # (ActiveRecord の pool_config.rb を参照) ため、これはあくまで親プロセス側の念のための処置。
-    # 対象レコードを materialize した後・fork の直前という、このタイミングでのみ実行すること。
-    # そうしないと処理途中のトランザクションを中断してしまう恐れがある。
+    # fork 前に現在のスレッドが保持するDBコネクションをプールへ返すための保険。
+    # 他のスレッドの接続まで切断すると、Solid Queueのheartbeatや別ジョブの処理を中断する。
+    # 子プロセス側のプールは ActiveSupport::ForkTracker が破棄するため、全接続の切断は不要。
     def prepare_for_fork
-      ActiveRecord::Base.connection_handler.clear_all_connections!(:all)
+      ActiveRecord::Base.connection_handler.clear_active_connections!(:all)
     end
 
     # Parallel gem を経由せず逐次実行する。finish コールバックの引数は

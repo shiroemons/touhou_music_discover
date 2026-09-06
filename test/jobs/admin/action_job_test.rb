@@ -29,6 +29,42 @@ module Admin
       assert_equal ['run-1', result], completed
     end
 
+    test 'disables nested process parallelism while running an admin action' do
+      result = Admin::ActionResult.new(status: :success, message: 'done')
+      processed = []
+      parallel_each_called = false
+      parallel_each = lambda do |items, _options, &block|
+        parallel_each_called = true
+        items.each(&block)
+      end
+      action = FakeAction.new(result) do
+        ParallelRunner.each(%i[first second], workers: 2) { |item| processed << item }
+      end
+      resource = FakeResource.new(action)
+
+      with_forced_workers(2) do
+        Parallel.stub(:processor_count, 2) do
+          Parallel.stub(:each, parallel_each) do
+            with_admin_resource(resource) do
+              with_action_run_method(:start!, ->(_run_id) {}) do
+                with_action_run_method(:complete!, ->(_run_id, _action_result) {}) do
+                  Admin::ActionJob.perform_now(
+                    run_id: 'run-1',
+                    resource_key: 'albums',
+                    action_key: 'fake_action',
+                    fields: {}
+                  )
+                end
+              end
+            end
+          end
+        end
+      end
+
+      assert_not parallel_each_called
+      assert_equal %i[first second], processed
+    end
+
     test 'keeps the uploaded file marker on the lazily loaded value class' do
       assert_equal '_admin_action_uploaded_file', Admin::ActionUploadedFile::ACTION_UPLOADED_FILE_MARKER
       assert_not Admin.const_defined?(:ACTION_UPLOADED_FILE_MARKER, false)
@@ -100,13 +136,15 @@ module Admin
     class FakeAction
       attr_reader :calls
 
-      def initialize(result)
+      def initialize(result, &operation)
         @result = result
         @calls = []
+        @operation = operation
       end
 
       def run(fields:, record: nil)
         @calls << { fields:, record: }
+        @operation&.call
         @result
       end
     end
@@ -119,6 +157,14 @@ module Admin
         fields: {},
         record_id:
       )
+    end
+
+    def with_forced_workers(value)
+      previous = ParallelRunner.forced_workers
+      ParallelRunner.forced_workers = value
+      yield
+    ensure
+      ParallelRunner.forced_workers = previous
     end
 
     def with_admin_resource(resource)

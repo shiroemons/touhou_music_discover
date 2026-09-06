@@ -79,6 +79,27 @@ class ParallelRunnerTest < ActiveSupport::TestCase
     assert_equal [1, 2, 3], visited
   end
 
+  test 'runs inline while forking is disabled' do
+    visited = []
+    parallel_each_called = false
+    parallel_each = lambda do |*_args|
+      parallel_each_called = true
+    end
+
+    with_forced_workers(2) do
+      Parallel.stub(:processor_count, 2) do
+        Parallel.stub(:each, parallel_each) do
+          ParallelRunner.with_forking_disabled do
+            ParallelRunner.each([1, 2, 3], workers: 2) { |item| visited << item }
+          end
+        end
+      end
+    end
+
+    assert_not parallel_each_called
+    assert_equal [1, 2, 3], visited
+  end
+
   test 'inline fallback passes item, index and result to the finish callback' do
     finished = []
     finish = ->(item, index, result) { finished << [item, index, result] }
@@ -110,6 +131,25 @@ class ParallelRunnerTest < ActiveSupport::TestCase
         end
       end
     end
+  end
+
+  test 'restores the forking setting after the block' do
+    parallel_each_called = false
+    parallel_each = lambda do |items, _options, &block|
+      parallel_each_called = true
+      items.each(&block)
+    end
+
+    with_forced_workers(2) do
+      Parallel.stub(:processor_count, 2) do
+        Parallel.stub(:each, parallel_each) do
+          ParallelRunner.with_forking_disabled { nil }
+          ParallelRunner.each([1, 2], workers: 2, mode: :threads) { |item| item }
+        end
+      end
+    end
+
+    assert parallel_each_called
   end
 
   private
