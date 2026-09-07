@@ -87,8 +87,8 @@ class ParallelRunnerTest < ActiveSupport::TestCase
     end
 
     with_forced_workers(2) do
-      Parallel.stub(:processor_count, 2) do
-        Parallel.stub(:each, parallel_each) do
+      with_parallel_method(:processor_count, -> { 2 }) do
+        with_parallel_method(:each, parallel_each) do
           ParallelRunner.with_forking_disabled do
             ParallelRunner.each([1, 2, 3], workers: 2) { |item| visited << item }
           end
@@ -141,8 +141,8 @@ class ParallelRunnerTest < ActiveSupport::TestCase
     end
 
     with_forced_workers(2) do
-      Parallel.stub(:processor_count, 2) do
-        Parallel.stub(:each, parallel_each) do
+      with_parallel_method(:processor_count, -> { 2 }) do
+        with_parallel_method(:each, parallel_each) do
           ParallelRunner.with_forking_disabled { nil }
           ParallelRunner.each([1, 2], workers: 2, mode: :threads) { |item| item }
         end
@@ -160,6 +160,14 @@ class ParallelRunnerTest < ActiveSupport::TestCase
     yield
   ensure
     ParallelRunner.forced_workers = previous
+  end
+
+  def with_parallel_method(method_name, replacement)
+    original = Parallel.method(method_name)
+    Parallel.define_singleton_method(method_name, replacement)
+    yield
+  ensure
+    Parallel.define_singleton_method(method_name, original)
   end
 
   def with_env(key, value)

@@ -43,8 +43,8 @@ module Admin
       resource = FakeResource.new(action)
 
       with_forced_workers(2) do
-        Parallel.stub(:processor_count, 2) do
-          Parallel.stub(:each, parallel_each) do
+        with_parallel_method(:processor_count, -> { 2 }) do
+          with_parallel_method(:each, parallel_each) do
             with_admin_resource(resource) do
               with_action_run_method(:start!, ->(_run_id) {}) do
                 with_action_run_method(:complete!, ->(_run_id, _action_result) {}) do
@@ -165,6 +165,14 @@ module Admin
       yield
     ensure
       ParallelRunner.forced_workers = previous
+    end
+
+    def with_parallel_method(method_name, replacement)
+      original = Parallel.method(method_name)
+      Parallel.define_singleton_method(method_name, replacement)
+      yield
+    ensure
+      Parallel.define_singleton_method(method_name, original)
     end
 
     def with_admin_resource(resource)
