@@ -20,6 +20,7 @@ class Circle < ApplicationRecord
     'SYNC ART`S' => "SYNC.ART'S",
     't0m0h1r0' => 'Blackscreen',
     'UNDEAD CORPORATION DOUJIN WORKS' => 'UNDEAD CORPORATION',
+    'Yutaka Kouzaki' => 'Studio-Stardustglass',
     'はちみつれもん' => 'はちみつれもん/Hachimitsu-Lemon',
     'ねこみりん' => 'nekomimi style',
     'まりつみ' => 'maritumix',

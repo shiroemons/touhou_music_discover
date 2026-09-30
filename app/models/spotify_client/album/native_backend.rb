@@ -12,7 +12,8 @@ module SpotifyClient
           page = SpotifyApi::Album.search(keyword, limit: SEARCH_LIMIT, offset:)
           page.items.each { |s_album| process_album(s_album) }
           offset += page.items.size
-          break if page.last_page? || page.items.empty?
+          # 検索は100件境界で next が nil でも、次の offset に結果が存在する。
+          break if page.items.size < SEARCH_LIMIT
 
           puts "year:#{year}\toffset: #{offset}"
           # リクエスト間に短いディレイを追加

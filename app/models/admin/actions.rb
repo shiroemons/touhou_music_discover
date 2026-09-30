@@ -474,6 +474,7 @@ module Admin
           )
         end
 
+        AppleMusicClient::Artist.fetch_from_albums
         am_artist_ids = AppleMusicArtist.pluck(:apple_music_id)
         Admin::ActionProgress.start(total: am_artist_ids.size, message: 'Apple Musicアルバムを取得しています')
         am_artist_ids.each do |am_artist_id|

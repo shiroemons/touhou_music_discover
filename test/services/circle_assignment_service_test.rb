@@ -54,6 +54,31 @@ class CircleAssignmentServiceTest < ActiveSupport::TestCase
     assert_equal({ processed: 1, assigned: 1, unassigned: 0 }, result)
   end
 
+  test 'maps Yutaka Kouzaki to Studio-Stardustglass for both streaming services' do
+    album = Album.create!(jan_code: '4582736139415')
+    circle = Circle.create!(name: 'Studio-Stardustglass')
+    Circle.create!(name: 'Yutaka Kouzaki')
+    SpotifyAlbum.create!(
+      album:,
+      spotify_id: 'spotify-stibnight',
+      album_type: 'album',
+      name: 'StibNight',
+      label: Album::TOUHOU_MUSIC_LABEL,
+      payload: { 'artists' => [{ 'name' => 'Yutaka Kouzaki' }] }
+    )
+    AppleMusicAlbum.create!(
+      album:,
+      apple_music_id: 'apple-stibnight',
+      name: 'StibNight',
+      label: Album::TOUHOU_MUSIC_LABEL,
+      payload: { 'attributes' => { 'artistName' => 'Yutaka Kouzaki' } }
+    )
+
+    CircleAssignmentService.new.assign(album)
+
+    assert_equal [circle], album.reload.circles.to_a
+  end
+
   test 'assigns circle from LINE MUSIC artist when other services use Various Artists' do
     album = Album.create!(jan_code: '4582736138869')
     circle = Circle.create!(name: '甘夏 -アマナツ-')

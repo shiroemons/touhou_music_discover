@@ -62,6 +62,33 @@ module SpotifyClient
       assert_includes updates.last.fetch(:message), "#{Time.zone.today.year}年"
     end
 
+    test 'continues searching after a full page with no next URL at the 100 result boundary' do
+      offsets = []
+      processed_ids = []
+      album_api = Class.new do
+        define_singleton_method(:search) do |_query, **options|
+          offset = options.fetch(:offset)
+          offsets << offset
+          count = offset < 100 ? 10 : 1
+          SpotifyApi::Page.build(
+            'items' => Array.new(count) { |index| { 'id' => "album-#{offset + index}" } },
+            'next' => nil,
+            'total' => offset < 100 ? 100 : 101
+          )
+        end
+      end
+
+      with_spotify_album_processor(->(album) { processed_ids << album.id }) do
+        stub_const(SpotifyApi, :Album, album_api) do
+          SpotifyClient::Album.search_and_save_albums('label:test year:2024', 2024)
+        end
+      end
+
+      assert_equal (0..100).step(10).to_a, offsets
+      assert_equal 101, processed_ids.uniq.size
+      assert_includes processed_ids, 'album-100'
+    end
+
     test 'does not search albums that already have inactive Spotify albums' do
       jan_code = "spotify-jan-skip-#{SecureRandom.hex(4)}"
       album = create_album_with_apple_music(jan_code:)

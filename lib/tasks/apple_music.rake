@@ -16,6 +16,7 @@ namespace :apple_music do
 
   desc 'AppleMusic アーティストに紐づくアルバム情報を取得'
   task fetch_artist_albums: :environment do
+    AppleMusicClient::Artist.fetch_from_albums
     am_artist_ids = AppleMusicArtist.pluck(:apple_music_id)
     count = 0
     max_count = am_artist_ids.count
