@@ -1,0 +1,60 @@
+#!/usr/bin/env sh
+
+# 本体のサービス操作を、ワークツリーのセットアップ（本体の PostgreSQL の一時起動とダンプ）と直列化する。
+# ワークツリーでは本体の PostgreSQL に触らないので、ロックを取らずにそのまま実行する。
+#
+#   scripts/with_source_db_lock run <command...>
+#     コマンドの実行中だけロックを持つ。停止や孤児プロセスの掃除に使う
+#   scripts/with_source_db_lock start <command...>
+#     ロックを取ってからコマンドを実行し、PostgreSQL がポートを開くまでバックグラウンドでロックを持ち続ける。
+#     起動に使う。TUI のように終わらないコマンドにも使える
+
+set -eu
+
+usage() {
+  echo "使い方: $0 run|start <command...>" >&2
+  exit 2
+}
+
+[ "$#" -ge 2 ] || usage
+mode="$1"
+shift
+case "$mode" in
+  run|start) ;;
+  *) usage ;;
+esac
+
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
+project_root="$(CDPATH= cd -- "$script_dir/.." && pwd -P)"
+common_dir="$(git -C "$project_root" rev-parse --path-format=absolute --git-common-dir)"
+if [ "$project_root" != "$(dirname -- "$common_dir")" ]; then
+  exec "$@"
+fi
+
+. "$script_dir/lib/source_db_lock.sh"
+source_db_lock_init "$project_root"
+pg_port="${PGPORT:-5432}"
+pg_wait_seconds=120
+
+source_db_lock_acquire
+
+if [ "$mode" = run ]; then
+  trap 'source_db_lock_release' EXIT
+  trap 'exit 130' INT
+  trap 'exit 143' TERM
+  "$@"
+  exit 0
+fi
+
+# 起動したコマンドが PostgreSQL のポートを開くまで、ロックをバックグラウンドのプロセスに持たせる。
+# 標準入出力を閉じておかないと、task がこのプロセスの終了まで待ってしまう。
+(
+  waited=0
+  while [ "$waited" -lt "$pg_wait_seconds" ] && ! lsof -nP -iTCP:"$pg_port" -sTCP:LISTEN >/dev/null 2>&1; do
+    sleep 1
+    waited=$((waited + 1))
+  done
+  source_db_lock_release
+) </dev/null >/dev/null 2>&1 &
+source_db_lock_handover "$!"
+exec "$@"

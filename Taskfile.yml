@@ -58,7 +58,7 @@ tasks:
         if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
           echo "サービスは既に起動しています"
         else
-          devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+          PGPORT={{.PG_PORT}} scripts/with_source_db_lock start devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
         fi
       - task: wait-for-rails
       - task: versions
@@ -68,7 +68,7 @@ tasks:
   tui:
     desc: 全サービスをTUIモードで起動
     cmds:
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - PGPORT={{.PG_PORT}} scripts/with_source_db_lock start devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} --pcport {{.DEVBOX_PC_PORT_NUM}}
 
   logs:
     desc: Railsサーバーのログを表示
@@ -80,7 +80,7 @@ tasks:
     cmds:
       - |
         if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
-          devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null
+          scripts/with_source_db_lock run devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null
           echo "サービスを停止しました"
         else
           echo "サービスは起動していません"
@@ -138,7 +138,7 @@ tasks:
     desc: Terminating/Pendingなどから復旧するため全サービスを停止してバックグラウンド起動
     cmds:
       - echo "devboxサービスを停止します"
-      - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
+      - scripts/with_source_db_lock run devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
       - |
         if lsof -tiTCP:{{.PG_PORT}} -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:{{.REDIS_PORT}} -sTCP:LISTEN >/dev/null 2>&1; then
           echo "devbox停止後も {{.PG_PORT}}/{{.REDIS_PORT}} のいずれかが使用中です。"
@@ -147,7 +147,7 @@ tasks:
           exit 1
         fi
       - echo "devboxサービスをバックグラウンドで起動します"
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - PGPORT={{.PG_PORT}} scripts/with_source_db_lock start devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
       - task: wait-for-rails
       - task: health
 
@@ -155,10 +155,10 @@ tasks:
     desc: devbox管理外に残ったRails/PostgreSQL/Redisの孤児プロセスも停止して復旧
     cmds:
       - echo "devboxサービスを停止します"
-      - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
+      - scripts/with_source_db_lock run devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
       - task: kill-orphan-ports
       - echo "devboxサービスをバックグラウンドで起動します"
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - PGPORT={{.PG_PORT}} scripts/with_source_db_lock start devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
       - task: wait-for-rails
       - task: health
 
@@ -181,7 +181,7 @@ tasks:
   kill-orphan-ports:
     desc: 当該プロジェクトの孤児だけを停止し、他プロジェクトのプロセスは識別情報を表示
     cmds:
-      - DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} PORT={{.RAILS_PORT}} PGPORT={{.PG_PORT}} REDIS_PORT={{.REDIS_PORT}} scripts/kill_orphan_ports
+      - DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} PORT={{.RAILS_PORT}} PGPORT={{.PG_PORT}} REDIS_PORT={{.REDIS_PORT}} scripts/with_source_db_lock run scripts/kill_orphan_ports
 
   server:
     desc: Railsサーバーを起動
