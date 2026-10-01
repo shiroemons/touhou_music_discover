@@ -136,8 +136,10 @@ Solid Queueのスキーマは `db/queue_schema.rb` で管理される。
   ```shell
   BACKUP_FILE=tmp/data/touhou_music_discover-20260811-175418.bak task db:restore
   ```
-  復元先の既定値は `touhou_music_discover_development`。別のDBに復元する場合は `RESTORE_DB` を指定する。
-  実行時に復元先DB・バックアップファイル・成功/失敗を表示し、途中で失敗した場合は復元開始前の状態に戻す。
+  復元先の既定値は `touhou_music_discover_development`。検証用DBに復元する場合は `RESTORE_DB` を指定する。
+  指定できるのは既定の開発DB、または `touhou_music_discover_restore_check_` で始まる英数字と `_` のみのDB名。
+  接続文字列・URIや、それ以外のDB名は受け付けない。
+  実行時に接続先（`PGHOST` / `PGPORT`）・復元先DB・バックアップファイル・成功/失敗を表示し、途中で失敗した場合は復元開始前の状態に戻す。
   ```shell
   RESTORE_DB=touhou_music_discover_restore_check_example BACKUP_FILE=tmp/data/touhou_music_discover-20260811-175418.bak task db:restore
   ```

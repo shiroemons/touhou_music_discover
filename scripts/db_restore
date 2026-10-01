@@ -2,15 +2,27 @@
 
 set -eu
 
-restore_db="${RESTORE_DB:-touhou_music_discover_development}"
+restore_db="${RESTORE_DB-touhou_music_discover_development}"
 backup_file="${BACKUP_FILE:-}"
 trap 'status=$?; if [ "$status" -eq 0 ]; then result="成功"; else result="失敗"; fi; printf "リストア%s: DB=%s ファイル=%s 終了コード=%s\n" "$result" "$restore_db" "${backup_file:-<未指定>}" "$status"' 0
+
+# libpq 接続文字列による接続先の差し替えと、開発・検証用以外の DB の上書きを防ぐ。
+case "$restore_db" in
+  *[!a-zA-Z0-9_]*) valid_target=false ;;
+  touhou_music_discover_development|touhou_music_discover_restore_check_*) valid_target=true ;;
+  *) valid_target=false ;;
+esac
+if [ "$valid_target" = false ]; then
+  echo 'RESTORE_DBには開発DBまたは検証用DBの名前だけを指定してください。' >&2
+  exit 1
+fi
 
 if [ -z "$backup_file" ] && [ -d tmp/data ]; then
   backup_file="$(find tmp/data -maxdepth 1 -type f -name 'touhou_music_discover-*.bak' -print | sort | tail -n 1)"
 fi
 
-printf '復元先DB: %s\nバックアップファイル: %s\n' "$restore_db" "${backup_file:-<未指定>}"
+printf '接続先: PGHOST=%s PGPORT=%s\n復元先DB: %s\nバックアップファイル: %s\n' \
+  "${PGHOST:-<既定のUnixソケット>}" "${PGPORT:-5432}" "$restore_db" "${backup_file:-<未指定>}"
 if [ -z "$backup_file" ] || [ ! -f "$backup_file" ]; then
   echo 'バックアップファイルが見つかりません。BACKUP_FILEで指定してください。' >&2
   exit 1

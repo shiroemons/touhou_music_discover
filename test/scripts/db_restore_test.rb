@@ -6,6 +6,7 @@ require 'tmpdir'
 
 class DbRestoreTest < ActiveSupport::TestCase
   SCRIPT = Rails.root.join('scripts/db_restore').to_s
+  CLIENT_COMMANDS = %w[pg_dump pg_restore createdb dropdb].freeze
 
   def test_missing_backup_reports_default_target_without_connecting
     Dir.mktmpdir('db-restore-', Rails.root.join('tmp')) do |directory|
@@ -17,14 +18,37 @@ class DbRestoreTest < ActiveSupport::TestCase
     end
   end
 
+  def test_invalid_restore_targets_are_rejected_without_running_pg_restore
+    Dir.mktmpdir('db-restore-', Rails.root.join('tmp')) do |directory|
+      backup = File.join(directory, 'backup.bak')
+      marker = File.join(directory, 'pg_restore_called')
+      client = File.join(directory, 'pg_restore')
+      File.write(backup, 'not a PostgreSQL archive')
+      File.write(client, "#!/bin/sh\n: > \"#{marker}\"\n")
+      File.chmod(0o700, client)
+      env = { 'PATH' => "#{directory}:#{ENV.fetch('PATH')}", 'BACKUP_FILE' => backup }
+      targets = ['service=production', 'postgresql://localhost/production', '',
+                 'touhou_music_discover_production', 'touhou_music_discover_test',
+                 'touhou_music_discover_restore_check_bad-name',
+                 'touhou_music_discover_restore_check_bad name', "touhou_music_discover_restore_check_bad\nname"]
+
+      targets.each do |database|
+        output, status = Open3.capture2e(env.merge('RESTORE_DB' => database), SCRIPT)
+
+        assert_equal 1, status.exitstatus, output
+        assert_includes output, 'RESTORE_DBには開発DBまたは検証用DBの名前だけを指定してください。'
+        assert_not File.exist?(marker), output
+      end
+    end
+  end
+
   def test_restore_is_atomic_and_reports_success_and_failures
     config = ActiveRecord::Base.connection_db_config.configuration_hash
     env = { 'PGHOST' => config[:host] || ENV.fetch('PGHOST', nil), 'PGPORT' => config[:port].to_s,
             'PGUSER' => config[:username] || ENV.fetch('PGUSER', nil),
             'PGPASSWORD' => config[:password] || ENV.fetch('PGPASSWORD', nil) }
     begin
-      output, status = Open3.capture2e(env, 'pg_restore', '--version')
-      skip "PostgreSQLクライアントがありません: #{output}" unless status.success?
+      check_postgresql_clients(env)
       connection = PG.connect(host: env['PGHOST'], port: env['PGPORT'], user: env['PGUSER'],
                               password: env['PGPASSWORD'], dbname: 'postgres')
       connection.close
@@ -93,6 +117,7 @@ class DbRestoreTest < ActiveSupport::TestCase
         output, status = Open3.capture2e(restore_env.merge('BACKUP_FILE' => backup), SCRIPT)
 
         assert_predicate status, :success?, output
+        assert_includes output, "接続先: PGHOST=#{env['PGHOST']} PGPORT=#{env['PGPORT']}"
         assert_includes output, "復元先DB: #{database}"
         assert_includes output, "バックアップファイル: #{backup}"
         assert_includes output, 'リストア成功'
@@ -104,5 +129,43 @@ class DbRestoreTest < ActiveSupport::TestCase
 
       assert_predicate status, :success?, output
     end
+  end
+
+  def test_older_dump_or_restore_client_skips_integration_test
+    server_major = ActiveRecord::Base.connection.raw_connection.server_version / 10_000
+    Dir.mktmpdir('db-clients-', Rails.root.join('tmp')) do |directory|
+      %w[pg_dump pg_restore].each do |older_client|
+        CLIENT_COMMANDS.each do |command|
+          major = command == older_client ? server_major - 1 : server_major + 1
+          client = File.join(directory, command)
+          File.write(client, "#!/bin/sh\nprintf '%s\\n' '#{command} (PostgreSQL) #{major}.0'\n")
+          File.chmod(0o700, client)
+        end
+
+        error = assert_raises(Minitest::Skip) { check_postgresql_clients('PATH' => directory) }
+
+        assert_includes error.message, "#{older_client}のメジャーバージョン#{server_major - 1}"
+        assert_includes error.message, "サーバーの#{server_major}未満"
+      end
+    end
+  end
+
+  private
+
+  def check_postgresql_clients(env)
+    server_major = ActiveRecord::Base.connection.raw_connection.server_version / 10_000
+    CLIENT_COMMANDS.each do |command|
+      output, status = Open3.capture2e(env, command, '--version')
+      skip "PostgreSQLクライアント#{command}が利用できません: #{output}" unless status.success?
+      next unless %w[pg_dump pg_restore].include?(command)
+
+      client_major = output[/\(PostgreSQL\) (\d+)/, 1]&.to_i
+      skip "#{command}のメジャーバージョンを確認できません: #{output}" unless client_major
+      next if client_major >= server_major
+
+      skip "#{command}のメジャーバージョン#{client_major}がサーバーの#{server_major}未満です。"
+    end
+  rescue Errno::ENOENT => e
+    skip "PostgreSQLクライアントがありません: #{e.message}"
   end
 end
