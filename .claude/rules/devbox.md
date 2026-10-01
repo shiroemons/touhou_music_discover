@@ -60,3 +60,4 @@ devbox run -- bash -c "bundle install"
 ## ポート衝突に注意
 
 - devbox環境とDocker環境を同時に起動しないこと（ポート3000, 5432, 6379が衝突する）
+- ワークツリーでは `.worktree.env`（`scripts/worktree_setup` が生成）のポートを devbox の init_hook と Taskfile が読み込む。ポートを固定値で書かず、`PORT` / `PGPORT` / `REDIS_PORT` / `DEVBOX_PC_PORT_NUM` を参照すること
