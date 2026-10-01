@@ -230,7 +230,7 @@ tasks:
       - devbox run db:backup
 
   "db:restore":
-    desc: 最新または指定したバックアップからデータベースをリストア
+    desc: バックアップを原子的にリストア（BACKUP_FILE / RESTORE_DB で指定）
     cmds:
       - devbox run db:restore
 
