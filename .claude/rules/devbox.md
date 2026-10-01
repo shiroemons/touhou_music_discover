@@ -3,7 +3,8 @@ description: devbox開発環境のルールとベストプラクティス
 globs:
   - devbox.json
   - process-compose.yaml
-  - Makefile
+  - justfile
+  - just/*.just
   - .envrc
 ---
 
@@ -17,19 +18,19 @@ globs:
 
 ## コマンド実行パターン
 
-- Taskコマンド: `task <name>` → devbox経由で実行される（定義は `Taskfile.yml`、一覧は `task --list`）
-- `Makefile` は移行期間中の互換ラッパー（`make <target>` → `task <name>`）。新しい手順や指示では `task` を使う
+- justコマンド: `just <name>` → devbox経由で実行される（定義は `justfile` と `just/*.just`、一覧は `just`）
+- 名前空間付きのレシピは `just db migrate` のように空白区切りで実行する（`just db::migrate` も同じ）
 - 直接実行: `devbox run <script>` でdevbox.jsonのscriptsを呼び出す
 - devboxシェル内: `devbox shell` に入れば直接コマンド実行可能
-- Docker環境: `Dockerfile` / `docker-compose.yml` は残っているが、Task/Make の入口はない
+- Docker環境: `Dockerfile` / `docker-compose.yml` は残っているが、just の入口はない
 
 ## サービス管理
 
-- `task tui`: 全サービスをTUIモードで起動（PostgreSQL, Redis, Rails, jobs, JS, CSS）
-- `task up`: バックグラウンドで起動（非TTY環境ではこちらを使う）
-- `task down`: サービス停止
-- `task status` / `task health`: サービス状態とHTTP応答の確認
-- `task recover` / `task recover-force`: Terminating/Pending や孤児プロセスからの復旧
+- `just tui`: 全サービスをTUIモードで起動（PostgreSQL, Redis, Rails, jobs, JS, CSS）
+- `just up`: バックグラウンドで起動（非TTY環境ではこちらを使う）
+- `just down`: サービス停止
+- `just status` / `just health`: サービス状態とHTTP応答の確認
+- `just recover` / `just recover-force`: Terminating/Pending や孤児プロセスからの復旧
 - PostgreSQLはdevboxプラグインが自動管理
 
 ## パッケージ追加
@@ -60,4 +61,4 @@ devbox run -- bash -c "bundle install"
 ## ポート衝突に注意
 
 - devbox環境とDocker環境を同時に起動しないこと（ポート3000, 5432, 6379が衝突する）
-- ワークツリーでは `.worktree.env`（`scripts/worktree_setup` が生成）のポートを devbox の init_hook と Taskfile が読み込む。ポートを固定値で書かず、`PORT` / `PGPORT` / `REDIS_PORT` / `DEVBOX_PC_PORT_NUM` を参照すること
+- ワークツリーでは `.worktree.env`（`scripts/worktree_setup` が生成）のポートを devbox の init_hook と justfile が読み込む。ポートを固定値で書かず、`PORT` / `PGPORT` / `REDIS_PORT` / `DEVBOX_PC_PORT_NUM` を参照すること
