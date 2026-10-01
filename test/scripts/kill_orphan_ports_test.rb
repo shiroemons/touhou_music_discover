@@ -131,6 +131,8 @@ class KillOrphanPortsTest < ActiveSupport::TestCase
   end
 
   def test_rails_only_listener_does_not_block_recover_force
+    skip 'task コマンドが PATH にありません' unless system('/bin/sh', '-c', 'command -v task >/dev/null 2>&1')
+
     status, output = run_recover_force(env: {
                                          'ORPHAN_TEST_CWD' => @tmpdir,
                                          'ORPHAN_TEST_COMMAND' => 'ruby another-project/server'
