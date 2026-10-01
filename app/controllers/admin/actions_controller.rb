@@ -91,6 +91,7 @@ module Admin
 
     def default_action_fields
       return {} if @record.blank?
+      return {} unless @action.action_class_name == 'ReplaceLineMusicAlbum' && @resource_config.model_class == LineMusicAlbum
 
       requested_replacement_id = params[:new_line_music_id].presence
       replacement_candidate = if @record.respond_to?(:pending_replacement_candidate)

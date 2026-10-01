@@ -70,6 +70,24 @@ module Admin
       assert_equal I18n.t('admin.actions.auto_assign_original_songs.no_candidates'), flash[:alert]
     end
 
+    test 'renders YouTube Music member action forms' do
+      album = Album.create!(jan_code: "admin-ytmusic-action-#{SecureRandom.hex(4)}")
+      ytmusic_album = YtmusicAlbum.create!(
+        album:,
+        browse_id: "MPREb_admin_action_#{SecureRandom.hex(4)}",
+        name: 'Admin YouTube Music Album',
+        payload: {}
+      )
+
+      %w[update_ytmusic_album_payload fetch_ytmusic_album_distribution_date].each do |action_key|
+        get admin_member_resource_action_url('ytmusic_albums', ytmusic_album, action_key)
+
+        assert_response :success
+        assert_select 'h1', text: Admin::Resource.find!('ytmusic_albums').action_for!(action_key).label
+        assert_select 'form[action=?]', admin_member_resource_action_path('ytmusic_albums', ytmusic_album, action_key), count: 1
+      end
+    end
+
     test 'requires a replacement preview before allowing the LINE MUSIC album update' do
       album = Album.create!(jan_code: "admin-line-music-replacement-#{SecureRandom.hex(4)}")
       line_music_album = LineMusicAlbum.create!(
