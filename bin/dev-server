@@ -6,6 +6,12 @@ require_relative '../lib/development/port_selector'
 default_port = Development::PortSelector::DEFAULT_PORT.to_s
 requested_port = ENV.fetch('PORT', default_port).to_s
 port_file = ENV.fetch('RAILS_PORT_FILE', 'tmp/pids/server.port')
+bind_address = ENV.fetch('RAILS_BIND_ADDRESS', '127.0.0.1')
+
+if bind_address == '0.0.0.0' && ENV.fetch('RAILS_ENV', 'development') != 'development'
+  warn '0.0.0.0 への bind は開発環境でのみ許可されます。'
+  exit 1
+end
 
 begin
   selected_port = if requested_port == '0'
@@ -31,4 +37,4 @@ else
 end
 
 ENV['PORT'] = selected_port.to_s
-exec 'bin/rails', 'server', '-b', '0.0.0.0', '-p', selected_port.to_s, *ARGV
+exec 'bin/rails', 'server', '-b', bind_address, '-p', selected_port.to_s, *ARGV

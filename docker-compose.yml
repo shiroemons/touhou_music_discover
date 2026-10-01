@@ -32,13 +32,16 @@ services:
       WD_INSTALL_DIR: "/usr/local/bin"
       HISTFILE: "/app/log/.bash_history"
       EDITOR: "vi"
+      ADMIN_AUTH_DISABLED: "true"
+      RAILS_ENV: "development"
+      RAILS_BIND_ADDRESS: "0.0.0.0"
       DATABASE_URL: "postgres://postgres:postgres@postgres-18:5432"
       REDIS_URL: "redis://redis:6379/"
       RAILS_MASTER_KEY:
     depends_on:
       - postgres-18
       - redis
-    command: bash -c "bundle install --jobs=4 && rm -f tmp/pids/server.pid && bin/rails server -b 0.0.0.0"
+    command: bash -c "bundle install --jobs=4 && bin/dev-server"
     expose: ["3000"]
     ports: ["3000:3000"]
     user: root

@@ -5,6 +5,8 @@ version: "0.5"
 processes:
   rails:
     command: bin/dev-server
+    environment:
+      - "ADMIN_AUTH_DISABLED=true"
     availability:
       restart: on_failure
     depends_on:
