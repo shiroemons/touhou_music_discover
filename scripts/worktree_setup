@@ -62,6 +62,7 @@ PGPORT=$pg_port
 REDIS_PORT=$redis_port
 REDIS_URL=redis://localhost:$redis_port
 DEVBOX_PC_PORT_NUM=$pc_port
+SESSION_COOKIE_KEY=_touhou_music_discover_session_$port_base
 EOF
 
 # APFS では複製（clonefile）するので、容量も時間もほとんど使わない。
