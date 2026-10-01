@@ -33,6 +33,44 @@ fi
 
 mkdir -p "$work_dir"
 
+# 本体の PostgreSQL の一時起動からダンプ・停止までを、全ワークツリーで共有するロックで囲む。
+# ロックがないと、先に終わったセットアップが、他のセットアップのダンプ中に本体の PostgreSQL を止めてしまう。
+source_lock_dir="$(CDPATH= cd -- "$project_root" && CDPATH= cd -- "$(git rev-parse --git-common-dir)" && pwd -P)/worktree-source-db.lock"
+source_lock_timeout=600
+holding_source_lock=false
+
+acquire_source_lock() {
+  waited=0
+  until mkdir "$source_lock_dir" 2>/dev/null; do
+    holder="$(cat "$source_lock_dir/pid" 2>/dev/null || true)"
+    if [ -n "$holder" ] && ! kill -0 "$holder" 2>/dev/null; then
+      echo "終了したプロセス（PID ${holder}）が残したロックを解除します"
+      rm -f "$source_lock_dir/pid"
+      rmdir "$source_lock_dir" 2>/dev/null || true
+      continue
+    fi
+    if [ "$waited" -eq 0 ]; then
+      echo "別のワークツリーが本体の開発DBをダンプ中のため、終わるまで待ちます"
+    fi
+    waited=$((waited + 1))
+    if [ "$waited" -ge "$source_lock_timeout" ]; then
+      echo "${source_lock_timeout} 秒待ってもロックを取得できません。他に実行中のものがなければ $source_lock_dir を削除してください。" >&2
+      exit 1
+    fi
+    sleep 1
+  done
+  echo "$$" > "$source_lock_dir/pid"
+  holding_source_lock=true
+}
+
+release_source_lock() {
+  if [ "$holding_source_lock" = true ]; then
+    rm -f "$source_lock_dir/pid"
+    rmdir "$source_lock_dir" 2>/dev/null || true
+    holding_source_lock=false
+  fi
+}
+
 started_source=false
 started_target=false
 cleanup() {
@@ -42,6 +80,7 @@ cleanup() {
     echo "一時的に起動した本体の PostgreSQL を停止します"
     pg_ctl -D "$source_pgdata" -m fast -w stop >/dev/null || true
   fi
+  release_source_lock
   if [ "$started_target" = true ]; then
     echo "一時的に起動したワークツリーの PostgreSQL を停止します"
     pg_ctl -D "$target_pgdata" -m fast -w stop >/dev/null || true
@@ -103,6 +142,7 @@ fi
 if db_exists "$target_port" "$primary_db" && [ "${WORKTREE_DB_RECOPY:-}" != 1 ]; then
   echo "開発DBはコピー済みのため、コピーを省略します（作り直す場合は task worktree:db:copy）"
 else
+  acquire_source_lock
   if ensure_running "本体" "$source_pgdata" "$source_port"; then
     started_source=true
   fi
@@ -117,6 +157,7 @@ else
     pg_ctl -D "$source_pgdata" -m fast -w stop >/dev/null
     started_source=false
   fi
+  release_source_lock
 
   # 途中で失敗しても既存の開発DBが壊れないよう、別名に復元してから差し替える。
   echo "ワークツリーの開発DBに復元します（ポート ${target_port}）"
