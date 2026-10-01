@@ -1,0 +1,132 @@
+#!/usr/bin/env sh
+
+set -eu
+set -f
+
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
+project_root="${ORPHAN_PROJECT_ROOT:-$(CDPATH= cd -- "$script_dir/.." && pwd -P)}"
+project_root="$(CDPATH= cd -- "$project_root" && pwd -P)"
+devbox_pc_port_num="${DEVBOX_PC_PORT_NUM:-53177}"
+
+if [ -n "${ORPHAN_PORTS:-}" ]; then
+  ports="$ORPHAN_PORTS"
+else
+  rails_port="$(cd "$project_root" && scripts/current_rails_port)"
+  ports="$rails_port 3000 5432 6379"
+fi
+
+valid_ports=""
+for port in $ports; do
+  case "$port" in
+    ''|*[!0-9]*) echo "不正なポート番号です: $port" >&2; exit 2 ;;
+  esac
+  if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+    echo "不正なポート番号です: $port" >&2
+    exit 2
+  fi
+  case " $valid_ports " in
+    *" $port "*) ;;
+    *) valid_ports="$valid_ports $port" ;;
+  esac
+done
+ports="$valid_ports"
+
+listeners() {
+  for port in $ports; do
+    lsof -tiTCP:"$port" -sTCP:LISTEN 2>/dev/null || true
+  done | sort -u
+}
+
+process_command() {
+  ps -p "$1" -o command= 2>/dev/null | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+}
+
+process_cwd() {
+  lsof -a -p "$1" -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | sed -n '1p'
+}
+
+is_project_process() {
+  command="$(process_command "$1")"
+  case "$command" in
+    *"$project_root"*) return 0 ;;
+  esac
+  cwd="$(process_cwd "$1")"
+  case "$cwd" in
+    "$project_root"|"$project_root"/*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+report_process() {
+  pid="$1"
+  label="$2"
+  command="$(process_command "$pid")"
+  cwd="$(process_cwd "$pid")"
+  [ -n "$command" ] || command="<取得不可>"
+  [ -n "$cwd" ] || cwd="<取得不可>"
+  printf '%s PID=%s command=%s cwd=%s\n' "$label" "$pid" "$command" "$cwd"
+}
+
+initial_pids="$(listeners)"
+if [ -z "$initial_pids" ]; then
+  echo "対象ポートにLISTENプロセスはありません"
+  exit 0
+fi
+
+manager_status="$(cd "$project_root" && devbox services ls --env "DEVBOX_PC_PORT_NUM=$devbox_pc_port_num" 2>&1)" || {
+  echo "devboxの管理状態を確認できないため、プロセスを停止しません" >&2
+  for pid in $initial_pids; do report_process "$pid" "判定保留:"; done
+  echo "$manager_status" >&2
+  exit 1
+}
+
+if printf '%s' "$manager_status" | grep -q 'Services running in process-compose'; then
+  echo "devboxサービスが管理中のため、プロセスを停止しません"
+  for pid in $initial_pids; do report_process "$pid" "管理中:"; done
+  exit 1
+fi
+
+project_pids=""
+for pid in $initial_pids; do
+  if is_project_process "$pid"; then
+    project_pids="$project_pids $pid"
+    report_process "$pid" "当該プロジェクトの孤児を停止します:"
+  else
+    report_process "$pid" "他プロジェクトまたは判定不能のため停止しません:"
+  fi
+done
+
+if [ -z "$project_pids" ]; then
+  echo "停止対象の孤児プロセスはありません"
+  exit 1
+fi
+
+sent_term=0
+for pid in $project_pids; do
+  if printf '%s\n' "$(listeners)" | grep -qx "$pid" && is_project_process "$pid"; then
+    kill -TERM "$pid" 2>/dev/null || true
+    sent_term=1
+  else
+    report_process "$pid" "状態が変わったため停止を見送りました:"
+  fi
+done
+
+if [ "$sent_term" -eq 1 ]; then sleep 2; fi
+
+for pid in $(listeners); do
+  if is_project_process "$pid" && printf '%s\n' "$(listeners)" | grep -qx "$pid" && is_project_process "$pid"; then
+    report_process "$pid" "通常終了しない当該プロジェクトの孤児を強制停止します:"
+    kill -9 "$pid" 2>/dev/null || true
+  else
+    report_process "$pid" "再確認で対象外となったため強制停止しません:"
+  fi
+done
+
+sleep 1
+remaining_pids="$(listeners)"
+if [ -n "$remaining_pids" ]; then
+  for pid in $remaining_pids; do report_process "$pid" "ポート占有が残っています:停止しません:"; done
+  exit 1
+fi
+
+echo "当該プロジェクトの孤児プロセスを停止しました"
