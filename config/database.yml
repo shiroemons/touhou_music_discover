@@ -71,14 +71,14 @@ test:
     host:     <%= ENV.fetch('PG_HOST', 'localhost') %>
     username: <%= ENV.fetch('PG_USER', nil) %>
     password: <%= ENV.fetch('PG_PASSWORD', nil) %>
-    port:     <%= ENV.fetch('PG_PORT', 5432) %>
+    port:     <%= ENV.fetch('PG_PORT') { ENV.fetch('PGPORT', 5432) } %>
   queue:
     <<: *default
     database: touhou_music_discover_test_queue
     host:     <%= ENV.fetch('PG_HOST', 'localhost') %>
     username: <%= ENV.fetch('PG_USER', nil) %>
     password: <%= ENV.fetch('PG_PASSWORD', nil) %>
-    port:     <%= ENV.fetch('PG_PORT', 5432) %>
+    port:     <%= ENV.fetch('PG_PORT') { ENV.fetch('PGPORT', 5432) } %>
     migrations_paths: db/queue_migrate
 
 # As with config/credentials.yml, you never want to store sensitive information,

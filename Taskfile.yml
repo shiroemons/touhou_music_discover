@@ -3,8 +3,17 @@ silent: true
 
 set: [errexit, pipefail]
 
+# ワークツリーでは .worktree.env（scripts/worktree_setup が生成）のポートを使う。
+# 本体では環境変数、なければ既定値（3000 / 5432 / 6379 / 53177）を使う。
 vars:
-  DEVBOX_PC_PORT_NUM: '{{env "DEVBOX_PC_PORT_NUM" | default "53177"}}'
+  DEVBOX_PC_PORT_NUM:
+    sh: scripts/worktree_env DEVBOX_PC_PORT_NUM 53177
+  RAILS_PORT:
+    sh: scripts/worktree_env PORT 3000
+  PG_PORT:
+    sh: scripts/worktree_env PGPORT 5432
+  REDIS_PORT:
+    sh: scripts/worktree_env REDIS_PORT 6379
 
 tasks:
   default:
@@ -49,7 +58,7 @@ tasks:
         if devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
           echo "サービスは既に起動しています"
         else
-          devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+          devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
         fi
       - task: wait-for-rails
       - task: versions
@@ -59,7 +68,7 @@ tasks:
   tui:
     desc: 全サービスをTUIモードで起動
     cmds:
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} --pcport {{.DEVBOX_PC_PORT_NUM}}
 
   logs:
     desc: Railsサーバーのログを表示
@@ -102,14 +111,14 @@ tasks:
     desc: Rails/DB/Redisの起動状態とHTTP応答を確認
     cmds:
       - |
-        rails_port="$(scripts/current_rails_port)"
+        rails_port="$(PORT={{.RAILS_PORT}} scripts/current_rails_port)"
         echo "=== devbox services ==="
         devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} || true
         echo ""
         echo "=== listening ports ==="
-        lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ":(${rails_port}|5432|6379)([[:space:]]|$)" || true
+        lsof -iTCP -sTCP:LISTEN -P 2>/dev/null | grep -E ":(${rails_port}|{{.PG_PORT}}|{{.REDIS_PORT}})([[:space:]]|$)" || true
         if ! devbox services ls --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>&1 | grep -q "Services running in process-compose"; then
-          if (lsof -tiTCP:"${rails_port}" -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1) && ! scripts/rails_health >/dev/null 2>&1; then
+          if (lsof -tiTCP:"${rails_port}" -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:{{.PG_PORT}} -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:{{.REDIS_PORT}} -sTCP:LISTEN >/dev/null 2>&1) && ! PORT={{.RAILS_PORT}} scripts/rails_health >/dev/null 2>&1; then
             echo ""
             echo "WARNING: devbox管理外の孤児プロセスがポートを掴んでいる可能性があります。task recover-force で掃除できます。"
           fi
@@ -131,25 +140,25 @@ tasks:
       - echo "devboxサービスを停止します"
       - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
       - |
-        if lsof -tiTCP:5432 -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:6379 -sTCP:LISTEN >/dev/null 2>&1; then
-          echo "devbox停止後も 5432/6379 のいずれかが使用中です。"
+        if lsof -tiTCP:{{.PG_PORT}} -sTCP:LISTEN >/dev/null 2>&1 || lsof -tiTCP:{{.REDIS_PORT}} -sTCP:LISTEN >/dev/null 2>&1; then
+          echo "devbox停止後も {{.PG_PORT}}/{{.REDIS_PORT}} のいずれかが使用中です。"
           echo "孤児プロセスを停止するには task recover-force を実行してください。"
           task health
           exit 1
         fi
       - echo "devboxサービスをバックグラウンドで起動します"
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
       - task: wait-for-rails
       - task: health
 
   recover-force:
-    desc: devbox管理外に残ったRails/5432/6379の孤児プロセスも停止して復旧
+    desc: devbox管理外に残ったRails/PostgreSQL/Redisの孤児プロセスも停止して復旧
     cmds:
       - echo "devboxサービスを停止します"
       - devbox services stop --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} 2>/dev/null || true
       - task: kill-orphan-ports
       - echo "devboxサービスをバックグラウンドで起動します"
-      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT="${PORT:-3000}" -b --pcport {{.DEVBOX_PC_PORT_NUM}}
+      - devbox services up --env DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} --env PORT={{.RAILS_PORT}} -b --pcport {{.DEVBOX_PC_PORT_NUM}}
       - task: wait-for-rails
       - task: health
 
@@ -159,7 +168,7 @@ tasks:
       - |
         echo "Railsの /up を待機します"
         for i in $(seq 1 30); do
-          if scripts/rails_health; then
+          if PORT={{.RAILS_PORT}} scripts/rails_health; then
             echo "Rails is ready"
             exit 0
           fi
@@ -172,7 +181,7 @@ tasks:
   kill-orphan-ports:
     desc: 当該プロジェクトの孤児だけを停止し、他プロジェクトのプロセスは識別情報を表示
     cmds:
-      - DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} scripts/kill_orphan_ports
+      - DEVBOX_PC_PORT_NUM={{.DEVBOX_PC_PORT_NUM}} PORT={{.RAILS_PORT}} PGPORT={{.PG_PORT}} REDIS_PORT={{.REDIS_PORT}} scripts/kill_orphan_ports
 
   server:
     desc: Railsサーバーを起動
@@ -233,6 +242,27 @@ tasks:
     desc: バックアップを原子的にリストア（BACKUP_FILE / RESTORE_DB で指定）
     cmds:
       - devbox run db:restore
+
+  "worktree:config":
+    desc: git wt でワークツリーを作成・削除したときにセットアップ・停止が走るよう、このリポジトリの git config を設定
+    cmds:
+      - scripts/worktree_config
+
+  "worktree:setup":
+    desc: 現在のワークツリーにポートを割り当て、本体の開発DBをコピー（git wt 以外で作ったワークツリー用）
+    cmds:
+      - scripts/worktree_setup
+
+  "worktree:db:copy":
+    desc: 現在のワークツリーの開発DBを、本体の開発DBで置き換える
+    prompt: ワークツリーの開発DBを本体の開発DBで上書きします。続けますか？
+    cmds:
+      - WORKTREE_DB_RECOPY=1 scripts/worktree_setup
+
+  "worktree:list":
+    desc: ワークツリーごとの割り当てポートを一覧表示
+    cmds:
+      - scripts/worktree_list
 
   "data:upsert-originals":
     desc: 原作・原曲データをupsert（追加・更新）

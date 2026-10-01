@@ -1,0 +1,35 @@
+#!/usr/bin/env sh
+
+# ワークツリー用の設定値を表示する。
+# 使い方: scripts/worktree_env <KEY> <DEFAULT>
+#
+# .worktree.env に KEY があればその値、なければ同名の環境変数、どちらもなければ DEFAULT を返す。
+# ワークツリーでは本体の direnv 由来の値（PGPORT=5432 など）が残っていることがあるため、
+# .worktree.env を環境変数より優先する。
+
+set -eu
+
+if [ "$#" -ne 2 ]; then
+  echo "使い方: $0 <KEY> <DEFAULT>" >&2
+  exit 2
+fi
+
+key="$1"
+default_value="$2"
+case "$key" in
+  ''|*[!A-Z0-9_]*) echo "不正なキーです: $key" >&2; exit 2 ;;
+esac
+
+script_dir="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd -P)"
+env_file="$script_dir/../.worktree.env"
+
+if [ -r "$env_file" ]; then
+  value="$(sed -n "s/^${key}=//p" "$env_file" | tail -n 1)"
+  if [ -n "$value" ]; then
+    printf '%s\n' "$value"
+    exit 0
+  fi
+fi
+
+eval "value=\${$key:-}"
+printf '%s\n' "${value:-$default_value}"

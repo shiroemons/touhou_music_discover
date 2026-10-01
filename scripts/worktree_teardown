@@ -1,0 +1,30 @@
+#!/usr/bin/env sh
+
+# ワークツリーを削除する前に、そのワークツリーで動いているサービスを停止し、ポートの割り当てを解放する。
+# git wt の wt.deletehook から呼ばれる。停止しないと、削除したディレクトリの
+# PostgreSQL / Redis がポートを掴んだまま残る。
+
+set -eu
+
+project_root="$(git rev-parse --show-toplevel)"
+project_root="$(CDPATH= cd -- "$project_root" && pwd -P)"
+cd "$project_root"
+common_dir="$(CDPATH= cd -- "$(git rev-parse --git-common-dir)" && pwd -P)"
+
+if [ "$project_root" = "$(dirname -- "$common_dir")" ]; then
+  exit 0
+fi
+# 解放に失敗しても削除は止めない。ディレクトリが消えた割り当ては次回の割り当て時に自動で解放される。
+scripts/worktree_registry release "$project_root" || echo "ポートの割り当てを解放できませんでした（次回の割り当て時に自動で解放されます）" >&2
+if [ ! -f .worktree.env ] || [ ! -d .devbox ]; then
+  exit 0
+fi
+
+pc_port="$(scripts/worktree_env DEVBOX_PC_PORT_NUM 53177)"
+if devbox services ls --env "DEVBOX_PC_PORT_NUM=$pc_port" 2>&1 | grep -q "Services running in process-compose"; then
+  echo "ワークツリーのサービスを停止します"
+  devbox services stop --env "DEVBOX_PC_PORT_NUM=$pc_port" >/dev/null 2>&1 || true
+fi
+
+# worktree_copy_db などで単独起動した PostgreSQL が残っていれば止める。
+devbox run -- sh -c 'if pg_ctl -D "$PGDATA" status >/dev/null 2>&1; then pg_ctl -D "$PGDATA" -m fast -w stop; fi' || true

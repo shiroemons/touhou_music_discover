@@ -48,6 +48,10 @@ yarn-debug.log*
 # devbox
 .devbox/
 
+# git wt のワークツリーと、ワークツリーごとのポート設定（scripts/worktree_setup が生成）
+/.worktrees/
+/.worktree.env
+
 # mise project configuration
 !mise.toml
 
