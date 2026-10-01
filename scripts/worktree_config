@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+# git wt でワークツリーを作成・削除したときに、セットアップと停止が自動で走るようにする。
+# 設定はこのリポジトリの .git/config（--local）にだけ書き込む。何度実行してもよい。
+
+set -eu
+
+cd "$(git rev-parse --show-toplevel)"
+
+# スクリプトを含まない古いブランチからワークツリーを作った場合は何もしない。
+git config --local --replace-all wt.hook \
+  'if [ -x scripts/worktree_setup ]; then scripts/worktree_setup; else echo "scripts/worktree_setup がないブランチのため、セットアップを省略します"; fi'
+git config --local --replace-all wt.deletehook \
+  'if [ -x scripts/worktree_teardown ]; then scripts/worktree_teardown; fi'
+
+# wt.copyignored が有効でも、作成元の PostgreSQL データ・ポート設定・ログはコピーしない。
+# bundle と node_modules は scripts/worktree_setup が本体から複製する。
+git config --local --unset-all wt.nocopy 2>/dev/null || true
+for pattern in .devbox/ .worktree.env .worktrees/ tmp/ log/ node_modules/; do
+  git config --local --add wt.nocopy "$pattern"
+done
+
+echo "git wt の設定を更新しました:"
+git config --local --get-regexp '^wt\.'

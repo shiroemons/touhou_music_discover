@@ -1,0 +1,109 @@
+#!/usr/bin/env sh
+
+# ワークツリーで本体と並行して開発できるようにする。
+# git wt の wt.hook から呼ばれるほか、task worktree:setup でも実行できる。何度実行してもよい。
+#
+# 1. 他のワークツリーや他のリポジトリと重ならないポートを割り当て、.worktree.env に書き出す
+# 2. 作成元からコピーされた .devbox/（PostgreSQL のデータや本体の絶対パスを含む）を作り直す
+# 3. 本体の bundle / node_modules を複製して依存を入れる
+# 4. ワークツリー専用の PostgreSQL に本体の開発DBをコピーする
+
+set -eu
+
+project_root="$(git rev-parse --show-toplevel)"
+project_root="$(CDPATH= cd -- "$project_root" && pwd -P)"
+cd "$project_root"
+common_dir="$(CDPATH= cd -- "$(git rev-parse --git-common-dir)" && pwd -P)"
+main_root="$(dirname -- "$common_dir")"
+
+if [ "$project_root" = "$main_root" ]; then
+  echo "本体のチェックアウトでは実行できません。git wt で作成したワークツリー内で実行してください。" >&2
+  exit 1
+fi
+case "$project_root" in
+  *"'"*) echo "ワークツリーのパスにシングルクォートを含めないでください: $project_root" >&2; exit 1 ;;
+esac
+
+env_file=.worktree.env
+devbox_marker=.devbox/.worktree_path
+
+registered_path=""
+if [ -r "$env_file" ]; then
+  registered_path="$(sed -n "s/^WORKTREE_PATH='\(.*\)'$/\1/p" "$env_file" | tail -n 1)"
+fi
+
+if [ "$registered_path" != "$project_root" ]; then
+  # 作成元からコピーされた設定やプロセス情報は、このワークツリーのものではないので捨てる。
+  rm -f "$env_file" tmp/pids/server.pid tmp/pids/server.port
+
+  if [ -d .devbox ] && [ "$(cat "$devbox_marker" 2>/dev/null || true)" != "$project_root" ]; then
+    echo "作成元からコピーされた .devbox/ を削除します"
+    rm -rf .devbox
+  fi
+fi
+
+# 他のワークツリーや他のリポジトリと重ならないポートのブロックを、ユーザー単位の台帳から割り当てる。
+# 割り当て済みなら同じブロックが返るので、再実行してもポートは変わらない。
+port_base="$(scripts/worktree_registry allocate "$project_root")"
+rails_port="$port_base"
+pg_port=$((port_base + 1))
+redis_port=$((port_base + 2))
+pc_port=$((port_base + 3))
+
+# Rails は使用中なら次のポートへずれる仕組みだが、隣のブロックと重ならないよう固定する。
+cat > "$env_file" <<EOF
+# scripts/worktree_setup が生成するワークツリー固有の設定。手で編集しない。
+# devbox の init_hook と Taskfile が読み込み、scripts/worktree_registry が割り当てたポートで起動する。
+WORKTREE_PATH='$project_root'
+WORKTREE_PORT_BASE=$port_base
+PORT=$rails_port
+RAILS_PORT_FIXED=true
+PGPORT=$pg_port
+REDIS_PORT=$redis_port
+REDIS_URL=redis://localhost:$redis_port
+DEVBOX_PC_PORT_NUM=$pc_port
+SESSION_COOKIE_KEY=_touhou_music_discover_session_$port_base
+EOF
+
+# APFS では複製（clonefile）するので、容量も時間もほとんど使わない。
+clone_from_main() {
+  [ -e "$1" ] && return 0
+  [ -e "$main_root/$1" ] || return 0
+  echo "本体から $1 を複製します"
+  mkdir -p "$(dirname -- "$1")"
+  if [ "$(uname -s)" = Darwin ]; then
+    cp -cR "$main_root/$1" "$1"
+  else
+    cp -R "$main_root/$1" "$1"
+  fi
+}
+
+clone_from_main .env.development.local
+clone_from_main node_modules
+clone_from_main .devbox/virtenv/bundle
+clone_from_main .devbox/virtenv/gems
+mkdir -p .devbox
+printf '%s\n' "$project_root" > "$devbox_marker"
+
+devbox run setup
+WORKTREE_SOURCE_ROOT="$main_root" devbox run -- scripts/worktree_copy_db
+
+cat <<EOF
+
+ワークツリーのセットアップが完了しました: $project_root
+  Rails           http://127.0.0.1:$rails_port
+  PostgreSQL      $pg_port
+  Redis           $redis_port
+  process-compose $pc_port
+task up で起動できます。
+EOF
+
+# Spotify のダッシュボードはポートなしのループバック URI を受け付けないため、34000〜34040 の
+# 5 ブロック分だけ redirect URI を登録している。範囲外のポートでは Spotify にログインできない。
+if [ "$rails_port" -gt 34040 ]; then
+  cat <<EOF
+
+注意: Rails のポート $rails_port は Spotify に redirect URI を登録していないため、このワークツリーでは Spotify にログインできません。
+ログインが必要なら、使い終わったワークツリーを片付けて作り直すか、http://127.0.0.1:$rails_port/auth/spotify/callback を Spotify のダッシュボードに追加してください。
+EOF
+fi

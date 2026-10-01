@@ -1,0 +1,141 @@
+#!/usr/bin/env sh
+
+# ワークツリー専用の PostgreSQL を用意し、本体チェックアウトの開発DBをコピーする。
+# devbox 環境内（PGDATA / PGPORT がワークツリー用に設定された状態）で実行する。
+#
+#   WORKTREE_SOURCE_ROOT  コピー元となる本体チェックアウトのパス（必須）
+#   WORKTREE_SOURCE_PORT  本体の PostgreSQL のポート（既定: 5432）
+#   WORKTREE_DB_RECOPY=1  コピー済みの開発DBを本体のDBで置き換える
+#
+# どちらの PostgreSQL も停止中なら一時的に起動し、終了時に停止して元の状態に戻す。
+# Solid Queue のキューDBはジョブの二重実行を避けるためコピーせず、空で作成する。
+
+set -eu
+
+source_root="${WORKTREE_SOURCE_ROOT:?WORKTREE_SOURCE_ROOT を指定してください}"
+source_port="${WORKTREE_SOURCE_PORT:-5432}"
+socket_dir="${PGHOST:-/tmp}"
+target_port="${PGPORT:?PGPORT が設定されていません。devbox run 経由で実行してください}"
+target_pgdata="${PGDATA:?PGDATA が設定されていません。devbox run 経由で実行してください}"
+project_root="${DEVBOX_PROJECT_ROOT:?devbox run 経由で実行してください}"
+source_pgdata="$source_root/${target_pgdata#"$project_root"/}"
+work_dir="$project_root/tmp/worktree_setup"
+
+primary_db=touhou_music_discover_development
+queue_db=touhou_music_discover_development_queue
+staging_db="${primary_db}_worktree_copy"
+dump_file="$work_dir/$primary_db.dump"
+
+if [ "$source_port" = "$target_port" ]; then
+  echo "コピー元とコピー先のポートが同じです（${target_port}）。.worktree.env を確認してください。" >&2
+  exit 1
+fi
+
+mkdir -p "$work_dir"
+
+started_source=false
+started_target=false
+cleanup() {
+  status=$?
+  rm -f "$dump_file"
+  if [ "$started_source" = true ]; then
+    echo "一時的に起動した本体の PostgreSQL を停止します"
+    pg_ctl -D "$source_pgdata" -m fast -w stop >/dev/null || true
+  fi
+  if [ "$started_target" = true ]; then
+    echo "一時的に起動したワークツリーの PostgreSQL を停止します"
+    pg_ctl -D "$target_pgdata" -m fast -w stop >/dev/null || true
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+ready() {
+  pg_isready -q -h "$socket_dir" -p "$1"
+}
+
+# 停止中なら一時的に起動する。起動したら 0、すでに動いていたら 1 を返す。
+ensure_running() {
+  label="$1"
+  pgdata="$2"
+  port="$3"
+
+  if ready "$port"; then
+    return 1
+  fi
+  if [ ! -f "$pgdata/PG_VERSION" ]; then
+    echo "${label}の PostgreSQL データディレクトリがありません: $pgdata" >&2
+    exit 1
+  fi
+  if pg_ctl -D "$pgdata" status >/dev/null 2>&1; then
+    echo "${label}の PostgreSQL は起動していますが、ポート $port で応答しません。" >&2
+    exit 1
+  fi
+
+  echo "${label}の PostgreSQL をポート $port で一時的に起動します"
+  pg_ctl -D "$pgdata" -o "-k '$socket_dir' -p $port" -l "$work_dir/postgres-$port.log" -w -t 60 start >/dev/null
+  return 0
+}
+
+psql_at() {
+  port="$1"
+  shift
+  PGOPTIONS='-c client_min_messages=warning' \
+    psql -X -q -At -v ON_ERROR_STOP=1 -h "$socket_dir" -p "$port" -d postgres "$@"
+}
+
+db_exists() {
+  [ "$(psql_at "$1" -c "SELECT 1 FROM pg_database WHERE datname = '$2'")" = 1 ]
+}
+
+if [ ! -f "$target_pgdata/PG_VERSION" ]; then
+  echo "ワークツリーの PostgreSQL を初期化します: $target_pgdata"
+  # 本体と同じく postgres ユーザー・trust 認証・C ロケールで作る。
+  initdb -D "$target_pgdata" -U postgres --auth=trust -E UTF8 --locale-provider=libc --locale=C >/dev/null
+fi
+
+if ensure_running "ワークツリー" "$target_pgdata" "$target_port"; then
+  started_target=true
+fi
+
+if db_exists "$target_port" "$primary_db" && [ "${WORKTREE_DB_RECOPY:-}" != 1 ]; then
+  echo "開発DBはコピー済みのため、コピーを省略します（作り直す場合は task worktree:db:copy）"
+else
+  if ensure_running "本体" "$source_pgdata" "$source_port"; then
+    started_source=true
+  fi
+  if ! db_exists "$source_port" "$primary_db"; then
+    echo "コピー元の開発DB $primary_db がポート $source_port にありません。" >&2
+    exit 1
+  fi
+
+  echo "本体の開発DBをダンプします（ポート ${source_port}）"
+  pg_dump -Fc -h "$socket_dir" -p "$source_port" -d "$primary_db" -f "$dump_file"
+  if [ "$started_source" = true ]; then
+    pg_ctl -D "$source_pgdata" -m fast -w stop >/dev/null
+    started_source=false
+  fi
+
+  # 途中で失敗しても既存の開発DBが壊れないよう、別名に復元してから差し替える。
+  echo "ワークツリーの開発DBに復元します（ポート ${target_port}）"
+  psql_at "$target_port" -c "DROP DATABASE IF EXISTS $staging_db"
+  psql_at "$target_port" -c "CREATE DATABASE $staging_db"
+  pg_restore --no-owner --no-privileges --exit-on-error -j 4 \
+    -h "$socket_dir" -p "$target_port" -d "$staging_db" "$dump_file"
+  psql_at "$target_port" -c "DROP DATABASE IF EXISTS $primary_db WITH (FORCE)"
+  psql_at "$target_port" -c "ALTER DATABASE $staging_db RENAME TO $primary_db"
+  echo "開発DBのコピーが完了しました"
+fi
+
+cd "$project_root"
+if ! db_exists "$target_port" "$queue_db"; then
+  echo "キューDBを空で作成します"
+  bin/rails db:create:queue db:schema:load:queue
+fi
+
+# db:migrate はスキーマファイルを書き出してワークツリーを変更ありにするため、ここでは実行しない。
+if ! bin/rails runner 'exit(ActiveRecord::Base.connection_pool.migration_context.needs_migration? ? 1 : 0)'; then
+  echo "未適用のマイグレーションがあります。task db:migrate で適用してください。"
+fi

@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+# ワークツリーごとの割り当てポートと Rails の応答状況を一覧表示する。
+
+set -eu
+
+port_value() {
+  value=""
+  if [ -r "$1/.worktree.env" ]; then
+    value="$(sed -n "s/^$2=//p" "$1/.worktree.env" | tail -n 1)"
+  fi
+  printf '%s\n' "${value:-$3}"
+}
+
+printf '%-5s %-6s %-6s %-6s %-6s %-5s %s\n' KIND RAILS PG REDIS PC UP PATH
+git worktree list --porcelain | sed -n 's/^worktree //p' | while IFS= read -r worktree; do
+  if [ -r "$worktree/.worktree.env" ]; then
+    slot=wt
+  elif [ "$worktree" = "$(git worktree list --porcelain | sed -n '1s/^worktree //p')" ]; then
+    slot=main
+  else
+    slot=未設定
+  fi
+
+  rails_port="$(port_value "$worktree" PORT 3000)"
+  if [ -r "$worktree/tmp/pids/server.port" ]; then
+    rails_port="$(tr -d '[:space:]' < "$worktree/tmp/pids/server.port")"
+  fi
+  if curl -fsS --max-time 1 "http://127.0.0.1:$rails_port/up" >/dev/null 2>&1; then
+    up=yes
+  else
+    up=no
+  fi
+
+  printf '%-5s %-6s %-6s %-6s %-6s %-5s %s\n' "$slot" "$rails_port" \
+    "$(port_value "$worktree" PGPORT 5432)" "$(port_value "$worktree" REDIS_PORT 6379)" \
+    "$(port_value "$worktree" DEVBOX_PC_PORT_NUM 53177)" "$up" "$worktree"
+done

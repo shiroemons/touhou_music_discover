@@ -29,6 +29,7 @@
     "init_hook": [
       "echo '東方同人音楽流通 - devbox環境'",
       "mkdir -p .devbox/virtenv/bundle .devbox/virtenv/gems .devbox/virtenv/bootsnap",
+      "if [ -f \"$DEVBOX_PROJECT_ROOT/.worktree.env\" ]; then set -a; . \"$DEVBOX_PROJECT_ROOT/.worktree.env\"; set +a; fi",
       "export PATH=\"$GEM_HOME/bin:$PATH\"",
       "if ! command -v bundle &> /dev/null; then gem install bundler; fi"
     ],

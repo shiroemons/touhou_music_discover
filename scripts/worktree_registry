@@ -1,0 +1,122 @@
+#!/usr/bin/env sh
+
+# ワークツリーに割り当てたポートのブロックを、リポジトリをまたいで管理する。
+# 使い方:
+#   scripts/worktree_registry allocate <path>  割り当て済みならそのブロック、なければ新しいブロックの先頭ポートを表示
+#   scripts/worktree_registry release <path>   割り当てを解放する
+#   scripts/worktree_registry list             割り当て一覧（先頭ポート<TAB>パス）を表示
+#
+# 台帳はユーザー単位（既定: ~/.local/state/worktree-ports/registry.tsv）に置き、
+# 他のリポジトリのワークツリーとも同じ台帳で重複を防ぐ。ディレクトリが消えたワークツリーの割り当ては自動で解放する。
+#
+# ブロックは 34000〜35999 を 10 ポートずつ区切る。他リポジトリの設定（1025〜8090 / 15432 / 18080 / 28080 / 55432 など）や
+# macOS の一時ポート（49152 以降）と重ならない範囲を選んでいる。各ブロックでは先頭から 4 ポートを使う。
+
+set -eu
+
+first_base=34000
+last_base=35990
+block_size=10
+ports_per_block=4
+
+state_dir="${WORKTREE_PORT_REGISTRY_DIR:-${XDG_STATE_HOME:-$HOME/.local/state}/worktree-ports}"
+registry="$state_dir/registry.tsv"
+lock_dir="$state_dir/lock"
+tab="$(printf '\t')"
+
+usage() {
+  echo "使い方: $0 allocate <path> | release <path> | list" >&2
+  exit 2
+}
+
+lock() {
+  mkdir -p "$state_dir"
+  waited=0
+  until mkdir "$lock_dir" 2>/dev/null; do
+    waited=$((waited + 1))
+    if [ "$waited" -ge 60 ]; then
+      echo "ポート台帳のロックを取得できません。他に実行中のものがなければ $lock_dir を削除してください。" >&2
+      exit 1
+    fi
+    sleep 1
+  done
+  trap 'rmdir "$lock_dir" 2>/dev/null || true' EXIT
+  touch "$registry"
+}
+
+# 指定したパスと、ディレクトリが消えたワークツリーの行を除いて台帳を書き直す。
+rewrite_without() {
+  tmp_file="$registry.tmp"
+  : > "$tmp_file"
+  while IFS="$tab" read -r entry_base entry_path; do
+    [ -n "$entry_base" ] || continue
+    [ "$entry_path" = "$1" ] && continue
+    [ -d "$entry_path" ] || continue
+    printf '%s\t%s\n' "$entry_base" "$entry_path" >> "$tmp_file"
+  done < "$registry"
+  mv "$tmp_file" "$registry"
+}
+
+port_in_use() {
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+}
+
+block_in_use() {
+  offset=0
+  while [ "$offset" -lt "$ports_per_block" ]; do
+    port_in_use $(($1 + offset)) && return 0
+    offset=$((offset + 1))
+  done
+  return 1
+}
+
+command="${1:-}"
+case "$command" in
+  allocate|release) [ "$#" -eq 2 ] || usage ;;
+  list) [ "$#" -eq 1 ] || usage ;;
+  *) usage ;;
+esac
+
+case "$command" in
+  list)
+    [ -r "$registry" ] && cat "$registry"
+    exit 0
+    ;;
+  release)
+    lock
+    rewrite_without "$2"
+    exit 0
+    ;;
+esac
+
+path="$2"
+case "$path" in
+  /*) ;;
+  *) echo "絶対パスを指定してください: $path" >&2; exit 2 ;;
+esac
+case "$path" in
+  *"$tab"*|*'
+'*) echo "タブや改行を含むパスは扱えません: $path" >&2; exit 2 ;;
+esac
+
+lock
+existing="$(awk -F "$tab" -v path="$path" '$2 == path { print $1; exit }' "$registry")"
+rewrite_without "$path"
+if [ -n "$existing" ]; then
+  printf '%s\t%s\n' "$existing" "$path" >> "$registry"
+  printf '%s\n' "$existing"
+  exit 0
+fi
+
+base="$first_base"
+while [ "$base" -le "$last_base" ]; do
+  if ! cut -f 1 "$registry" | grep -qx "$base" && ! block_in_use "$base"; then
+    printf '%s\t%s\n' "$base" "$path" >> "$registry"
+    printf '%s\n' "$base"
+    exit 0
+  fi
+  base=$((base + block_size))
+done
+
+echo "空いているポートのブロックがありません（$first_base〜$((last_base + block_size - 1))）。不要なワークツリーを削除してください。" >&2
+exit 1

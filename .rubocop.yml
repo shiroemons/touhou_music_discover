@@ -18,6 +18,7 @@ AllCops:
     - tmp/**/*
     - .git/**/*
     - 'node_modules/**/*'
+    - '.worktrees/**/*'
 
 Rails:
   Enabled: true

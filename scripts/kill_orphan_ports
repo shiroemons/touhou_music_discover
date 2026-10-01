@@ -12,7 +12,7 @@ if [ -n "${ORPHAN_PORTS:-}" ]; then
   ports="$ORPHAN_PORTS"
 else
   rails_port="$(cd "$project_root" && scripts/current_rails_port)"
-  ports="$rails_port 3000 5432 6379"
+  ports="$rails_port ${PORT:-3000} ${PGPORT:-5432} ${REDIS_PORT:-6379}"
 fi
 
 valid_ports=""
@@ -210,7 +210,7 @@ for port in $ports; do
   [ -n "$remaining_pids" ] || continue
 
   case "$port" in
-    5432|6379)
+    "${PGPORT:-5432}"|"${REDIS_PORT:-6379}")
       required_conflict=1
       label="必須サービスのポート占有が残っています:"
       ;;
