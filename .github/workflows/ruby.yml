@@ -111,6 +111,10 @@ jobs:
         run: |
           yarn install --frozen-lockfile
 
+      - name: Run JavaScript tests
+        run: |
+          yarn test:javascript
+
       - name: Build assets
         run: |
           yarn build && yarn build:css
@@ -127,3 +131,11 @@ jobs:
       - name: Run test
         run: |
           bundle exec rails test
+
+      - name: Run ParallelRunner mode checks
+        run: |
+          bundle exec ruby test/models/parallel_runner_real_modes_check.rb
+
+      - name: Run system tests
+        run: |
+          bundle exec rails test test/system/admin/action_submission_test.rb

@@ -21,9 +21,11 @@ gem 'turbo-rails'
 group :development, :test do
   gem 'brakeman', require: false
   gem 'bundler-audit', require: false
+  gem 'capybara'
   gem 'debug'
   gem 'dotenv-rails'
   gem 'minitest', '~> 6.0'
+  gem 'selenium-webdriver'
   gem 'vcr', require: false
   gem 'webmock', require: false
 end
