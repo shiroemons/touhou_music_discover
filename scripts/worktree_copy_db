@@ -33,6 +33,12 @@ fi
 
 mkdir -p "$work_dir"
 
+# 本体の PostgreSQL の一時起動からダンプ・停止までをロックで囲む。ロックは本体のサービス操作
+# （scripts/with_source_db_lock）とも共有する。ロックがないと、先に終わったセットアップが他のセットアップの
+# ダンプ中に本体の PostgreSQL を止めたり、一時起動中に本体の task up が同じポートで起動しようとしたりする。
+. "$project_root/scripts/lib/source_db_lock.sh"
+source_db_lock_init "$project_root"
+
 started_source=false
 started_target=false
 cleanup() {
@@ -42,6 +48,7 @@ cleanup() {
     echo "一時的に起動した本体の PostgreSQL を停止します"
     pg_ctl -D "$source_pgdata" -m fast -w stop >/dev/null || true
   fi
+  source_db_lock_release
   if [ "$started_target" = true ]; then
     echo "一時的に起動したワークツリーの PostgreSQL を停止します"
     pg_ctl -D "$target_pgdata" -m fast -w stop >/dev/null || true
@@ -54,6 +61,17 @@ trap 'exit 143' TERM
 
 ready() {
   pg_isready -q -h "$socket_dir" -p "$1"
+}
+
+# 起動処理中の PostgreSQL が応答するまで待つ。応答したら 0 を返す。
+wait_until_ready() {
+  waited=0
+  while [ "$waited" -lt 60 ]; do
+    ready "$1" && return 0
+    sleep 1
+    waited=$((waited + 1))
+  done
+  return 1
 }
 
 # 停止中なら一時的に起動する。起動したら 0、すでに動いていたら 1 を返す。
@@ -70,6 +88,11 @@ ensure_running() {
     exit 1
   fi
   if pg_ctl -D "$pgdata" status >/dev/null 2>&1; then
+    # 本体の task up などで起動処理中なら、応答するまで待ってそのまま使う。
+    echo "${label}の PostgreSQL が起動処理中のため、応答するまで待ちます"
+    if wait_until_ready "$port"; then
+      return 1
+    fi
     echo "${label}の PostgreSQL は起動していますが、ポート $port で応答しません。" >&2
     exit 1
   fi
@@ -103,6 +126,7 @@ fi
 if db_exists "$target_port" "$primary_db" && [ "${WORKTREE_DB_RECOPY:-}" != 1 ]; then
   echo "開発DBはコピー済みのため、コピーを省略します（作り直す場合は task worktree:db:copy）"
 else
+  source_db_lock_acquire
   if ensure_running "本体" "$source_pgdata" "$source_port"; then
     started_source=true
   fi
@@ -117,6 +141,7 @@ else
     pg_ctl -D "$source_pgdata" -m fast -w stop >/dev/null
     started_source=false
   fi
+  source_db_lock_release
 
   # 途中で失敗しても既存の開発DBが壊れないよう、別名に復元してから差し替える。
   echo "ワークツリーの開発DBに復元します（ポート ${target_port}）"
