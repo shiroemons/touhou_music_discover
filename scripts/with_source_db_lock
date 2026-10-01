@@ -47,7 +47,7 @@ if [ "$mode" = run ]; then
 fi
 
 # 起動したコマンドが PostgreSQL のポートを開くまで、ロックをバックグラウンドのプロセスに持たせる。
-# 標準入出力を閉じておかないと、task がこのプロセスの終了まで待ってしまう。
+# 標準入出力を閉じておかないと、出力をパイプで読む呼び出し元（テストの Open3 など）がこのプロセスの終了まで待ってしまう。
 (
   waited=0
   while [ "$waited" -lt "$pg_wait_seconds" ] && ! lsof -nP -iTCP:"$pg_port" -sTCP:LISTEN >/dev/null 2>&1; do
