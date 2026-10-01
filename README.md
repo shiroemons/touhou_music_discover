@@ -56,6 +56,8 @@ task up
 
 起動ポートを指定する場合は、`PORT` に優先ポートを設定する。指定したポートも使用中なら、そこから次の空きポートを選択する。
 
+`bin/dev-server` は追加引数を受け付けない。bind は `RAILS_BIND_ADDRESS`、環境は `RAILS_ENV`、ポートは `PORT` で指定する。
+
 ```shell
 PORT=3001 task up
 ```

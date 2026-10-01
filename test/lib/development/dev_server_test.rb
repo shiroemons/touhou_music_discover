@@ -31,31 +31,32 @@ module Development
       assert_includes output, '開発環境でのみ許可'
     end
 
-    test 'rejects bind and environment options passed to the wrapper' do
+    test 'rejects all arguments passed to the wrapper' do
       cases = {
         'separate -b' => ['-b', '0.0.0.0'],
-        'separate --binding' => ['--binding', '0.0.0.0'],
         '--binding=0.0.0.0' => ['--binding=0.0.0.0'],
-        '-b=0.0.0.0' => ['-b=0.0.0.0'],
         'concatenated -b value' => ['-b0.0.0.0'],
-        'separate -e' => ['-e', 'development'],
-        'separate --environment' => ['--environment', 'development'],
-        '--environment=development' => ['--environment=development'],
-        '-e=development' => ['-e=development'],
-        'concatenated -e value' => ['-edevelopment']
+        'bundled -Cb' => ['-Cb', '0.0.0.0'],
+        'bundled -db' => ['-db'],
+        '--no-binding' => ['--no-binding'],
+        '--skip-binding' => ['--skip-binding'],
+        '--no_binding' => ['--no_binding'],
+        '--skip_binding' => ['--skip_binding'],
+        'separate -e' => ['-e', 'production'],
+        'after --' => ['--', '-b', '0.0.0.0'],
+        'port option' => ['-p', '3000'],
+        'help option' => ['--help'],
+        'bare --' => ['--']
       }
+      results = cases.transform_values { |server_args| run_dev_server(server_args: server_args) }
+      rejected_cases = results.filter_map { |description, (_, status)| description if status.exitstatus == 1 }
 
-      cases.each do |description, server_args|
-        environment = if server_args.first.start_with?('-b', '--binding')
-                        { 'RAILS_ENV' => 'production' }
-                      else
-                        { 'RAILS_ENV' => 'production', 'RAILS_BIND_ADDRESS' => '0.0.0.0' }
-                      end
-        output, status = run_dev_server(environment, server_args: server_args)
+      assert_equal cases.keys, rejected_cases
 
-        assert_equal 1, status.exitstatus, description
+      results.each do |description, (output, _status)|
         assert_includes output, 'RAILS_BIND_ADDRESS', description
         assert_includes output, 'RAILS_ENV', description
+        assert_includes output, 'PORT', description
         assert_not_includes output, 'bin/rails', description
       end
     end
@@ -112,12 +113,25 @@ module Development
       assert_equal '3000', docker_compose.dig('services', 'web', 'environment', 'PORT')
       assert_equal 'true', docker_compose.dig('services', 'web', 'environment', 'RAILS_PORT_FIXED')
       assert_equal ['3000:3000'], docker_compose.dig('services', 'web', 'ports')
+
+      output, status = run_dev_server(
+        docker_compose.dig('services', 'web', 'environment').slice(
+          'RAILS_ENV', 'RAILS_BIND_ADDRESS', 'PORT', 'RAILS_PORT_FIXED'
+        ),
+        # 共有の開発サーバーが 3000 番を使用中でも、Docker の起動引数を検証できるようにする。
+        port_available: true
+      )
+
+      assert_predicate status, :success?, output
+      assert_equal "bin/rails server -b 0.0.0.0 -p 3000 -e development\n", output
     end
 
     private
 
-    def run_dev_server(overrides = {}, server_args: [])
+    def run_dev_server(overrides = {}, server_args: [], port_available: false)
       wrapper = <<~RUBY
+        require #{Rails.root.join('lib/development/port_selector').to_s.inspect}
+        Development::PortSelector.define_method(:port_available?) { |_port| true } if #{port_available}
         module Kernel
           def exec(*args)
             puts args.join(' ')
@@ -128,7 +142,10 @@ module Development
 
       Dir.mktmpdir do |directory|
         Open3.capture2e(
-          { 'PORT' => '0', 'RAILS_ENV' => nil, 'RACK_ENV' => nil }.merge(overrides),
+          {
+            'PORT' => '0', 'RAILS_ENV' => nil, 'RACK_ENV' => nil,
+            'RAILS_BIND_ADDRESS' => nil, 'RAILS_PORT_FIXED' => nil
+          }.merge(overrides),
           RbConfig.ruby,
           '-e',
           wrapper,
