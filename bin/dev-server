@@ -1,14 +1,36 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'fileutils'
+require 'ipaddr'
 require_relative '../lib/development/port_selector'
 
 default_port = Development::PortSelector::DEFAULT_PORT.to_s
 requested_port = ENV.fetch('PORT', default_port).to_s
 port_file = ENV.fetch('RAILS_PORT_FILE', 'tmp/pids/server.port')
+bind_address = ENV.fetch('RAILS_BIND_ADDRESS', '127.0.0.1')
+unless ARGV.empty?
+  warn '追加引数は受け付けません。bind は RAILS_BIND_ADDRESS、環境は RAILS_ENV、ポートは PORT で指定してください。'
+  exit 1
+end
+
+rails_environment = ENV['RAILS_ENV'] || ENV['RACK_ENV'] || 'development'
+
+loopback_bind = begin
+  bind_address.casecmp('localhost').zero? || IPAddr.new(bind_address).loopback?
+rescue IPAddr::InvalidAddressError
+  false
+end
+
+if !loopback_bind && rails_environment != 'development'
+  warn 'loopback 以外への bind は開発環境でのみ許可されます。'
+  exit 1
+end
 
 begin
-  selected_port = if requested_port == '0'
+  selected_port = if ENV['RAILS_PORT_FIXED'] == 'true'
+                    Development::PortSelector.select(preferred_port: requested_port, max_port: requested_port)
+                  elsif requested_port == '0'
                     0
                   else
                     Development::PortSelector.select(preferred_port: requested_port)
@@ -18,9 +40,7 @@ rescue Development::PortSelector::InvalidPort, Development::PortSelector::NoAvai
   exit 1
 end
 
-if selected_port.to_s != requested_port
-  warn "ポート #{requested_port} は使用中のため、#{selected_port} で Rails を起動します。"
-end
+warn "ポート #{requested_port} は使用中のため、#{selected_port} で Rails を起動します。" if selected_port.to_s != requested_port
 
 FileUtils.rm_f('tmp/pids/server.pid')
 if selected_port.zero?
@@ -31,4 +51,4 @@ else
 end
 
 ENV['PORT'] = selected_port.to_s
-exec 'bin/rails', 'server', '-b', '0.0.0.0', '-p', selected_port.to_s, *ARGV
+exec 'bin/rails', 'server', '-b', bind_address, '-p', selected_port.to_s, '-e', rails_environment

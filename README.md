@@ -52,7 +52,11 @@ task up
 
 通常は http://127.0.0.1:3000 でアクセスできる。3000番ポートが使用中の場合は、次に空いているポートを自動的に選択する。実際のアクセス先は `task up` 完了時、または `task health` の `URL` 行で確認できる。
 
+開発サーバーの bind は既定で `127.0.0.1`。管理認証を無効にする場合は開発環境で `ADMIN_AUTH_DISABLED=true` を明示する（`task up` と Docker Compose は開発用設定を渡す）。Docker Compose はコンテナ内からアクセスできるよう `RAILS_BIND_ADDRESS=0.0.0.0` を設定する。本番環境では `ADMIN_USERNAME`、`ADMIN_PASSWORD`、`APP_HOST` が必須。
+
 起動ポートを指定する場合は、`PORT` に優先ポートを設定する。指定したポートも使用中なら、そこから次の空きポートを選択する。
+
+`bin/dev-server` は追加引数を受け付けない。bind は `RAILS_BIND_ADDRESS`、環境は `RAILS_ENV`、ポートは `PORT` で指定する。
 
 ```shell
 PORT=3001 task up

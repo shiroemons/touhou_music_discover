@@ -3,6 +3,12 @@
 require 'active_support/core_ext/integer/time'
 
 Rails.application.configure do
+  missing_admin_credentials = %w[ADMIN_USERNAME ADMIN_PASSWORD].select { |key| ENV[key].to_s.strip.empty? }
+  raise ArgumentError, "本番環境では管理認証に #{missing_admin_credentials.join(', ')} を設定してください" if missing_admin_credentials.any?
+
+  app_host = ENV['APP_HOST']&.strip
+  raise ArgumentError, '本番環境では APP_HOST を設定してください' if app_host.to_s.empty?
+
   # Settings specified here will take precedence over those in config/application.rb.
 
   # Code is not reloaded between requests.
@@ -70,9 +76,7 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [:id]
 
   # DNSリバインディング等のHostヘッダー攻撃対策。
-  # APP_HOST 未設定時は空配列となり Rails はチェック自体をスキップするため、
-  # 設定していない環境でも壊れない。
-  config.hosts = [ENV.fetch('APP_HOST', nil)].compact
+  config.hosts = [app_host]
 
   # ヘルスチェックはHost検証の対象外にする
   config.host_authorization = { exclude: ->(request) { request.path == '/up' } }

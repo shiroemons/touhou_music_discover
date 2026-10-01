@@ -44,13 +44,17 @@ module Admin
     end
 
     def authenticate_admin_if_configured
+      return if Rails.application.config.x.admin_auth_disabled == true
+
       username = ENV.fetch('ADMIN_USERNAME', nil)
       password = ENV.fetch('ADMIN_PASSWORD', nil)
-      return if username.blank? || password.blank?
 
       authenticate_or_request_with_http_basic('Admin') do |provided_username, provided_password|
-        ActiveSupport::SecurityUtils.secure_compare(provided_username, username) &
-          ActiveSupport::SecurityUtils.secure_compare(provided_password, password)
+        username.present? && password.present? &&
+          (
+            ActiveSupport::SecurityUtils.secure_compare(provided_username, username) &
+              ActiveSupport::SecurityUtils.secure_compare(provided_password, password)
+          )
       end
     end
   end
