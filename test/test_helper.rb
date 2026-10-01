@@ -16,6 +16,8 @@ VCR.configure do |config|
   config.cassette_library_dir = Rails.root.join('test/vcr_cassettes').to_s
   config.hook_into :webmock
   config.default_cassette_options = { record: :none }
+  # Selenium の WebDriver はローカルHTTPで制御するため、外部API用のVCRから除外する。
+  config.ignore_localhost = true
   config.filter_sensitive_data('<CLIENT_ID>') { ENV.fetch('SPOTIFY_CLIENT_ID', nil) }
   config.filter_sensitive_data('<CLIENT_SECRET>') { ENV.fetch('SPOTIFY_CLIENT_SECRET', nil) }
   config.filter_sensitive_data('<ACCESS_TOKEN>') do |interaction|

@@ -28,6 +28,11 @@ group :development, :test do
   gem 'webmock', require: false
 end
 
+group :test do
+  gem 'capybara'
+  gem 'selenium-webdriver'
+end
+
 group :development do
   gem 'listen', '~> 3.8'
   gem 'rubocop', require: false
