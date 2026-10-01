@@ -32,9 +32,11 @@ services:
       WD_INSTALL_DIR: "/usr/local/bin"
       HISTFILE: "/app/log/.bash_history"
       EDITOR: "vi"
-      ADMIN_AUTH_DISABLED: "true"
+      ADMIN_AUTH_DISABLED: "${ADMIN_AUTH_DISABLED:-true}"
       RAILS_ENV: "development"
       RAILS_BIND_ADDRESS: "0.0.0.0"
+      PORT: "3000"
+      RAILS_PORT_FIXED: "true"
       DATABASE_URL: "postgres://postgres:postgres@postgres-18:5432"
       REDIS_URL: "redis://redis:6379/"
       RAILS_MASTER_KEY:

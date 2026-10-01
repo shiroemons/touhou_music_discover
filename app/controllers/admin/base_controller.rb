@@ -44,7 +44,7 @@ module Admin
     end
 
     def authenticate_admin_if_configured
-      return if Rails.application.config.x.admin_auth_disabled
+      return if Rails.application.config.x.admin_auth_disabled == true
 
       username = ENV.fetch('ADMIN_USERNAME', nil)
       password = ENV.fetch('ADMIN_PASSWORD', nil)

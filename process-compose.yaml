@@ -6,7 +6,7 @@ processes:
   rails:
     command: bin/dev-server
     environment:
-      - "ADMIN_AUTH_DISABLED=true"
+      - "ADMIN_AUTH_DISABLED=${ADMIN_AUTH_DISABLED:-true}"
     availability:
       restart: on_failure
     depends_on:

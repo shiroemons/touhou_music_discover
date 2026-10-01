@@ -29,6 +29,29 @@ module Admin
       end
     end
 
+    test 'requires authentication when the disable setting is absent' do
+      previous_auth_disabled = Rails.application.config.x.admin_auth_disabled
+      Rails.application.config.x.admin_auth_disabled = ActiveSupport::OrderedOptions.new
+      previous_username = ENV.fetch('ADMIN_USERNAME', nil)
+      previous_password = ENV.fetch('ADMIN_PASSWORD', nil)
+      ENV['ADMIN_USERNAME'] = 'admin'
+      ENV['ADMIN_PASSWORD'] = 'secret'
+
+      assert_instance_of ActiveSupport::OrderedOptions, Rails.application.config.x.admin_auth_disabled
+
+      get admin_root_url
+
+      assert_response :unauthorized
+
+      get admin_root_url, headers: basic_auth_headers('admin', 'secret')
+
+      assert_response :success
+    ensure
+      ENV['ADMIN_USERNAME'] = previous_username
+      ENV['ADMIN_PASSWORD'] = previous_password
+      Rails.application.config.x.admin_auth_disabled = previous_auth_disabled
+    end
+
     private
 
     def with_admin_auth_settings(overrides)

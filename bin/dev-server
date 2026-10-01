@@ -1,24 +1,37 @@
 #!/usr/bin/env ruby
 
 require 'fileutils'
+require 'ipaddr'
 require_relative '../lib/development/port_selector'
 
 default_port = Development::PortSelector::DEFAULT_PORT.to_s
 requested_port = ENV.fetch('PORT', default_port).to_s
 port_file = ENV.fetch('RAILS_PORT_FILE', 'tmp/pids/server.port')
 bind_address = ENV.fetch('RAILS_BIND_ADDRESS', '127.0.0.1')
+environment_argument = ARGV.each_cons(2).find { |argument, _value| %w[-e --environment].include?(argument) }&.last
+environment_argument ||= ARGV.find { |argument| argument.start_with?('--environment=') }&.split('=', 2)&.last
+environment_argument ||= ARGV.find { |argument| argument.start_with?('-e') && argument != '-e' }&.delete_prefix('-e')
+rails_environment = environment_argument || ENV.fetch('RAILS_ENV', 'development')
 
-if bind_address == '0.0.0.0' && ENV.fetch('RAILS_ENV', 'development') != 'development'
-  warn '0.0.0.0 への bind は開発環境でのみ許可されます。'
+loopback_bind = begin
+  bind_address.casecmp('localhost').zero? || IPAddr.new(bind_address).loopback?
+rescue IPAddr::InvalidAddressError
+  false
+end
+
+if !loopback_bind && rails_environment != 'development'
+  warn 'loopback 以外への bind は開発環境でのみ許可されます。'
   exit 1
 end
 
 begin
-  selected_port = if requested_port == '0'
-                    0
-                  else
-                    Development::PortSelector.select(preferred_port: requested_port)
-                  end
+selected_port = if ENV['RAILS_PORT_FIXED'] == 'true'
+                  Development::PortSelector.select(preferred_port: requested_port, max_port: requested_port)
+                elsif requested_port == '0'
+                  0
+                else
+                  Development::PortSelector.select(preferred_port: requested_port)
+                end
 rescue Development::PortSelector::InvalidPort, Development::PortSelector::NoAvailablePort => e
   warn "Railsの起動ポートを決定できません: #{e.message}"
   exit 1
