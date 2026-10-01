@@ -1,129 +1,34 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+東方同人音楽を複数の配信サービス（Spotify / Apple Music / YouTube Music / LINE MUSIC）横断で管理する Rails アプリ。
 
-## Project Overview
+## コマンド
 
-touhou_music_discover (東方同人音楽流通) is a Rails application that tracks and manages Touhou doujin music across multiple streaming platforms (Spotify, Apple Music, YouTube Music, LINE MUSIC). It provides a unified database of albums and tracks with platform-specific metadata.
+- タスクは `Taskfile.yml` が正本で、`task <name>` で実行する（内部で `devbox run` を呼ぶ）。一覧は `task --list`
+- `Makefile` は移行期間中の互換ラッパーなので、新しい手順や指示では使わない
+- よく使うもの: `task up`（全サービス起動）/ `task health`（状態と URL の確認）/ `task test` / `task lint`
+- rake タスクの直接実行は `devbox run -- bin/rails <task>`
+- JS は yarn 1.22 を使う（bun は使わない）
+- Rails のポートは 3000 が埋まっていると自動で切り替わる。URL は `task health` で確認する
 
-## Key Architecture
+## データ保護
 
-### Core Models & Relationships
-- **Album** (JAN code) → has many **Track** (ISRC code)
-- Platform-specific models (SpotifyAlbum, AppleMusicAlbum, etc.) link to core Album/Track
-- **Original** → **OriginalSong** → **TracksOriginalSong** → **Track** (tracks Touhou game origins)
-- **Circle** (doujin groups) ← **CirclesAlbum** → **Album**
+- 開発 DB に書き込む作業（マイグレーション、データ修復、rake タスクなど）の前に `task db:backup` を取る
+- `task db:restore` は DB を丸ごと上書きするため、実行前にユーザーに確認する
 
-### Admin Interface
-A self-built admin interface (not a gem) mounted at `/admin`, with controllers under `app/controllers/admin/`. Data-fetching and operational actions are defined as action classes in `app/models/admin/actions.rb`, each inheriting from `Admin::Actions::BaseAction`, for:
-- Fetching data from streaming platforms
-- Bulk operations
-- Data export/import
+## 設計上の規約
 
-## Common Development Commands
+- コアは Album（JAN コード）と Track（ISRC コード）。プラットフォーム別モデルは必ずこれらに紐付ける
+- 主キーは UUID
+- `is_touhou` で東方関連かどうかを判定する
+- データ取得・運用操作は `app/models/admin/actions.rb` に `Admin::Actions::BaseAction` を継承したクラスとして実装する
+- 管理アクションは Solid Queue のジョブで動くため、確認時は `jobs` サービスも起動しておく
+- 外部 API の機密情報は `.env.development.local` に置く
 
-### Setup & Development (devbox)
-```bash
-make setup         # 依存パッケージのインストール（bundle + yarn）
-make tui           # 全サービスをTUIモードで起動（PostgreSQL + Redis + Rails + JS/CSS）
-make up            # 全サービスをバックグラウンドで起動
-make down          # 全サービスを停止
-make server        # Railsサーバーのみ起動
-make console       # Railsコンソール
-make shell         # devboxシェルに入る
-```
+## Git
 
-JSのパッケージマネージャーはyarn 1.22を使用する（bunは使用しない）。
-
-### Database Operations
-```bash
-make migrate       # マイグレーション実行
-make dbseed        # マスターデータ投入（originals, circles, artists）
-make db-dump       # データベースバックアップ
-make db-restore    # データベースリストア
-```
-
-### Testing & Code Quality
-```bash
-make minitest      # テスト実行
-make rubocop       # Linter実行
-```
-
-### Platform Data Collection
-Each platform has specific rake tasks for data fetching:
-- `spotify:fetch_touhou_albums` - Fetch albums from "東方同人音楽流通" label
-- `apple_music:fetch_artist_albums` - Fetch by artist ID
-- `ytmusic:search_albums_and_save` - Search and save albums
-- `line_music:search_albums_and_save` - Search and save albums
-
-Run tasks with: `devbox run -- bin/rails [task_name]`
-
-### Docker Environment (Legacy)
-Docker commands are available with `docker-` prefix:
-```bash
-make docker-server    # Dockerでサーバー起動
-make docker-console   # DockerでRailsコンソール
-make docker-migrate   # Dockerでマイグレーション
-```
-
-## API Integration Notes
-
-### Spotify
-- Custom 3-layer client in `lib/spotify_api/`: auth (`Config` for the Client Credentials app token, `UserSession` for Redis-backed user tokens with auto-refresh) → HTTP (`Client`, Faraday-based, maps status codes to error classes) → resources (`Album` / `Track` / `Playlist` / `AudioFeatures`, with `Response` / `Page` wrapping JSON and paging)
-- OAuth login (linking a user's Spotify account) is handled by `lib/omniauth/strategies/spotify.rb` (an `OmniAuth::Strategies::OAuth2` subclass)
-- `app/models/spotify_client/` (Album / Track / AudioFeatures + their `native_backend.rb`) is the app layer that calls `SpotifyApi` to bulk-fetch and persist, and is used from `Admin::Actions::*`
-- Fetches audio features (tempo, energy, etc.)
-- Primary source: "東方同人音楽流通" label
-
-### Apple Music
-- Requires: secret_key, team_id, music_id in credentials
-- Custom client implementation in `app/models/apple_music_client/`
-
-### YouTube Music & LINE MUSIC
-- Custom implementations without official gems
-- Located in `lib/ytmusic/` and `lib/line_music/`
-
-## Linting
-- Uses Rubocop for Ruby code style
-- Configuration follows standard Rails conventions
-- Run `make rubocop` to check for issues
-- Use `make rubocop-autocorrect` for auto-corrections
-
-## Key Workflows
-
-1. **Adding New Albums**: Use admin actions (`Admin::Actions::*`) to fetch from platforms, then associate with circles and original songs
-2. **Data Export**: Use rake tasks for Algolia search or random selection app exports
-3. **Platform Updates**: Each platform has separate update actions in the admin actions system to refresh metadata
-
-## Important Conventions
-
-- All platform-specific models must link to core Album/Track models
-- Use UUIDs for primary keys
-- JAN codes identify albums, ISRC codes identify tracks
-- Touhou flag (`is_touhou`) determines if content is actually Touhou-related
-- Implement data fetching operations as action classes inheriting from `Admin::Actions::BaseAction` in `app/models/admin/actions.rb` to maintain consistency
-
-## Development Workflow
-When making code modifications:
-1. Create a new branch before making changes (if on main branch)
-2. Make your modifications
-3. Commit your changes with a descriptive message in Japanese
-4. Push to remote repository
-5. Create a Pull Request for review in Japanese
-
-This workflow ensures code changes are properly reviewed and tracked through version control.
-
-### Git Commit and Pull Request Guidelines
-- **Commit messages**: Must be written in Japanese
-- **Pull Request titles and descriptions**: Must be written in Japanese
-- **Branch naming**: Use descriptive English branch names (e.g., `feature/add-feature-name`, `fix/bug-description`)
-- **Do NOT include**: `🤖 Generated with [Claude Code]` or `Co-Authored-By: Claude` in commit messages
-
-Example commit message format:
-```
-ユーザー認証システムを追加
-
-- JWTトークンによる認証を実装
-- ログイン/ログアウトAPIを追加
-- セッション管理機能を追加
-```
+- コードを変更したら、ブランチ作成 → コミット → push → PR 作成まで行う
+- main にいる場合は、変更前に英語名のブランチを作る（例: `feature/...`、`fix/...`）
+- コミットは Conventional Commits の種別を英語で付け、説明は日本語で書く（例: `feat: ユーザー認証を追加`）
+- PR のタイトルと説明は日本語で書く
+- コミットや PR に `Generated with Claude Code` や `Co-Authored-By: Claude` を入れない
