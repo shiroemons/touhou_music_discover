@@ -17,16 +17,19 @@ globs:
 
 ## コマンド実行パターン
 
-- Makefileコマンド: `make <command>` → devbox経由で実行される
+- Taskコマンド: `task <name>` → devbox経由で実行される（定義は `Taskfile.yml`、一覧は `task --list`）
+- `Makefile` は移行期間中の互換ラッパー（`make <target>` → `task <name>`）。新しい手順や指示では `task` を使う
 - 直接実行: `devbox run <script>` でdevbox.jsonのscriptsを呼び出す
 - devboxシェル内: `devbox shell` に入れば直接コマンド実行可能
-- Docker環境: `make docker-<command>` で従来のDocker経由実行
+- Docker環境: `Dockerfile` / `docker-compose.yml` は残っているが、Task/Make の入口はない
 
 ## サービス管理
 
-- `devbox services up` / `make tui`: 全サービスをTUIモードで起動（PostgreSQL, Redis, Rails, JS, CSS）
-- `devbox services up -b` / `make up`: バックグラウンドで起動
-- `devbox services stop` / `make down`: サービス停止
+- `task tui`: 全サービスをTUIモードで起動（PostgreSQL, Redis, Rails, jobs, JS, CSS）
+- `task up`: バックグラウンドで起動（非TTY環境ではこちらを使う）
+- `task down`: サービス停止
+- `task status` / `task health`: サービス状態とHTTP応答の確認
+- `task recover` / `task recover-force`: Terminating/Pending や孤児プロセスからの復旧
 - PostgreSQLはdevboxプラグインが自動管理
 
 ## パッケージ追加
