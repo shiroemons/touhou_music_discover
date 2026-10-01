@@ -6,6 +6,9 @@ class ParallelRunnerRealModesCheck < ActiveSupport::TestCase
   parallelize(workers: 1)
 
   test 'process and thread modes use database and Redis connections' do
+    assert_equal 1, ActiveRecord::Base.connection.select_value('SELECT 1').to_i
+    assert_equal 'PONG', RedisPool.with(&:ping)
+
     %i[processes threads].each do |mode|
       results = run_mode(mode)
 
