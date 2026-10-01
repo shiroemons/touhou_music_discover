@@ -46,7 +46,7 @@
       "db:rollback":     "bin/rails db:rollback",
       "db:seed":         "bin/rails db:seed",
       "db:backup":       "mkdir -p tmp/data && backup_file=\"tmp/data/touhou_music_discover-$(date +%Y%m%d-%H%M%S).bak\" && pg_dump -Fc --compress=gzip:6 --no-owner -d touhou_music_discover_development -f \"$backup_file\" && echo \"バックアップを作成しました: $backup_file\"",
-      "db:restore":      "backup_file=\"${BACKUP_FILE:-$(find tmp/data -maxdepth 1 -type f -name 'touhou_music_discover-*.bak' -print | sort | tail -n 1)}\" && if [ -z \"$backup_file\" ] || [ ! -f \"$backup_file\" ]; then echo 'バックアップファイルが見つかりません。BACKUP_FILEで指定してください。' >&2; exit 1; fi && echo \"バックアップをリストアします: $backup_file\" && pg_restore --no-privileges --no-owner --clean -d touhou_music_discover_development \"$backup_file\"",
+      "db:restore":      "scripts/db_restore",
       "test":            "RAILS_ENV=test bin/rails db:test:prepare && RAILS_ENV=test bin/rails test",
       "rubocop":         "bundle exec rubocop",
       "rubocop:fix":     "bundle exec rubocop --autocorrect",
