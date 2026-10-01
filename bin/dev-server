@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'fileutils'
 require 'ipaddr'
@@ -8,10 +9,15 @@ default_port = Development::PortSelector::DEFAULT_PORT.to_s
 requested_port = ENV.fetch('PORT', default_port).to_s
 port_file = ENV.fetch('RAILS_PORT_FILE', 'tmp/pids/server.port')
 bind_address = ENV.fetch('RAILS_BIND_ADDRESS', '127.0.0.1')
-environment_argument = ARGV.each_cons(2).find { |argument, _value| %w[-e --environment].include?(argument) }&.last
-environment_argument ||= ARGV.find { |argument| argument.start_with?('--environment=') }&.split('=', 2)&.last
-environment_argument ||= ARGV.find { |argument| argument.start_with?('-e') && argument != '-e' }&.delete_prefix('-e')
-rails_environment = environment_argument || ENV.fetch('RAILS_ENV', 'development')
+if ARGV.any? do |argument|
+     argument.start_with?('-b', '-e', '--binding=', '--environment=') ||
+     argument == '--binding' || argument == '--environment'
+   end
+  warn 'bind は RAILS_BIND_ADDRESS、環境は RAILS_ENV で指定してください。'
+  exit 1
+end
+
+rails_environment = ENV['RAILS_ENV'] || ENV['RACK_ENV'] || 'development'
 
 loopback_bind = begin
   bind_address.casecmp('localhost').zero? || IPAddr.new(bind_address).loopback?
@@ -25,21 +31,19 @@ if !loopback_bind && rails_environment != 'development'
 end
 
 begin
-selected_port = if ENV['RAILS_PORT_FIXED'] == 'true'
-                  Development::PortSelector.select(preferred_port: requested_port, max_port: requested_port)
-                elsif requested_port == '0'
-                  0
-                else
-                  Development::PortSelector.select(preferred_port: requested_port)
-                end
+  selected_port = if ENV['RAILS_PORT_FIXED'] == 'true'
+                    Development::PortSelector.select(preferred_port: requested_port, max_port: requested_port)
+                  elsif requested_port == '0'
+                    0
+                  else
+                    Development::PortSelector.select(preferred_port: requested_port)
+                  end
 rescue Development::PortSelector::InvalidPort, Development::PortSelector::NoAvailablePort => e
   warn "Railsの起動ポートを決定できません: #{e.message}"
   exit 1
 end
 
-if selected_port.to_s != requested_port
-  warn "ポート #{requested_port} は使用中のため、#{selected_port} で Rails を起動します。"
-end
+warn "ポート #{requested_port} は使用中のため、#{selected_port} で Rails を起動します。" if selected_port.to_s != requested_port
 
 FileUtils.rm_f('tmp/pids/server.pid')
 if selected_port.zero?
@@ -50,4 +54,4 @@ else
 end
 
 ENV['PORT'] = selected_port.to_s
-exec 'bin/rails', 'server', '-b', bind_address, '-p', selected_port.to_s, *ARGV
+exec 'bin/rails', 'server', '-b', bind_address, '-p', selected_port.to_s, '-e', rails_environment, *ARGV

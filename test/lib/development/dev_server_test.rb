@@ -14,6 +14,7 @@ module Development
 
       assert_predicate status, :success?
       assert_includes output, '-b 127.0.0.1'
+      assert_includes output, '-e development'
     end
 
     test 'rejects public binding outside development' do
@@ -30,14 +31,51 @@ module Development
       assert_includes output, '開発環境でのみ許可'
     end
 
-    test 'rejects public binding when production is selected by Rails arguments' do
+    test 'rejects bind and environment options passed to the wrapper' do
+      cases = {
+        'separate -b' => ['-b', '0.0.0.0'],
+        'separate --binding' => ['--binding', '0.0.0.0'],
+        '--binding=0.0.0.0' => ['--binding=0.0.0.0'],
+        '-b=0.0.0.0' => ['-b=0.0.0.0'],
+        'concatenated -b value' => ['-b0.0.0.0'],
+        'separate -e' => ['-e', 'development'],
+        'separate --environment' => ['--environment', 'development'],
+        '--environment=development' => ['--environment=development'],
+        '-e=development' => ['-e=development'],
+        'concatenated -e value' => ['-edevelopment']
+      }
+
+      cases.each do |description, server_args|
+        environment = if server_args.first.start_with?('-b', '--binding')
+                        { 'RAILS_ENV' => 'production' }
+                      else
+                        { 'RAILS_ENV' => 'production', 'RAILS_BIND_ADDRESS' => '0.0.0.0' }
+                      end
+        output, status = run_dev_server(environment, server_args: server_args)
+
+        assert_equal 1, status.exitstatus, description
+        assert_includes output, 'RAILS_BIND_ADDRESS', description
+        assert_includes output, 'RAILS_ENV', description
+        assert_not_includes output, 'bin/rails', description
+      end
+    end
+
+    test 'uses RACK_ENV when RAILS_ENV is unset' do
       output, status = run_dev_server(
-        { 'RAILS_BIND_ADDRESS' => '0.0.0.0', 'RAILS_ENV' => nil },
-        server_args: ['-e', 'production']
+        { 'RAILS_BIND_ADDRESS' => '0.0.0.0', 'RAILS_ENV' => nil, 'RACK_ENV' => 'production' }
       )
 
       assert_equal 1, status.exitstatus
       assert_includes output, '開発環境でのみ許可'
+    end
+
+    test 'prefers RAILS_ENV and passes it to Rails explicitly' do
+      output, status = run_dev_server(
+        { 'RAILS_BIND_ADDRESS' => '0.0.0.0', 'RAILS_ENV' => 'development', 'RACK_ENV' => 'production' }
+      )
+
+      assert_predicate status, :success?
+      assert_includes output, '-e development'
     end
 
     test 'allows explicit public binding in development' do
@@ -90,7 +128,7 @@ module Development
 
       Dir.mktmpdir do |directory|
         Open3.capture2e(
-          { 'PORT' => '0' }.merge(overrides),
+          { 'PORT' => '0', 'RAILS_ENV' => nil, 'RACK_ENV' => nil }.merge(overrides),
           RbConfig.ruby,
           '-e',
           wrapper,
