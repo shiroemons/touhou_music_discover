@@ -51,6 +51,12 @@ devbox run -- bash -c "bundle install"
 ```
 
 - `.ruby-version` / `devbox.json` の `ruby` / `Dockerfile` の `FROM ruby:` は3箇所セットで更新する
+- Gemfile の `ruby file: '.ruby-version'` がパッチ番号まで照合するため、devbox の Ruby が `.ruby-version` と一致しないと `bundle` が動かない
+- nixhub（`devbox search`）の索引は nixpkgs 本体より遅れることがある。必要なパッチ版が nixhub にないときは、
+  `devbox.json` の `ruby` を nixpkgs のコミット指定（`"github:NixOS/nixpkgs/<commit>#ruby_4_0": ""`）に置き換える
+  - nixpkgs に入っているバージョンは `pkgs/development/interpreters/ruby/default.nix` の `ruby_4_0` で確認する
+  - コミット指定では devbox の ruby プラグインが効かないが、このプロジェクトは `GEM_HOME` を `env` で上書きしているため影響はない
+  - nixhub が同じバージョンに追いついたら、`"ruby": "<version>"` の指定に戻す
 
 ## 環境変数
 

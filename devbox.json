@@ -1,17 +1,17 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": {
-    "ruby":          "4.0.6",
+    "github:NixOS/nixpkgs/5d2b81a7a3be3e2f832879028e4d60abbf58e9a0#ruby_4_0": "",
     "postgresql_18": "18.4",
-    "redis":         "8.8.0",
+    "redis":         "8.10.2",
     "nodejs":        "24",
     "yarn":          "1.22",
     "libyaml":       "0.2.5",
     "openssl":       "3.6.0",
-    "zlib":          "1.3.1",
+    "zlib":          "1.3.2",
     "readline":      "8.3p3",
     "libffi":        "40",
-    "libpq":         "18.4"
+    "libpq":         "18.6"
   },
   "env": {
     "BUNDLE_PATH":        ".devbox/virtenv/bundle",
