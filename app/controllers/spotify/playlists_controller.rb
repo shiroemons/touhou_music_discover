@@ -416,7 +416,7 @@ module Spotify
       # 「一覧に出る」ことは「自分が所有している」ことを意味しない。owner.id で
       # 絞らないと、他人が所有する同名プレイリストをこのユーザーの行として保存してしまう。
       matched = fetched.compact.select { |p| p.dig('owner', 'id') == spotify_user_id }
-                               .select { |playlist| titles.include?(playlist['name']) }
+                       .select { |playlist| titles.include?(playlist['name']) }
 
       matched.map do |playlist|
         {
@@ -493,7 +493,7 @@ module Spotify
       # index と同じ理由で owner.id によるフィルタも必須。これが無いと、他人が所有する
       # 同名プレイリストに GET /playlists/{id} を発行してしまう（403 の原因にもなる）。
       matched = playlists.compact.select { |p| p.dig('owner', 'id') == spotify_user_id }
-                                 .select { |playlist| titles.include?(playlist['name']) }.reverse
+                         .select { |playlist| titles.include?(playlist['name']) }.reverse
 
       write_refresh_progress(redis, progress_key) { |info| info['total'] = matched.size }
 

@@ -165,7 +165,7 @@ class YtmusicAlbum < ApplicationRecord
     false
   end
 
-  # rubocop:disable Naming/PredicateMethod
+  # rubocop:disable-next Naming/PredicateMethod
   def self.find_and_save(browse_id, album)
     ytmusic_album = YtMusic::Album.find(browse_id)
     return false if ytmusic_album.nil? || album.total_tracks != ytmusic_album.track_total_count
@@ -173,9 +173,8 @@ class YtmusicAlbum < ApplicationRecord
 
     save_album(album.album_id, browse_id, ytmusic_album).present?
   end
-  # rubocop:enable Naming/PredicateMethod
 
-  # rubocop:disable Naming/PredicateMethod
+  # rubocop:disable-next Naming/PredicateMethod
   def self.similar_check_and_save(similar, album, ytm_album)
     return false unless similar.average.to_d > BigDecimal('0.80') && similar.jarowinkler_similar.to_d > BigDecimal('0.85')
 
@@ -184,7 +183,6 @@ class YtmusicAlbum < ApplicationRecord
 
     save_album(album.album_id, ytm_album.browse_id, ytmusic_album).present?
   end
-  # rubocop:enable Naming/PredicateMethod
 
   def update_album(album, url)
     if album.degraded?
@@ -417,7 +415,7 @@ class YtmusicAlbum < ApplicationRecord
   # YouTube Musicではシングルがアーティストページの「シングルと EP」や曲検索には出る一方、
   # albumsフィルター付き検索に返らないことがある。曲検索のメタデータに含まれるアルバムbrowse IDを
   # たどり、リリース年・曲数をfind_and_saveで再検証してから保存する。
-  # rubocop:disable Naming/PredicateMethod
+  # rubocop:disable-next Naming/PredicateMethod
   def self.search_songs_and_save(source_album)
     source_tracks(source_album).first(3).each do |source_track|
       song_search_queries(source_album, source_track).each do |query|
@@ -434,7 +432,6 @@ class YtmusicAlbum < ApplicationRecord
 
     false
   end
-  # rubocop:enable Naming/PredicateMethod
 
   def self.source_tracks(source_album)
     return source_album.spotify_tracks if source_album.respond_to?(:spotify_tracks)

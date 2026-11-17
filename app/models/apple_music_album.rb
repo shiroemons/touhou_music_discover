@@ -17,14 +17,13 @@ class AppleMusicAlbum < ApplicationRecord
   scope :non_touhou, -> { eager_load(:album).where(albums: { is_touhou: false }) }
   scope :missing_album, -> { where.missing(:album) }
 
-  # rubocop:disable Style/NumericLiterals
+  # rubocop:disable-next Style/NumericLiterals
   VARIOUS_ARTISTS_ALBUMS_IDS = [
     1437759828, # 東方インストバッカー
     1437759890, # オールナイト・オブ・ナイツ
     1582445297, # 東方ダンジョンダイブ (Original Sound Track)
     1583684648 # 東方オトハナビ
   ].freeze
-  # rubocop:enable Style/NumericLiterals
 
   # AppleMusicのアルバム情報を保存する
   def self.save_album(am_album)

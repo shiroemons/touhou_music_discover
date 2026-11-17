@@ -257,7 +257,7 @@ class LineMusicAlbum < ApplicationRecord
     line_music_album
   end
 
-  # rubocop:disable Naming/PredicateMethod
+  # rubocop:disable-next Naming/PredicateMethod
   def self.search_and_save(query, album)
     Rails.logger.info "LINE MUSIC アルバム検索: #{query}"
     line_albums = LineMusic::Album.search(query)
@@ -329,7 +329,6 @@ class LineMusicAlbum < ApplicationRecord
 
     false
   end
-  # rubocop:enable Naming/PredicateMethod
 
   # アルバムがマッチするかどうかを判定するヘルパーメソッド
   def self.matches_album?(line_album, album)

@@ -403,11 +403,10 @@ module Dedupe
     end
 
     # 「どの行を残すか」は created_at で決まるため、Railsが自動設定した値を上書きして順序を固定する。
-    # rubocop:disable Rails/SkipsModelValidations
+    # rubocop:disable-next Rails/SkipsModelValidations
     def overwrite_created_at(record, created_at)
       record.update_columns(created_at:)
     end
-    # rubocop:enable Rails/SkipsModelValidations
 
     def create_album
       Album.create!(jan_code: "dedupe-#{SecureRandom.hex(6)}")
