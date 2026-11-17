@@ -90,9 +90,8 @@ module SpotifyApi
 
       assert_equal 12, response.dig('tracks', 'total')
       assert_equal 12, response.dig(:tracks, :total)
-      # rubocop:disable Style/SingleArgumentDig -- dig の単一キー呼び出し自体を検証するテストのため [] には置き換えない
+      # rubocop:disable-next Style/SingleArgumentDig -- dig の単一キー呼び出し自体を検証するテストのため [] には置き換えない
       assert_equal 'Playlist', response.dig('name')
-      # rubocop:enable Style/SingleArgumentDig
     end
 
     test 'dig returns nil for missing keys instead of raising' do
