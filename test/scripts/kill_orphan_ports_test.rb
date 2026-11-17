@@ -7,7 +7,7 @@ require 'tmpdir'
 
 class KillOrphanPortsTest < ActiveSupport::TestCase
   SCRIPT = Rails.root.join('scripts/kill_orphan_ports').to_s
-  TASKFILE = Rails.root.join('Taskfile.yml').to_s
+  JUSTFILE = Rails.root.join('justfile').to_s
   # macOS の PID 範囲外の値を使い、組み込み kill が実プロセスへ届かないようにする。
   PID = '2147483646'
   REPLACEMENT_PID = '2147483647'
@@ -131,7 +131,7 @@ class KillOrphanPortsTest < ActiveSupport::TestCase
   end
 
   def test_rails_only_listener_does_not_block_recover_force
-    skip 'task コマンドが PATH にありません' unless system('/bin/sh', '-c', 'command -v task >/dev/null 2>&1')
+    skip 'just コマンドが PATH にありません' unless system('/bin/sh', '-c', 'command -v just >/dev/null 2>&1')
 
     status, output = run_recover_force(env: {
                                          'ORPHAN_TEST_CWD' => @tmpdir,
@@ -158,7 +158,7 @@ class KillOrphanPortsTest < ActiveSupport::TestCase
   end
 
   def run_recover_force(env: {})
-    capture(script_env('41000').merge(env), 'task', '--taskfile', TASKFILE, 'recover-force', chdir: Rails.root.to_s)
+    capture(script_env('41000').merge(env), 'just', '--justfile', JUSTFILE, 'recover-force', chdir: Rails.root.to_s)
   end
 
   def script_env(port)

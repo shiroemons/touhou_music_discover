@@ -35,7 +35,7 @@ mkdir -p "$work_dir"
 
 # 本体の PostgreSQL の一時起動からダンプ・停止までをロックで囲む。ロックは本体のサービス操作
 # （scripts/with_source_db_lock）とも共有する。ロックがないと、先に終わったセットアップが他のセットアップの
-# ダンプ中に本体の PostgreSQL を止めたり、一時起動中に本体の task up が同じポートで起動しようとしたりする。
+# ダンプ中に本体の PostgreSQL を止めたり、一時起動中に本体の just up が同じポートで起動しようとしたりする。
 . "$project_root/scripts/lib/source_db_lock.sh"
 source_db_lock_init "$project_root"
 
@@ -88,7 +88,7 @@ ensure_running() {
     exit 1
   fi
   if pg_ctl -D "$pgdata" status >/dev/null 2>&1; then
-    # 本体の task up などで起動処理中なら、応答するまで待ってそのまま使う。
+    # 本体の just up などで起動処理中なら、応答するまで待ってそのまま使う。
     echo "${label}の PostgreSQL が起動処理中のため、応答するまで待ちます"
     if wait_until_ready "$port"; then
       return 1
@@ -124,7 +124,7 @@ if ensure_running "ワークツリー" "$target_pgdata" "$target_port"; then
 fi
 
 if db_exists "$target_port" "$primary_db" && [ "${WORKTREE_DB_RECOPY:-}" != 1 ]; then
-  echo "開発DBはコピー済みのため、コピーを省略します（作り直す場合は task worktree:db:copy）"
+  echo "開発DBはコピー済みのため、コピーを省略します（作り直す場合は just worktree db-copy）"
 else
   source_db_lock_acquire
   if ensure_running "本体" "$source_pgdata" "$source_port"; then
@@ -162,5 +162,5 @@ fi
 
 # db:migrate はスキーマファイルを書き出してワークツリーを変更ありにするため、ここでは実行しない。
 if ! bin/rails runner 'exit(ActiveRecord::Base.connection_pool.migration_context.needs_migration? ? 1 : 0)'; then
-  echo "未適用のマイグレーションがあります。task db:migrate で適用してください。"
+  echo "未適用のマイグレーションがあります。just db migrate で適用してください。"
 fi

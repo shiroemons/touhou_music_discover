@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 
 # ワークツリーで本体と並行して開発できるようにする。
-# git wt の wt.hook から呼ばれるほか、task worktree:setup でも実行できる。何度実行してもよい。
+# git wt の wt.hook から呼ばれるほか、just worktree setup でも実行できる。何度実行してもよい。
 #
 # 1. 他のワークツリーや他のリポジトリと重ならないポートを割り当て、.worktree.env に書き出す
 # 2. 作成元からコピーされた .devbox/（PostgreSQL のデータや本体の絶対パスを含む）を作り直す
@@ -53,7 +53,7 @@ pc_port=$((port_base + 3))
 # Rails は使用中なら次のポートへずれる仕組みだが、隣のブロックと重ならないよう固定する。
 cat > "$env_file" <<EOF
 # scripts/worktree_setup が生成するワークツリー固有の設定。手で編集しない。
-# devbox の init_hook と Taskfile が読み込み、scripts/worktree_registry が割り当てたポートで起動する。
+# devbox の init_hook と justfile が読み込み、scripts/worktree_registry が割り当てたポートで起動する。
 WORKTREE_PATH='$project_root'
 WORKTREE_PORT_BASE=$port_base
 PORT=$rails_port
@@ -95,7 +95,7 @@ cat <<EOF
   PostgreSQL      $pg_port
   Redis           $redis_port
   process-compose $pc_port
-task up で起動できます。
+just up で起動できます。
 EOF
 
 # Spotify のダッシュボードはポートなしのループバック URI を受け付けないため、34000〜34040 の
