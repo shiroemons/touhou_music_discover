@@ -50,13 +50,23 @@ rm -rf .devbox/virtenv/bootsnap/bootsnap
 devbox run -- bash -c "bundle install"
 ```
 
-- `.ruby-version` / `devbox.json` の `ruby` / `Dockerfile` の `FROM ruby:` は3箇所セットで更新する
+- `.ruby-version` / `devbox.json` の `ruby`（ローカル flake のときは `nix/ruby/flake.nix`）/ `Dockerfile` の `FROM ruby:` は3箇所セットで更新する
 - Gemfile の `ruby file: '.ruby-version'` がパッチ番号まで照合するため、devbox の Ruby が `.ruby-version` と一致しないと `bundle` が動かない
 - nixhub（`devbox search`）の索引は nixpkgs 本体より遅れることがある。必要なパッチ版が nixhub にないときは、
   `devbox.json` の `ruby` を nixpkgs のコミット指定（`"github:NixOS/nixpkgs/<commit>#ruby_4_0": ""`）に置き換える
   - nixpkgs に入っているバージョンは `pkgs/development/interpreters/ruby/default.nix` の `ruby_4_0` で確認する
   - コミット指定では devbox の ruby プラグインが効かないが、このプロジェクトは `GEM_HOME` を `env` で上書きしているため影響はない
   - nixhub が同じバージョンに追いついたら、`"ruby": "<version>"` の指定に戻す
+- nixpkgs 本体にもまだ入っていないとき（リリース直後など）は、`nix/ruby/flake.nix` で nixpkgs の `mkRuby` に
+  公式 tarball のハッシュを渡してビルドし、`devbox.json` では `"path:./nix/ruby#default": ""` で参照する
+  - 未マージの nixpkgs PR のコミットは参照しない。PR の土台のコミットはバイナリキャッシュに揃っている保証がなく、
+    rustc などのビルドまで走ることがある。flake の `nixpkgs` には、キャッシュ済みの nixpkgs-unstable のコミットを使う
+  - `hash` は ruby-lang.org のリリース告知にある `.tar.gz` の SHA256 を SRI 形式にした値で、
+    `nix hash convert --hash-algo sha256 --to sri <16進のSHA256>` で変換する。
+    `cargoHash` は YJIT の Cargo 依存が変わらなければ前の版と同じで、違えばビルドが正しい値を示して止まる
+  - ローカル flake の Ruby は `devbox.lock` に記録されない。nixpkgs のコミットは `nix/ruby/flake.lock` で固定されるため、これもコミットする
+  - ビルドするのは Ruby 本体だけで、Apple Silicon で 8 分ほどかかる。結果は Nix ストアに入るため、ワークツリーでは再ビルドされない
+  - nixpkgs に入ったら、コミット指定（上記）か nixhub の版指定に戻し、`nix/ruby/` を削除する
 
 ## 環境変数
 
