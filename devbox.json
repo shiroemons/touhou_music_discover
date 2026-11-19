@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/.schema/devbox.schema.json",
   "packages": {
-    "github:NixOS/nixpkgs/5d2b81a7a3be3e2f832879028e4d60abbf58e9a0#ruby_4_0": "",
+    "path:./nix/ruby#default": "",
     "postgresql_18": "18.4",
     "redis":         "8.10.2",
     "nodejs":        "24",
